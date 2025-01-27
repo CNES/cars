@@ -57,6 +57,16 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
 
     overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, False)
 
+    # default classes, in meters:
+    default_performance_classes = [0, 1.936, 2.2675, 2.59, 3.208, 4.846, 6.856]
+    overloaded_conf[adv_cst.PERFORMANCE_MAP_CLASSES] = conf.get(
+        adv_cst.PERFORMANCE_MAP_CLASSES, default_performance_classes
+    )
+    if overloaded_conf[adv_cst.PERFORMANCE_MAP_CLASSES] is not None:
+        check_performance_classes(
+            overloaded_conf[adv_cst.PERFORMANCE_MAP_CLASSES]
+        )
+
     if check_epipolar_a_priori:
         # Check conf use_epipolar_a_priori
         overloaded_conf[adv_cst.USE_EPIPOLAR_A_PRIORI] = conf.get(
@@ -77,6 +87,7 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
         adv_cst.MERGING: bool,
         adv_cst.SAVE_INTERMEDIATE_DATA: bool,
         adv_cst.PHASING: Or(dict, None),
+        adv_cst.PERFORMANCE_MAP_CLASSES: Or(None, list),
     }
     if check_epipolar_a_priori:
         schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool
@@ -134,6 +145,29 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
         validate_epipolar_a_priori(overloaded_conf, checker_epipolar)
 
     return overloaded_conf
+
+
+def check_performance_classes(performance_map_classes):
+    """
+    Check performance classes
+
+    :param performance_map_classes: list for step defining border of class
+    :type performance_map_classes: list or None
+    """
+    if len(performance_map_classes) < 2:
+        raise RuntimeError("Not enough step for performance_map_classes")
+    if performance_map_classes is not None:
+        previous_step = -1
+        for step in performance_map_classes:
+            if step < 0:
+                raise RuntimeError(
+                    "All step in performance_map_classes must be >=0"
+                )
+            if step <= previous_step:
+                raise RuntimeError(
+                    "performance_map_classes list must be ordered."
+                )
+            previous_step = step
 
 
 def validate_epipolar_a_priori(

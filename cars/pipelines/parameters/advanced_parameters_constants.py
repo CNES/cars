@@ -43,3 +43,5 @@ DEM_MIN = "dem_min"
 DEM_MAX = "dem_max"
 ALTITUDE_DELTA_MAX = "altitude_delta_max"
 ALTITUDE_DELTA_MIN = "altitude_delta_min"
+
+PERFORMANCE_MAP_CLASSES = "performance_map_classes"

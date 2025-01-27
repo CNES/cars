@@ -1137,6 +1137,12 @@ def save_dataset(
     if tag in (cst.EPI_FILLING, cst.RASTER_FILLING):
         bands_description = dataset.coords[cst.BAND_FILLING].values
 
+    classes_info_tag = None
+    if tag == cst.RASTER_PERFORMANCE_MAP:
+        classes_info_tag = dataset.attrs.get(
+            cst.RIO_TAG_PERFORMANCE_MAP_CLASSES, None
+        )
+
     outputs.rasterio_write_georaster(
         file_name,
         data,
@@ -1144,6 +1150,7 @@ def save_dataset(
         window=rio_window,
         descriptor=descriptor,
         bands_description=bands_description,
+        classes_info_tag=classes_info_tag,
     )
 
 

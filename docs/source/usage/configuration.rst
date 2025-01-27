@@ -1700,21 +1700,50 @@ The structure follows this organization:
     .. tab:: Advanced parameters
 
 
-        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
-        | Name                       | Description                                                             | Type                  | Default value        | Required |
-        +============================+=========================================================================+=======================+======================+==========+
-        | *save_intermediate data*   | Save intermediate data for all applications                             | bool                  | False                | Yes      |
-        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
-        | *use_epipolar_a_priori*    | Active epipolar a priori                                                | bool                  | False                | Yes      |
-        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
-        | *epipolar_a_priori*        | Provide epipolar a priori information (see section below)               | dict                  |                      | No       |
-        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
-        | *terrain_a_priori*         | Provide terrain a priori information (see section below)                | dict                  |                      | No       |
-        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
-        | *debug_with_roi*           | Use input ROI with the tiling of the entire image (see Inputs section)  | bool                  | False                | No       |
-        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
-        | *merging*                  | Merge point clouds before rasterization (soon to be deprecated)         | bool                  | False                | No       |
-        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        .. list-table:: Configuration
+            :widths: 19 19 19 19 19
+            :header-rows: 1
+
+            * - Name
+              - Description
+              - Type
+              - Default value
+              - Required
+            * - save_intermediate data
+              - Save intermediate data for all applications
+              - bool
+              - False
+              - Yes
+            * - use_epipolar_a_priori
+              - Active epipolar a priori
+              - bool
+              - False
+              - Yes
+            * - epipolar_a_priori
+              - Provide epipolar a priori information (see section below)
+              - dict
+              -
+              - No
+            * - terrain_a_priori
+              - Provide terrain a priori information (see section below)
+              - dict
+              -
+              - No
+            * - debug_with_roi
+              - Use input ROI with the tiling of the entire image (see Inputs section)
+              - bool
+              - False
+              - No
+            * - merging
+              - Merge point clouds before rasterization (soon to be deprecated)
+              - bool
+              - False
+              - No
+            * - performance_map_classes
+              - List defining interval: [a,b,c,d] generates [[a,b],[b,c],[c,d]] intervals used in the performance map classification. If null, raw performance map is given
+              - list or None
+              - [0, 1.936, 2.2675, 2.59, 3.208, 4.846, 6.856]
+              - No
 
 
         **Save intermediate data**
