@@ -21,14 +21,15 @@
 """
 This module contains the abstract direct_localization application class.
 """
+
+# Standard imports
+import collections
 import logging
 import os
 
 import numpy as np
 import rasterio as rio
 import xarray as xr
-
-# Standard imports
 from json_checker import And, Checker
 
 # CARS imports
@@ -126,7 +127,7 @@ class DirectLocalization(
         """
         Run direct localization for ground truth disparity
 
-        :param dem: path to reference dem
+        :param dem: path to initial elevation dem
         :type dem: str
         :param sensor_left: Tiled sensor left image.
             Dict must contain keys: "image", "color", "geomodel",
@@ -168,6 +169,22 @@ class DirectLocalization(
         else:
             safe_makedirs(pair_folder)
 
+        with rio.open(sensor_left[sens_cst.INPUT_IMG]) as src:
+            width = src.width
+            height = src.height
+            transform = src.transform
+
+        raster_profile = collections.OrderedDict(
+            {
+                "height": height,
+                "width": width,
+                "driver": "GTiff",
+                "dtype": "float32",
+                "transform": transform,
+                "tiled": True,
+            }
+        )
+
         if self.used_config["target"] in ["all", "epipolar"]:
 
             epi_disparity_ground_truth = cars_dataset.CarsDataset(
@@ -207,7 +224,6 @@ class DirectLocalization(
                     ) = self.orchestrator.cluster.create_task(
                         maps_generation_wrapper, nout=1
                     )(
-                        dem,
                         sensor_left,
                         grid_left,
                         geom_left,
@@ -216,6 +232,7 @@ class DirectLocalization(
                         "epipolar",
                         full_saving_info,
                         epi_disparity_ground_truth.tiling_grid[row, col],
+                        dem_median=dem,
                     )
 
         if self.used_config["target"] in ["all", "sensor"]:
@@ -223,10 +240,6 @@ class DirectLocalization(
             sensor_dsm_ground_truth = cars_dataset.CarsDataset(
                 "arrays", name="sensor_dsm_ground_truth" + pair_key
             )
-
-            with rio.open(sensor_left[sens_cst.INPUT_IMG]) as src:
-                width = src.width
-                height = src.height
 
             sensor_dsm_ground_truth.create_grid(width, height, 2500, 2500, 0, 0)
 
@@ -252,7 +265,6 @@ class DirectLocalization(
                     ) = self.orchestrator.cluster.create_task(
                         maps_generation_wrapper, nout=1
                     )(
-                        dem,
                         sensor_left,
                         grid_left,
                         geom_left,
@@ -261,11 +273,11 @@ class DirectLocalization(
                         "sensor",
                         full_saving_info,
                         sensor_dsm_ground_truth.tiling_grid[row, col],
+                        raster_profile=raster_profile,
                     )
 
 
 def maps_generation_wrapper(
-    dem,
     sensor_left,
     grid_left,
     geom_left,
@@ -274,6 +286,8 @@ def maps_generation_wrapper(
     target,
     saving_infos,
     window,
+    raster_profile=None,
+    dem_median=None,
 ):
     """
     Computes ground truth epipolar disparity map and sensor geometry.
@@ -299,10 +313,11 @@ def maps_generation_wrapper(
     :type saving_infos: dict
     :param window: size of tile
     :type window: np.ndarray
+    :param raster_profile: dictionnary containing dataset information
+    :type raster_profile: dict
     """
 
     ground_truth = ground_truth_reprojection_tools.get_ground_truth(
-        dem,
         geom_plugin,
         grid_left,
         sensor_left[sens_cst.INPUT_IMG],
@@ -310,6 +325,7 @@ def maps_generation_wrapper(
         disp_to_alt_ratio,
         target,
         window,
+        dem_median,
     )
 
     constant_for_dataset = cst.EPI_GROUND_TRUTH
@@ -319,10 +335,18 @@ def maps_generation_wrapper(
     rows = np.arange(window[0], window[1])
     cols = np.arange(window[2], window[3])
 
-    values = {constant_for_dataset: ([cst.COL, cst.ROW], ground_truth)}
+    values = {
+        constant_for_dataset: (
+            [
+                cst.ROW,
+                cst.COL,
+            ],
+            ground_truth,
+        )
+    }
     outputs_dataset = xr.Dataset(
         values,
-        coords={cst.COL: cols, cst.ROW: rows},
+        coords={cst.ROW: rows, cst.COL: cols},
     )
 
     # Fill datasets based on target
@@ -332,6 +356,7 @@ def maps_generation_wrapper(
         outputs_dataset,
         saving_info=saving_infos,
         attributes=attributes,
+        profile=raster_profile,
     )
 
     return outputs_dataset

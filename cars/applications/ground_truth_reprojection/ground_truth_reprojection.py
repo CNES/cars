@@ -113,7 +113,7 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
         as a delayed task. If user want to correctly save dataset, the user must
         provide saving_info_left and right.  See cars_dataset.fill_dataset.
 
-        :param dem: path to original dem
+        :param dem: path to initial elevation dem
         :type dem: str
         :param sensor_left: Tiled sensor left image.
             Dict must contain keys: "image", "color", "geomodel",

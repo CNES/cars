@@ -30,7 +30,6 @@ from cars.core.projection import point_cloud_conversion
 
 
 def get_ground_truth(
-    dem,
     geom_plugin,
     grid,
     sensor_data,
@@ -38,11 +37,12 @@ def get_ground_truth(
     disp_to_alt_ratio,
     target,
     window,
+    dem=None,
 ):
     """
     Computes ground truth in epipolar and sensor geometry.
 
-    :param dem: path to reference dem
+    :param dem: path to initial dem
     :type dem: str
     :param geom_plugin: Geometry plugin with user's DSM used to
         generate epipolar grids.
@@ -61,12 +61,14 @@ def get_ground_truth(
     :type target: str
     :param window: size of tile
     :type window: np.ndarray
+    :param dem: path to initial elevation
+    :type dem: str
     """
 
     rows = np.arange(window[0], window[1])
     cols = np.arange(window[2], window[3])
 
-    (positions_row, positions_col) = np.meshgrid(rows, cols)
+    (positions_row, positions_col) = np.meshgrid(cols, rows)
 
     if target == "epipolar":
 
@@ -94,24 +96,24 @@ def get_ground_truth(
             row,
         )
 
-        alt = np.reshape(alt, (cols.shape[0], rows.shape[0]))
+        alt = np.reshape(alt, (rows.shape[0], cols.shape[0]))
 
         alt_ref = inputs.rasterio_get_values(
             dem, lon, lat, point_cloud_conversion
         )
-        alt_ref = np.reshape(alt_ref, (cols.shape[0], rows.shape[0]))
+        alt_ref = np.reshape(alt_ref, (rows.shape[0], cols.shape[0]))
 
         ground_truth = -(alt - alt_ref) / disp_to_alt_ratio
 
     if target == "sensor":
 
-        lon, lat, alt = geom_plugin.direct_loc(
+        _, _, alt = geom_plugin.direct_loc(
             sensor_data,
             geomodel,
-            positions_col.ravel(),
             positions_row.ravel(),
+            positions_col.ravel(),
         )
 
-        ground_truth = np.reshape(alt, (cols.shape[0], rows.shape[0]))
+        ground_truth = np.reshape(alt, (rows.shape[0], cols.shape[0]))
 
     return ground_truth

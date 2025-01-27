@@ -1804,9 +1804,7 @@ class DefaultPipeline(PipelineTemplate):
                     ],
                 )
                 self.ground_truth_reprojection.run(
-                    self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
-                        adv_cst.INPUT_GROUND_TRUTH_DSM
-                    ],
+                    inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH],
                     self.pairs[pair_key]["sensor_image_left"],
                     self.pairs[pair_key]["corrected_grid_left"],
                     self.pairs[pair_key]["sensor_image_left"][

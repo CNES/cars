@@ -1730,7 +1730,6 @@ The structure follows this organization:
 
     .. tab:: Advanced parameters
 
-
         .. list-table:: Configuration
             :widths: 19 19 19 19 19
             :header-rows: 1
@@ -1780,6 +1779,7 @@ The structure follows this organization:
               - dict
               -
               - No
+
 
 
         **Save intermediate data**
