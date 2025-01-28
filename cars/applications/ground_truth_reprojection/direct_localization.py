@@ -118,7 +118,7 @@ class DirectLocalization(
         grid_left,
         geom_left,
         geom_plugin,
-        dem,
+        geom_plugin_dem_median,
         disp_to_alt_ratio,
         orchestrator=None,
         pair_folder=None,
@@ -135,8 +135,8 @@ class DirectLocalization(
         :type grid_left: CarsDataset
         :param geom_left: Path and attributes for left geomodel.
         :type geom_left: dict
-        :param dem: path to initial elevation dem
-        :type dem: str
+        :param geom_plugin_dem_median: Geometry plugin with dem median
+        :type geom_plugin_dem_median: geometry_plugin
         :param geom_plugin: Geometry plugin with user's DSM used to
             generate epipolar grids.
         :type geom_plugin: GeometryPlugin
@@ -232,7 +232,7 @@ class DirectLocalization(
                         "epipolar",
                         full_saving_info,
                         epi_disparity_ground_truth.tiling_grid[row, col],
-                        dem_median=dem,
+                        geom_plugin_dem_median=geom_plugin_dem_median,
                     )
 
         if self.used_config["target"] in ["all", "sensor"]:
@@ -287,7 +287,7 @@ def maps_generation_wrapper(
     saving_infos,
     window,
     raster_profile=None,
-    dem_median=None,
+    geom_plugin_dem_median=None,
 ):
     """
     Computes ground truth epipolar disparity map and sensor geometry.
@@ -315,8 +315,8 @@ def maps_generation_wrapper(
     :type window: np.ndarray
     :param raster_profile: dictionnary containing dataset information
     :type raster_profile: dict
-    :param dem_median: path to initial elevation dem
-    :type dem_median: str
+    :param geom_plugin_dem_median: Geometry plugin with dem median
+    :type geom_plugin_dem_median: geometry_plugin
     """
 
     ground_truth = ground_truth_reprojection_tools.get_ground_truth(
@@ -327,7 +327,7 @@ def maps_generation_wrapper(
         disp_to_alt_ratio,
         target,
         window,
-        dem_median,
+        geom_plugin_dem_median,
     )
 
     constant_for_dataset = cst.EPI_GROUND_TRUTH

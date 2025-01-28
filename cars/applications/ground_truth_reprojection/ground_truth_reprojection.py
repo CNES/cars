@@ -103,7 +103,7 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
         grid_left,
         geom_left,
         geom_plugin,
-        dem,
+        geom_plugin_dem_median,
         disp_to_alt_ratio,
         orchestrator=None,
         pair_folder=None,
@@ -113,8 +113,8 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
         as a delayed task. If user want to correctly save dataset, the user must
         provide saving_info_left and right.  See cars_dataset.fill_dataset.
 
-        :param dem: path to initial elevation dem
-        :type dem: str
+        :param geom_plugin_dem_median: Geometry plugin with dem median
+        :type geom_plugin_dem_median: geometry_plugin
         :param sensor_left: Tiled sensor left image.
             Dict must contain keys: "image", "color", "geomodel",
             "no_data", "mask". Paths must be absolute.

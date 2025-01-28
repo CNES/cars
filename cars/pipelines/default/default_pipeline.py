@@ -1810,7 +1810,7 @@ class DefaultPipeline(PipelineTemplate):
                         sens_cst.INPUT_GEO_MODEL
                     ],
                     new_geomplugin_dsm,
-                    dem_median,
+                    self.geom_plugin_with_dem_and_geoid,
                     self.pairs[pair_key]["corrected_grid_left"].attributes[
                         "disp_to_alt_ratio"
                     ],

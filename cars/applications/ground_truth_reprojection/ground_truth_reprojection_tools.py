@@ -26,7 +26,6 @@ import numpy as np
 from shareloc.proj_utils import transform_physical_point_to_index
 
 from cars.core import inputs
-from cars.core.projection import point_cloud_conversion
 
 
 def get_ground_truth(
@@ -37,13 +36,13 @@ def get_ground_truth(
     disp_to_alt_ratio,
     target,
     window,
-    dem=None,
+    geom_plugin_dem_median=None,
 ):
     """
     Computes ground truth in epipolar and sensor geometry.
 
-    :param dem: path to initial dem
-    :type dem: str
+    :param geom_plugin_dem_median: path to initial dem
+    :type geom_plugin_dem_median: str
     :param geom_plugin: Geometry plugin with user's DSM used to
         generate epipolar grids.
     :type geom_plugin: GeometryPlugin
@@ -61,8 +60,8 @@ def get_ground_truth(
     :type target: str
     :param window: size of tile
     :type window: np.ndarray
-    :param dem: path to initial elevation
-    :type dem: str
+    :param geom_plugin_dem_median: Geometry plugin with dem median
+    :type geom_plugin_dem_median: geometry_plugin
     """
 
     rows = np.arange(window[0], window[1])
@@ -89,7 +88,7 @@ def get_ground_truth(
             ~transform, sensor_positions[:, 1], sensor_positions[:, 0]
         )
 
-        lat, lon, alt = geom_plugin.direct_loc(
+        _, _, alt = geom_plugin.direct_loc(
             sensor_data,
             geomodel,
             col,
@@ -98,9 +97,13 @@ def get_ground_truth(
 
         alt = np.reshape(alt, (rows.shape[0], cols.shape[0]))
 
-        alt_ref = inputs.rasterio_get_values(
-            dem, lon, lat, point_cloud_conversion
+        _, _, alt_ref = geom_plugin_dem_median.direct_loc(
+            sensor_data,
+            geomodel,
+            col,
+            row,
         )
+
         alt_ref = np.reshape(alt_ref, (rows.shape[0], cols.shape[0]))
 
         ground_truth = -(alt - alt_ref) / disp_to_alt_ratio
