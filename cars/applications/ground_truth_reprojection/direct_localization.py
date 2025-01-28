@@ -68,6 +68,7 @@ class DirectLocalization(
         # check conf
         self.used_method = self.used_config["method"]
         self.target = self.used_config["target"]
+        self.tile_size = self.used_config["tile_size"]
 
         # Saving bools
         self.save_intermediate_data = True
@@ -96,6 +97,7 @@ class DirectLocalization(
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "direct_loc")
         overloaded_conf["target"] = conf.get("target", "epipolar")
+        overloaded_conf["tile_size"] = conf.get("tile_size", 2500)
         overloaded_conf["save_intermediate_data"] = True
 
         ground_truth_reprojection_schema = {
@@ -103,6 +105,7 @@ class DirectLocalization(
             "target": And(
                 str, lambda input: input in ["epipolar", "sensor", "all"]
             ),
+            "tile_size": And(int, lambda size: size > 0),
             "save_intermediate_data": bool,
         }
 
@@ -180,7 +183,7 @@ class DirectLocalization(
             height_left = src_left.height
             transform_left = src_left.transform
 
-        with rio.open(sensor_left[sens_cst.INPUT_IMG]) as src_right:
+        with rio.open(sensor_right[sens_cst.INPUT_IMG]) as src_right:
             width_right = src_right.width
             height_right = src_right.height
             transform_right = src_right.transform
@@ -213,7 +216,7 @@ class DirectLocalization(
             epi_disparity_ground_truth_left = cars_dataset.CarsDataset(
                 "arrays", name="epipolar_disparity_ground_truth_left" + pair_key
             )
-            epi_disparity_ground_truth_right = cars_dataset.CarsDataset(
+            epi_disp_ground_truth_right = cars_dataset.CarsDataset(
                 "arrays",
                 name="epipolar_disparity_ground_truth_right" + pair_key,
             )
@@ -221,12 +224,12 @@ class DirectLocalization(
             epi_disparity_ground_truth_left.create_grid(
                 grid_left.attributes["epipolar_size_x"],
                 grid_left.attributes["epipolar_size_y"],
-                2500,
-                2500,
+                self.tile_size,
+                self.tile_size,
                 0,
                 0,
             )
-            epi_disparity_ground_truth_right.tiling_grid = (
+            epi_disp_ground_truth_right.tiling_grid = (
                 epi_disparity_ground_truth_left.tiling_grid
             )
 
@@ -243,7 +246,7 @@ class DirectLocalization(
                     pair_folder, "epipolar_disp_ground_truth_right.tif"
                 ),
                 cst.EPI_GROUND_TRUTH,
-                epi_disparity_ground_truth_right,
+                epi_disp_ground_truth_right,
                 cars_ds_name="epipolar_disparity_ground_truth",
             )
 
@@ -252,7 +255,7 @@ class DirectLocalization(
                 [epi_disparity_ground_truth_left]
             )
             [saving_infos_epi_right] = self.orchestrator.get_saving_infos(
-                [epi_disparity_ground_truth_right]
+                [epi_disp_ground_truth_right]
             )
 
             for col in range(
@@ -283,10 +286,15 @@ class DirectLocalization(
                         full_saving_info_left,
                         epi_disparity_ground_truth_left.tiling_grid[row, col],
                         geom_plugin_dem_median=geom_plugin_dem_median,
+                        window_dict=(
+                            epi_disparity_ground_truth_left.get_window_as_dict(
+                                row, col
+                            )
+                        ),
                     )
 
                     (
-                        epi_disparity_ground_truth_right[row, col]
+                        epi_disp_ground_truth_right[row, col]
                     ) = self.orchestrator.cluster.create_task(
                         maps_generation_wrapper, nout=1
                     )(
@@ -296,59 +304,62 @@ class DirectLocalization(
                         disp_to_alt_ratio,
                         "epipolar",
                         full_saving_info_right,
-                        epi_disparity_ground_truth_right.tiling_grid[row, col],
+                        epi_disp_ground_truth_right.tiling_grid[row, col],
                         geom_plugin_dem_median=geom_plugin_dem_median,
                         reverse=True,
+                        window_dict=(
+                            epi_disp_ground_truth_right.get_window_as_dict(
+                                row, col
+                            )
+                        ),
                     )
 
         if self.used_config["target"] in ["all", "sensor"]:
 
-            sensor_dsm_ground_truth_left = cars_dataset.CarsDataset(
+            sensor_dsm_gt_left = cars_dataset.CarsDataset(
                 "arrays", name="sensor_dsm_ground_truth_left" + pair_key
             )
-            sensor_dsm_ground_truth_right = cars_dataset.CarsDataset(
+            sensor_dsm_gt_right = cars_dataset.CarsDataset(
                 "arrays", name="sensor_dsm_ground_truth_right" + pair_key
             )
 
             # update grid
-            sensor_dsm_ground_truth_left.create_grid(
-                width_left, height_left, 2500, 2500, 0, 0
+            sensor_dsm_gt_left.create_grid(
+                width_left, height_left, self.tile_size, self.tile_size, 0, 0
             )
-            sensor_dsm_ground_truth_right.create_grid(
-                width_right, height_right, 2500, 2500, 0, 0
+            sensor_dsm_gt_right.create_grid(
+                width_right, height_right, self.tile_size, self.tile_size, 0, 0
             )
 
             self.orchestrator.add_to_save_lists(
                 os.path.join(pair_folder, "sensor_dsm_ground_truth_left.tif"),
                 cst.SENSOR_GROUND_TRUTH,
-                sensor_dsm_ground_truth_left,
+                sensor_dsm_gt_left,
                 cars_ds_name="sensor_dsm_ground_truth_left",
             )
             self.orchestrator.add_to_save_lists(
                 os.path.join(pair_folder, "sensor_dsm_ground_truth_right.tif"),
                 cst.SENSOR_GROUND_TRUTH,
-                sensor_dsm_ground_truth_right,
+                sensor_dsm_gt_right,
                 cars_ds_name="sensor_dsm_ground_truth_right",
             )
 
             # Get saving infos in order to save tiles when they are computed
             [saving_infos_sensor_left] = self.orchestrator.get_saving_infos(
-                [sensor_dsm_ground_truth_left]
+                [sensor_dsm_gt_left]
             )
             [saving_infos_sensor_right] = self.orchestrator.get_saving_infos(
-                [sensor_dsm_ground_truth_right]
+                [sensor_dsm_gt_right]
             )
 
             # left
-            for col in range(sensor_dsm_ground_truth_left.tiling_grid.shape[1]):
-                for row in range(
-                    sensor_dsm_ground_truth_left.tiling_grid.shape[0]
-                ):
+            for col in range(sensor_dsm_gt_left.tiling_grid.shape[1]):
+                for row in range(sensor_dsm_gt_left.tiling_grid.shape[0]):
                     full_saving_info_left = ocht.update_saving_infos(
                         saving_infos_sensor_left, row=row, col=col
                     )
                     (
-                        sensor_dsm_ground_truth_left[row, col]
+                        sensor_dsm_gt_left[row, col]
                     ) = self.orchestrator.cluster.create_task(
                         maps_generation_wrapper, nout=1
                     )(
@@ -358,22 +369,21 @@ class DirectLocalization(
                         disp_to_alt_ratio,
                         "sensor",
                         full_saving_info_left,
-                        sensor_dsm_ground_truth_left.tiling_grid[row, col],
+                        sensor_dsm_gt_left.tiling_grid[row, col],
                         raster_profile=raster_profile_left,
+                        window_dict=sensor_dsm_gt_left.get_window_as_dict(
+                            row, col
+                        ),
                     )
 
             # right
-            for col in range(
-                sensor_dsm_ground_truth_right.tiling_grid.shape[1]
-            ):
-                for row in range(
-                    sensor_dsm_ground_truth_right.tiling_grid.shape[0]
-                ):
+            for col in range(sensor_dsm_gt_right.tiling_grid.shape[1]):
+                for row in range(sensor_dsm_gt_right.tiling_grid.shape[0]):
                     full_saving_info_right = ocht.update_saving_infos(
                         saving_infos_sensor_right, row=row, col=col
                     )
                     (
-                        sensor_dsm_ground_truth_right[row, col]
+                        sensor_dsm_gt_right[row, col]
                     ) = self.orchestrator.cluster.create_task(
                         maps_generation_wrapper, nout=1
                     )(
@@ -383,8 +393,11 @@ class DirectLocalization(
                         disp_to_alt_ratio,
                         "sensor",
                         full_saving_info_right,
-                        sensor_dsm_ground_truth_right.tiling_grid[row, col],
+                        sensor_dsm_gt_right.tiling_grid[row, col],
                         raster_profile=raster_profile_right,
+                        window_dict=sensor_dsm_gt_right.get_window_as_dict(
+                            row, col
+                        ),
                     )
 
 
@@ -399,6 +412,7 @@ def maps_generation_wrapper(
     raster_profile=None,
     geom_plugin_dem_median=None,
     reverse=False,
+    window_dict=None,
 ):
     """
     Computes ground truth epipolar disparity map and sensor geometry.
@@ -428,6 +442,7 @@ def maps_generation_wrapper(
     :type geom_plugin_dem_median: geometry_plugin
     :param reverse: true if right-> left
     :type reverse: bool
+    :param window_dict: window as dict
     """
 
     ground_truth = ground_truth_reprojection_tools.get_ground_truth(
@@ -468,6 +483,7 @@ def maps_generation_wrapper(
     cars_dataset.fill_dataset(
         outputs_dataset,
         saving_info=saving_infos,
+        window=window_dict,
         attributes=attributes,
         profile=raster_profile,
     )
