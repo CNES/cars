@@ -68,11 +68,11 @@ def get_ground_truth(
     rows = np.arange(window[0], window[1])
     cols = np.arange(window[2], window[3])
 
-    (positions_row, positions_col) = np.meshgrid(cols, rows)
+    (positions_col, positions_row) = np.meshgrid(cols, rows)
 
     if target == "epipolar":
 
-        positions = np.stack([positions_row, positions_col], axis=2)
+        positions = np.stack([positions_col, positions_row], axis=2)
         sensor_positions = geom_plugin.sensor_position_from_grid(
             grid,
             np.reshape(
@@ -110,8 +110,8 @@ def get_ground_truth(
         _, _, alt = geom_plugin.direct_loc(
             sensor_data,
             geomodel,
-            positions_row.ravel(),
             positions_col.ravel(),
+            positions_row.ravel(),
         )
 
         ground_truth = np.reshape(alt, (rows.shape[0], cols.shape[0]))

@@ -99,11 +99,11 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def run(
         self,
-        dem,
         sensor_left,
         grid_left,
         geom_left,
         geom_plugin,
+        dem,
         disp_to_alt_ratio,
         orchestrator=None,
         pair_folder=None,

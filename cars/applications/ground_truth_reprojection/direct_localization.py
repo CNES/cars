@@ -114,11 +114,11 @@ class DirectLocalization(
 
     def run(  # noqa: C901
         self,
-        dem,
         sensor_left,
         grid_left,
         geom_left,
         geom_plugin,
+        dem,
         disp_to_alt_ratio,
         orchestrator=None,
         pair_folder=None,
@@ -127,8 +127,6 @@ class DirectLocalization(
         """
         Run direct localization for ground truth disparity
 
-        :param dem: path to initial elevation dem
-        :type dem: str
         :param sensor_left: Tiled sensor left image.
             Dict must contain keys: "image", "color", "geomodel",
             "no_data", "mask". Paths must be absolute.
@@ -137,6 +135,8 @@ class DirectLocalization(
         :type grid_left: CarsDataset
         :param geom_left: Path and attributes for left geomodel.
         :type geom_left: dict
+        :param dem: path to initial elevation dem
+        :type dem: str
         :param geom_plugin: Geometry plugin with user's DSM used to
             generate epipolar grids.
         :type geom_plugin: GeometryPlugin
@@ -315,6 +315,8 @@ def maps_generation_wrapper(
     :type window: np.ndarray
     :param raster_profile: dictionnary containing dataset information
     :type raster_profile: dict
+    :param dem_median: path to initial elevation dem
+    :type dem_median: str
     """
 
     ground_truth = ground_truth_reprojection_tools.get_ground_truth(

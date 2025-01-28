@@ -1804,13 +1804,13 @@ class DefaultPipeline(PipelineTemplate):
                     ],
                 )
                 self.ground_truth_reprojection.run(
-                    inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH],
                     self.pairs[pair_key]["sensor_image_left"],
                     self.pairs[pair_key]["corrected_grid_left"],
                     self.pairs[pair_key]["sensor_image_left"][
                         sens_cst.INPUT_GEO_MODEL
                     ],
                     new_geomplugin_dsm,
+                    dem_median,
                     self.pairs[pair_key]["corrected_grid_left"].attributes[
                         "disp_to_alt_ratio"
                     ],

@@ -474,38 +474,38 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #         )
         #     ),
         # )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "one_two",
-                "epipolar_disp_ground_truth.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir + "_application",
-                    "ground_truth_reprojection",
-                    "ref_epipolar_disp_ground_truth.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "one_two",
-                "sensor_dsm_ground_truth.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir + "_application",
-                    "ground_truth_reprojection",
-                    "ref_sensor_dsm_ground_truth.tif",
-                )
-            ),
-        )
+        # copy2(
+        #     os.path.join(
+        #         out_dir,
+        #         "dump_dir",
+        #         "ground_truth_reprojection",
+        #         "one_two",
+        #         "epipolar_disp_ground_truth.tif",
+        #     ),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir + "_application",
+        #             "ground_truth_reprojection",
+        #             "ref_epipolar_disp_ground_truth.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(
+        #         out_dir,
+        #         "dump_dir",
+        #         "ground_truth_reprojection",
+        #         "one_two",
+        #         "sensor_dsm_ground_truth.tif",
+        #     ),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir + "_application",
+        #             "ground_truth_reprojection",
+        #             "ref_sensor_dsm_ground_truth.tif",
+        #         )
+        #     ),
+        # )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
