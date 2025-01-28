@@ -1805,10 +1805,9 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 self.ground_truth_reprojection.run(
                     self.pairs[pair_key]["sensor_image_left"],
+                    self.pairs[pair_key]["sensor_image_right"],
                     self.pairs[pair_key]["corrected_grid_left"],
-                    self.pairs[pair_key]["sensor_image_left"][
-                        sens_cst.INPUT_GEO_MODEL
-                    ],
+                    self.pairs[pair_key]["corrected_grid_right"],
                     new_geomplugin_dsm,
                     self.geom_plugin_with_dem_and_geoid,
                     self.pairs[pair_key]["corrected_grid_left"].attributes[

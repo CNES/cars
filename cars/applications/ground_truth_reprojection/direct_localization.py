@@ -115,8 +115,9 @@ class DirectLocalization(
     def run(  # noqa: C901
         self,
         sensor_left,
+        sensor_right,
         grid_left,
-        geom_left,
+        grid_right,
         geom_plugin,
         geom_plugin_dem_median,
         disp_to_alt_ratio,
@@ -131,10 +132,14 @@ class DirectLocalization(
             Dict must contain keys: "image", "color", "geomodel",
             "no_data", "mask". Paths must be absolute.
         :type sensor_left: CarsDataset
+        :param sensor_right: Tiled sensor right image.
+            Dict must contain keys: "image", "color", "geomodel",
+            "no_data", "mask". Paths must be absolute.
+        :type sensor_right: CarsDataset
         :param grid_left: Grid left.
         :type grid_left: CarsDataset
-        :param geom_left: Path and attributes for left geomodel.
-        :type geom_left: dict
+        :param grid_right: Grid right.
+        :type grid_right: CarsDataset
         :param geom_plugin_dem_median: Geometry plugin with dem median
         :type geom_plugin_dem_median: geometry_plugin
         :param geom_plugin: Geometry plugin with user's DSM used to
@@ -169,29 +174,51 @@ class DirectLocalization(
         else:
             safe_makedirs(pair_folder)
 
-        with rio.open(sensor_left[sens_cst.INPUT_IMG]) as src:
-            width = src.width
-            height = src.height
-            transform = src.transform
+        # Get profile
+        with rio.open(sensor_left[sens_cst.INPUT_IMG]) as src_left:
+            width_left = src_left.width
+            height_left = src_left.height
+            transform_left = src_left.transform
 
-        raster_profile = collections.OrderedDict(
+        with rio.open(sensor_left[sens_cst.INPUT_IMG]) as src_right:
+            width_right = src_right.width
+            height_right = src_right.height
+            transform_right = src_right.transform
+
+        raster_profile_left = collections.OrderedDict(
             {
-                "height": height,
-                "width": width,
+                "height": height_left,
+                "width": width_left,
                 "driver": "GTiff",
                 "dtype": "float32",
-                "transform": transform,
+                "transform": transform_left,
+                "tiled": True,
+            }
+        )
+
+        raster_profile_right = collections.OrderedDict(
+            {
+                "height": height_right,
+                "width": width_right,
+                "driver": "GTiff",
+                "dtype": "float32",
+                "transform": transform_right,
                 "tiled": True,
             }
         )
 
         if self.used_config["target"] in ["all", "epipolar"]:
 
-            epi_disparity_ground_truth = cars_dataset.CarsDataset(
-                "arrays", name="epipolar_disparity_ground_truth" + pair_key
+            # Create cars datasets
+            epi_disparity_ground_truth_left = cars_dataset.CarsDataset(
+                "arrays", name="epipolar_disparity_ground_truth_left" + pair_key
+            )
+            epi_disparity_ground_truth_right = cars_dataset.CarsDataset(
+                "arrays",
+                name="epipolar_disparity_ground_truth_right" + pair_key,
             )
 
-            epi_disparity_ground_truth.create_grid(
+            epi_disparity_ground_truth_left.create_grid(
                 grid_left.attributes["epipolar_size_x"],
                 grid_left.attributes["epipolar_size_y"],
                 2500,
@@ -199,88 +226,171 @@ class DirectLocalization(
                 0,
                 0,
             )
+            epi_disparity_ground_truth_right.tiling_grid = (
+                epi_disparity_ground_truth_left.tiling_grid
+            )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epipolar_disp_ground_truth.tif"),
+                os.path.join(
+                    pair_folder, "epipolar_disp_ground_truth_left.tif"
+                ),
                 cst.EPI_GROUND_TRUTH,
-                epi_disparity_ground_truth,
+                epi_disparity_ground_truth_left,
+                cars_ds_name="epipolar_disparity_ground_truth",
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(
+                    pair_folder, "epipolar_disp_ground_truth_right.tif"
+                ),
+                cst.EPI_GROUND_TRUTH,
+                epi_disparity_ground_truth_right,
                 cars_ds_name="epipolar_disparity_ground_truth",
             )
 
             # Get saving infos in order to save tiles when they are computed
-            [saving_infos_epi] = self.orchestrator.get_saving_infos(
-                [epi_disparity_ground_truth]
+            [saving_infos_epi_left] = self.orchestrator.get_saving_infos(
+                [epi_disparity_ground_truth_left]
+            )
+            [saving_infos_epi_right] = self.orchestrator.get_saving_infos(
+                [epi_disparity_ground_truth_right]
             )
 
-            for col in range(epi_disparity_ground_truth.tiling_grid.shape[1]):
+            for col in range(
+                epi_disparity_ground_truth_left.tiling_grid.shape[1]
+            ):
                 for row in range(
-                    epi_disparity_ground_truth.tiling_grid.shape[0]
+                    epi_disparity_ground_truth_left.tiling_grid.shape[0]
                 ):
-                    full_saving_info = ocht.update_saving_infos(
-                        saving_infos_epi, row=row, col=col
+                    # update saving infos with row col
+                    full_saving_info_left = ocht.update_saving_infos(
+                        saving_infos_epi_left, row=row, col=col
                     )
+                    full_saving_info_right = ocht.update_saving_infos(
+                        saving_infos_epi_right, row=row, col=col
+                    )
+
+                    # generate ground truth
                     (
-                        epi_disparity_ground_truth[row, col]
+                        epi_disparity_ground_truth_left[row, col]
                     ) = self.orchestrator.cluster.create_task(
                         maps_generation_wrapper, nout=1
                     )(
                         sensor_left,
                         grid_left,
-                        geom_left,
                         geom_plugin,
                         disp_to_alt_ratio,
                         "epipolar",
-                        full_saving_info,
-                        epi_disparity_ground_truth.tiling_grid[row, col],
+                        full_saving_info_left,
+                        epi_disparity_ground_truth_left.tiling_grid[row, col],
                         geom_plugin_dem_median=geom_plugin_dem_median,
+                    )
+
+                    (
+                        epi_disparity_ground_truth_right[row, col]
+                    ) = self.orchestrator.cluster.create_task(
+                        maps_generation_wrapper, nout=1
+                    )(
+                        sensor_right,
+                        grid_right,
+                        geom_plugin,
+                        disp_to_alt_ratio,
+                        "epipolar",
+                        full_saving_info_right,
+                        epi_disparity_ground_truth_right.tiling_grid[row, col],
+                        geom_plugin_dem_median=geom_plugin_dem_median,
+                        reverse=True,
                     )
 
         if self.used_config["target"] in ["all", "sensor"]:
 
-            sensor_dsm_ground_truth = cars_dataset.CarsDataset(
-                "arrays", name="sensor_dsm_ground_truth" + pair_key
+            sensor_dsm_ground_truth_left = cars_dataset.CarsDataset(
+                "arrays", name="sensor_dsm_ground_truth_left" + pair_key
+            )
+            sensor_dsm_ground_truth_right = cars_dataset.CarsDataset(
+                "arrays", name="sensor_dsm_ground_truth_right" + pair_key
             )
 
-            sensor_dsm_ground_truth.create_grid(width, height, 2500, 2500, 0, 0)
+            # update grid
+            sensor_dsm_ground_truth_left.create_grid(
+                width_left, height_left, 2500, 2500, 0, 0
+            )
+            sensor_dsm_ground_truth_right.create_grid(
+                width_right, height_right, 2500, 2500, 0, 0
+            )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "sensor_dsm_ground_truth.tif"),
+                os.path.join(pair_folder, "sensor_dsm_ground_truth_left.tif"),
                 cst.SENSOR_GROUND_TRUTH,
-                sensor_dsm_ground_truth,
-                cars_ds_name="sensor_dsm_ground_truth",
+                sensor_dsm_ground_truth_left,
+                cars_ds_name="sensor_dsm_ground_truth_left",
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "sensor_dsm_ground_truth_right.tif"),
+                cst.SENSOR_GROUND_TRUTH,
+                sensor_dsm_ground_truth_right,
+                cars_ds_name="sensor_dsm_ground_truth_right",
             )
 
             # Get saving infos in order to save tiles when they are computed
-            [saving_infos_sensor] = self.orchestrator.get_saving_infos(
-                [sensor_dsm_ground_truth]
+            [saving_infos_sensor_left] = self.orchestrator.get_saving_infos(
+                [sensor_dsm_ground_truth_left]
+            )
+            [saving_infos_sensor_right] = self.orchestrator.get_saving_infos(
+                [sensor_dsm_ground_truth_right]
             )
 
-            for col in range(sensor_dsm_ground_truth.tiling_grid.shape[1]):
-                for row in range(sensor_dsm_ground_truth.tiling_grid.shape[0]):
-                    full_saving_info = ocht.update_saving_infos(
-                        saving_infos_sensor, row=row, col=col
+            # left
+            for col in range(sensor_dsm_ground_truth_left.tiling_grid.shape[1]):
+                for row in range(
+                    sensor_dsm_ground_truth_left.tiling_grid.shape[0]
+                ):
+                    full_saving_info_left = ocht.update_saving_infos(
+                        saving_infos_sensor_left, row=row, col=col
                     )
                     (
-                        sensor_dsm_ground_truth[row, col]
+                        sensor_dsm_ground_truth_left[row, col]
                     ) = self.orchestrator.cluster.create_task(
                         maps_generation_wrapper, nout=1
                     )(
                         sensor_left,
                         grid_left,
-                        geom_left,
                         geom_plugin,
                         disp_to_alt_ratio,
                         "sensor",
-                        full_saving_info,
-                        sensor_dsm_ground_truth.tiling_grid[row, col],
-                        raster_profile=raster_profile,
+                        full_saving_info_left,
+                        sensor_dsm_ground_truth_left.tiling_grid[row, col],
+                        raster_profile=raster_profile_left,
+                    )
+
+            # right
+            for col in range(
+                sensor_dsm_ground_truth_right.tiling_grid.shape[1]
+            ):
+                for row in range(
+                    sensor_dsm_ground_truth_right.tiling_grid.shape[0]
+                ):
+                    full_saving_info_right = ocht.update_saving_infos(
+                        saving_infos_sensor_right, row=row, col=col
+                    )
+                    (
+                        sensor_dsm_ground_truth_right[row, col]
+                    ) = self.orchestrator.cluster.create_task(
+                        maps_generation_wrapper, nout=1
+                    )(
+                        sensor_right,
+                        grid_right,
+                        geom_plugin,
+                        disp_to_alt_ratio,
+                        "sensor",
+                        full_saving_info_right,
+                        sensor_dsm_ground_truth_right.tiling_grid[row, col],
+                        raster_profile=raster_profile_right,
                     )
 
 
 def maps_generation_wrapper(
     sensor_left,
     grid_left,
-    geom_left,
     geom_plugin,
     disp_to_alt_ratio,
     target,
@@ -288,20 +398,19 @@ def maps_generation_wrapper(
     window,
     raster_profile=None,
     geom_plugin_dem_median=None,
+    reverse=False,
 ):
     """
     Computes ground truth epipolar disparity map and sensor geometry.
 
     :param dem: path to reference dem
     :type dem: str
-    :param sensor_left: Tiled sensor left image.
+    :param sensor_left: sensor data
         Dict must contain keys: "image", "color", "geomodel",
         "no_data", "mask". Paths must be absolute.
-    :type sensor_left: CarsDataset
+    :type sensor_left: dict
     :param grid_left: Grid left.
     :type grid_left: CarsDataset
-    :param geom_left: Path and attributes for left geomodel.
-    :type geom_left: dict
     :param geom_plugin: Geometry plugin with user's DSM used to
         generate epipolar grids.
     :type geom_plugin: GeometryPlugin
@@ -317,17 +426,19 @@ def maps_generation_wrapper(
     :type raster_profile: dict
     :param geom_plugin_dem_median: Geometry plugin with dem median
     :type geom_plugin_dem_median: geometry_plugin
+    :param reverse: true if right-> left
+    :type reverse: bool
     """
 
     ground_truth = ground_truth_reprojection_tools.get_ground_truth(
         geom_plugin,
         grid_left,
-        sensor_left[sens_cst.INPUT_IMG],
-        geom_left,
+        sensor_left,
         disp_to_alt_ratio,
         target,
         window,
         geom_plugin_dem_median,
+        reverse=reverse,
     )
 
     constant_for_dataset = cst.EPI_GROUND_TRUTH

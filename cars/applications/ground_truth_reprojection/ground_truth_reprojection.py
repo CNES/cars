@@ -100,8 +100,9 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
     def run(
         self,
         sensor_left,
+        sensor_right,
         grid_left,
-        geom_left,
+        grid_right,
         geom_plugin,
         geom_plugin_dem_median,
         disp_to_alt_ratio,
@@ -121,8 +122,6 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
         :type sensor_left: CarsDataset
         :param grid_left: Grid left.
         :type grid_left: CarsDataset
-        :param geom_left: Path and attributes for left geomodel.
-        :type geom_left: dict
         :param geom_plugin: Geometry plugin with user's DSM used to generate
             epipolar grids.
         :type geom_plugin: GeometryPlugin

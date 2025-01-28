@@ -480,13 +480,13 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #         "dump_dir",
         #         "ground_truth_reprojection",
         #         "one_two",
-        #         "epipolar_disp_ground_truth.tif",
+        #         "epipolar_disp_ground_truth_left.tif",
         #     ),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir + "_application",
         #             "ground_truth_reprojection",
-        #             "ref_epipolar_disp_ground_truth.tif",
+        #             "ref_epipolar_disp_ground_truth_left.tif",
         #         )
         #     ),
         # )
@@ -496,13 +496,45 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #         "dump_dir",
         #         "ground_truth_reprojection",
         #         "one_two",
-        #         "sensor_dsm_ground_truth.tif",
+        #         "epipolar_disp_ground_truth_right.tif",
         #     ),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir + "_application",
         #             "ground_truth_reprojection",
-        #             "ref_sensor_dsm_ground_truth.tif",
+        #             "ref_epipolar_disp_ground_truth_right.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(
+        #         out_dir,
+        #         "dump_dir",
+        #         "ground_truth_reprojection",
+        #         "one_two",
+        #         "sensor_dsm_ground_truth_left.tif",
+        #     ),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir + "_application",
+        #             "ground_truth_reprojection",
+        #             "ref_sensor_dsm_ground_truth_left.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(
+        #         out_dir,
+        #         "dump_dir",
+        #         "ground_truth_reprojection",
+        #         "one_two",
+        #         "sensor_dsm_ground_truth_right.tif",
+        #     ),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir + "_application",
+        #             "ground_truth_reprojection",
+        #             "ref_sensor_dsm_ground_truth_right.tif",
         #         )
         #     ),
         # )
@@ -557,13 +589,31 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "dump_dir",
                 "ground_truth_reprojection",
                 "one_two",
-                "epipolar_disp_ground_truth.tif",
+                "epipolar_disp_ground_truth_left.tif",
             ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir + "_application/",
                     "ground_truth_reprojection/"
-                    "ref_epipolar_disp_ground_truth.tif",
+                    "ref_epipolar_disp_ground_truth_left.tif",
+                )
+            ),
+            rtol=1.0e-6,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "one_two",
+                "epipolar_disp_ground_truth_right.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir + "_application/",
+                    "ground_truth_reprojection/"
+                    "ref_epipolar_disp_ground_truth_right.tif",
                 )
             ),
             rtol=1.0e-6,
@@ -574,13 +624,13 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 out_dir,
                 "dump_dir/",
                 "ground_truth_reprojection/one_two/"
-                "sensor_dsm_ground_truth.tif",
+                "sensor_dsm_ground_truth_right.tif",
             ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir + "_application/",
                     "ground_truth_reprojection/"
-                    "ref_sensor_dsm_ground_truth.tif",
+                    "ref_sensor_dsm_ground_truth_right.tif",
                 )
             ),
             rtol=1.0e-6,

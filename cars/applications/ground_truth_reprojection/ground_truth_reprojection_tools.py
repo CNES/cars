@@ -26,17 +26,18 @@ import numpy as np
 from shareloc.proj_utils import transform_physical_point_to_index
 
 from cars.core import inputs
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
 def get_ground_truth(
     geom_plugin,
     grid,
-    sensor_data,
-    geomodel,
+    sensor,
     disp_to_alt_ratio,
     target,
     window,
     geom_plugin_dem_median=None,
+    reverse=False,
 ):
     """
     Computes ground truth in epipolar and sensor geometry.
@@ -48,12 +49,10 @@ def get_ground_truth(
     :type geom_plugin: GeometryPlugin
     :param grid: Grid left.
     :type grid: CarsDataset
-    :param sensor_data: Tiled data.
+    :param sensor: sensor data
         Dict must contain keys: "image", "color", "geomodel",
         "no_data", "mask". Paths must be absolute.
-    :type sensor_data: CarsDataset
-    :param geomodel: Path and attributes for left geomodel.
-    :type geomodel: dict
+    :type sensor: dict
     :param disp_to_alt_ratio: Disp to altitude ratio used for performance map.
     :type disp_to_alt_ratio: float
     :param target: sensor, epipolar or both outputs geometry
@@ -62,7 +61,12 @@ def get_ground_truth(
     :type window: np.ndarray
     :param geom_plugin_dem_median: Geometry plugin with dem median
     :type geom_plugin_dem_median: geometry_plugin
+    :param reverse: true if right-> left
+    :type reverse: bool
     """
+
+    sensor_data_im = sensor[sens_cst.INPUT_IMG]
+    geomodel = sensor[sens_cst.INPUT_GEO_MODEL]
 
     rows = np.arange(window[0], window[1])
     cols = np.arange(window[2], window[3])
@@ -83,13 +87,13 @@ def get_ground_truth(
             ),
         )
 
-        transform = inputs.rasterio_get_transform(sensor_data)
+        transform = inputs.rasterio_get_transform(sensor_data_im)
         row, col = transform_physical_point_to_index(
             ~transform, sensor_positions[:, 1], sensor_positions[:, 0]
         )
 
         _, _, alt = geom_plugin.direct_loc(
-            sensor_data,
+            sensor_data_im,
             geomodel,
             col,
             row,
@@ -98,7 +102,7 @@ def get_ground_truth(
         alt = np.reshape(alt, (rows.shape[0], cols.shape[0]))
 
         _, _, alt_ref = geom_plugin_dem_median.direct_loc(
-            sensor_data,
+            sensor_data_im,
             geomodel,
             col,
             row,
@@ -107,11 +111,13 @@ def get_ground_truth(
         alt_ref = np.reshape(alt_ref, (rows.shape[0], cols.shape[0]))
 
         ground_truth = -(alt - alt_ref) / disp_to_alt_ratio
+        if reverse:
+            ground_truth *= -1
 
     if target == "sensor":
 
         _, _, alt = geom_plugin.direct_loc(
-            sensor_data,
+            sensor_data_im,
             geomodel,
             positions_col.ravel(),
             positions_row.ravel(),
