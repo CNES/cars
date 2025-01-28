@@ -108,7 +108,7 @@ install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, do
 
 .PHONY: install-dev
 install-dev: install-deps ## install cars in dev editable mode (pip install -e .) without recompiling rasterio, fiona
-	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install --no-build-isolation --editable .[dev,docs,notebook]
+	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
@@ -117,7 +117,7 @@ install-dev: install-deps ## install cars in dev editable mode (pip install -e .
 
 .PHONY: install-ci
 install-ci: install-deps ## install cars in dev editable mode (pip install -e .) without recompiling rasterio, fiona and with dev, docs, notebook, pandora_mccnn dependencies
-	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install --no-build-isolation --editable .[dev,docs,notebook,pandora_mccnn]
+	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs,notebook,pandora_mccnn]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
