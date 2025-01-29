@@ -51,6 +51,8 @@ if not os.path.isdir(dask_config_path):
 os.environ["DASK_CONFIG"] = str(dask_config_path)
 
 # Force monothread for child workers
+os.environ["PANDORA_NUMBA_PARALLEL"] = str(False)
+os.environ["PANDORA_NUMBA_CACHE"] = str(False)
 os.environ["SHARELOC_NUMBA_PARALLEL"] = str(False)
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
