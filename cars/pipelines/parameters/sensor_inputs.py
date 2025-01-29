@@ -231,7 +231,7 @@ def check_geometry_plugin(conf_inputs, conf_advanced, conf_geom_plugin):
 
     :param conf_inputs: checked configuration of inputs
     :type conf_inputs: type
-    :param cond_advanced: checked configuration of advanced
+    :param conf_advanced: checked configuration of advanced
     :type conf_advanced: type
     :param conf_geom_plugin: name of geometry plugin
     :type conf_geom_plugin: str

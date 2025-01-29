@@ -1117,6 +1117,41 @@ The structure follows this organization:
                         }
                     }
 
+            .. tab:: Ground truth reprojection
+
+                **Name**: "ground_truth_reprojection"
+
+                **Description**
+
+                Generates epipolar and sensor ground truth from input dsm using direct localization.
+                * Sensor ground truth contains altitude in sensor geometry.
+                * Epipolar ground truth contains disparity map in epipolar geometry.
+
+                +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+                | Name                            | Description                                                | Type       | Available value              | Default value | Required |
+                +=================================+============================================================+============+==============================+===============+==========+
+                | method                          | Method for ground_truth_reprojection                       | string     | "direct_loc"                 |               | Yes      |
+                +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+                | target                          | Type of ground truth                                       | string     | "epipolar", "sensor", "all"  | "epipolar"    | No       |
+                +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+                | tile_size                       | Tile size to use                                           | int        |                              | 2500          | No       |
+                +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+
+                **Example**
+
+                .. code-block:: json
+
+                    "applications": {
+                        "ground_truth_reprojection": {
+                            "method": "direct_loc",
+                            "target": "all"
+                        }
+                    }
+
+                .. figure:: ../images/cars_pipeline_advanced.png
+                    :align: center
+                    :alt: Applications
+
             .. tab:: Dense matching
 
                 **Name**: "dense_matching"
@@ -1704,7 +1739,6 @@ The structure follows this organization:
 
     .. tab:: Advanced parameters
 
-
         .. list-table:: Configuration
             :widths: 19 19 19 19 19
             :header-rows: 1
@@ -1749,6 +1783,12 @@ The structure follows this organization:
               - list or None
               - [0, 1.936, 2.2675, 2.59, 3.208, 4.846, 6.856]
               - No
+            * - ground_truth_dsm
+              - Datas to be reprojected from the application ground_truth_reprojection
+              - dict
+              -
+              - No
+
 
 
         **Save intermediate data**
@@ -1816,6 +1856,34 @@ The structure follows this organization:
         +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
 
 
+        **Ground truth DSM**
+
+        To activate the ground truth reprojection application, it is necessary to specify the required inputs in the advanced settings.
+        For this, a dictionary named `ground_truth_dsm` must be added, containing the keys presented in the following table.
+        By default, the used dsm is considered on ellipsoid. If not, fill the `geoid` parameter.
+
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+---------------+----------+
+        | Name                            | Description                                                | Type               | Available value              | Default value | Required |
+        +=================================+============================================================+====================+==============================+===============+==========+
+        | dsm                             | Path to ground truth dsm (Lidar for example)               | string             |                              |               | Yes      |
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+---------------+----------+
+        | geoid                           | DSM geoid.                                                 | bool or string     |                              |  False        | No       |
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+---------------+----------+
+
+        .. note::
+
+            The parameter `geoid` refers to the vertical reference of the ground truth DSM. It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to True CARS default geoid is used, if set to False no vertical offset is applied (ellipsoid reference).
+
+        Example:
+
+        .. code-block:: json
+
+            "advanced":
+                {
+                    "ground_truth_dsm": {
+                        "dsm": "path/to/ground/truth/dsm.tif"
+                    }
+                }
 
     .. tab:: Output
 
