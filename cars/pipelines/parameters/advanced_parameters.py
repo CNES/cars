@@ -23,14 +23,14 @@
 CARS module containing functions to check advanced parameters configuration
 """
 import logging
+import os
 
 import numpy as np
 import rasterio as rio
-from json_checker import Checker, OptionalKey, Or
+from json_checker import Checker, Or
 
-from cars.core import inputs
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters.sensor_inputs import check_all_nbits_equal_one
+from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
 from cars.pipelines.pipeline_constants import ADVANCED
 
 
@@ -220,12 +220,12 @@ def check_ground_truth_dsm_data(conf):
                     "Input images has to be in sensor geometry.".format(conf)
                 )
 
+    conf[adv_cst.INPUT_GEOID] = conf.get(adv_cst.INPUT_GEOID, None)
+
     if isinstance(conf, dict):
         ground_truth_dsm_schema = {
             adv_cst.INPUT_GROUND_TRUTH_DSM: str,
-            OptionalKey(adv_cst.INPUT_CLASSIFICATION): str,
-            OptionalKey(adv_cst.INPUT_GEOID): str,
-            OptionalKey(adv_cst.INPUT_EPSG): int,
+            adv_cst.INPUT_GEOID: Or(None, str, bool),
         }
 
         checker_ground_truth_dsm_schema = Checker(ground_truth_dsm_schema)
@@ -242,25 +242,20 @@ def check_ground_truth_dsm_data(conf):
                     )
                 )
 
-        classif = conf.get(adv_cst.INPUT_CLASSIFICATION, None)
-
-        if classif:
-            nbits = inputs.rasterio_get_nbits(classif)
-            if not check_all_nbits_equal_one(nbits):
-                raise RuntimeError(
-                    "The classification {} have {} nbits per band. ".format(
-                        classif, nbits
-                    )
-                    + "Only the classification with nbits=1 is supported! "
+        # Update geoid
+        if isinstance(conf[adv_cst.INPUT_GEOID], bool):
+            if conf[adv_cst.INPUT_GEOID]:
+                # Use CARS geoid
+                logging.info(
+                    "CARS will use its own internal file as geoid reference"
                 )
-
-            if inputs.rasterio_get_size(
-                gt_dsm_path
-            ) != inputs.rasterio_get_size(classif):
-                raise RuntimeError(
-                    "The image {} and the classif {} "
-                    "do not have the same size".format(gt_dsm_path, classif)
+                package_path = os.path.dirname(__file__)
+                geoid_path = os.path.join(
+                    package_path, "..", "..", "conf", CARS_GEOID_PATH
                 )
+                conf[adv_cst.INPUT_GEOID] = geoid_path
+            else:
+                conf[adv_cst.INPUT_GEOID] = None
 
 
 def update_conf(

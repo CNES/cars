@@ -70,9 +70,6 @@ class DirectLocalization(
         self.target = self.used_config["target"]
         self.tile_size = self.used_config["tile_size"]
 
-        # Saving bools
-        self.save_intermediate_data = True
-
         # Init orchestrator
         self.orchestrator = None
 
@@ -98,6 +95,7 @@ class DirectLocalization(
         overloaded_conf["method"] = conf.get("method", "direct_loc")
         overloaded_conf["target"] = conf.get("target", "epipolar")
         overloaded_conf["tile_size"] = conf.get("tile_size", 2500)
+        # save_intermediate_data not used in this app, but overiden
         overloaded_conf["save_intermediate_data"] = True
 
         ground_truth_reprojection_schema = {

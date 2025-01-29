@@ -31,6 +31,7 @@ USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
 EPIPOLAR_A_PRIORI = "epipolar_a_priori"
 GROUND_TRUTH_DSM = "ground_truth_dsm"
 
+
 MERGING = "merging"
 
 # inner epipolar a priori constants

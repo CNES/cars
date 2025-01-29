@@ -1802,6 +1802,9 @@ class DefaultPipeline(PipelineTemplate):
                     dem=self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
                         adv_cst.INPUT_GROUND_TRUTH_DSM
                     ],
+                    geoid=self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
+                        adv_cst.INPUT_GEOID
+                    ],
                 )
                 self.ground_truth_reprojection.run(
                     self.pairs[pair_key]["sensor_image_left"],

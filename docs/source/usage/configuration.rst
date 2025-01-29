@@ -1119,6 +1119,8 @@ The structure follows this organization:
                 **Description**
 
                 Generates epipolar and sensor ground truth from input dsm using direct localization.
+                * Sensor ground truth contains altitude in sensor geometry.
+                * Epipolar ground truth contains disparity map in epipolar geometry.
 
                 +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
                 | Name                            | Description                                                | Type       | Available value              | Default value | Required |
@@ -1853,13 +1855,19 @@ The structure follows this organization:
 
         To activate the ground truth reprojection application, it is necessary to specify the required inputs in the advanced settings.
         For this, a dictionary named `ground_truth_dsm` must be added, containing the keys presented in the following table.
+        By default, the used dsm is considered on ellipsoid. If not, fill the `geoid` parameter.
 
-        +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
-        | Name                            | Description                                                | Type       | Available value              | Default value | Required |
-        +=================================+============================================================+============+==============================+===============+==========+
-        | dsm                             | Path to ground truth dsm (Lidar for example)               | string     |                              |               | Yes      |
-        +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+---------------+----------+
+        | Name                            | Description                                                | Type               | Available value              | Default value | Required |
+        +=================================+============================================================+====================+==============================+===============+==========+
+        | dsm                             | Path to ground truth dsm (Lidar for example)               | string             |                              |               | Yes      |
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+---------------+----------+
+        | geoid                           | DSM geoid.                                                 | bool or string     |                              |  False        | No       |
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+---------------+----------+
 
+        .. note::
+
+            The parameter `geoid` refers to the vertical reference of the ground truth DSM. It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to True CARS default geoid is used, if set to False no vertical offset is applied (ellipsoid reference).
 
         Example:
 
