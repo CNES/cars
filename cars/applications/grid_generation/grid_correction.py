@@ -172,6 +172,7 @@ def estimate_right_grid_correction(
     grid_right,
     initial_cars_ds=None,
     save_matches=False,
+    minimum_nb_matches=100,
     pair_folder="",
     pair_key="pair_0",
     orchestrator=None,
@@ -185,6 +186,8 @@ def estimate_right_grid_correction(
     :type grid_right: CarsDataset
     :param save_matches: true is matches needs to be saved
     :type save_matches: bool
+    :param minimum_nb_matches: minimum number of matches required
+    :type minimum_nb_matches: int
     :param pair_folder: folder used for current pair
     :type pair_folder: str
 
@@ -206,15 +209,15 @@ def estimate_right_grid_correction(
     else:
         cars_orchestrator = orchestrator
 
-    if matches.shape[0] < 100:
+    if matches.shape[0] < minimum_nb_matches:
         logging.error(
-            "Insufficient amount of matches found (< 100), can not safely "
-            "estimate epipolar error correction"
+            "Insufficient amount of matches found"
+            ", can not safely estimate epipolar error correction"
         )
 
         raise ValueError(
-            "Insufficient amount of matches found (< 100), can not safely "
-            "estimate epipolar error correction"
+            f"Insufficient amount of matches found (< {minimum_nb_matches})"
+            ", can not safely estimate epipolar error correction"
         )
 
     # Get grids attributes

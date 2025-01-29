@@ -317,7 +317,7 @@ def get_config_input_custom_cars(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
 
 def check_input_section_custom_cars(
-    user_cfg: Dict[str, dict]
+    user_cfg: Dict[str, dict],
 ) -> Dict[str, dict]:
     """
     Complete and check if the dictionary is correct
