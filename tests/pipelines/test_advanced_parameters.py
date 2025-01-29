@@ -58,7 +58,7 @@ def test_advanced_parameters_full_config():
         },
         "ground_truth_dsm": {
             "dsm": "tests/data/input/phr_gizeh/img1.tif",
-            "classification": "tests/data/input/phr_gizeh/classif1.tif",
+            "geoid": True,
         },
     }
 
@@ -121,11 +121,7 @@ def test_check_ground_truth_dsm_data():
     Test check_ground_truth_dsm_data function
     """
 
-    ground_truth_dsm_conf = {
-        "dsm": "tests/data/input/phr_gizeh/img1.tif",
-        "classification": "tests/data/input/phr_gizeh/classif1.tif",
-        "target": "epipolar",
-    }
+    ground_truth_dsm_conf = {"dsm": "tests/data/input/phr_gizeh/img1.tif"}
 
     # Should pass
     advanced_parameters.check_ground_truth_dsm_data(ground_truth_dsm_conf)
@@ -138,20 +134,4 @@ def test_check_ground_truth_dsm_data():
     # Should raise an error because of wrong dsm type is used
     ground_truth_dsm_conf["dsm"] = True
     with pytest.raises(json_checker.core.exceptions.DictCheckerError):
-        advanced_parameters.check_ground_truth_dsm_data(ground_truth_dsm_conf)
-
-    # Should raise an error because of wrong classif size is used
-    ground_truth_dsm_conf["dsm"] = "tests/data/input/phr_gizeh/img1.tif"
-    ground_truth_dsm_conf["classification"] = (
-        "tests/data/input/test_classification/epi_img_left_classif.tif"
-    )
-    with pytest.raises(RuntimeError):
-        advanced_parameters.check_ground_truth_dsm_data(ground_truth_dsm_conf)
-
-    # Should raise an error because of wrong target is used
-    ground_truth_dsm_conf["classification"] = (
-        "tests/data/input/phr_gizeh/classif1.tif"
-    )
-    ground_truth_dsm_conf["target"] = "wrong_target_name"
-    with pytest.raises(ValueError):
         advanced_parameters.check_ground_truth_dsm_data(ground_truth_dsm_conf)
