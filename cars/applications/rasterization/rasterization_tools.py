@@ -810,7 +810,6 @@ def rasterize(
 
     if confidences is not None:
         for key in confidences:
-            print(key)
             if cst.RASTER_AMBIGUITY in key:
                 ambiguity = confidences[key].reshape(shape_out)
             else:
