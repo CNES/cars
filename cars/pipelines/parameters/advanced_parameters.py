@@ -266,6 +266,28 @@ def check_ground_truth_dsm_data(conf):
             else:
                 conf[adv_cst.INPUT_GEOID] = None
 
+        path_dict = conf[adv_cst.INPUT_AUX_PATH]
+        if path_dict is not None:
+            for key in path_dict.keys():
+                if not isinstance(path_dict[key], str):
+                    raise RuntimeError("Path should be a string")
+                if not os.path.exists(path_dict[key]):
+                    raise RuntimeError("Path doesn't exist")
+
+        path_interp = conf[adv_cst.INPUT_AUX_INTERP]
+        if path_interp is not None:
+            for key in path_interp.keys():
+                if not isinstance(path_interp[key], str):
+                    raise RuntimeError("interpolator should be a string")
+                if path_interp[key] not in (
+                    "nearest",
+                    "linear",
+                    "cubic",
+                    "slinear",
+                    "quintic",
+                ):
+                    raise RuntimeError("interpolator does not exist")
+
 
 def update_conf(
     conf,
