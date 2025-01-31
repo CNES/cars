@@ -453,7 +453,7 @@ def compute_vector_raster_and_stats(
     )
 
 
-def create_raster_dataset(
+def create_raster_dataset(  # noqa: C901
     raster: np.ndarray,
     weights_sum: np.ndarray,
     x_start: float,
@@ -480,6 +480,7 @@ def create_raster_dataset(
     source_pc_names: List[str] = None,
     filling: np.ndarray = None,
     band_filling: List[str] = None,
+    ambiguity: np.ndarray = None,
     performance_map: np.ndarray = None,
     performance_map_classified: np.ndarray = None,
     performance_map_classified_index: list = None,
@@ -511,6 +512,7 @@ def create_raster_dataset(
     :param source_pc: binary raster with source point cloud information
     :param source_pc_names: list of names of point cloud before merging :
         name of sensors pair or name of point cloud file
+    :param ambiguity: raster containing the ambiguity
     :param performance_map: raster containing the raw performance map
     :param performance_map_classified: raster containing the classified
         performance map
@@ -606,7 +608,10 @@ def create_raster_dataset(
 
     if confidences is not None:  # rasterizer produced color output
         for key in confidences:
-            raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
+            if cst.RASTER_AMBIGUITY not in key:
+                raster_out[key] = xr.DataArray(
+                    confidences[key], dims=raster_dims
+                )
 
     if interval is not None:
         hgt_inf = np.nan_to_num(interval[0], nan=hgt_no_data)
@@ -678,6 +683,11 @@ def create_raster_dataset(
         performance_map = np.nan_to_num(performance_map, nan=msk_no_data)
         raster_out[cst.RASTER_PERFORMANCE_MAP_RAW] = xr.DataArray(
             performance_map, dims=raster_dims
+        )
+    if ambiguity is not None:
+        ambiguity = np.nan_to_num(ambiguity, nan=msk_no_data)
+        raster_out[cst.RASTER_AMBIGUITY] = xr.DataArray(
+            ambiguity, dims=raster_dims
         )
     if performance_map_classified is not None:
         raster_out[cst.RASTER_PERFORMANCE_MAP] = xr.DataArray(
@@ -800,7 +810,11 @@ def rasterize(
 
     if confidences is not None:
         for key in confidences:
-            confidences[key] = confidences[key].reshape(shape_out)
+            print(key)
+            if cst.RASTER_AMBIGUITY in key:
+                ambiguity = confidences[key].reshape(shape_out)
+            else:
+                confidences[key] = confidences[key].reshape(shape_out)
 
     if interval is not None:
         interval = interval.reshape(shape_out + (-1,))
@@ -853,6 +867,7 @@ def rasterize(
         source_pc_names,
         filling,
         filling_indexes,
+        ambiguity,
         performance_map_raw,
         performance_map_classified,
         performance_map_classified_indexes,

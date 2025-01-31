@@ -54,6 +54,7 @@ class PandoraLoader:
         conf=None,
         method_name=None,
         generate_performance_map=False,
+        generate_ambiguity=False,
         generate_confidence_intervals=False,
         perf_eta_max_ambiguity=0.99,
         perf_eta_max_risk=0.25,
@@ -115,15 +116,6 @@ class PandoraLoader:
                     "No method named {} in pandora loader".format(method_name)
                 )
 
-        # add required confidences
-        basic_ambiguity_conf = {
-            "cost_volume_confidence": {
-                "confidence_method": "ambiguity",
-                "eta_max": 0.7,
-                "eta_step": 0.01,
-            }
-        }
-
         perf_ambiguity_conf = {
             "cost_volume_confidence.cars_1": {
                 "confidence_method": "ambiguity",
@@ -159,7 +151,6 @@ class PandoraLoader:
             confidences.update(perf_risk_conf)
         if generate_confidence_intervals:
             if uses_cars_pandora_conf:
-                confidences.update(perf_ambiguity_conf)
                 confidences.update(intervals_conf)
             else:
                 flag_intervals = True
@@ -175,12 +166,8 @@ class PandoraLoader:
                         "but no interval confidence is in the "
                         "dense_matching_configuration loader_conf"
                     )
-        if (
-            not generate_performance_map
-            and not generate_confidence_intervals
-            and uses_cars_pandora_conf
-        ):
-            confidences.update(basic_ambiguity_conf)
+        if generate_ambiguity:
+            confidences.update(perf_ambiguity_conf)
 
         conf["pipeline"] = overload_pandora_conf_with_confidence(
             conf["pipeline"], confidences

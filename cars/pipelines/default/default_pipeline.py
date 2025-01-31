@@ -635,9 +635,17 @@ class DefaultPipeline(PipelineTemplate):
                 .get(out_cst.AUXILIARY, {})
                 .get(out_cst.AUX_PERFORMANCE_MAP, False)
             )
+            generate_ambiguity = (
+                self.used_conf[OUTPUT]
+                .get(out_cst.AUXILIARY, {})
+                .get(out_cst.AUX_AMBIGUITY, False)
+            )
             dense_matching_config = used_conf.get("dense_matching", {})
             if generate_performance_map is True:
                 dense_matching_config["generate_performance_map"] = True
+            if generate_ambiguity is True:
+                dense_matching_config["generate_ambiguity"] = True
+
             self.dense_matching_app = Application(
                 "dense_matching", cfg=dense_matching_config
             )
@@ -2058,6 +2066,8 @@ class DefaultPipeline(PipelineTemplate):
                 and self.auxiliary[out_cst.AUX_MASK],
                 save_output_performance_map=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_PERFORMANCE_MAP],
+                save_output_ambiguity=bool(depth_map_dir)
+                and self.auxiliary[out_cst.AUX_AMBIGUITY],
             )
 
             if self.quit_on_app("triangulation"):
@@ -2250,6 +2260,17 @@ class DefaultPipeline(PipelineTemplate):
             else None
         )
 
+        ambiguity_file_name = (
+            os.path.join(
+                self.out_dir,
+                out_cst.DSM_DIRECTORY,
+                "ambiguity.tif",
+            )
+            if self.save_output_dsm
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_AMBIGUITY]
+            else None
+        )
+
         classif_file_name = (
             os.path.join(
                 self.out_dir,
@@ -2308,6 +2329,7 @@ class DefaultPipeline(PipelineTemplate):
             color_file_name=color_file_name,
             classif_file_name=classif_file_name,
             performance_map_file_name=performance_map_file_name,
+            ambiguity_file_name=ambiguity_file_name,
             mask_file_name=mask_file_name,
             contributing_pair_file_name=contributing_pair_file_name,
             filling_file_name=filling_file_name,
@@ -2394,6 +2416,16 @@ class DefaultPipeline(PipelineTemplate):
                 else None
             )
 
+            ambiguity_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "ambiguity.tif",
+                )
+                if "ambiguity" in dict_path
+                else None
+            )
+
             classif_file_name = (
                 os.path.join(
                     self.out_dir,
@@ -2441,6 +2473,7 @@ class DefaultPipeline(PipelineTemplate):
                 classif_file_name,
                 filling_file_name,
                 performance_map_file_name,
+                ambiguity_file_name,
                 mask_file_name,
                 contributing_all_pair_file_name,
             )

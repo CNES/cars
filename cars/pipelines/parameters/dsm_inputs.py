@@ -377,6 +377,7 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
     classif_file_name=None,
     filling_file_name=None,
     performance_map_file_name=None,
+    ambiguity_file_name=None,
     mask_file_name=None,
     contributing_pair_file_name=None,
 ):
@@ -398,6 +399,8 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
     :type filling_file_name: str
     :param performance_map_file_name: name of the performance_map output file
     :type performance_map_file_name: str
+    :param ambiguity_file_name: name of the ambiguity output file
+    :type ambiguity_file_name: str
     :param mask_file_name: name of the mask output file
     :type mask_file_name: str
     :param contributing_pair_file_name: name of contributing_pair output file
@@ -527,6 +530,11 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
         elif (
             key == cst.DSM_PERFORMANCE_MAP
             and performance_map_file_name is not None
+        ):
+            out_file_name = performance_map_file_name
+        elif (
+            key == cst.DSM_CONFIDENCE_AMBIGUITY
+            and ambiguity_file_name is not None
         ):
             out_file_name = performance_map_file_name
         elif (

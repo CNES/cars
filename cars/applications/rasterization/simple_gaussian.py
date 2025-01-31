@@ -213,6 +213,7 @@ class SimpleGaussian(
         mask_file_name=None,
         classif_file_name=None,
         performance_map_file_name=None,
+        ambiguity_file_name=None,
         contributing_pair_file_name=None,
         filling_file_name=None,
         color_dtype=None,
@@ -262,9 +263,11 @@ class SimpleGaussian(
         :param mask_file_name: path of color
         :type mask_file_name: str
         :param classif_file_name: path of color
-        :type performance_map_file_name: str
+        :type classif_file_name: str
         :param performance_map_file_name: path of performance map file
-        :type confidence_file_name: str
+        :type performance_map_file_name: str
+        :param ambiguity_file_name: path of ambiguity file
+        :type ambiguity_file_name: str
         :param contributing_pair_file_name: path of contributing pair file
         :type contributing_pair_file_name: str
         :param filling_file_name: path of filling file
@@ -560,6 +563,31 @@ class SimpleGaussian(
                 dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="performance_map",
+                optional_data=True,
+            )
+
+        out_ambiguity = ambiguity_file_name
+        if out_ambiguity is not None:
+            # add contributing pair filename to index
+            self.orchestrator.update_index(
+                {
+                    "dsm": {
+                        cst.INDEX_DSM_AMBIGUITY: os.path.basename(out_ambiguity)
+                    }
+                }
+            )
+        elif save_intermediate_data:
+            # File is not part of the official product, write it in dump_dir
+            out_ambiguity = os.path.join(out_dump_dir, "ambiguity.tif")
+        if out_ambiguity:
+            list_computed_layers += ["ambiguity"]
+            self.orchestrator.add_to_save_lists(
+                out_ambiguity,
+                cst.RASTER_AMBIGUITY,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="ambiguity",
                 optional_data=True,
             )
 
