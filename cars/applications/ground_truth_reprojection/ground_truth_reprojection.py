@@ -106,6 +106,8 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
         geom_plugin,
         geom_plugin_dem_median,
         disp_to_alt_ratio,
+        auxiliary_values,
+        auxiliary_interp,
         orchestrator=None,
         pair_folder=None,
     ):  # noqa: C901

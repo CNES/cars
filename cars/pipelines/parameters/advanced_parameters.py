@@ -27,7 +27,7 @@ import os
 
 import numpy as np
 import rasterio as rio
-from json_checker import Checker, Or
+from json_checker import Checker, OptionalKey, Or
 
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
@@ -77,6 +77,12 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
 
     # Validate ground truth DSM
     if overloaded_conf[adv_cst.GROUND_TRUTH_DSM]:
+        overloaded_conf[adv_cst.GROUND_TRUTH_DSM][adv_cst.INPUT_AUX_PATH] = (
+            conf[adv_cst.GROUND_TRUTH_DSM].get(adv_cst.INPUT_AUX_PATH, None)
+        )
+        overloaded_conf[adv_cst.GROUND_TRUTH_DSM][adv_cst.INPUT_AUX_INTERP] = (
+            conf[adv_cst.GROUND_TRUTH_DSM].get(adv_cst.INPUT_AUX_INTERP, None)
+        )
         check_ground_truth_dsm_data(overloaded_conf[adv_cst.GROUND_TRUTH_DSM])
 
     if check_epipolar_a_priori:
@@ -225,7 +231,10 @@ def check_ground_truth_dsm_data(conf):
     if isinstance(conf, dict):
         ground_truth_dsm_schema = {
             adv_cst.INPUT_GROUND_TRUTH_DSM: str,
+            OptionalKey(adv_cst.INPUT_AUX_PATH): Or(dict, None),
+            OptionalKey(adv_cst.INPUT_AUX_INTERP): Or(dict, None),
             adv_cst.INPUT_GEOID: Or(None, str, bool),
+            OptionalKey(adv_cst.INPUT_EPSG): int,
         }
 
         checker_ground_truth_dsm_schema = Checker(ground_truth_dsm_schema)
