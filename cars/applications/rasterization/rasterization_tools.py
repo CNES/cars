@@ -814,6 +814,8 @@ def rasterize(
                 ambiguity = confidences[key].reshape(shape_out)
             else:
                 confidences[key] = confidences[key].reshape(shape_out)
+    else:
+        ambiguity = None
 
     if interval is not None:
         interval = interval.reshape(shape_out + (-1,))
