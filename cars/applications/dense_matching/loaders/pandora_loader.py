@@ -151,6 +151,7 @@ class PandoraLoader:
             confidences.update(perf_risk_conf)
         if generate_confidence_intervals:
             if uses_cars_pandora_conf:
+                confidences.update(perf_ambiguity_conf)
                 confidences.update(intervals_conf)
             else:
                 flag_intervals = True
