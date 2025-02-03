@@ -809,11 +809,11 @@ def rasterize(
         msk = np.isnan(out[0, :, :])
 
     if confidences is not None:
-        for key in confidences:
+        for key, value in confidences.items():
             if cst.RASTER_AMBIGUITY in key:
-                ambiguity = confidences[key].reshape(shape_out)
+                ambiguity = value.reshape(shape_out)
             else:
-                confidences[key] = confidences[key].reshape(shape_out)
+                confidences[key] = value.reshape(shape_out)
     else:
         ambiguity = None
 
