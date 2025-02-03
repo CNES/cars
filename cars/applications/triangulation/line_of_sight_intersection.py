@@ -124,7 +124,7 @@ class LineOfSightIntersection(
 
         return overloaded_conf
 
-    def save_triangulation_output(
+    def save_triangulation_output(  # noqa: C901 function is too complex
         self,
         epipolar_point_cloud,
         sensor_image_left,

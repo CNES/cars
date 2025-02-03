@@ -2422,7 +2422,7 @@ class DefaultPipeline(PipelineTemplate):
                     out_cst.DSM_DIRECTORY,
                     "ambiguity.tif",
                 )
-                if "ambiguity" in dict_path
+                if "confidence_from_ambiguity" in dict_path
                 else None
             )
 
