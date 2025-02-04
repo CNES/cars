@@ -170,7 +170,7 @@ class PandoraLoader:
         if generate_ambiguity:
             confidences.update(perf_ambiguity_conf)
 
-        if confidences != {}:
+        if confidences:
             conf["pipeline"] = overload_pandora_conf_with_confidence(
                 conf["pipeline"], confidences
             )
