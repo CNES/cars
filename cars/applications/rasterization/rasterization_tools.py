@@ -606,15 +606,7 @@ def create_raster_dataset(  # noqa: C901
 
     if confidences is not None:  # rasterizer produced color output
         for key in confidences:
-            if cst.RASTER_AMBIGUITY not in key:
-                raster_out[key] = xr.DataArray(
-                    confidences[key], dims=raster_dims
-                )
-            else:
-                key_replaced = key.replace("confidence_from_", "")
-                raster_out[key_replaced] = xr.DataArray(
-                    confidences[key], dims=raster_dims
-                )
+            raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
 
     if interval is not None:
         hgt_inf = np.nan_to_num(interval[0], nan=hgt_no_data)
