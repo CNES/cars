@@ -433,7 +433,7 @@ def create_disp_dataset(  # noqa: C901
     )
 
     # add confidence
-    if "confidence_measure" in disp_ds:
+    if "confidence_measure" in disp:
         add_confidence(disp_ds, disp, ref_roi)
 
     # add performance map
