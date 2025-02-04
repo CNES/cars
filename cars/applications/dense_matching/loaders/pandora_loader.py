@@ -170,9 +170,10 @@ class PandoraLoader:
         if generate_ambiguity:
             confidences.update(perf_ambiguity_conf)
 
-        conf["pipeline"] = overload_pandora_conf_with_confidence(
-            conf["pipeline"], confidences
-        )
+        if confidences != {}:
+            conf["pipeline"] = overload_pandora_conf_with_confidence(
+                conf["pipeline"], confidences
+            )
 
         # update with cross validation
         if use_cross_validation and "validation" not in conf["pipeline"]:
