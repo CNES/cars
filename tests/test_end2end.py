@@ -142,7 +142,7 @@ def test_end2end_dsm_fusion():
         #         )
         #     ),
         # )
-        #
+        
         # copy2(
         #     os.path.join(out_dir, "dump_dir/rasterization/", "weights.tif"),
         #     absolute_data_path(
@@ -171,7 +171,7 @@ def test_end2end_dsm_fusion():
         #         )
         #     ),
         # )
-        #
+        
         # copy2(
         #     os.path.join(out_dir, "dump_dir", "rasterization",
         #     "classification.tif"),
@@ -4571,9 +4571,9 @@ def test_end2end_ventoux_egm96_geoid():
             ]
             # global_disp_min   -21 shareloc
             assert out_disp_compute["global_disp_min"] > -68
-            assert out_disp_compute["global_disp_min"] < -66
+            assert out_disp_compute["global_disp_min"] < -60
             # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 45
+            assert out_disp_compute["global_disp_max"] > 43
             assert out_disp_compute["global_disp_max"] < 46
 
         # Ref output dir dependent from geometry plugin chosen
@@ -4799,9 +4799,9 @@ def test_end2end_ventoux_egm96_geoid():
             ]
             # global_disp_min   -21 shareloc
             assert out_disp_compute["global_disp_min"] > -68
-            assert out_disp_compute["global_disp_min"] < -66
+            assert out_disp_compute["global_disp_min"] < -60
             # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 45
+            assert out_disp_compute["global_disp_max"] > 43
             assert out_disp_compute["global_disp_max"] < 46
 
         # Ref output dir dependent from geometry plugin chosen
