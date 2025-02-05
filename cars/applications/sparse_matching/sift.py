@@ -81,11 +81,6 @@ class Sift(SparseMatching, short_name=["sift"]):
             "epipolar_error_maximum_bias"
         ]
 
-        # outlier filtering (used after application run, to filter matches)
-        self.disparity_outliers_rejection_percent = self.used_config[
-            "disparity_outliers_rejection_percent"
-        ]
-
         # minimum number of matches to continue with
         self.minimum_nb_matches = self.used_config["minimum_nb_matches"]
 
@@ -152,10 +147,6 @@ class Sift(SparseMatching, short_name=["sift"]):
         overloaded_conf["epipolar_error_maximum_bias"] = conf.get(
             "epipolar_error_maximum_bias", 0.0
         )
-        # outliers rejections used for matches filtering
-        overloaded_conf["disparity_outliers_rejection_percent"] = conf.get(
-            "disparity_outliers_rejection_percent", 0.1
-        )
 
         # minimum number of matches to continue with
         overloaded_conf["minimum_nb_matches"] = conf.get(
@@ -200,9 +191,6 @@ class Sift(SparseMatching, short_name=["sift"]):
         sparse_matching_schema = {
             "method": str,
             "disparity_margin": float,
-            "disparity_outliers_rejection_percent": And(
-                float, lambda x: x >= 0, lambda x: x <= 1
-            ),
             "minimum_nb_matches": And(int, lambda x: x > 0),
             "elevation_delta_lower_bound": Or(int, float, None),
             "elevation_delta_upper_bound": Or(int, float, None),
