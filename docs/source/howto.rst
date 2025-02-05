@@ -282,7 +282,48 @@ Any OTB application can be ran in docker
 .. code-block:: console
 
     docker run  --entrypoint=/bin/bash  cnes/cars otbcli_BandMath -help
+    
+If you want to execute a program via docker, you can use those command lines (example for extract-roi):
 
+Interactive mode:
+-----------------
+
+You can enter in the docker interactive mode by using this command : 
+
+.. code-block:: console
+
+    docker run -it -w /data -v "$(pwd)"/data_gizeh_small:/data  --entrypoint /bin/bash cnes/cars:latest
+
+You are now in an interactive docker mode and you can launch your program as follow:
+
+.. code-block:: console
+
+    cars-extractroi /data/img1.tif -out crop_img1.tif  -bbx 20800 5100 21000 5300
+
++--------------------------------------+------------------------------------------------------------------------------+
+| Option                               | Explication                                                                  |
++======================================+==============================================================================+
+| *docker run*                         | Runs a container based on the cnes/cars:latest image.                        |
++--------------------------------------+------------------------------------------------------------------------------+
+| *-it*                                | Interactive mode (-i: interactive input, -t: allocates a pseudo-terminal).   |
++--------------------------------------+------------------------------------------------------------------------------+
+| *-w /data*                           | Sets /data as the working directory inside the container.                    |
++--------------------------------------+------------------------------------------------------------------------------+
+| *-v "$(pwd)"/data_gizeh_small:/data* | Mounts the local data_gizeh_small folder to /data inside the container.      |
++--------------------------------------+------------------------------------------------------------------------------+
+| *--entrypoint /bin/bash*             | Overrides the container’s default entrypoint to run /bin/bash instead.       |
++--------------------------------------+------------------------------------------------------------------------------+
+| *cnes/cars:latest*                   | Uses the cnes/cars:latest Docker image containing cars-extractroi.           |
++--------------------------------------+------------------------------------------------------------------------------+
+
+From outsite
+------------
+
+The other option is to directly use this complete command:
+
+.. code-block:: console
+
+    docker run  -w /data -v "$(pwd)"/data_gizeh_small:/data  --entrypoint cars-extractroi cnes/cars:latest -il /data/img1.tif -out crop_img1.tif  -bbx 20800 5100 21000 5300
 
 .. _resample_image:
 
