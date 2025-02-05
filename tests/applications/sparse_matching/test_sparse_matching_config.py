@@ -42,7 +42,6 @@ def test_check_full_conf():
         "strip_margin": 10,
         "epipolar_error_upper_bound": 10.0,
         "epipolar_error_maximum_bias": 0.0,
-        "disparity_outliers_rejection_percent": 0.1,
         "minimum_nb_matches": 100,
         "sift_matching_threshold": 0.6,
         "sift_n_octave": 8,
