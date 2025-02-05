@@ -131,7 +131,7 @@ If the DEM is not specified by the user, an internal DEM is generated with spars
 
 To download the low resolution DEM corresponding to your area, see section :ref:`download_srtm_tiles`.
 
-The parameter is ``dem`` in ``initial_elevation`` as seen in :ref:`configuration`.
+The parameter is ``dem`` in ``initial_elevation`` as seen in :ref:`basic configuration`.
 
 
 Altimetric exploration and geometric inaccuracies

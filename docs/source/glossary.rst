@@ -11,6 +11,15 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
 .. glossary::
     CARS
       means CNES Algorithms to Reconstruct Surface (ou Chaîne Automatique de Restitution Stéréoscopique en français)
+     
+    CNES
+      Centre National d'Etudes Spatiales
+      
+    RPC
+      Rational Polynomial Coefficient
+      
+    SIFT
+      Scale-Invariant Feature Transform
 
     core
       Means the internal CARS function used as the engine core for steps and pipelines.
