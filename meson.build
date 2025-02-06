@@ -3,7 +3,7 @@ project(
   'cpp',
   version: run_command(
     'python',
-    'version.py',
+    meson.source_root() / 'version.py',
     'get-vcs',
   ).stdout().strip(),
   default_options: [
@@ -11,7 +11,7 @@ project(
   ],
 )
 
-meson.add_dist_script('python', 'version.py', 'set-dist', meson.project_version())
+meson.add_dist_script('python', meson.source_root() / 'version.py', 'set-dist', meson.project_version())
 
 py = import('python').find_installation(pure: false)
 

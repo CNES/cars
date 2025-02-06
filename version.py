@@ -18,19 +18,10 @@ def set_dist(version):
         sys.exit(1)
 
     print(meson_project_dist_root)
-    subprocess.run(
-        [
-            meson_rewrite,
-            "--sourcedir=" + meson_project_dist_root,
-            "kwargs",
-            "set",
-            "project",
-            "/",
-            "version",
-            version,
-        ],
-        check=True,
-    )
+    rewrite_command = f"{meson_rewrite} --sourcedir {meson_project_dist_root} "
+    rewrite_command += f"kwargs set project / version {version}"
+
+    subprocess.run(rewrite_command.split(" "))
 
 
 if __name__ == "__main__":
