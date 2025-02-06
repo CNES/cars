@@ -23,6 +23,7 @@
 # attributes however we need, to stick to the "everything is attribute" logic
 # introduced in issue#895
 # pylint: disable=attribute-defined-outside-init
+# pylint: disable=too-many-nested-blocks
 """
 CARS default pipeline class file
 """
