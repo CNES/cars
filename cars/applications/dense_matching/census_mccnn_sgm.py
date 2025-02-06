@@ -34,8 +34,8 @@ from typing import Dict, Tuple
 # Third party imports
 import affine
 import numpy as np
-import pandora
 import pandas
+import pandora
 import rasterio
 import xarray as xr
 from affine import Affine
@@ -822,96 +822,82 @@ class CensusMccnnSgm(
             dem_min_list = dem_min_list[nan_mask]
             dem_max_list = dem_max_list[nan_mask]
 
-            sequential_begin = datetime.datetime.now()
+            # if shareloc is used, perform inverse locs sequentially
+            if geom_plugin_with_dem_and_geoid.plugin_name == "SharelocGeometry":
 
-            # sensors physical positions
-            (
-                ind_cols_sensor_seq,
-                ind_rows_sensor_seq,
-                _,
-            ) = geom_plugin_with_dem_and_geoid.inverse_loc(
-                sensor_image_right["image"],
-                sensor_image_right["geomodel"],
-                lat_mean,
-                lon_mean,
-                z_coord=dem_median_list,
-            )
-
-            sequential_end = datetime.datetime.now()
-            sequential_duration = sequential_end - sequential_begin
-            print(f"Loc inverse (sequential): {sequential_duration}")
-
-            parallel_begin = datetime.datetime.now()
-
-            num_points = len(dem_median_list)
-
-            if loc_inverse_orchestrator is None:
-                loc_inverse_orchestrator = grid_orchestrator
-
-            num_workers = loc_inverse_orchestrator.get_conf().get(
-                "nb_workers", 1
-            )
-
-            loc_inverse_dataset = cars_dataset.CarsDataset(
-                "points", name="loc_inverse"
-            )
-            step = int(np.ceil(num_points / num_workers))
-            # Create a grid with num_workers elements
-            loc_inverse_dataset.create_grid(1, num_workers, 1, 1, 0, 0)
-
-            # Get saving infos in order to save tiles when they are computed
-            [saving_info] = loc_inverse_orchestrator.get_saving_infos(
-                [loc_inverse_dataset]
-            )
-
-            for task_id in range(0, num_workers):
-                first_elem = task_id * step
-                last_elem = min((task_id + 1) * step, num_points)
-                full_saving_info = ocht.update_saving_infos(
-                    saving_info, row=task_id, col=0
-                )
-                loc_inverse_dataset[
-                    task_id, 0
-                ] = loc_inverse_orchestrator.cluster.create_task(
-                    loc_inverse_wrapper
-                )(
-                    geom_plugin_with_dem_and_geoid,
+                # sensors physical positions
+                (
+                    ind_cols_sensor,
+                    ind_rows_sensor,
+                    _,
+                ) = geom_plugin_with_dem_and_geoid.inverse_loc(
                     sensor_image_right["image"],
                     sensor_image_right["geomodel"],
-                    lat_mean[first_elem:last_elem],
-                    lon_mean[first_elem:last_elem],
-                    dem_median_list[first_elem:last_elem],
-                    full_saving_info,
+                    lat_mean,
+                    lon_mean,
+                    z_coord=dem_median_list,
                 )
 
-            loc_inverse_orchestrator.add_to_replace_lists(loc_inverse_dataset)
+            # else (if libgeo is used) perform inverse locs in parallel
+            else:
 
-            loc_inverse_orchestrator.compute_futures(
-                only_remaining_delayed=[
-                    tile[0] for tile in loc_inverse_dataset.tiles
-                ]
-            )
+                num_points = len(dem_median_list)
 
-            ind_cols_sensor = []
-            ind_rows_sensor = []
+                if loc_inverse_orchestrator is None:
+                    loc_inverse_orchestrator = grid_orchestrator
 
-            for tile in loc_inverse_dataset.tiles:
-                ind_cols_sensor += list(tile[0]["col"])
-                ind_rows_sensor += list(tile[0]["row"])
+                num_workers = loc_inverse_orchestrator.get_conf().get(
+                    "nb_workers", 1
+                )
 
-            parallel_end = datetime.datetime.now()
-            parallel_duration = parallel_end - parallel_begin
-            print(f"Loc inverse (parallel): {parallel_duration}")
+                loc_inverse_dataset = cars_dataset.CarsDataset(
+                    "points", name="loc_inverse"
+                )
+                step = int(np.ceil(num_points / num_workers))
+                # Create a grid with num_workers elements
+                loc_inverse_dataset.create_grid(1, num_workers, 1, 1, 0, 0)
 
-            is_same = (
-                np.array(ind_cols_sensor_seq) == np.array(ind_cols_sensor)
-            ).all()
-            print(f"is_same {is_same}")
+                # Get saving info in order to save tiles when they are computed
+                [saving_info] = loc_inverse_orchestrator.get_saving_infos(
+                    [loc_inverse_dataset]
+                )
 
-            is_same = (
-                np.array(ind_rows_sensor_seq) == np.array(ind_rows_sensor)
-            ).all()
-            print(f"is_same {is_same}")
+                for task_id in range(0, num_workers):
+                    first_elem = task_id * step
+                    last_elem = min((task_id + 1) * step, num_points)
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=task_id, col=0
+                    )
+                    loc_inverse_dataset[
+                        task_id, 0
+                    ] = loc_inverse_orchestrator.cluster.create_task(
+                        loc_inverse_wrapper
+                    )(
+                        geom_plugin_with_dem_and_geoid,
+                        sensor_image_right["image"],
+                        sensor_image_right["geomodel"],
+                        lat_mean[first_elem:last_elem],
+                        lon_mean[first_elem:last_elem],
+                        dem_median_list[first_elem:last_elem],
+                        full_saving_info,
+                    )
+
+                loc_inverse_orchestrator.add_to_replace_lists(
+                    loc_inverse_dataset
+                )
+
+                loc_inverse_orchestrator.compute_futures(
+                    only_remaining_delayed=[
+                        tile[0] for tile in loc_inverse_dataset.tiles
+                    ]
+                )
+
+                ind_cols_sensor = []
+                ind_rows_sensor = []
+
+                for tile in loc_inverse_dataset.tiles:
+                    ind_cols_sensor += list(tile[0]["col"])
+                    ind_rows_sensor += list(tile[0]["row"])
 
             # Generate epipolar disp grids
             # Get epipolar positions
