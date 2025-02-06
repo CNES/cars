@@ -585,7 +585,7 @@ class SimpleGaussian(
                 out_ambiguity,
                 cst.RASTER_AMBIGUITY,
                 terrain_raster,
-                dtype=np.uint8,
+                dtype=np.float32,
                 nodata=self.msk_no_data,
                 cars_ds_name="ambiguity",
                 optional_data=True,
