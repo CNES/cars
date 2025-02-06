@@ -397,6 +397,7 @@ class SingleCarsDatasetSaver:
             return False
 
         confidence_tags = list(filter(test_conf, future_result.keys()))
+
         index = None
         if confidence_type in self.tags:
             # get the confidence indexes in the registered tag

@@ -300,9 +300,14 @@ def compute_vector_raster_and_stats(
     split_indexes.append(len(values_bands))
 
     # 2. confidences
-    confidences_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT, list_computed_layers
-    )
+    if cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT not in list_computed_layers:
+        confidences_indexes = find_indexes_in_point_cloud(
+            cloud, cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT, list_computed_layers
+        )
+    else:
+        confidences_indexes = find_indexes_in_point_cloud(
+            cloud, cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT, list_computed_layers
+        )
     values_bands.extend(confidences_indexes)
     split_indexes.append(len(confidences_indexes))
 
