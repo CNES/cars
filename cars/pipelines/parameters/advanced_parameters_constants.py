@@ -55,3 +55,7 @@ INPUT_GEOID = "geoid"
 INPUT_EPSG = "epsg"
 
 PERFORMANCE_MAP_CLASSES = "performance_map_classes"
+
+GEOMETRY_PLUGIN = "geometry_plugin"
+
+PIPELINE = "pipeline"

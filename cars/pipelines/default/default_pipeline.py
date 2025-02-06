@@ -68,11 +68,9 @@ from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
     APPLICATIONS,
-    GEOMETRY_PLUGIN,
     INPUTS,
     ORCHESTRATOR,
     OUTPUT,
-    PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 
@@ -111,9 +109,9 @@ class DefaultPipeline(PipelineTemplate):
         """
 
         # Used conf
-        self.used_conf = {PIPELINE: "default"}
+        self.used_conf = {}
 
-        # check global conf
+        # Check global conf
         self.check_global_schema(conf)
 
         # Check conf orchestrator
@@ -129,36 +127,17 @@ class DefaultPipeline(PipelineTemplate):
 
         # Check advanced parameters
         # TODO static method in the base class
-        advanced = advanced_parameters.check_advanced_parameters(
-            conf.get(ADVANCED, {}), check_epipolar_a_priori=True
+        (
+            inputs,
+            advanced,
+            self.geometry_plugin,
+            self.geom_plugin_without_dem_and_geoid,
+            self.geom_plugin_with_dem_and_geoid,
+            self.dem_generation_roi,
+        ) = advanced_parameters.check_advanced_parameters(
+            inputs, conf.get(ADVANCED, {}), check_epipolar_a_priori=True
         )
         self.used_conf[ADVANCED] = advanced
-
-        if self.used_conf[INPUTS][sens_cst.SENSORS] is not None:
-            # Check geometry plugin and overwrite geomodel in conf inputs
-            (
-                inputs,
-                self.used_conf[GEOMETRY_PLUGIN],
-                self.geom_plugin_without_dem_and_geoid,
-                self.geom_plugin_with_dem_and_geoid,
-                self.dem_generation_roi,
-            ) = sensor_inputs.check_geometry_plugin(
-                inputs, advanced, conf.get(GEOMETRY_PLUGIN, None)
-            )
-            self.used_conf[INPUTS] = inputs
-        elif (
-            depth_cst.DEPTH_MAPS in self.used_conf[INPUTS]
-            or dsm_cst.DSMS in self.used_conf[INPUTS]
-        ):
-
-            # if there's an initial elevation with
-            # point clouds as inputs, generate a plugin (used in dsm_filling)
-
-            self.geom_plugin_with_dem_and_geoid = (
-                depth_map_inputs.check_geometry_plugin(
-                    inputs, conf.get(GEOMETRY_PLUGIN, None)
-                )
-            )
 
         # Get ROI
         (
@@ -1400,7 +1379,7 @@ class DefaultPipeline(PipelineTemplate):
             ):
                 self.geom_plugin_with_dem_and_geoid = (
                     sensor_inputs.generate_geometry_plugin_with_dem(
-                        self.used_conf[GEOMETRY_PLUGIN],
+                        self.geometry_plugin,
                         inputs,
                         dem=dem_median,
                     )
