@@ -15,12 +15,6 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
     CNES
       Centre National d'Etudes Spatiales
       
-    RPC
-      Rational Polynomial Coefficient
-      
-    SIFT
-      Scale-Invariant Feature Transform
-
     core
       Means the internal CARS function used as the engine core for steps and pipelines.
 
@@ -67,6 +61,12 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
     ROI
       `Region of Interest`_ means a subpart of the `DSM` raster in CARS.
       It can be defined by a file or a bounding box.
+     
+    RPC
+      Rational Polynomial Coefficient
+      
+    SIFT
+      Scale-Invariant Feature Transform
 
 
 

@@ -76,7 +76,7 @@ Development
 Is there a Github ? 
 -------------------
 
-Please, see the link `CARS GitHub <https://github.com/CNES/cars>`_ to acces CARS github.
+Please, see the link `CARS GitHub <https://github.com/CNES/cars>`_ to access CARS github. Do not hesitate to create issues if you have a question or if you encounter a problem.
 
 
 .. _`GDAL`: https://gdal.org/

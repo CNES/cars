@@ -67,7 +67,11 @@ Here is a reminder of what a basic json file configuration should looks like :
                 }
             }
         },
-
+        "orchestrator": {
+          	"mode": "multiprocessing",
+          	"nb_workers": 110,
+          	"max_ram_per_worker": 6000
+          	},
         "output": {
                 "directory": "outresults"
         }

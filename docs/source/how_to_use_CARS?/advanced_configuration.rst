@@ -3,7 +3,7 @@
 Advanced configuration
 ======================
 
-This section describes CARS main avdanced configuration structure through a `json <http://www.json.org/json-fr.html>`_ configuration file.
+This section describes CARS main advanced configuration structure through a `json <http://www.json.org/json-fr.html>`_ configuration file.
 
 The structure follows this organization:
 
@@ -1127,7 +1127,7 @@ The structure follows this organization:
 
                 The particularities in the configuration file are:
 
-                * **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC".
+                * **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as :term:`RPC` or `GRID`. By default, "RPC".
                 * **initial_elevation**: Field contains the path to the **file** corresponding the srtm tiles covering the production (and **not** a directory !!)
                 * **geometry_plugin**: Parameter configured to "SharelocGeometry" to use Shareloc plugin.
 

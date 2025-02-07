@@ -1,7 +1,7 @@
 Satellite photogrammetry in a nutshell
 ======================================
 
-As its name suggests, satellite photogrammetry works using optical satellite acquisitions to generate a Digital Surface Model (DSM), the 2.5D representation created from observed surface altitude data. We speak of 2.5D because the digital surface model is an array of pixels (raster, 2D) where each pixel (x,y) corresponds to an altitude (z).
+As its name suggests, satellite photogrammetry works using optical satellite acquisitions to generate a Digital Surface Model (:term:`DSM`), the 2.5D representation created from observed surface altitude data. We speak of 2.5D because the digital surface model is an array of pixels (raster, 2D) where each pixel (x,y) corresponds to an altitude (z).
 
 .. figure:: ../images/2D5.drawio.png
    :width: 40%
@@ -25,7 +25,7 @@ Like our eyes, altitude (or depth relative to the satellite, to continue the ana
 | |b_over_h|      | |nutimages|    |                 
 +-----------------+----------------+
 
-Every raster readable by `GDAL`_ can be given as CARS input. In addition to images, the photogrammetric process requires geometric models.  Rational Polynomial Coefficients (RPCs) provide a compact representation of a ground-to-image geometry giving a relationship between:
+Every raster readable by `GDAL`_ can be given as CARS input. In addition to images, the photogrammetric process requires geometric models.  Rational Polynomial Coefficients (:term:`RPC`) provide a compact representation of a ground-to-image geometry giving a relationship between:
 
     - Image coordinates + altitude and ground coordinates (direct model: image to ground)
     - Ground coordinates + altitude and image coordinates (inverse model: ground to image)

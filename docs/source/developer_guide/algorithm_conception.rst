@@ -8,6 +8,8 @@
 Algorithm Conception
 ====================
 
+.. note::
+	Work in progress !
 
 .. tabs::
 

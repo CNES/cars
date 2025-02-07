@@ -5,6 +5,8 @@ Examples
 Use CARS with Pleiades images ...
 ========================================
 
+.. note::
+	CARS is used in the same way with Pléiades and Pléiades Neo data.
 
 .. _pleiade_raw_data:
 
@@ -145,3 +147,6 @@ If you want to compute grid correction and compute epipolar/ terrain a priori on
 
 
 See  Usage Sensors Images Inputs configuration for more information.
+
+.. note::
+	CARS is also working with other types of data: SPOT 6-7, WorldView, etc.
