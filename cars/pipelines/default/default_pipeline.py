@@ -508,11 +508,7 @@ class DefaultPipeline(PipelineTemplate):
                 ]
 
             if self.merging:  # we have to merge point clouds, add merging apps
-                needed_applications += [
-                    "point_cloud_fusion",
-                    "point_cloud_outliers_removing.1",
-                    "point_cloud_outliers_removing.2",
-                ]
+                needed_applications += ["point_cloud_fusion"]
 
         for app_key in conf.keys():
             if app_key not in needed_applications:
@@ -546,8 +542,6 @@ class DefaultPipeline(PipelineTemplate):
 
         for app_key in [
             "point_cloud_fusion",
-            "point_cloud_outlier_removal.1",
-            "point_cloud_outlier_removal.2",
             "pc_denoising",
         ]:
             if app_key in needed_applications:
