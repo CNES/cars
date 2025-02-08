@@ -160,6 +160,53 @@ def test_wrong_class_name():
 
 
 @pytest.mark.unit_tests
+def test_wrong_class_name_with_int():
+    """
+    Test cars geometry abstract class
+    """
+    with pytest.raises(RuntimeError) as error:
+        AbstractGeometry(3)  # pylint: disable=abstract-class-instantiated
+    assert str(error.value) == "Not a supported type"
+
+
+@pytest.mark.unit_tests
+def test_wrong_class_name_with_dict():
+    """
+    Test cars geometry abstract class
+    """
+    with pytest.raises(KeyError) as error:
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            {"plugin_name": "test"}
+        )  # pylint: disable=abstract-class-instantiated
+    assert str(error.value) == "'No geometry plugin named test registered'"
+
+
+@pytest.mark.unit_tests
+def test_correct_class_name_with():
+    """
+    Test cars geometry abstract class
+    """
+    AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        {"plugin_name": "SharelocGeometry"}
+    )
+    AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        {  # pylint: disable=abstract-class-instantiated
+            "plugin_name": "SharelocGeometry",
+            "interpolator": "cubic",
+        }
+    )
+    AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        {
+            "plugin_name": "SharelocGeometry",
+            "interpolator": "linear",
+        }
+    )
+    AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        "SharelocGeometry"
+    )
+
+
+@pytest.mark.unit_tests
 def test_sensor_position_from_grid(
     epipolar_coords, ref_sensor_coords
 ):  # pylint: disable=redefined-outer-name
@@ -168,14 +215,14 @@ def test_sensor_position_from_grid(
     """
     grid = absolute_data_path("input/abstract_geometry_input/grid.tif")
 
-    coords = AbstractGeometry.sensor_position_from_grid(
-        grid, epipolar_coords["left"]
-    )
+    coords = AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+    ).sensor_position_from_grid(grid, epipolar_coords["left"])
     assert np.allclose(ref_sensor_coords["left"], coords)
 
-    coords = AbstractGeometry.sensor_position_from_grid(
-        grid, epipolar_coords["right"]
-    )
+    coords = AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+    ).sensor_position_from_grid(grid, epipolar_coords["right"])
     assert np.allclose(ref_sensor_coords["right"], coords)
 
 
@@ -199,7 +246,9 @@ def test_disp_to_sensor_coords(
     (
         sensor_pos_left,
         sensor_pos_right,
-    ) = AbstractGeometry.matches_to_sensor_coords(
+    ) = AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+    ).matches_to_sensor_coords(
         grid1, grid2, disp_map, cst.DISP_MODE, matches_msk=disp_msk
     )
 
@@ -239,7 +288,9 @@ def test_disp_to_sensor_coords(
     (
         sensor_pos_left,
         sensor_pos_right,
-    ) = AbstractGeometry.matches_to_sensor_coords(
+    ) = AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+    ).matches_to_sensor_coords(
         grid1,
         grid2,
         disp_map,
@@ -291,7 +342,9 @@ def test_matches_to_sensor_coords(
     (
         sensor_pos_left,
         sensor_pos_right,
-    ) = AbstractGeometry.matches_to_sensor_coords(
+    ) = AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+    ).matches_to_sensor_coords(
         grid1, grid2, matches, cst.MATCHES_MODE
     )
 
@@ -337,10 +390,16 @@ def test_epipolar_position_from_grid():
 
     epi_pos = np.array([[2, 2], [2, 300], [2, 580], [300, 300], [600, 300]])
 
-    sensor_pos = AbstractGeometry.sensor_position_from_grid(grid_left, epi_pos)
+    sensor_pos = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+        ).sensor_position_from_grid(grid_left, epi_pos)
+    )
 
-    new_epi_pos = AbstractGeometry.epipolar_position_from_grid(
-        grid_left, sensor_pos, step=30
+    new_epi_pos = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+        ).epipolar_position_from_grid(grid_left, sensor_pos, step=30)
     )
 
     assert np.allclose(new_epi_pos, epi_pos)

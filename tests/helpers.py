@@ -151,17 +151,20 @@ def get_geoid_path():
     return os.path.join(cars_path(), "cars/conf/geoid/egm96.grd")
 
 
-def get_geometry_plugin(dem=None, default_alt=None) -> AbstractGeometry:
+def get_geometry_plugin(
+    conf="SharelocGeometry", dem=None, default_alt=None
+) -> AbstractGeometry:
     """
     returns the default Shareloc geometry plugin for test
 
+    :param conf: conf to use
     :param dem: if defined, dem to use in AbstractGeometry object returned
     :param default_alt: default alt optional used in Abstractgeometry returned
     :return: AbstractGeometry object to use in tests
     """
 
     return AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-        "SharelocGeometry",
+        conf,
         dem=dem,
         geoid=get_geoid_path(),
         default_alt=default_alt,

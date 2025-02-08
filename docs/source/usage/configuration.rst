@@ -795,11 +795,23 @@ The structure follows this organization:
 
         This section describes configuration of the geometry plugins for CARS, please refer to :ref:`plugins` section for details on plugins installation.
 
-        +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
-        | Name              | Description           | Type   | Default value           | Available values                      | Required |
-        +===================+=======================+========+=========================+=======================================+==========+
-        | *geometry_plugin* | The plugin to use     | str    | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
-        +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
+        +-------------------+-----------------------+----------------+-------------------------+---------------------------------------+----------+
+        | Name              | Description           | Type           | Default value           | Available values                      | Required |
+        +===================+=======================+================+=========================+=======================================+==========+
+        | *geometry_plugin* | The plugin to use     | str or dict    | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
+        +-------------------+-----------------------+----------------+-------------------------+---------------------------------------+----------+
+
+        **geometry_plugin** allow user to specify other parameters, through a dictionary:
+
+        +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+        | Name              | Description              | Type           | Default value           | Available values                      | Required |
+        +===================+==========================+================+=========================+=======================================+==========+
+        | *plugin_name*     | The plugin name to use   | str            | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
+        +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+        | *interpolator*    | Interpolator to use      | str            | "cubic"                 | "cubic" , "linear"                    | False    |
+        +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+
+
 
         To use Shareloc geometry library, CARS input configuration should be defined as :
 
@@ -833,6 +845,18 @@ The structure follows this organization:
                 "directory": "outresults"
               }
             }
+
+       **geometry_plugin** specify the plugin to use, but other configuration parameters can be specified :
+
+        .. code-block:: json
+
+            "geometry_plugin": {
+                "plugin_name": "SharelocGeometry",
+                "interpolator": "cubic"
+            }
+
+
+
 
         The particularities in the configuration file are:
 

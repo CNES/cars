@@ -29,6 +29,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import rasterio as rio
 import xarray as xr
+from json_checker import And, Checker
 from scipy import interpolate
 from scipy.interpolate import LinearNDInterpolator
 from shapely.geometry import Polygon
@@ -47,16 +48,25 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     available_plugins: Dict = {}
 
-    def __new__(cls, geometry_plugin=None, **kwargs):
+    def __new__(cls, geometry_plugin_conf=None, **kwargs):
         """
         Return the required plugin
         :raises:
          - KeyError when the required plugin is not registered
 
-        :param geometry_plugin: plugin name to instantiate
+        :param geometry_plugin_conf: plugin name or plugin configuration
+            to instantiate
+        :type geometry_plugin_conf: str or dict
         :return: a geometry_plugin object
         """
-        if geometry_plugin is not None:
+        if geometry_plugin_conf is not None:
+            if isinstance(geometry_plugin_conf, str):
+                geometry_plugin = geometry_plugin_conf
+            elif isinstance(geometry_plugin_conf, dict):
+                geometry_plugin = geometry_plugin_conf.get("plugin_name", None)
+            else:
+                raise RuntimeError("Not a supported type")
+
             if geometry_plugin not in cls.available_plugins:
                 logging.error(
                     "No geometry plugin named {} registered".format(
@@ -81,10 +91,19 @@ class AbstractGeometry(metaclass=ABCMeta):
         return super().__new__(cls)
 
     def __init__(
-        self, geometry_plugin, dem=None, geoid=None, default_alt=None, **kwargs
+        self,
+        geometry_plugin_conf,
+        dem=None,
+        geoid=None,
+        default_alt=None,
+        **kwargs
     ):
 
-        self.plugin_name = geometry_plugin
+        config = self.check_conf(geometry_plugin_conf)
+
+        self.plugin_name = config["plugin_name"]
+        self.interpolator = config["interpolator"]
+
         self.dem = dem
         self.dem_roi = None
         self.dem_roi_epsg = None
@@ -111,9 +130,44 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         return decorator
 
-    @staticmethod
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: str or dict
+
+        :return: full dict
+        :rtype: dict
+
+        """
+
+        if conf is None:
+            raise RuntimeError("Geometry plugin configuration is None")
+
+        overloaded_conf = {}
+
+        if isinstance(conf, str):
+            conf = {"plugin_name": conf}
+
+        # overload conf
+        overloaded_conf["plugin_name"] = conf.get("plugin_name", None)
+        overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
+
+        geometry_schema = {
+            "plugin_name": str,
+            "interpolator": And(str, lambda x: x in ["cubic", "linear"]),
+        }
+
+        # Check conf
+        checker = Checker(geometry_schema)
+        checker.validate(overloaded_conf)
+
+        return overloaded_conf
+
     @abstractmethod
     def triangulate(
+        self,
         sensor1,
         sensor2,
         geomodel1,
@@ -266,12 +320,12 @@ class AbstractGeometry(metaclass=ABCMeta):
             )
 
         # convert epipolar matches to sensor coordinates
-        sensor_pos_left = AbstractGeometry.sensor_position_from_grid(
-            grid1, vec_epi_pos_left
-        )
-        sensor_pos_right = AbstractGeometry.sensor_position_from_grid(
-            grid2, vec_epi_pos_right
-        )
+        sensor_pos_left = AbstractGeometry(
+            {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+        ).sensor_position_from_grid(grid1, vec_epi_pos_left)
+        sensor_pos_right = AbstractGeometry(
+            {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+        ).sensor_position_from_grid(grid2, vec_epi_pos_right)
 
         if matches_type == cst.DISP_MODE:
             # rearrange matches in the original epipolar geometry
@@ -302,8 +356,8 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         return sensor_pos_left, sensor_pos_right
 
-    @staticmethod
     def sensor_position_from_grid(
+        self,
         grid: Union[str, cars_dataset.CarsDataset],
         positions: np.ndarray,
     ) -> np.ndarray:
@@ -315,6 +369,7 @@ class AbstractGeometry(metaclass=ABCMeta):
                array of size [number of points, 2]. The last index indicates
                the 'x' coordinate (last index set to 0) or the 'y' coordinate
                (last index set to 1).
+        :param interpolator: interpolator to use
         :return: sensors positions as a numpy array of size
                  [number of points, 2]. The last index indicates the 'x'
                  coordinate (last index set to 0) or
@@ -363,34 +418,31 @@ class AbstractGeometry(metaclass=ABCMeta):
         rows = np.arange(ori_row, last_row, step_row)
 
         # create regular grid points positions
-        points = (cols, rows)
         sensor_row_positions = row_dep
         sensor_col_positions = col_dep
 
         # interpolate sensor positions
-        interp_row = interpolate.interpn(
+        interpolator = interpolate.RegularGridInterpolator(
             (cols, rows),
-            sensor_row_positions.transpose(),
-            positions,
-            method="linear",
-            bounds_error=False,
-            fill_value=None,
-        )
-        interp_col = interpolate.interpn(
-            points,
-            sensor_col_positions.transpose(),
-            positions,
-            method="linear",
+            np.stack(
+                (
+                    sensor_row_positions.transpose(),
+                    sensor_col_positions.transpose(),
+                ),
+                axis=2,
+            ),
+            method=self.interpolator,
             bounds_error=False,
             fill_value=None,
         )
 
-        # stack both coordinates
-        sensor_positions = np.transpose(np.vstack([interp_col, interp_row]))
+        sensor_positions = interpolator(positions)
+        # swap
+        sensor_positions[:, [0, 1]] = sensor_positions[:, [1, 0]]
+
         return sensor_positions
 
-    @staticmethod
-    def epipolar_position_from_grid(grid, sensor_positions, step=30):
+    def epipolar_position_from_grid(self, grid, sensor_positions, step=30):
         """
         Compute epipolar position from grid
 
@@ -413,9 +465,7 @@ class AbstractGeometry(metaclass=ABCMeta):
             [epi_grid_row.flatten(), epi_grid_col.flatten()], axis=1
         )
 
-        sensor_interp_pos = AbstractGeometry.sensor_position_from_grid(
-            grid, full_epi_pos
-        )
+        sensor_interp_pos = self.sensor_position_from_grid(grid, full_epi_pos)
         interp_row = LinearNDInterpolator(
             list(
                 zip(  # noqa: B905
@@ -446,9 +496,13 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         return epipolar_positions
 
-    @staticmethod
     def transform_matches_from_grids(
-        matches_array, grid_left, grid_right, new_grid_left, new_grid_right
+        self,
+        matches_array,
+        grid_left,
+        grid_right,
+        new_grid_left,
+        new_grid_right,
     ):
         """
         Transform epipolar matches with grid transformation
@@ -462,18 +516,18 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
 
         # Transform to sensors
-        sensor_matches_left = AbstractGeometry.sensor_position_from_grid(
+        sensor_matches_left = self.sensor_position_from_grid(
             grid_left, matches_array[:, 0:2]
         )
-        sensor_matches_right = AbstractGeometry.sensor_position_from_grid(
+        sensor_matches_right = self.sensor_position_from_grid(
             grid_right, matches_array[:, 2:4]
         )
 
         # Transform to new grids
-        new_grid_matches_left = AbstractGeometry.epipolar_position_from_grid(
+        new_grid_matches_left = self.epipolar_position_from_grid(
             new_grid_left, sensor_matches_left
         )
-        new_grid_matches_right = AbstractGeometry.epipolar_position_from_grid(
+        new_grid_matches_right = self.epipolar_position_from_grid(
             new_grid_right, sensor_matches_right
         )
 
