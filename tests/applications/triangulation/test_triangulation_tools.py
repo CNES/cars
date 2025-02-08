@@ -135,10 +135,10 @@ def test_triangulate_matches_shareloc(
     )
     # put decimal values to 10 to know if modifications are done.
     # for long/lat, 10**(-8) have been checked
-    np.testing.assert_almost_equal(llh.x[0], 5.197378451223451, decimal=10)
-    np.testing.assert_almost_equal(llh.y[0], 44.20798042602802, decimal=10)
+    np.testing.assert_almost_equal(llh.x[0], 5.197378451485809, decimal=10)
+    np.testing.assert_almost_equal(llh.y[0], 44.20798042552038, decimal=10)
     # for altitude, 10**(-3) have been checked
-    np.testing.assert_almost_equal(llh.z[0], 512.807649359107, decimal=10)
+    np.testing.assert_almost_equal(llh.z[0], 512.8074492644519, decimal=10)
     # np.testing.assert_almost_equal(llh.z[0], 511.4383088)
     assert llh[cst.DISPARITY][0] == 0.0
     assert llh[cst.POINT_CLOUD_CORR_MSK][0] == 255

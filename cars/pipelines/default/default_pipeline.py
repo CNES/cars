@@ -1479,7 +1479,7 @@ class DefaultPipeline(PipelineTemplate):
                     # Correct grids with former matches
                     # Transform matches to new grids
                     new_grid_matches_array = (
-                        AbstractGeometry.transform_matches_from_grids(
+                        geom_plugin.transform_matches_from_grids(
                             matches,
                             self.pairs[pair_key]["corrected_grid_left"],
                             self.pairs[pair_key]["corrected_grid_right"],

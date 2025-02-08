@@ -58,15 +58,15 @@ class SharelocGeometry(AbstractGeometry):
 
     def __init__(
         self,
-        geometry_plugin,
+        geometry_plugin_conf,
         dem=None,
         geoid=None,
         default_alt=None,
         pairs_for_roi=None,
-        rectification_grid_margin=0,
     ):
+
         super().__init__(
-            geometry_plugin,
+            geometry_plugin_conf,
             dem=dem,
             geoid=geoid,
             default_alt=default_alt,
@@ -76,7 +76,11 @@ class SharelocGeometry(AbstractGeometry):
         self.dem_roi = None
         self.roi_shareloc = None
         self.elevation = None
-        self.rectification_grid_margin = rectification_grid_margin
+
+        # a margin is needed for cubic interpolation
+        self.rectification_grid_margin = 0
+        if self.interpolator == "cubic":
+            self.rectification_grid_margin = 5
 
         # compute roi only when generating geometry object with dem
         # even if dem is None
@@ -250,8 +254,8 @@ class SharelocGeometry(AbstractGeometry):
 
         return sensor, overloaded_geomodel
 
-    @staticmethod
     def triangulate(
+        self,
         sensor1,
         sensor2,
         geomodel1,
@@ -300,6 +304,7 @@ class SharelocGeometry(AbstractGeometry):
                 grid_right=grid2,
                 residues=True,
                 fill_nan=True,
+                interpolator=self.interpolator,
             )
 
             llh = point_wgs84.reshape((point_wgs84.shape[0], 1, 3))
@@ -315,6 +320,7 @@ class SharelocGeometry(AbstractGeometry):
                 grid_right=grid2,
                 residues=True,
                 fill_nan=True,
+                interpolator=self.interpolator,
             )
 
             row = np.array(

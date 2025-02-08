@@ -120,9 +120,12 @@ def test_get_roi():
     dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
     geoid = get_geoid_path()
 
+    # Uses 0 margin with linar interpolator
     geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "SharelocGeometry", dem=dem, geoid=geoid
+            {"plugin_name": "SharelocGeometry", "interpolator": "linear"},
+            dem=dem,
+            geoid=geoid,
         )
     )
     pairs_for_roi = [(sensor1, geomodel1, sensor2, geomodel2)]
@@ -135,19 +138,19 @@ def test_get_roi():
     ]
     np.testing.assert_allclose(roi, ref_roi)
 
-    # Add a 5 pixel margin on rectification grid
+    # Uses a 5 pixel margin on rectification grid, with cubic interpolator
     geo_plugin_with_margin_on_grid = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "SharelocGeometry",
             dem=dem,
             geoid=geoid,
-            rectification_grid_margin=5,
         )
     )
     pairs_for_roi = [(sensor1, geomodel1, sensor2, geomodel2)]
     roi = geo_plugin_with_margin_on_grid.get_roi(
         pairs_for_roi, 4326, margin=0.005
     )
+
     ref_roi = [
         44.198651,
         5.185954,

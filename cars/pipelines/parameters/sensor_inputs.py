@@ -313,10 +313,19 @@ def check_geometry_plugin(conf_inputs, conf_advanced, conf_geom_plugin):
             if not total_input_roi_poly.contains_properly(
                 dem_generation_roi_poly
             ):
-                raise RuntimeError(
+                base_message = (
                     "Given initial elevation ROI is not covering needed ROI: "
                     " EPSG:4326, ROI: {}".format(dem_generation_roi_poly.bounds)
                 )
+
+                if total_input_roi_poly.intersects(dem_generation_roi_poly):
+                    logging.warning(
+                        "{}. Only a part of it intersects. "
+                        "Errors might occur".format(base_message)
+                    )
+                else:
+                    # Exit, Error is certain to occur
+                    raise RuntimeError(base_message)
 
     else:
         logging.warning(

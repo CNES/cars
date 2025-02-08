@@ -197,7 +197,9 @@ def test_epipolar_pipeline(
         geomodel2,
         grid1,
         grid2,
-        get_geometry_plugin(),
+        get_geometry_plugin(
+            conf={"plugin_name": "SharelocGeometry", "interpolator": "linear"}
+        ),
         32636,
     )
 

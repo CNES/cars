@@ -4564,11 +4564,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -68
-            assert out_disp_compute["global_disp_min"] < -66
+            assert out_disp_compute["global_disp_min"] > -62
+            assert out_disp_compute["global_disp_min"] < -61
             # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 45
-            assert out_disp_compute["global_disp_max"] < 46
+            assert out_disp_compute["global_disp_max"] > 43
+            assert out_disp_compute["global_disp_max"] < 45
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -4792,11 +4792,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -68
-            assert out_disp_compute["global_disp_min"] < -66
+            assert out_disp_compute["global_disp_min"] > -63
+            assert out_disp_compute["global_disp_min"] < -61
             # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 45
-            assert out_disp_compute["global_disp_max"] < 46
+            assert out_disp_compute["global_disp_max"] > 43
+            assert out_disp_compute["global_disp_max"] < 45
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
