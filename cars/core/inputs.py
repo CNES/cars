@@ -37,6 +37,7 @@ import rasterio as rio
 import xarray as xr
 from json_checker import Checker
 from rasterio.warp import Resampling, calculate_default_transform, reproject
+from rasterio.windows import Window
 from shapely.geometry import shape
 
 # CARS imports
@@ -104,19 +105,44 @@ def rasterio_get_values(raster_file: str, x_list, y_list, proj_function):
         cloud_in = np.stack([x_list, y_list], axis=1)
         cloud_out = proj_function(cloud_in, 4326, file_espg)
 
-        new_x = cloud_out[:, 0]
-        new_y = cloud_out[:, 1]
-
-        # get z list
-        z_list = list(
-            descriptor.sample(
-                [(new_x[row], new_y[row]) for row in range(new_x.shape[0])]
-            )
+        # get the transform and inverse
+        aff_tr = descriptor.transform
+        np_tr = np.array(
+            [
+                [aff_tr[0], aff_tr[1], aff_tr[2]],
+                [aff_tr[3], aff_tr[4], aff_tr[5]],
+                [0, 0, 1],
+            ]
         )
-        z_list = np.array(z_list, dtype=float)
-        z_list[z_list == nodata_value] = np.nan
+        inv_tr = np.linalg.inv(np_tr)
 
-        return z_list[:, 0]
+        # convert sensor to pixel coordinates
+        pix_pos = np.hstack([cloud_out, np.ones((len(cloud_out), 1))])
+        pix_pos = inv_tr @ pix_pos.T
+        pix_pos = pix_pos.T[:, [1, 0]].astype(int)
+
+        # get the data needed
+        min_pt = pix_pos.min(axis=0)
+        max_pt = pix_pos.max(axis=0)
+
+        width = max_pt[0] - min_pt[0] + 1
+        height = max_pt[1] - min_pt[1] + 1
+        window = Window(min_pt[1], min_pt[0], height, width)
+
+        data = descriptor.read(1, window=window)
+
+        # read the data for all points
+        max_sampled_pos = np.array(data.shape)[:2] - 1
+        pix_pos -= min_pt
+        pix_pos[:, 0] = np.clip(pix_pos[:, 0], 0, max_sampled_pos[0])
+        pix_pos[:, 1] = np.clip(pix_pos[:, 1], 0, max_sampled_pos[1])
+
+        z_list = data[pix_pos[:, 0], pix_pos[:, 1]].astype(float)
+
+        if nodata_value is not None:
+            z_list[z_list == nodata_value] = np.nan
+
+        return z_list
 
 
 def rasterio_get_nb_bands(raster_file: str) -> int:
