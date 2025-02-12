@@ -110,7 +110,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
             del config["output"]["out_dir"]
 
         config_json_dir = os.path.abspath(os.path.dirname(args.conf))
-        pipeline_name = config.get("pipeline", "default")
+        pipeline_name = config.get("advanced", {}).get("pipeline", "default")
         old_pipelines = [
             "sensors_to_dense_dsm",
             "sensors_to_dense_dsm_no_merging",

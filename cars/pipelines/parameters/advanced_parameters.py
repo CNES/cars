@@ -30,12 +30,12 @@ import rasterio as rio
 from json_checker import Checker, OptionalKey, Or
 
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
 from cars.pipelines.parameters import depth_map_inputs
 from cars.pipelines.parameters import depth_map_inputs_constants as depth_cst
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
+from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
 from cars.pipelines.pipeline_constants import ADVANCED
 
 
@@ -43,6 +43,8 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     """
     Check the advanced parameters consistency
 
+    :param inputs: configuration of inputs
+    :type inputs: dict
     :param conf: configuration of advanced parameters
     :type conf: dict
     :param check_epipolar_a_priori: use epipolar a priori parameters
@@ -136,6 +138,9 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
                     ]
                 )
 
+    # Check pipeline
+    overloaded_conf[adv_cst.PIPELINE] = conf.get(adv_cst.PIPELINE, "default")
+
     # Validate inputs
     schema = {
         adv_cst.DEBUG_WITH_ROI: bool,
@@ -145,6 +150,7 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.PHASING: Or(dict, None),
         adv_cst.PERFORMANCE_MAP_CLASSES: Or(None, list),
         adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
+        adv_cst.PIPELINE: str,
     }
     if check_epipolar_a_priori:
         schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool

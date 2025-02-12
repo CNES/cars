@@ -26,7 +26,9 @@ import json_checker
 import pytest
 import rasterio as rio
 
-from cars.pipelines.parameters import advanced_parameters
+from cars.pipelines.parameters import advanced_parameters, sensor_inputs
+
+from ..helpers import absolute_data_path
 
 
 @pytest.mark.unit_tests
@@ -62,7 +64,18 @@ def test_advanced_parameters_full_config():
         },
     }
 
-    advanced_parameters.check_advanced_parameters(config)
+    inputs_config = {
+        "sensors": {
+            "one": {"image": "img1_crop.tif", "geomodel": "img1_crop.geom"},
+            "two": {"image": "img2_crop.tif", "geomodel": "img2_crop.geom"},
+        }
+    }
+    inputs_config = sensor_inputs.sensors_check_inputs(
+        inputs_config,
+        config_json_dir=absolute_data_path("input/data_gizeh_crop/"),
+    )
+
+    advanced_parameters.check_advanced_parameters(inputs_config, config)
 
 
 @pytest.mark.unit_tests
@@ -73,7 +86,18 @@ def test_advanced_parameters_minimal():
 
     config = {"debug_with_roi": True}
 
-    advanced_parameters.check_advanced_parameters(config)
+    inputs_config = {
+        "sensors": {
+            "one": {"image": "img1_crop.tif", "geomodel": "img1_crop.geom"},
+            "two": {"image": "img2_crop.tif", "geomodel": "img2_crop.geom"},
+        }
+    }
+    inputs_config = sensor_inputs.sensors_check_inputs(
+        inputs_config,
+        config_json_dir=absolute_data_path("input/data_gizeh_crop/"),
+    )
+
+    advanced_parameters.check_advanced_parameters(inputs_config, config)
 
 
 @pytest.mark.unit_tests
@@ -84,9 +108,22 @@ def test_advanced_parameters_update_conf():
 
     config = {"debug_with_roi": True}
 
+    inputs_config = {
+        "sensors": {
+            "one": {"image": "img1_crop.tif", "geomodel": "img1_crop.geom"},
+            "two": {"image": "img2_crop.tif", "geomodel": "img2_crop.geom"},
+        }
+    }
+    inputs_config = sensor_inputs.sensors_check_inputs(
+        inputs_config,
+        config_json_dir=absolute_data_path("input/data_gizeh_crop/"),
+    )
+
     # First config check without epipolar a priori
-    updated_config = advanced_parameters.check_advanced_parameters(
-        config, check_epipolar_a_priori=False
+    _, updated_config, _, _, _, _ = (
+        advanced_parameters.check_advanced_parameters(
+            inputs_config, config, check_epipolar_a_priori=False
+        )
     )
 
     # TODO: maybe move this inside update conf
@@ -112,7 +149,7 @@ def test_advanced_parameters_update_conf():
 
     # First config check without epipolar a priori
     _ = advanced_parameters.check_advanced_parameters(
-        full_config["advanced"], check_epipolar_a_priori=True
+        inputs_config, full_config["advanced"], check_epipolar_a_priori=True
     )
 
 

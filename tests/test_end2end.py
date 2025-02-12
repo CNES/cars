@@ -1669,7 +1669,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
         pc_pipeline.run()
 
         out_dir = input_config_pc["output"]["directory"]
-        geometry_plugin_name = input_config_pc["geometry_plugin"]
+        geometry_plugin_name = input_config_pc["advanced"]["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
@@ -1737,13 +1737,12 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                         "input/phr_ventoux/srtm/N44E005.hgt"
                     ),
                 },
-                "geometry_plugin": geometry_plugin_name,
+                "advanced": {"geometry_plugin": geometry_plugin_name},
                 "output": {
                     "directory": output_path,
                     "resolution": 0.000005,
                     "epsg": 4326,
                 },
-                "pipeline": "dense_depth_maps_to_dense_dsm",
                 "applications": {
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
@@ -1947,7 +1946,7 @@ def test_end2end_ventoux_unique_split():
         pc_pipeline.run()
 
         out_dir = input_config_pc["output"]["directory"]
-        geometry_plugin_name = input_config_pc["geometry_plugin"]
+        geometry_plugin_name = input_config_pc["advanced"]["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
@@ -2008,9 +2007,7 @@ def test_end2end_ventoux_unique_split():
                         ],
                     },
                 },
-                "geometry_plugin": geometry_plugin_name,
                 "output": {"directory": output_path, "resolution": 0.5},
-                "pipeline": "dense_depth_maps_to_dense_dsm",
                 "applications": {
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
@@ -2021,7 +2018,10 @@ def test_end2end_ventoux_unique_split():
                         "save_intermediate_data": True,
                     },
                 },
-                "advanced": {"merging": True},
+                "advanced": {
+                    "geometry_plugin": geometry_plugin_name,
+                    "merging": True,
+                },
             }
 
             dsm_pipeline = default.DefaultPipeline(input_dsm_config)
@@ -3481,7 +3481,6 @@ def test_end2end_ventoux_with_color():
         input_config_dense_dsm["output"]["resolution"] = 0.5
 
         # update pipeline
-        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)

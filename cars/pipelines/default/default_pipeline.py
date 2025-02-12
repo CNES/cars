@@ -1786,7 +1786,7 @@ class DefaultPipeline(PipelineTemplate):
                     "save_intermediate_data"
                 ] = True
                 new_geomplugin_dsm = AbstractGeometry(  # pylint: disable=E0110
-                    self.used_conf[GEOMETRY_PLUGIN],
+                    self.geometry_plugin,
                     dem=self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
                         adv_cst.INPUT_GROUND_TRUTH_DSM
                     ],
