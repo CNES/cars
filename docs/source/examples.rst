@@ -113,7 +113,7 @@ It generates a .tif and .geom to be used as:
 Then use the generated data as you would with raw data.
 
 
-If you want to compute grid correction and compute epipolar/ terrain a priori on the whole image, keep the same input images, but specify terrain ROI to use:
+If you want to compute the grid correction and compute the epipolar/terrain a priori on the whole image, keep the same input images but specify the terrain ROI to use:
 
 .. code-block:: json
 

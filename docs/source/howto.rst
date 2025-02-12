@@ -283,7 +283,7 @@ Any OTB application can be ran in docker
 
     docker run  --entrypoint=/bin/bash  cnes/cars otbcli_BandMath -help
     
-you can either enter docker's interactive mode or execute the program from outside of the docker, as explained right below (example for extract-roi): 
+You can either enter docker's interactive mode or execute the program from outside of the docker, as explained right below (example for extract-roi): 
 
 Interactive mode:
 -----------------
