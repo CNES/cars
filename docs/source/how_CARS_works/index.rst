@@ -2,7 +2,7 @@
 .. _How CARS works:
 
 ===================
-How CARS works ?
+How CARS works 
 ===================
 
 .. include:: in_a_nutshell.rst

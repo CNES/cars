@@ -84,13 +84,13 @@ It can be performed with `otbcli_BundleToPerfectSensor` as explained in  :ref:`m
 ... with a region of interest
 -----------------------------
 
-There are two different uses of roi in CARS:
+There are two different ways to use a ROI in CARS:
 
 * Crop input images: the whole pipeline will be done with cropped images
-* Use input roi parameter: the whole images will be used to compute grid correction and terrain + epipolar a priori. Then the rest of the pipeline will use the given roi. This allow better correction of epipolar rectification grids.
+* Use input roi parameter: the whole images will be used to compute grid correction and terrain + epipolar a priori. Then the rest of the pipeline will use the given roi. This allows a better correction of epipolar rectification grids.
 
 
-If you want to only work with a region of interest for the whole pipeline, use cars-extractroi:
+If you want to work with cropped image by using a region of interest for the whole pipeline, use cars-extractroi:
 
 .. code-block:: bash
 
@@ -110,7 +110,7 @@ It generates a .tif and .geom to be used as:
             }
     }
 
-And use generated data as previously explained with raw data.
+Then use the generated data as you would with raw data.
 
 
 If you want to compute grid correction and compute epipolar/ terrain a priori on the whole image, keep the same input images, but specify terrain ROI to use:
@@ -149,4 +149,4 @@ If you want to compute grid correction and compute epipolar/ terrain a priori on
 See  Usage Sensors Images Inputs configuration for more information.
 
 .. note::
-	CARS is also working with other types of data: SPOT 6-7, WorldView, etc.
+	CARS also works with other types of data: SPOT 6-7, WorldView, etc.

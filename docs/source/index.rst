@@ -32,8 +32,8 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
    :maxdepth: 2
 
    getting_started
-   how_CARS_works?/index.rst
-   how_to_use_CARS?
+   how_CARS_works/index.rst
+   how_to_use_CARS
    howto
    examples
    troubleshooting_and_faqs
