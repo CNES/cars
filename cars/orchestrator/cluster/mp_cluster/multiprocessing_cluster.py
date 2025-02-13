@@ -102,6 +102,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         # retrieve parameters
         self.nb_workers = self.checked_conf_cluster["nb_workers"]
+        self.mp_mode = self.checked_conf_cluster["mp_mode"]
         self.task_timeout = self.checked_conf_cluster["task_timeout"]
         self.max_tasks_per_worker = self.checked_conf_cluster[
             "max_tasks_per_worker"
@@ -111,8 +112,14 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.profiling = self.checked_conf_cluster["profiling"]
         self.factorize_tasks = self.checked_conf_cluster["factorize_tasks"]
         # Set multiprocessing mode
-        # forkserver is used, to allow OMP to be used in numba
-        mp_mode = "spawn" if IS_WIN else "forkserver"
+        self.mp_mode = self.checked_conf_cluster["mp_mode"]
+
+        if IS_WIN:
+            self.mp_mode = "spawn"
+            logging.warning(
+                "{} is not functionnal in windows,"
+                "spawn will be used instead".format(self.mp_mode)
+            )
 
         self.launch_worker = launch_worker
 
@@ -139,7 +146,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 self.wrapper = mp_wrapper.WrapperNone(None)
 
             # Create pool
-            ctx_in_main = mp.get_context(mp_mode)
+            ctx_in_main = mp.get_context(self.mp_mode)
             # import cars for env variables firts
             # import cars pipelines for numba compilation
             ctx_in_main.set_forkserver_preload(["cars", "cars.pipelines"])
@@ -206,6 +213,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         # Overload conf
         overloaded_conf["mode"] = conf.get("mode", "mp")
+        overloaded_conf["mp_mode"] = conf.get("mp_mode", "forkserver")
         nb_workers = conf.get("nb_workers", 2)
         overloaded_conf["nb_workers"] = min(available_cpu, nb_workers)
         overloaded_conf["task_timeout"] = conf.get("task_timeout", 600)
@@ -223,6 +231,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         cluster_schema = {
             "mode": str,
             "dump_to_disk": bool,
+            "mp_mode": str,
             "nb_workers": And(int, lambda x: x > 0),
             "task_timeout": And(int, lambda x: x > 0),
             "max_ram_per_worker": And(Or(float, int), lambda x: x > 0),
@@ -265,7 +274,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         if self.tmp_dir is not None:
             shutil.rmtree(self.tmp_dir)
 
-    def scatter(self, data, broadcast=True):
+    def scatter(self, data):
         """
         Distribute data through workers
 
