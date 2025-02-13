@@ -124,7 +124,10 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     elif depth_cst.DEPTH_MAPS in inputs or dsm_cst.DSMS in inputs:
         # If there's an initial elevation with
         # point clouds as inputs, generate a plugin (used in dsm_filling)
-        geom_plugin_with_dem_and_geoid = depth_map_inputs.check_geometry_plugin(
+        (
+            overloaded_conf[adv_cst.GEOMETRY_PLUGIN],
+            geom_plugin_with_dem_and_geoid,
+        ) = depth_map_inputs.check_geometry_plugin(
             inputs, conf.get(adv_cst.GEOMETRY_PLUGIN, None)
         )
 

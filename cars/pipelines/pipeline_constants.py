@@ -25,9 +25,7 @@ this module contains the constants used for all pipelines
 # Sensor input
 
 INPUTS = "inputs"
-GEOMETRY_PLUGIN = "geometry_plugin"
 OUTPUT = "output"
 APPLICATIONS = "applications"
 ADVANCED = "advanced"
 ORCHESTRATOR = "orchestrator"
-PIPELINE = "pipeline"

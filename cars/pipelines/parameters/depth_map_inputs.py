@@ -244,7 +244,7 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     dem_path = conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
 
     if dem_path is None:
-        return None
+        return conf_geom_plugin, None
 
     # Initialize a geometry plugin with elevation information
     geom_plugin_with_dem_and_geoid = (
@@ -256,7 +256,7 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
         )
     )
 
-    return geom_plugin_with_dem_and_geoid
+    return conf_geom_plugin, geom_plugin_with_dem_and_geoid
 
 
 def check_input_size(
