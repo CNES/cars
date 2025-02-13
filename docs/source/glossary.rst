@@ -11,7 +11,10 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
 .. glossary::
     CARS
       means CNES Algorithms to Reconstruct Surface (ou Chaîne Automatique de Restitution Stéréoscopique en français)
-
+     
+    CNES
+      Centre National d'Etudes Spatiales
+      
     core
       Means the internal CARS function used as the engine core for steps and pipelines.
 
@@ -58,6 +61,12 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
     ROI
       `Region of Interest`_ means a subpart of the `DSM` raster in CARS.
       It can be defined by a file or a bounding box.
+     
+    RPC
+      Rational Polynomial Coefficient
+      
+    SIFT
+      Scale-Invariant Feature Transform
 
 
 

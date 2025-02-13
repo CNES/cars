@@ -69,6 +69,14 @@ Considering bulky files, it can be recommended to generate an overview file with
 .. code-block:: console
 
     gdaladdo -ro -r average dsm.tif 2 4 8 16 32 64
+    
+Development
+===========
+
+Is there a Github ? 
+-------------------
+
+Please, see the link `CARS GitHub <https://github.com/CNES/cars>`_ to access CARS github. Do not hesitate to create issues if you have a question or if you encounter a problem.
 
 
 .. _`GDAL`: https://gdal.org/

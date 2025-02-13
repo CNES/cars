@@ -1,5 +1,9 @@
-Command line
-============
+.. include:: ../links_substitution.rst
+
+.. _how to launch CARS:
+
+How to launch CARS
+==================
 
 ``cars`` command line is the entry point for CARS to run the 3D pipeline.
 
@@ -44,3 +48,31 @@ Note that ``cars-starter`` script can be used to instantiate this configuration 
       --check               Check inputs
 
 Finally, an output ``used_conf.json`` file will be created on the output directory. This file contains all the parameters used during execution and can be used as an input configuration file to re-run cars.
+
+Here is a reminder of what a basic json file configuration should look like :
+
+.. sourcecode:: text
+
+    {
+        "inputs": {
+            "sensors" : {
+                "one": {
+                    "image": "img1.tif",
+                    "geomodel": "img1.geom",
+                    "color": "color1.tif"
+                },
+                "two": {
+                    "image": "img2.tif",
+                    "geomodel": "img2.geom"
+                }
+            }
+        },
+        "orchestrator": {
+          	"mode": "multiprocessing",
+          	"nb_workers": 110,
+          	"max_ram_per_worker": 6000
+          	},
+        "output": {
+                "directory": "outresults"
+        }
+    }

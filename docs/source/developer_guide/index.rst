@@ -11,5 +11,4 @@ Developer Guide
     algorithm_conception
     contributing_to_cars
     creating_a_plugin
-    faq_dev
-    troubleshooting
+

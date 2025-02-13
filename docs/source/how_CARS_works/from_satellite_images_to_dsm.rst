@@ -131,7 +131,7 @@ If the DEM is not specified by the user, an internal DEM is generated with spars
 
 To download the low resolution DEM corresponding to your area, see section :ref:`download_srtm_tiles`.
 
-The parameter is ``dem`` in ``initial_elevation`` as seen in :ref:`configuration`.
+The parameter is ``dem`` in ``initial_elevation`` as seen in :ref:`basic configuration`.
 
 
 Altimetric exploration and geometric inaccuracies
@@ -139,7 +139,7 @@ Altimetric exploration and geometric inaccuracies
 
 To reduce the search interval (i.e. altimetric exploration) in the matching step and thus save computing time, a faster sparse matching step is typically used. This matching step also enables geometric errors to be corrected, thus ensuring that the epipolar geometry (based on these models) is correct.
 
-Matching can be performed with keypoints like `SIFT <https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf>`_.
+Matching can be performed with keypoints like :term:`SIFT` (`Here is an article <https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf>`_).
 
 .. _matchingsparse:
 

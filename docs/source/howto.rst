@@ -95,7 +95,7 @@ or the lower left corner with the upper right corner (in purple in the previous 
    cars config.json
 
 
-N.B.: Instead of using ``cars-extractroi``, you can directly give the GeoJson dictionnary in the configuration file (Please, see :ref:`configuration` for details). In this case, the sparse steps (geometric corrections) are processed on the entire image and not only on the ROI. 
+N.B.: Instead of using ``cars-extractroi``, you can directly give the GeoJson dictionnary in the configuration file (Please, see :ref:`basic configuration` for details). In this case, the sparse steps (geometric corrections) are processed on the entire image and not only on the ROI.
 
 Monitor tiles progression
 -------------------------
@@ -282,7 +282,48 @@ Any OTB application can be ran in docker
 .. code-block:: console
 
     docker run  --entrypoint=/bin/bash  cnes/cars otbcli_BandMath -help
+    
+You can either enter docker's interactive mode or execute the program from outside of the docker, as explained right below (example for extract-roi): 
 
+Interactive mode:
+-----------------
+
+You can enter in the docker interactive mode by using this command : 
+
+.. code-block:: console
+
+    docker run -it -w /data -v "$(pwd)"/data_gizeh_small:/data  --entrypoint /bin/bash cnes/cars:latest
+
+You are now in an interactive docker mode and you can launch your program as follow:
+
+.. code-block:: console
+
+    cars-extractroi /data/img1.tif -out crop_img1.tif  -bbx 20800 5100 21000 5300
+
++--------------------------------------+------------------------------------------------------------------------------+
+| Option                               | Explication                                                                  |
++======================================+==============================================================================+
+| *docker run*                         | Runs a container based on the cnes/cars:latest image.                        |
++--------------------------------------+------------------------------------------------------------------------------+
+| *-it*                                | Interactive mode (-i: interactive input, -t: allocates a pseudo-terminal).   |
++--------------------------------------+------------------------------------------------------------------------------+
+| *-w /data*                           | Sets /data as the working directory inside the container.                    |
++--------------------------------------+------------------------------------------------------------------------------+
+| *-v "$(pwd)"/data_gizeh_small:/data* | Mounts the local data_gizeh_small folder to /data inside the container.      |
++--------------------------------------+------------------------------------------------------------------------------+
+| *--entrypoint /bin/bash*             | Overrides the container’s default entrypoint to run /bin/bash instead.       |
++--------------------------------------+------------------------------------------------------------------------------+
+| *cnes/cars:latest*                   | Uses the cnes/cars:latest Docker image containing cars-extractroi.           |
++--------------------------------------+------------------------------------------------------------------------------+
+
+From outside
+------------
+
+The other option is to directly use this complete command:
+
+.. code-block:: console
+
+    docker run  -w /data -v "$(pwd)"/data_gizeh_small:/data  --entrypoint cars-extractroi cnes/cars:latest -il /data/img1.tif -out crop_img1.tif  -bbx 20800 5100 21000 5300
 
 .. _resample_image:
 
@@ -324,146 +365,3 @@ If you want to upscale or downscale the resolution of you input data, use raster
 
 
 
-Use CARS with Pleiades images ...
-========================================
-
-
-.. _pleiade_raw_data:
-
-... with raw data
------------------
-
-
-If you want to generate a 3D model with the following pair:
-
-.. code-block:: bash
-
-    IMG_PHR1B_MS_003
-    IMG_PHR1B_MS_004
-    IMG_PHR1B_P_001
-    IMG_PHR1B_P_002
-
-You should find in each folder the following data:
-
-.. code-block:: bash
-
-    ...
-    DIM_PHR1B_***.XML
-    IMG_PHR1B_***.TIF
-    RPC_PHR1B_***.XML
-
-
-For each product, the user must provide the path to the pancromatic data (*P*.TIF) with its geomodel, all contained in the DIMAP file (DIMAP*P*.XML):
-
-
-.. code-block:: json
-
-    {
-    "inputs": {
-        "sensors" : {
-            "one": {
-                "image": "IMG_PHR1B_P_001/DIM_PHR1B_***.XML"
-            },
-            "two": {
-                "image": "IMG_PHR1B_P_002/DIM_PHR1B_***.XML",
-            }
-        },
-        "pairing": [["one", "two"]]
-        }
-    }
-
-
-
-If you want to add the colors, a P+XS fusion must be done, to specify a color.tif with the same shape and resolution than the Pancromatic data.
-It can be performed with `otbcli_BundleToPerfectSensor` as explained in  `make_a_simple_pan_sharpening`_
-
-.. code-block:: json
-
-    {
-    "inputs": {
-        "sensors" : {
-            "one": {
-                "image": "IMG_PHR1B_P_001/DIM_PHR1B_***.XML",
-                "color": "color_one.tif"
-            },
-            "two": {
-                "image": "IMG_PHR1B_P_002/DIM_PHR1B_***.XML",
-                "color": "color_two.tif"
-
-            }
-        },
-        "pairing": [["one", "two"]]
-        }
-    }
-
-
-
-
-.. _pleiade_roi_data:
-
-... with a region of interest
------------------------------
-
-There are two different uses of roi in CARS:
-
-* Crop input images: the whole pipeline will be done with cropped images
-* Use input roi parameter: the whole images will be used to compute grid correction and terrain + epipolar a priori. Then the rest of the pipeline will use the given roi. This allow better correction of epipolar rectification grids.
-
-
-If you want to only work with a region of interest for the whole pipeline, use cars-extractroi:
-
-.. code-block:: bash
-
-    cars-extractroi -il DIM_PHR1B_***.XML -out ext_dir -bbx -58.5896 -34.4872 -58.5818 -34.4943
-
-It generates a .tif and .geom to be used as:
-
-.. code-block:: json
-
-    {
-    "inputs": {
-        "sensors" : {
-            "one": {
-                "image": "ext_dir/***.tif",
-                "geomodel": "ext_dir/***.geom",
-                "color": "color_one.tif"
-            }
-    }
-
-And use generated data as previously explained with raw data.
-
-
-If you want to compute grid correction and compute epipolar/ terrain a priori on the whole image, keep the same input images, but specify terrain ROI to use:
-
-.. code-block:: json
-
-    {
-        "inputs":
-        {
-            "roi" : {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                    "type": "Feature",
-                    "properties": {},
-                    "geometry": {
-                        "coordinates": [
-                        [
-                            [5.194, 44.2064],
-                            [5.194, 44.2059],
-                            [5.195, 44.2059],
-                            [5.195, 44.2064],
-                            [5.194, 44.2064]
-                        ]
-                        ],
-                        "type": "Polygon"
-                    }
-                    }
-                ]
-            }
-        }
-    }
-
-
-
-See  Usage Sensors Images Inputs configuration for more information.

@@ -1,7 +1,8 @@
+.. include:: ../links_substitution.rst
+
+
 Overview
 ========
-
-.. include:: ../links_substitution.rst
 
 To summarize, CARS pipeline is organized in sequential steps from input pairs (and metadata) to output data. Each step is performed tile-wise and distributed among workers.
 
