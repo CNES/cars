@@ -662,8 +662,6 @@ class CensusMccnnSgm(
             altitude_delta_max,
         ):
             # use local disparity
-            if None not in (dmin, dmax):
-                raise RuntimeError("Mix between local and global mode")
 
             # Get associated alti mean / min / max values
             dem_median_shape = inputs.rasterio_get_size(dem_median)
