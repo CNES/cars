@@ -290,7 +290,7 @@ The structure follows this organization:
                 **ROI**
 
                 A terrain ROI can be provided by the user. It can be either a vector file (Shapefile for instance) path,
-                or a GeoJson dictionary. These structures must contain a single Polygon or MultiPolygon. Multi-features are 
+                or a GeoJson dictionary. These structures must contain a single Polygon or MultiPolygon. Multi-features are
                 not supported. Instead of cropping the input images, the whole images will be used to compute grid correction
                 and terrain + epipolar a priori. Then the rest of the pipeline will use the given roi. T
                 his allow better correction of epipolar rectification grids.
@@ -327,11 +327,11 @@ The structure follows this organization:
                         }
                     }
 
-                If the *debug_with_roi* advanced parameter (see dedicated tab) is enabled, the tiling of the entire image is kept but only the tiles intersecting 
+                If the *debug_with_roi* advanced parameter (see dedicated tab) is enabled, the tiling of the entire image is kept but only the tiles intersecting
                 the ROI are computed.
 
-                MultiPolygon feature is only useful if the parameter *debug_with_roi* is activated, otherwise the total footprint of the 
-                MultiPolygon will be used as ROI. 
+                MultiPolygon feature is only useful if the parameter *debug_with_roi* is activated, otherwise the total footprint of the
+                MultiPolygon will be used as ROI.
 
                 By default epsg 4326 is used. If the user has defined a polygon in a different reference system, the "crs" field must be specified.
 
@@ -410,7 +410,7 @@ The structure follows this organization:
                 **Initial elevation**
 
                 The attribute contains all informations about initial elevation: dem path, geoid path and default altitudes.
-                
+
                 +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
                 | Name                  | Description                                                                | Type   | Available value      | Default value        | Required |
                 +=======================+============================================================================+========+======================+======================+==========+
@@ -424,11 +424,11 @@ The structure follows this organization:
                 +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
 
                 See section :ref:`download_srtm_tiles` to download 90-m SRTM DEM. If no DEM path is provided, an internal DEM is generated with sparse matches. Moreover, when there is no DEM data available, a default height above ellipsoid of 0 is used (no coverage for some points or pixels with no_data in the DEM tiles).
-                
+
                 If no geoid is provided, the default cars geoid is used (egm96).
 
                 If no altitude delta is provided, the `dem_min` and `dem_max` generated with sparse matches will be used.
-                
+
                 The altitude deltas are used following this formula:
 
                 .. code-block:: python
@@ -469,7 +469,7 @@ The structure follows this organization:
                 (see output parameters).
 
                 Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
-		
+
     .. tab:: Orchestrator
 
         CARS can distribute the computations chunks by using either dask (local or distributed cluster) or multiprocessing libraries.
@@ -496,7 +496,7 @@ The structure follows this organization:
 
             If CARS is launched on HPC cluster, this mode is not recommended because parameters would be set according to the full node resources.
             In this case, use multiprocessing mode and fill the parameters *nb_workers* and *max_ram_per_worker* according to the resources you requested.
-    
+
 
         Depending on the used orchestrator mode, the following parameters can be added in the configuration:
 
@@ -566,11 +566,11 @@ The structure follows this organization:
 
             **Factorisation**
 
-            Two or more tasks are sequentially dependant if they can be run sequentially, independantly from any other task. 
+            Two or more tasks are sequentially dependant if they can be run sequentially, independantly from any other task.
             If it is the case, those tasks can be factorized, which means they can be run in a single task.
-            
-            Running several tasks in one task avoids doing useless dumps on disk between sequential tasks. It does not lose time 
-            because tasks that are factorized could not be run in parallel, and it permits to save some time from the 
+
+            Running several tasks in one task avoids doing useless dumps on disk between sequential tasks. It does not lose time
+            because tasks that are factorized could not be run in parallel, and it permits to save some time from the
             creation of tasks and data transfer that are avoided.
 
         .. note::
