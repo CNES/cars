@@ -469,7 +469,7 @@ The structure follows this organization:
                 (see output parameters).
 
                 Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
-
+		
     .. tab:: Orchestrator
 
         CARS can distribute the computations chunks by using either dask (local or distributed cluster) or multiprocessing libraries.
@@ -544,22 +544,24 @@ The structure follows this organization:
 
         **Mode multiprocessing:**
 
-        +-----------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | Name                  | Description                                               | Type                                     | Default value | Required |
-        +=======================+===========================================================+==========================================+===============+==========+
-        | *nb_workers*          | Number of workers                                         | int, should be > 0                       | 2             | No       |
-        +-----------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *max_ram_per_worker*  | Maximum ram per worker                                    | int or float, should be > 0              | 2000          | No       |
-        +-----------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *max_tasks_per_worker*| Number of tasks a worker can complete before refresh      | int, should be > 0                       | 10            | No       |
-        +-----------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *dump_to_disk*        | Dump temporary files to disk                              | bool                                     | True          | No       |
-        +-----------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *per_job_timeout*     | Timeout used for a job                                    | int or float                             | 600           | No       |
-        +-----------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *factorize_tasks*     | Tasks sequentially dependent are run in one task          | bool                                     | True          | No       |
-        +-----------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-    
+        +-----------------------+-----------------------------------------------------------------+------------------------------------------+---------------+----------+
+        | Name                  | Description                                                     | Type                                     | Default value | Required |
+        +=======================+=================================================================+==========================================+===============+==========+
+        | *mp_mode*             | The type of multiprocessing mode "forkserver", "fork", "spawn"  | str                                      | "forkserver"  | No       |
+        +-----------------------+-----------------------------------------------------------------+------------------------------------------+---------------+----------+
+        | *nb_workers*          | Number of workers                                               | int, should be > 0                       | 2             | No       |
+        +-----------------------+-----------------------------------------------------------------+------------------------------------------+---------------+----------+
+        | *max_ram_per_worker*  | Maximum ram per worker                                          | int or float, should be > 0              | 2000          | No       |
+        +-----------------------+-----------------------------------------------------------------+------------------------------------------+---------------+----------+
+        | *max_tasks_per_worker*| Number of tasks a worker can complete before refresh            | int, should be > 0                       | 10            | No       |
+        +-----------------------+-----------------------------------------------------------------+------------------------------------------+---------------+----------+
+        | *dump_to_disk*        | Dump temporary files to disk                                    | bool                                     | True          | No       |
+        +-----------------------+-----------------------------------------------------------------+------------------------------------------+---------------+----------+
+        | *per_job_timeout*     | Timeout used for a job                                          | int or float                             | 600           | No       |
+        +-----------------------+-----------------------------------------------------------------+------------------------------------------+---------------+----------+
+        | *factorize_tasks*     | Tasks sequentially dependent are run in one task                | bool                                     | True          | No       |
+        +-----------------------+-----------------------------------------------------------------+------------------------------------------+---------------+----------+
+
         .. note::
 
             **Factorisation**
@@ -571,6 +573,9 @@ The structure follows this organization:
             because tasks that are factorized could not be run in parallel, and it permits to save some time from the 
             creation of tasks and data transfer that are avoided.
 
+        .. note::
+
+            If you are working on windows, the spawn multiprocessing mode has to be used. If you are putting "fork" or "forkserver", it will be forced to spawn.
 
         **Profiling configuration:**
 
