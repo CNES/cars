@@ -159,7 +159,7 @@ class SimpleGaussian(
         Get the margin to use for terrain tiles
 
         :param resolution: resolution of raster data (in target CRS unit)
-        :type epsg: float
+        :type resolution: float
 
         :return: margin in meters or degrees
         """
@@ -253,7 +253,7 @@ class SimpleGaussian(
         :param epsg: epsg of raster data
         :type epsg: str
         :param resolution: resolution of raster data (in target CRS unit)
-        :type epsg: float
+        :type resolution: float
         :param orchestrator: orchestrator used
         :param dsm_file_name: path of dsm
         :type dsm_file_name: str
