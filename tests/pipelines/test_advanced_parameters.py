@@ -54,9 +54,15 @@ def test_advanced_parameters_full_config():
             }
         },
         "terrain_a_priori": {
-            "dem_median": "dem_median.tif",
-            "dem_min": "dem_min.tif",
-            "dem_max": "dem_max.tif",
+            "dem_median": absolute_data_path(
+                "input/data_gizeh_crop/dump_dir/dem_generation/dem_median.tif"
+            ),
+            "dem_min": absolute_data_path(
+                "input/data_gizeh_crop/dump_dir/dem_generation/dem_min.tif"
+            ),
+            "dem_max": absolute_data_path(
+                "input/data_gizeh_crop/dump_dir/dem_generation/dem_max.tif"
+            ),
         },
         "ground_truth_dsm": {
             "dsm": "tests/data/input/phr_gizeh/img1.tif",
@@ -142,9 +148,15 @@ def test_advanced_parameters_update_conf():
         dmin=-10,
         dmax=10,
         pair_key="pair_key",
-        dem_median="dem_median.tif",
-        dem_min="dem_min.tif",
-        dem_max="dem_max.tif",
+        dem_median=absolute_data_path(
+            "input/data_gizeh_crop/dump_dir/dem_generation/dem_median.tif"
+        ),
+        dem_min=absolute_data_path(
+            "input/data_gizeh_crop/dump_dir/dem_generation/dem_min.tif"
+        ),
+        dem_max=absolute_data_path(
+            "input/data_gizeh_crop/dump_dir/dem_generation/dem_max.tif"
+        ),
     )
 
     # First config check without epipolar a priori
