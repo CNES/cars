@@ -234,7 +234,6 @@ def check_ground_truth_dsm_data(conf):
             OptionalKey(adv_cst.INPUT_AUX_PATH): Or(dict, None),
             OptionalKey(adv_cst.INPUT_AUX_INTERP): Or(dict, None),
             adv_cst.INPUT_GEOID: Or(None, str, bool),
-            OptionalKey(adv_cst.INPUT_EPSG): int,
         }
 
         checker_ground_truth_dsm_schema = Checker(ground_truth_dsm_schema)
