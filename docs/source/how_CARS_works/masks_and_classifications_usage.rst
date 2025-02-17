@@ -14,7 +14,23 @@ Mask
 
 | The masks are resampled in epipolar geometry with the resampling application.
 | The masked values are not taken into account in the matching process (sparse or dense matching method) to avoid mismatch and useless processing.
-| Furthermore, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typicaly.
+| Furthermore, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typically.
+
+Below, an example of an area close to Nice with its associated water mask (calculated with SLURP) and the DSM calculated by masking the water zones.
+
+.. |mask_satellite_image| image:: ../images/mask_satellite_nice.png
+  :width: 100%
+.. |mask_watermask| image:: ../images/mask_watermask_nice.png
+  :width: 100%
+.. |mask_dsm| image:: ../images/mask_dsm_nice.png
+  :width: 100%
+
++--------------------------+--------------------+-----------------+
+|   Satellite image        |   Water mask       | Masked DSM      |
++--------------------------+--------------------+-----------------+
+| |mask_satellite_image|   | |mask_watermask|   |  |mask_dsm|     |
++--------------------------+--------------------+-----------------+
+
 
 Classification
 --------------
@@ -24,3 +40,18 @@ Classification
 
 | All non-zeros values of the classification image will be considered as invalid data.
 | The classification can be used in each application by band name list selection parameter. See application ``classification`` parameter :ref:`advanced configuration`.
+
+Below, an example of an area close to Nice with its associated classification image (calculated with SLURP). The first band corresponds to the water class and the second band to the vegetation class.
+
+.. |classif_satellite_image| image:: ../images/classif_satellite_nice.png
+  :width: 100%
+.. |classif_watermask| image:: ../images/classif_watermask_nice.png
+  :width: 100%
+.. |classif_vegetationmask| image:: ../images/classif_vegetationmask_nice.png
+  :width: 100%
+
++----------------------------+------------------------------------+--------------------------------------------+
+|   Satellite image          |   Classification (band 1: "water") |     Classification (band 2: "vegetation")  |
++----------------------------+------------------------------------+--------------------------------------------+
+| |classif_satellite_image|  | |classif_watermask|                |  |classif_vegetationmask|                  |
++----------------------------+------------------------------------+--------------------------------------------+
