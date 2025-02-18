@@ -139,6 +139,7 @@ def resample_auxiliary_values(
     auxiliary_input,
     window,
     interpolation_method="nearest",
+    keep_band=False,
 ):
     """
     Resample classification map in epipolar geometry
@@ -151,6 +152,8 @@ def resample_auxiliary_values(
     :type window: list
     :param interpolation_method: interpolation method
     :type interpolation_method: string
+    :param keep_band: bool to see if we keep the band
+    :type keep_band: bool
     """
 
     # get the shape of the tile
@@ -197,11 +200,19 @@ def resample_auxiliary_values(
 
         # Construct the window and read the data
         window = Window(col_min, row_min, col_max - col_min, row_max - row_min)
-        data = src.read(window=window)
+
+        if keep_band:
+            data = src.read(window=window)
+            height = data.shape[1]
+            width = data.shape[2]
+        else:
+            data = src.read(1, window=window)
+            height = data.shape[0]
+            width = data.shape[1]
 
         # Construct the grid that corresponds
-        grid_rows = np.linspace(row_min, row_max, data.shape[1])
-        grid_cols = np.linspace(col_min, col_max, data.shape[2])
+        grid_rows = np.linspace(row_min, row_max, height)
+        grid_cols = np.linspace(col_min, col_max, width)
         grid = (grid_rows, grid_cols)
 
     index = np.column_stack((rows_geo, cols_geo))
@@ -215,7 +226,10 @@ def resample_auxiliary_values(
         fill_value=outside_interpolated_value,
     )
 
-    output_array = interpolated_points.reshape((nb_bands, *shape))
+    if keep_band:
+        output_array = interpolated_points.reshape((nb_bands, *shape))
+    else:
+        output_array = interpolated_points.reshape(shape)
 
     return output_array
 

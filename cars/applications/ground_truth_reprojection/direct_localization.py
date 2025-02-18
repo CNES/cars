@@ -579,47 +579,33 @@ def maps_generation_wrapper(
                 auxiliary_values[key]
             )
 
-            if band_description[0] is not None:
+            keep_band = False
+            if band_description[0] is not None or len(band_description) > 1:
                 if len(band_description) == 1:
                     band_description = np.array([band_description[0]])
-                elif key != cst.DSM_CLASSIF:
-                    band_description = np.array([band_description])
                 else:
                     band_description = list(band_description)
 
-            if key == cst.DSM_COLOR:
-                if len(band_description) == 3:
-                    band_description = ["R", "G", "B"]
-                else:
-                    band_description = ["R", "G", "B", "N"]
+                band_description = [
+                    "band_" + str(i + 1) if v is None else v
+                    for i, v in enumerate(band_description)
+                ]
+
                 outputs_dataset.coords[cst.BAND_IM] = (
-                    cst.BAND_IM,
+                    key,
                     band_description,
                 )
-                dim = [cst.BAND_IM, cst.Y, cst.X]
-            elif key == cst.DSM_SOURCE_PC:
-                outputs_dataset.coords[cst.BAND_SOURCE_PC] = (
-                    cst.BAND_SOURCE_PC,
-                    band_description,
-                )
-                dim = [cst.BAND_SOURCE_PC, cst.Y, cst.X]
-            elif key == cst.DSM_CLASSIF:
-                outputs_dataset.coords[cst.BAND_CLASSIF] = (
-                    cst.BAND_CLASSIF,
-                    band_description,
-                )
-                dim = [cst.BAND_CLASSIF, cst.Y, cst.X]
-            elif key == cst.DSM_FILLING:
-                outputs_dataset.coords[cst.BAND_FILLING] = (
-                    cst.BAND_FILLING,
-                    band_description,
-                )
-                dim = [cst.BAND_FILLING, cst.Y, cst.X]
+                dim = [key, cst.Y, cst.X]
+                keep_band = True
             else:
                 dim = [cst.Y, cst.X]
 
             interp_value = gnd_truth_tools.resample_auxiliary_values(
-                direct_loc, auxiliary_values[key], window, interpolation
+                direct_loc,
+                auxiliary_values[key],
+                window,
+                interpolation,
+                keep_band,
             )
 
             outputs_dataset[key] = (dim, interp_value)
