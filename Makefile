@@ -44,80 +44,28 @@ CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 .PHONY: help
 help: ## this help
 	@echo "      CARS MAKE HELP  LOGLEVEL=${LOGLEVEL}"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'| sort
+	@grep -E '^[a-zA-Z_/-]+:.*?## .*$$' Makefile | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'| sort
 
 ## Install section
 
 .PHONY: venv
-venv: ## create virtualenv in CARS_VENV directory if not exists
+venv: ## create virtualenv in CARS_VENV directory if it doesn't exist already
 	@test -d ${CARS_VENV} || python3 -m venv ${CARS_VENV}
 	@${CARS_VENV}/bin/python -m pip install --upgrade pip meson-python meson ninja setuptools_scm setuptools wheel pybind11 # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
 
-.PHONY: install-deps
-install-deps: venv ## install python libs
+.PHONY: install/deps
+install/deps: venv ## install python libs
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numpy
 
-.PHONY: install-deps-gdal
-install-deps-gdal: install-deps ## create an healthy python environment for GDAL/ proj
+.PHONY: install/deps-gdal
+install/deps-gdal: install/deps ## create an healthy python environment for GDAL/ proj
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
 
-.PHONY: install
-install: install-deps ## install cars (not editable) with dev, docs, notebook dependencies
-	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; python -m pip install .[dev,docs,notebook]
-	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
-	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
-	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
-	@echo "Make sure to not launch CARS from the root directory of your CARS local repository, as this would cause internal issues."
-	@echo "If you wish to work on CARS, please use the 'make install-dev' command."
-
-.PHONY: install-gdal
-install-gdal: install-deps-gdal ## install cars (not editable) with dev, docs, notebook dependencies
-	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
-	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
-	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
-	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
-	@echo "Make sure to not launch CARS from the root directory of your CARS local repository, as this would cause internal issues."
-	@echo "If you wish to work on CARS, please use the 'make install-dev' command."
-
-.PHONY: install-gdal-dev
-install-gdal-dev: install-deps-gdal ## install cars dev (editable) with dev, docs, notebook dependencies
-	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
-	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
-	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
-	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
-	@echo "Make sure to not launch CARS from the root directory of your CARS local repository, as this would cause internal issues."
-	@echo "If you wish to work on CARS, please use the 'make install-dev' command."
-
-.PHONY: install-pandora-mccnn
-install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
-	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; python -m pip install .[dev,docs,notebook,pandora_mccnn]
-	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
-	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
-	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "Make sure to not launch CARS from the root directory of your CARS local repository, as this would cause internal issues."
-	@echo "If you wish to work on CARS, please use the 'make install-dev' command."
-
-.PHONY: install-dev
-install-dev: install-deps ## install cars in dev editable mode (pip install -e .) without recompiling rasterio, fiona
+.PHONY: install/deps
+install: install/deps ## install cars in dev editable mode (pip install --no-build-isolation -e .) without recompiling rasterio and fiona
 	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs,notebook]
-	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
-	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
-	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
-
-.PHONY: install-ci
-install-ci: install-deps ## install cars in dev editable mode (pip install -e .) without recompiling rasterio, fiona and with dev, docs, notebook, pandora_mccnn dependencies
-	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs,notebook,pandora_mccnn]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
@@ -127,31 +75,23 @@ install-ci: install-deps ## install cars in dev editable mode (pip install -e .)
 ## Test section
 
 .PHONY: test
-test: ## run unit tests without SLURM cluster + coverage html
-	@${CARS_VENV}/bin/pytest -m "unit_tests and not pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
+test: ## run unit tests + coverage html
+	@${CARS_VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
 
-.PHONY: test-ci
-test-ci: ## run unit and pbs tests + coverage for cars-ci
-	@${CARS_VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" --durations=0 --log-date-format="%Y-%m-%d %H:%M:%S" --log-format="%(asctime)s [%(levelname)8s] (%(filename)s:%(lineno)s) : %(message)s"  -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+.PHONY: test/ci
+test/ci: ## run unit and pbs tests + coverage for cars-ci
+	@${CARS_VENV}/bin/pytest -m "unit_tests" --durations=0 --log-date-format="%Y-%m-%d %H:%M:%S" --log-format="%(asctime)s [%(levelname)8s] (%(filename)s:%(lineno)s) : %(message)s"  -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
-.PHONY: test-end2end
-test-end2end: ## run end2end tests only
+.PHONY: test/end2end
+test/end2end: ## run end2end tests only
 	@${CARS_VENV}/bin/pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
-.PHONY: test-unit
-test-unit: ## run unit tests only
+.PHONY: test/unit
+test/unit: ## run unit tests only
 	@${CARS_VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
-.PHONY: test-pbs-cluster
-test-pbs-cluster: ## run pbs cluster tests only
-	@${CARS_VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
-
-.PHONY: test-slurm-cluster
-test-slurm-cluster: ## run slurm cluster tests only
-	@${CARS_VENV}/bin/pytest -m "slurm_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
-
-.PHONY: test-notebook
-test-notebook: ## run notebook tests only
+.PHONY: test/notebook
+test/notebook: ## run notebook tests only
 	@${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 ## Code quality, linting section
@@ -217,12 +157,12 @@ notebook: ## install Jupyter notebook kernel with venv and cars install
 # Dev section
 
 .PHONY: dev
-dev: install-dev docs notebook ## install CARS in dev mode : install-dev, notebook and docs
+dev: install docs notebook ## install CARS, compile docs, prepare notebooks
 
 ## Docker section
 
-.PHONY: docker-deps
-docker-deps: ## Check and build docker image cnes/cars-deps
+.PHONY: docker/deps
+docker/deps: ## Check and build docker image cnes/cars-deps
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@docker pull hadolint/hadolint
 	@echo "Check Dockerfile with hadolint"
@@ -230,7 +170,7 @@ docker-deps: ## Check and build docker image cnes/cars-deps
 	@echo "Hadolint ok"
 
 .PHONY: docker
-docker: docker-deps ## Check and build docker image cnes/cars
+docker: docker/deps ## Check and build docker image cnes/cars
 # Set docker options like --build-arg
 ifndef DOCKER_OPTIONS
 	@docker build -t cnes/cars -t cnes/cars:latest . -f Dockerfile
@@ -242,16 +182,16 @@ endif
 ## Clean section
 
 .PHONY: clean
-clean: clean-venv clean-build clean-precommit clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts
+clean: clean/venv clean/build clean/precommit clean/pyc clean/test clean/docs clean/notebook clean/dask ## remove all build, test, coverage and Python artifacts
 
-.PHONY: clean-venv
-clean-venv:
+.PHONY: clean/venv
+clean/venv:
 	@echo "+ $@"
 	@echo ${CARS_VENV}
 	@rm -rf ${CARS_VENV}
 
-.PHONY: clean-build
-clean-build:
+.PHONY: clean/build
+clean/build:
 	@echo "+ $@"
 	@rm -fr build/
 	@rm -fr dist/
@@ -259,20 +199,20 @@ clean-build:
 	@find . -name '*.egg-info' -exec rm -fr {} +
 	@find . -name '*.egg' -exec rm -f {} +
 
-.PHONY: clean-precommit
-clean-precommit:
+.PHONY: clean/precommit
+clean/precommit:
 	@rm -f .git/hooks/pre-commit
 	@rm -f .git/hooks/pre-push
 
-.PHONY: clean-pyc
-clean-pyc:
+.PHONY: clean/pyc
+clean/pyc:
 	@echo "+ $@"
 	@find . -type f -name "*.py[co]" -exec rm -fr {} +
 	@find . -type d -name "__pycache__" -exec rm -fr {} +
 	@find . -name '*~' -exec rm -fr {} +
 
-.PHONY: clean-test
-clean-test:
+.PHONY: clean/test
+clean/test:
 	@echo "+ $@"
 	@rm -fr .tox/
 	@rm -f .coverage
@@ -284,36 +224,35 @@ clean-test:
 	@rm -f pylint-report.txt
 	@rm -f debug.log
 
-.PHONY: clean-docs
-clean-docs:
+.PHONY: clean/docs
+clean/docs:
 	@echo "+ $@"
 	@rm -rf docs/build/
 	@rm -rf docs/source/api_reference/
 
-.PHONY: clean-notebook
-clean-notebook:
+.PHONY: clean/notebook
+clean/notebook:
 	@echo "+ $@"
 	@find . -type d -name ".ipynb_checkpoints" -exec rm -fr {} +
 
-.PHONY: clean-dask
-clean-dask:
+.PHONY: clean/dask
+clean/dask:
 	@echo "+ $@"
 	@find . -type d -name "dask-worker-space" -exec rm -fr {} +
 
-
-.PHONY: clean-docker
-clean-docker: ## clean docker image
+.PHONY: docker/clean
+docker/clean: ## clean docker image
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@echo "Clean Docker images cars ${CARS_VERSION_MIN}"
 	@docker image rm -f cnes/cars:${CARS_VERSION_MIN}
 	@docker image rm -f cnes/cars:latest
 
 
-.PHONY: profile-memory-report
-profile-memory-report: ## build report after execution of cars with profiling memray mode (report biggest  memory occupation for each application), indicate the output_result directory file
+.PHONY: profile/memory-report
+profile/memory-report: ## build report after execution of cars with profiling memray mode (report biggest  memory occupation for each application), indicate the output_result directory file
 	@for file in $(wildcard ./$(filter-out $@,$(MAKECMDGOALS))/profiling/memray/*.bin); do echo $$file && ${CARS_VENV}/bin/memray tree -b 10 $$file; done;
 
-.PHONY: profile-memory-all
-profile-memory-all: ## memory profiling at master orchestrator level (not only at worker level) with cars CLI command, uses config.json as input (please use sequential orchestrator mode and desactive profiling)
+.PHONY: profile/memory-all
+profile/memory-all: ## memory profiling at master orchestrator level (not only at worker level) with cars CLI command, uses config.json as input (please use sequential orchestrator mode and desactive profiling)
 	@${CARS_VENV}/bin/memray run -o memray.result.bin ${CARS_VENV}/bin/cars $(wildcard ./$(filter-out $@,$(MAKECMDGOALS)))
 	@${CARS_VENV}/bin/memray tree -b 50 memray.result.bin
