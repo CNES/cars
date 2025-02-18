@@ -785,9 +785,10 @@ def assemblage(
     weights = np.full((height, width), 0, dtype=dtype)
 
     for idx, path in enumerate(out):
-        with rasterio.open(path) as src, rasterio.open(
-            current_weights[idx]
-        ) as drt:
+        with (
+            rasterio.open(path) as src,
+            rasterio.open(current_weights[idx]) as drt,
+        ):
             if intersect_bounds[idx] != "no intersection":
                 # Build the window
                 window = from_bounds(

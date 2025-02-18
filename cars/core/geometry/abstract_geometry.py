@@ -96,7 +96,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         dem=None,
         geoid=None,
         default_alt=None,
-        **kwargs
+        **kwargs,
     ):
 
         config = self.check_conf(geometry_plugin_conf)
