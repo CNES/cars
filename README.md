@@ -40,10 +40,13 @@ From stereo images  |  CARS produces a Digital Surface Model (DSM)
 **CARS** is an open source 3D tool dedicated to produce **Digital Surface Models** from satellite imaging by photogrammetry.
 This Multiview Stereo framework is intended for massive DSM production with a robust, performant and modular design.
 
-Be aware that the project is new and is evolving to maturity with CNES usage roadmaps and projects such as:
+**CARS** is currently under active development and integrated into various projects & missions:
+
 - <a href="https://co3d.cnes.fr/en/co3d-0">CO3D project &nbsp;&nbsp;&nbsp;  <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo_co3D_cnes.jpg" height="20"/></a>
 - <a href="https://www.ai4geo.eu">AI4GEO project &nbsp;&nbsp;&nbsp; <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo-ai4geo.png" height="20"/> </a>
 - <a href="https://www.evo-land.eu">Evoland project &nbsp;&nbsp;&nbsp; <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo-evoland.png" height="20"/> </a>
+
+Its roadmap and implemented functionalities are evolving regularly depending on specific project requirements.
 
 ## Quick start
 
