@@ -911,9 +911,31 @@ def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
     :return: disp_min_right_grid, disp_max_right_grid
     :rtype: numpy ndarray, numpy ndarray
     """
-    return dense_matching_cpp.estimate_right_grid_disp(
-        disp_min_grid, disp_max_grid
-    )
+    float_types = [np.float16, np.float32, np.float64, np.float128]
+    int_types = [
+        int,
+        np.int8,
+        np.uint8,
+        np.int16,
+        np.uint16,
+        np.int32,
+        np.uint32,
+        np.int64,
+        np.uint64,
+    ]
+    if disp_min_grid.dtype in float_types:
+        return dense_matching_cpp.estimate_right_grid_disp_float(
+            disp_min_grid, disp_max_grid
+        )
+    elif disp_min_grid.dtype in int_types:
+        return dense_matching_cpp.estimate_right_grid_disp_int(
+            disp_min_grid, disp_max_grid
+        )
+    else:
+        raise TypeError(
+            "estimate_right_grid_disp does not support"
+            f"{disp_min_grid.dtype} as an input type"
+        )
 
 
 def optimal_tile_size_pandora_plugin_libsgm(

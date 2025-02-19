@@ -8,5 +8,6 @@ PYBIND11_MODULE(dense_matching_cpp, m) {
 
     m.def("estimate_right_classif_on_left", &estimate_right_classif_on_left, "");
     m.def("mask_left_classif_from_right_mask", &mask_left_classif_from_right_mask, "");
-    m.def("estimate_right_grid_disp", &estimate_right_grid_disp, "");
+    m.def("estimate_right_grid_disp_int", &estimate_right_grid_disp<int>, "");
+    m.def("estimate_right_grid_disp_float", &estimate_right_grid_disp<float>, "");
 }

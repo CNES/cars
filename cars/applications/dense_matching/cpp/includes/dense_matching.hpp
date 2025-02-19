@@ -48,9 +48,9 @@ py::array_t<bool> mask_left_classif_from_right_mask(
  * @param disp_max_grid left disparity maximum grid
  * @return pair of right grid minimum and maximum disparities
  */
-std::pair<py::array_t<int>, py::array_t<int>> estimate_right_grid_disp(
-    py::array_t<int> disp_min_grid,
-    py::array_t<int> disp_max_grid
+template<typename T> std::pair<py::array_t<T>, py::array_t<T>> estimate_right_grid_disp(
+    py::array_t<T> disp_min_grid,
+    py::array_t<T> disp_max_grid
 );
 
 #endif  // DENSE_MATCHING_HPP
