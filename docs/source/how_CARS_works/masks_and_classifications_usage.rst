@@ -18,19 +18,19 @@ Mask
 
 Below, an example of an area close to Nice with its associated water mask (calculated with SLURP) and the DSM calculated by masking the water zones.
 
-.. |mask_satellite_image| image:: ../images/mask_satellite_nice.png
-  :width: 100%
-.. |mask_watermask| image:: ../images/mask_watermask_nice.png
-  :width: 100%
-.. |mask_dsm| image:: ../images/mask_dsm_nice.png
-  :width: 100%
+.. list-table:: Example mask usage
+   :widths: auto
+   :align: center
 
-+--------------------------+--------------------+-----------------+
-|   Satellite image        |   Water mask       | Masked DSM      |
-+--------------------------+--------------------+-----------------+
-| |mask_satellite_image|   | |mask_watermask|   |  |mask_dsm|     |
-+--------------------------+--------------------+-----------------+
-
+   * - **Satellite Image**
+     - **Water Mask**
+     - **Masked DSM**
+   * - .. image:: ../images/mask_satellite_nice.png
+        :width: 100%
+     - .. image:: ../images/mask_watermask_nice.png
+        :width: 100%
+     - .. image:: ../images/mask_dsm_nice.png
+        :width: 100%
 
 Classification
 --------------
@@ -43,15 +43,17 @@ Classification
 
 Below, an example of an area close to Nice with its associated classification image (calculated with SLURP). The first band corresponds to the water class and the second band to the vegetation class.
 
-.. |classif_satellite_image| image:: ../images/classif_satellite_nice.png
-  :width: 100%
-.. |classif_watermask| image:: ../images/classif_watermask_nice.png
-  :width: 100%
-.. |classif_vegetationmask| image:: ../images/classif_vegetationmask_nice.png
-  :width: 100%
+.. list-table:: Example classification usage
+   :widths: auto
+   :align: center
 
-+----------------------------+------------------------------------+--------------------------------------------+
-|   Satellite image          |   Classification (band 1: "water") |     Classification (band 2: "vegetation")  |
-+----------------------------+------------------------------------+--------------------------------------------+
-| |classif_satellite_image|  | |classif_watermask|                |  |classif_vegetationmask|                  |
-+----------------------------+------------------------------------+--------------------------------------------+
+   * - **Satellite Image**
+     - **Classification (Band 1: "Water")**
+     - **Classification (Band 2: "Vegetation")**
+   * - .. image:: ../images/classif_satellite_nice.png
+        :width: 100%
+     - .. image:: ../images/classif_watermask_nice.png
+        :width: 100%
+     - .. image:: ../images/classif_vegetationmask_nice.png
+        :width: 100%
+
