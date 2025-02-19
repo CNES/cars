@@ -23,7 +23,6 @@ this module contains the dense_matching application class.
 """
 # pylint: disable=too-many-lines
 import collections
-import datetime
 
 # Standard imports
 import logging
@@ -1524,10 +1523,6 @@ def loc_inverse_wrapper(
     :type saving_info: dict
 
     """
-    print(f"type {type(geom_plugin)}")
-
-    wrapper_begin = datetime.datetime.now()
-
     col, row, _ = geom_plugin.inverse_loc(
         image,
         geomodel,
@@ -1538,12 +1533,6 @@ def loc_inverse_wrapper(
     output = pandas.DataFrame({"col": col, "row": row}, copy=False)
     cars_dataset.fill_dataframe(
         output, saving_info=saving_info, attributes=None
-    )
-
-    wrapper_end = datetime.datetime.now()
-    wrapper_duration = wrapper_end - wrapper_begin
-    print(
-        f"Loc inverse (wrapper): {wrapper_duration}, {len(longitudes)} points"
     )
 
     return output
