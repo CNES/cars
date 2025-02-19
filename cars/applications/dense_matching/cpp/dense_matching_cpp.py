@@ -49,9 +49,27 @@ def mask_left_classif_from_right_mask(
     ...
 
 
-def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
+def estimate_right_grid_disp_int(disp_min_grid, disp_max_grid):
     """
-    Estimate right grid min and max.
+    Estimate right grid min and max for int inputs.
+    Correspond to the range of pixels that can be correlated
+    from left -> right.
+    If no left pixels can be associated to right, use global values
+
+    :param disp_min_grid: left disp min grid
+    :type disp_min_grid: numpy ndarray
+    :param disp_max_grid: left disp max grid
+    :type disp_max_grid: numpy ndarray
+
+    :return: disp_min_right_grid, disp_max_right_grid
+    :rtype: numpy ndarray, numpy ndarray
+    """
+    return None, None
+
+
+def estimate_right_grid_disp_float(disp_min_grid, disp_max_grid):
+    """
+    Estimate right grid min and max for float inputs.
     Correspond to the range of pixels that can be correlated
     from left -> right.
     If no left pixels can be associated to right, use global values

@@ -927,15 +927,15 @@ def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
         return dense_matching_cpp.estimate_right_grid_disp_float(
             disp_min_grid, disp_max_grid
         )
-    elif disp_min_grid.dtype in int_types:
+    if disp_min_grid.dtype in int_types:
         return dense_matching_cpp.estimate_right_grid_disp_int(
             disp_min_grid, disp_max_grid
         )
-    else:
-        raise TypeError(
-            "estimate_right_grid_disp does not support"
-            f"{disp_min_grid.dtype} as an input type"
-        )
+
+    raise TypeError(
+        "estimate_right_grid_disp does not support"
+        f"{disp_min_grid.dtype} as an input type"
+    )
 
 
 def optimal_tile_size_pandora_plugin_libsgm(
