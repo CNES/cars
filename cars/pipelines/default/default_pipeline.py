@@ -1822,6 +1822,12 @@ class DefaultPipeline(PipelineTemplate):
                     self.pairs[pair_key]["corrected_grid_left"].attributes[
                         "disp_to_alt_ratio"
                     ],
+                    self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
+                        adv_cst.INPUT_AUX_PATH
+                    ],
+                    self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
+                        adv_cst.INPUT_AUX_INTERP
+                    ],
                     orchestrator=self.cars_orchestrator,
                     pair_folder=os.path.join(
                         self.dump_dir, "ground_truth_reprojection", pair_key

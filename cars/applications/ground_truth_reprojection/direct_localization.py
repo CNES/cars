@@ -36,11 +36,14 @@ from json_checker import And, Checker
 import cars.orchestrator.orchestrator as ocht
 from cars.applications.ground_truth_reprojection import (
     ground_truth_reprojection,
-    ground_truth_reprojection_tools,
+)
+from cars.applications.ground_truth_reprojection import (
+    ground_truth_reprojection_tools as gnd_truth_tools,
 )
 
 # CARS imports
 from cars.core import constants as cst
+from cars.core import inputs
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -122,6 +125,8 @@ class DirectLocalization(
         geom_plugin,
         geom_plugin_dem_median,
         disp_to_alt_ratio,
+        auxiliary_values,
+        auxiliary_interp,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
@@ -248,6 +253,46 @@ class DirectLocalization(
                 cars_ds_name="epipolar_disparity_ground_truth",
             )
 
+            # Save all file that are in inputs
+            if auxiliary_values is not None:
+                for key in auxiliary_values.keys():
+                    if key in (cst.DSM_COLOR, cst.DSM_WEIGHTS_SUM):
+                        option = False
+                    else:
+                        option = True
+
+                    out_file_left_name = os.path.join(
+                        pair_folder, key + "_left_epipolar.tif"
+                    )
+
+                    orchestrator.add_to_save_lists(
+                        out_file_left_name,
+                        key,
+                        epi_disparity_ground_truth_left,
+                        dtype=inputs.rasterio_get_dtype(auxiliary_values[key]),
+                        nodata=inputs.rasterio_get_nodata(
+                            auxiliary_values[key]
+                        ),
+                        cars_ds_name=key,
+                        optional_data=option,
+                    )
+
+                    out_file_right_name = os.path.join(
+                        pair_folder, key + "_right_epipolar.tif"
+                    )
+
+                    orchestrator.add_to_save_lists(
+                        out_file_right_name,
+                        key,
+                        epi_disp_ground_truth_right,
+                        dtype=inputs.rasterio_get_dtype(auxiliary_values[key]),
+                        nodata=inputs.rasterio_get_nodata(
+                            auxiliary_values[key]
+                        ),
+                        cars_ds_name=key,
+                        optional_data=option,
+                    )
+
             # Get saving infos in order to save tiles when they are computed
             [saving_infos_epi_left] = self.orchestrator.get_saving_infos(
                 [epi_disparity_ground_truth_left]
@@ -283,6 +328,8 @@ class DirectLocalization(
                         "epipolar",
                         full_saving_info_left,
                         epi_disparity_ground_truth_left.tiling_grid[row, col],
+                        auxiliary_values,
+                        auxiliary_interp,
                         geom_plugin_dem_median=geom_plugin_dem_median,
                         window_dict=(
                             epi_disparity_ground_truth_left.get_window_as_dict(
@@ -303,6 +350,8 @@ class DirectLocalization(
                         "epipolar",
                         full_saving_info_right,
                         epi_disp_ground_truth_right.tiling_grid[row, col],
+                        auxiliary_values,
+                        auxiliary_interp,
                         geom_plugin_dem_median=geom_plugin_dem_median,
                         reverse=True,
                         window_dict=(
@@ -342,6 +391,46 @@ class DirectLocalization(
                 cars_ds_name="sensor_dsm_ground_truth_right",
             )
 
+            # Save all file that are in inputs
+            if auxiliary_values is not None:
+                for key in auxiliary_values.keys():
+                    if key in (cst.DSM_COLOR, cst.DSM_WEIGHTS_SUM):
+                        option = False
+                    else:
+                        option = True
+
+                    out_file_left_name = os.path.join(
+                        pair_folder, key + "_left_sensor.tif"
+                    )
+
+                    orchestrator.add_to_save_lists(
+                        out_file_left_name,
+                        key,
+                        sensor_dsm_gt_left,
+                        dtype=inputs.rasterio_get_dtype(auxiliary_values[key]),
+                        nodata=inputs.rasterio_get_nodata(
+                            auxiliary_values[key]
+                        ),
+                        cars_ds_name=key,
+                        optional_data=option,
+                    )
+
+                    out_file_right_name = os.path.join(
+                        pair_folder, key + "_right_sensor.tif"
+                    )
+
+                    orchestrator.add_to_save_lists(
+                        out_file_right_name,
+                        key,
+                        sensor_dsm_gt_right,
+                        dtype=inputs.rasterio_get_dtype(auxiliary_values[key]),
+                        nodata=inputs.rasterio_get_nodata(
+                            auxiliary_values[key]
+                        ),
+                        cars_ds_name=key,
+                        optional_data=option,
+                    )
+
             # Get saving infos in order to save tiles when they are computed
             [saving_infos_sensor_left] = self.orchestrator.get_saving_infos(
                 [sensor_dsm_gt_left]
@@ -368,6 +457,8 @@ class DirectLocalization(
                         "sensor",
                         full_saving_info_left,
                         sensor_dsm_gt_left.tiling_grid[row, col],
+                        auxiliary_values,
+                        auxiliary_interp,
                         raster_profile=raster_profile_left,
                         window_dict=sensor_dsm_gt_left.get_window_as_dict(
                             row, col
@@ -392,6 +483,8 @@ class DirectLocalization(
                         "sensor",
                         full_saving_info_right,
                         sensor_dsm_gt_right.tiling_grid[row, col],
+                        auxiliary_values,
+                        auxiliary_interp,
                         raster_profile=raster_profile_right,
                         window_dict=sensor_dsm_gt_right.get_window_as_dict(
                             row, col
@@ -407,6 +500,8 @@ def maps_generation_wrapper(
     target,
     saving_infos,
     window,
+    auxiliary_values,
+    auxiliary_interp,
     raster_profile=None,
     geom_plugin_dem_median=None,
     reverse=False,
@@ -415,8 +510,6 @@ def maps_generation_wrapper(
     """
     Computes ground truth epipolar disparity map and sensor geometry.
 
-    :param dem: path to reference dem
-    :type dem: str
     :param sensor_left: sensor data
         Dict must contain keys: "image", "color", "geomodel",
         "no_data", "mask". Paths must be absolute.
@@ -443,7 +536,7 @@ def maps_generation_wrapper(
     :param window_dict: window as dict
     """
 
-    ground_truth = ground_truth_reprojection_tools.get_ground_truth(
+    ground_truth, direct_loc = gnd_truth_tools.get_ground_truth(
         geom_plugin,
         grid_left,
         sensor_left,
@@ -474,6 +567,48 @@ def maps_generation_wrapper(
         values,
         coords={cst.ROW: rows, cst.COL: cols},
     )
+
+    if auxiliary_values is not None:
+        for key in auxiliary_values.keys():
+            if auxiliary_interp is not None and key in auxiliary_interp:
+                interpolation = auxiliary_interp[key]
+            else:
+                interpolation = "nearest"
+
+            band_description = inputs.get_descriptions_bands(
+                auxiliary_values[key]
+            )
+
+            keep_band = False
+            if band_description[0] is not None or len(band_description) > 1:
+                if len(band_description) == 1:
+                    band_description = np.array([band_description[0]])
+                else:
+                    band_description = list(band_description)
+
+                band_description = [
+                    "band_" + str(i + 1) if v is None else v
+                    for i, v in enumerate(band_description)
+                ]
+
+                outputs_dataset.coords[cst.BAND_IM] = (
+                    key,
+                    band_description,
+                )
+                dim = [key, cst.Y, cst.X]
+                keep_band = True
+            else:
+                dim = [cst.Y, cst.X]
+
+            interp_value = gnd_truth_tools.resample_auxiliary_values(
+                direct_loc,
+                auxiliary_values[key],
+                window,
+                interpolation,
+                keep_band,
+            )
+
+            outputs_dataset[key] = (dim, interp_value)
 
     # Fill datasets based on target
     attributes = {}

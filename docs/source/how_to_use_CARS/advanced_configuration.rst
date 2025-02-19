@@ -1037,17 +1037,21 @@ The structure follows this organization:
                 For this, a dictionary named `ground_truth_dsm` must be added, containing the keys presented in the following table.
                 By default, the used dsm is considered on ellipsoid. If not, fill the `geoid` parameter.
 
-                +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+---------------+----------+
-                | Name                            | Description                                                | Type               | Available value              | Default value | Required |
-                +=================================+============================================================+====================+==============================+===============+==========+
-                | dsm                             | Path to ground truth dsm (Lidar for example)               | string             |                              |               | Yes      |
-                +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+---------------+----------+
-                | geoid                           | DSM geoid.                                                 | bool or string     |                              |  False        | No       |
-                +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+---------------+----------+
+				+---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
+				| Name                            | Description                                                | Type               | Available value              | Default value                                         | Required |
+				+=================================+============================================================+====================+==============================+=======================================================+==========+
+				| dsm                             | Path to ground truth dsm (Lidar for example)               | string             |                              |                                                       | Yes      |
+				+---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
+				| geoid                           | DSM geoid.                                                 | bool or string     |                              |  False                                                | No       |
+				+---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
+				| auxiliary_data                  | The lidar auxiliaries data                                 | dict               |                              |  None                                                 | No       |
+				+---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
+				| auxiliary_data_interpolation    | The lidar auxiliaries data interpolator                    | dict               |                              |  None (nearest if auxiliary_data is not None)         | No       |
+				+---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
 
-                .. note::
+				.. note::
 
-                    The parameter `geoid` refers to the vertical reference of the ground truth DSM. It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to True CARS default geoid is used, if set to False no vertical offset is applied (ellipsoid reference).
+					The parameter `geoid` refers to the vertical reference of the ground truth DSM. It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to True CARS default geoid is used, if set to False no vertical offset is applied (ellipsoid reference).
 
                 Example:
 
@@ -1056,7 +1060,15 @@ The structure follows this organization:
                     "advanced":
                         {
                             "ground_truth_dsm": {
-                                "dsm": "path/to/ground/truth/dsm.tif"
+                                "dsm": "path/to/ground/truth/dsm.tif",
+								"auxiliary_data":{
+									"classification": "path/to/classification.tif",
+									"color": "path/to/color.tif"
+								},
+								"auxiliary_data_interpolation":{
+									"classification": "nearest",
+									"color": "linear"
+								}
                             }
                         }
 

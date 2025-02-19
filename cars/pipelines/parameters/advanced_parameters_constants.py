@@ -49,6 +49,8 @@ ALTITUDE_DELTA_MIN = "altitude_delta_min"
 # ground truth dsm
 INPUT_GROUND_TRUTH_DSM = "dsm"
 INPUT_CLASSIFICATION = "classification"
+INPUT_AUX_PATH = "auxiliary_data"
+INPUT_AUX_INTERP = "auxiliary_data_interpolation"
 INPUT_GEOID = "geoid"
 INPUT_EPSG = "epsg"
 

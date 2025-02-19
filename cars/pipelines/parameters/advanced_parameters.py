@@ -27,7 +27,7 @@ import os
 
 import numpy as np
 import rasterio as rio
-from json_checker import Checker, Or
+from json_checker import Checker, OptionalKey, Or
 
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
@@ -77,6 +77,12 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
 
     # Validate ground truth DSM
     if overloaded_conf[adv_cst.GROUND_TRUTH_DSM]:
+        overloaded_conf[adv_cst.GROUND_TRUTH_DSM][adv_cst.INPUT_AUX_PATH] = (
+            conf[adv_cst.GROUND_TRUTH_DSM].get(adv_cst.INPUT_AUX_PATH, None)
+        )
+        overloaded_conf[adv_cst.GROUND_TRUTH_DSM][adv_cst.INPUT_AUX_INTERP] = (
+            conf[adv_cst.GROUND_TRUTH_DSM].get(adv_cst.INPUT_AUX_INTERP, None)
+        )
         check_ground_truth_dsm_data(overloaded_conf[adv_cst.GROUND_TRUTH_DSM])
 
     if check_epipolar_a_priori:
@@ -225,6 +231,8 @@ def check_ground_truth_dsm_data(conf):
     if isinstance(conf, dict):
         ground_truth_dsm_schema = {
             adv_cst.INPUT_GROUND_TRUTH_DSM: str,
+            OptionalKey(adv_cst.INPUT_AUX_PATH): Or(dict, None),
+            OptionalKey(adv_cst.INPUT_AUX_INTERP): Or(dict, None),
             adv_cst.INPUT_GEOID: Or(None, str, bool),
         }
 
@@ -256,6 +264,28 @@ def check_ground_truth_dsm_data(conf):
                 conf[adv_cst.INPUT_GEOID] = geoid_path
             else:
                 conf[adv_cst.INPUT_GEOID] = None
+
+        path_dict = conf[adv_cst.INPUT_AUX_PATH]
+        if path_dict is not None:
+            for key in path_dict.keys():
+                if not isinstance(path_dict[key], str):
+                    raise RuntimeError("Path should be a string")
+                if not os.path.exists(path_dict[key]):
+                    raise RuntimeError("Path doesn't exist")
+
+        path_interp = conf[adv_cst.INPUT_AUX_INTERP]
+        if path_interp is not None:
+            for key in path_interp.keys():
+                if not isinstance(path_interp[key], str):
+                    raise RuntimeError("interpolator should be a string")
+                if path_interp[key] not in (
+                    "nearest",
+                    "linear",
+                    "cubic",
+                    "slinear",
+                    "quintic",
+                ):
+                    raise RuntimeError("interpolator does not exist")
 
 
 def update_conf(
