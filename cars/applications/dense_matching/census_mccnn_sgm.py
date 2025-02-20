@@ -33,6 +33,7 @@ from typing import Dict, Tuple
 # Third party imports
 import affine
 import numpy as np
+import pandas
 import pandora
 import rasterio
 import xarray as xr
@@ -544,6 +545,7 @@ class CensusMccnnSgm(
         dem_min=None,
         dem_max=None,
         pair_folder=None,
+        loc_inverse_orchestrator=None,
     ):
         """
         Generate disparity grids min and max, with given step
@@ -575,6 +577,8 @@ class CensusMccnnSgm(
         :type dem_max: str
         :param pair_folder: folder used for current pair
         :type pair_folder: str
+        :param loc_inverse_orchestrator: orchestrator to perform inverse locs
+        :type loc_inverse_orchestrator: Orchestrator
 
 
         :return disparity grid range, containing grid min and max
@@ -657,8 +661,6 @@ class CensusMccnnSgm(
             altitude_delta_max,
         ):
             # use local disparity
-            if None not in (dmin, dmax):
-                raise RuntimeError("Mix between local and global mode")
 
             # Get associated alti mean / min / max values
             dem_median_shape = inputs.rasterio_get_size(dem_median)
@@ -817,18 +819,82 @@ class CensusMccnnSgm(
             dem_min_list = dem_min_list[nan_mask]
             dem_max_list = dem_max_list[nan_mask]
 
-            # sensors physical positions
-            (
-                ind_cols_sensor,
-                ind_rows_sensor,
-                _,
-            ) = geom_plugin_with_dem_and_geoid.inverse_loc(
-                sensor_image_right["image"],
-                sensor_image_right["geomodel"],
-                lat_mean,
-                lon_mean,
-                z_coord=dem_median_list,
-            )
+            # if shareloc is used, perform inverse locs sequentially
+            if geom_plugin_with_dem_and_geoid.plugin_name == "SharelocGeometry":
+
+                # sensors physical positions
+                (
+                    ind_cols_sensor,
+                    ind_rows_sensor,
+                    _,
+                ) = geom_plugin_with_dem_and_geoid.inverse_loc(
+                    sensor_image_right["image"],
+                    sensor_image_right["geomodel"],
+                    lat_mean,
+                    lon_mean,
+                    z_coord=dem_median_list,
+                )
+
+            # else (if libgeo is used) perform inverse locs in parallel
+            else:
+
+                num_points = len(dem_median_list)
+
+                if loc_inverse_orchestrator is None:
+                    loc_inverse_orchestrator = grid_orchestrator
+
+                num_workers = loc_inverse_orchestrator.get_conf().get(
+                    "nb_workers", 1
+                )
+
+                loc_inverse_dataset = cars_dataset.CarsDataset(
+                    "points", name="loc_inverse"
+                )
+                step = int(np.ceil(num_points / num_workers))
+                # Create a grid with num_workers elements
+                loc_inverse_dataset.create_grid(1, num_workers, 1, 1, 0, 0)
+
+                # Get saving info in order to save tiles when they are computed
+                [saving_info] = loc_inverse_orchestrator.get_saving_infos(
+                    [loc_inverse_dataset]
+                )
+
+                for task_id in range(0, num_workers):
+                    first_elem = task_id * step
+                    last_elem = min((task_id + 1) * step, num_points)
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=task_id, col=0
+                    )
+                    loc_inverse_dataset[
+                        task_id, 0
+                    ] = loc_inverse_orchestrator.cluster.create_task(
+                        loc_inverse_wrapper
+                    )(
+                        geom_plugin_with_dem_and_geoid,
+                        sensor_image_right["image"],
+                        sensor_image_right["geomodel"],
+                        lat_mean[first_elem:last_elem],
+                        lon_mean[first_elem:last_elem],
+                        dem_median_list[first_elem:last_elem],
+                        full_saving_info,
+                    )
+
+                loc_inverse_orchestrator.add_to_replace_lists(
+                    loc_inverse_dataset
+                )
+
+                loc_inverse_orchestrator.compute_futures(
+                    only_remaining_delayed=[
+                        tile[0] for tile in loc_inverse_dataset.tiles
+                    ]
+                )
+
+                ind_cols_sensor = []
+                ind_rows_sensor = []
+
+                for tile in loc_inverse_dataset.tiles:
+                    ind_cols_sensor += list(tile[0]["col"])
+                    ind_rows_sensor += list(tile[0]["row"])
 
             # Generate epipolar disp grids
             # Get epipolar positions
@@ -1426,3 +1492,47 @@ def compute_disparity_wrapper(
     )
 
     return disp_dataset
+
+
+def loc_inverse_wrapper(
+    geom_plugin,
+    image,
+    geomodel,
+    latitudes,
+    longitudes,
+    altitudes,
+    saving_info=None,
+) -> pandas.DataFrame:
+    """
+    Perform inverse localizations on input coordinates
+    This function will be run as a delayed task.
+
+    :param geom_plugin: geometry plugin used to perform localizations
+    :type geom_plugin: SharelocGeometry
+    :param image: input image path
+    :type image: str
+    :param geomodel: input geometric model
+    :type geomodel: str
+    :param latitudes: input latitude coordinates
+    :type latitudes: np.array
+    :param longitudes: input longitudes coordinates
+    :type longitudes: np.array
+    :param altitudes: input latitude coordinates
+    :type altitudes: np.array
+    :param saving_info: saving info for cars orchestrator
+    :type saving_info: dict
+
+    """
+    col, row, _ = geom_plugin.inverse_loc(
+        image,
+        geomodel,
+        latitudes,
+        longitudes,
+        z_coord=altitudes,
+    )
+    output = pandas.DataFrame({"col": col, "row": row}, copy=False)
+    cars_dataset.fill_dataframe(
+        output, saving_info=saving_info, attributes=None
+    )
+
+    return output

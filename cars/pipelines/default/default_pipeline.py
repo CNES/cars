@@ -1683,6 +1683,7 @@ class DefaultPipeline(PipelineTemplate):
                         dmin=dmin,
                         dmax=dmax,
                         pair_folder=dense_matching_pair_folder,
+                        loc_inverse_orchestrator=self.cars_orchestrator,
                     )
                 )
             elif None in (altitude_delta_min, altitude_delta_max):
@@ -1696,6 +1697,7 @@ class DefaultPipeline(PipelineTemplate):
                         dem_max=dem_max,
                         dem_median=dem_median,
                         pair_folder=dense_matching_pair_folder,
+                        loc_inverse_orchestrator=self.cars_orchestrator,
                     )
                 )
             else:
@@ -1709,6 +1711,7 @@ class DefaultPipeline(PipelineTemplate):
                         altitude_delta_max=altitude_delta_max,
                         dem_median=dem_median,
                         pair_folder=dense_matching_pair_folder,
+                        loc_inverse_orchestrator=self.cars_orchestrator,
                     )
                 )
 
