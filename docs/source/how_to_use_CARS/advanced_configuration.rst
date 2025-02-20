@@ -962,12 +962,12 @@ The structure follows this organization:
             * - geometry_plugin
               - Name of the geometry plugin to use and optional parameters
               - str or dict
-              -
+              - "SharelocGeometry"
               - No
             * - pipeline
               - Name of the pipeline to use
               - str
-              -
+              - "default"
               - No
 
 
