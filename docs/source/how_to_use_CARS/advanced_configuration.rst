@@ -928,7 +928,7 @@ The structure follows this organization:
               - Active epipolar a priori
               - bool
               - False
-              - Yes[Michel J. et al, 2020]
+              - Yes
             * - epipolar_a_priori
               - Provide epipolar a priori information (see section below)
               - dict
@@ -960,14 +960,14 @@ The structure follows this organization:
               -
               - No
             * - geometry_plugin
-              - The plugin to use
-              - str
-              -
+              - Name of the geometry plugin to use and optional parameters
+              - str or dict
+              - "SharelocGeometry"
               - No
             * - pipeline
-              - The pipeline to use
+              - Name of the pipeline to use
               - str
-              -
+              - "default"
               - No
 
 

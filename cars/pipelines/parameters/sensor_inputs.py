@@ -33,7 +33,6 @@ from json_checker import Checker, OptionalKey, Or
 from cars.core import inputs, preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
-from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import (
     depth_map_inputs_constants as depth_map_cst,
 )
@@ -225,7 +224,7 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
     return overloaded_conf
 
 
-def check_geometry_plugin(conf_inputs, conf_advanced, conf_geom_plugin):
+def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     """
     Check the geometry plugin with inputs
 
@@ -250,14 +249,6 @@ def check_geometry_plugin(conf_inputs, conf_advanced, conf_geom_plugin):
             default_alt=sens_cst.CARS_DEFAULT_ALT,
         )
     )
-
-    # If use a priori, override initial elevation with dem_median
-    if adv_cst.USE_EPIPOLAR_A_PRIORI in conf_advanced:
-        if conf_advanced[adv_cst.USE_EPIPOLAR_A_PRIORI]:
-            if adv_cst.DEM_MEDIAN in conf_advanced[adv_cst.TERRAIN_A_PRIORI]:
-                conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] = (
-                    conf_advanced[adv_cst.TERRAIN_A_PRIORI][adv_cst.DEM_MEDIAN]
-                )
 
     # Check products consistency with this plugin
     overloaded_conf_inputs = conf_inputs.copy()

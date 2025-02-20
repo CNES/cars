@@ -111,10 +111,10 @@ def generate_input_json(
     if geometry_plugin_name is None:
         geometry_plugin_name = get_geometry_plugin().plugin_name
 
-    config["geometry_plugin"] = geometry_plugin_name
-
-    # overload pipeline
-    config["pipeline"] = "default"
+    config["advanced"] = {
+        "geometry_plugin": geometry_plugin_name,
+        "pipeline": "default",
+    }
 
     # Create keys
     if "applications" not in config:

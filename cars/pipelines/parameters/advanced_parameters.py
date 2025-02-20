@@ -30,14 +30,21 @@ import rasterio as rio
 from json_checker import Checker, OptionalKey, Or
 
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
+from cars.pipelines.parameters import depth_map_inputs
+from cars.pipelines.parameters import depth_map_inputs_constants as depth_cst
+from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
+from cars.pipelines.parameters import sensor_inputs
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
 from cars.pipelines.pipeline_constants import ADVANCED
 
 
-def check_advanced_parameters(conf, check_epipolar_a_priori=True):
+def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     """
     Check the advanced parameters consistency
 
+    :param inputs: configuration of inputs
+    :type inputs: dict
     :param conf: configuration of advanced parameters
     :type conf: dict
     :param check_epipolar_a_priori: use epipolar a priori parameters
@@ -99,6 +106,45 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
             adv_cst.TERRAIN_A_PRIORI, {}
         )
 
+    # Check geometry plugin
+    geom_plugin_without_dem_and_geoid = None
+    geom_plugin_with_dem_and_geoid = None
+    dem_generation_roi = None
+
+    # If use a priori, override initial elevation with dem_median
+    if adv_cst.USE_EPIPOLAR_A_PRIORI in overloaded_conf:
+        if overloaded_conf[adv_cst.USE_EPIPOLAR_A_PRIORI]:
+            if adv_cst.DEM_MEDIAN in overloaded_conf[adv_cst.TERRAIN_A_PRIORI]:
+                inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] = (
+                    overloaded_conf[adv_cst.TERRAIN_A_PRIORI][
+                        adv_cst.DEM_MEDIAN
+                    ]
+                )
+
+    if inputs[sens_cst.SENSORS] is not None:
+        # Check geometry plugin and overwrite geomodel in conf inputs
+        (
+            inputs,
+            overloaded_conf[adv_cst.GEOMETRY_PLUGIN],
+            geom_plugin_without_dem_and_geoid,
+            geom_plugin_with_dem_and_geoid,
+            dem_generation_roi,
+        ) = sensor_inputs.check_geometry_plugin(
+            inputs, conf.get(adv_cst.GEOMETRY_PLUGIN, None)
+        )
+    elif depth_cst.DEPTH_MAPS in inputs or dsm_cst.DSMS in inputs:
+        # If there's an initial elevation with
+        # point clouds as inputs, generate a plugin (used in dsm_filling)
+        (
+            overloaded_conf[adv_cst.GEOMETRY_PLUGIN],
+            geom_plugin_with_dem_and_geoid,
+        ) = depth_map_inputs.check_geometry_plugin(
+            inputs, conf.get(adv_cst.GEOMETRY_PLUGIN, None)
+        )
+
+    # Check pipeline
+    overloaded_conf[adv_cst.PIPELINE] = conf.get(adv_cst.PIPELINE, "default")
+
     # Validate inputs
     schema = {
         adv_cst.DEBUG_WITH_ROI: bool,
@@ -107,6 +153,8 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
         adv_cst.GROUND_TRUTH_DSM: Or(dict, str),
         adv_cst.PHASING: Or(dict, None),
         adv_cst.PERFORMANCE_MAP_CLASSES: Or(None, list),
+        adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
+        adv_cst.PIPELINE: str,
     }
     if check_epipolar_a_priori:
         schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool
@@ -163,7 +211,14 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
     ):
         validate_epipolar_a_priori(overloaded_conf, checker_epipolar)
 
-    return overloaded_conf
+    return (
+        inputs,
+        overloaded_conf,
+        overloaded_conf[adv_cst.GEOMETRY_PLUGIN],
+        geom_plugin_without_dem_and_geoid,
+        geom_plugin_with_dem_and_geoid,
+        dem_generation_roi,
+    )
 
 
 def check_performance_classes(performance_map_classes):
