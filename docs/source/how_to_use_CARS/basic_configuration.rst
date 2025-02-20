@@ -262,25 +262,21 @@ The structure follows this organization:
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *dsm_mean*                 | Path to the dsm_mean file                                         | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-        	| *dsm_std*                  | Path to the dsm_std file                                          | string         |               | No       |
+                | *dsm_std*                  | Path to the dsm_std file                                          | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *dsm_inf_mean*             | Path to the dsm_inf_mean file                                     | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-        	| *dsm_inf_std*              | Path to the dsm_inf_std file                                      | string         |               | No       |
+                | *dsm_inf_std*              | Path to the dsm_inf_std file                                      | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *dsm_sup_mean*             | Path to the dsm_sup_mean file                                     | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *dsm_sup_std*              | Path to the dsm_sup_std file                                      | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-        	| *dsm_n_pts*                | Path to the dsm_n_pts file                                        | string         |               | No       |
+                | *dsm_n_pts*                | Path to the dsm_n_pts file                                        | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *dsm_pts_in_cell*          | Path to the dsm_pts_in_cell file                                  | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-        	| *confidence_from_ambiguity*| Path to the confidence_from_ambiguity file                        | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *confidence_from_risk_min* | Path to the confidence_from_risk_min file                         | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *confidence_from_risk_max* | Path to the confidence_from_risk_min file                         | string         |               | No       |
+                | *confidence*	             |  Dict of paths to the confidences                                 | dict           |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
 
             .. tab:: ROI
@@ -473,7 +469,7 @@ The structure follows this organization:
                 (see output parameters).
 
                 Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
-		
+
     .. tab:: Orchestrator
 
         CARS can distribute the computations chunks by using either dask (local or distributed cluster) or multiprocessing libraries.
