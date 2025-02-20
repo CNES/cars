@@ -24,10 +24,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip setuptools
+        python -m pip install --upgrade pip meson-python meson ninja setuptools_scm setuptools wheel pybind11
         pip install --upgrade cython numpy
-        pip install --upgrade numba
-        pip install .[dev,docs,notebook,pandora_mccnn]
+        pip install --no-build-isolation --editable .[dev,docs,notebook,pandora_mccnn]
         pip list
     - name: Unit Tests
       run: |

@@ -285,13 +285,17 @@ def test_outlier_removal_epipolar_statistical(use_median):
     half_window_size = 15
     dev_factor = 1
 
-    with rasterio.open(
-        absolute_data_path("input/depth_map_gizeh/X.tif")
-    ) as x_ds, rasterio.open(
-        absolute_data_path("input/depth_map_gizeh/Y.tif")
-    ) as y_ds, rasterio.open(
-        absolute_data_path("input/depth_map_gizeh/Z.tif")
-    ) as z_ds:
+    with (
+        rasterio.open(
+            absolute_data_path("input/depth_map_gizeh/X.tif")
+        ) as x_ds,
+        rasterio.open(
+            absolute_data_path("input/depth_map_gizeh/Y.tif")
+        ) as y_ds,
+        rasterio.open(
+            absolute_data_path("input/depth_map_gizeh/Z.tif")
+        ) as z_ds,
+    ):
         x_values = x_ds.read(1)
         y_values = y_ds.read(1)
         z_values = z_ds.read(1)
@@ -374,13 +378,17 @@ def test_outlier_removal_epipolar_small_components(
     radius = 1
     half_window_size = 7
 
-    with rasterio.open(
-        absolute_data_path("input/depth_map_gizeh/X.tif")
-    ) as x_ds, rasterio.open(
-        absolute_data_path("input/depth_map_gizeh/Y.tif")
-    ) as y_ds, rasterio.open(
-        absolute_data_path("input/depth_map_gizeh/Z.tif")
-    ) as z_ds:
+    with (
+        rasterio.open(
+            absolute_data_path("input/depth_map_gizeh/X.tif")
+        ) as x_ds,
+        rasterio.open(
+            absolute_data_path("input/depth_map_gizeh/Y.tif")
+        ) as y_ds,
+        rasterio.open(
+            absolute_data_path("input/depth_map_gizeh/Z.tif")
+        ) as z_ds,
+    ):
         x_values = x_ds.read(1)
         y_values = y_ds.read(1)
         z_values = z_ds.read(1)

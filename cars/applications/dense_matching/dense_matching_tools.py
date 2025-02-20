@@ -25,7 +25,6 @@ This module is responsible for the dense matching algorithms:
 
 # Standard imports
 import logging
-import math
 from typing import Dict, List
 
 import numpy as np
@@ -33,7 +32,6 @@ import pandora
 import xarray as xr
 
 # Third party imports
-from numba import njit, prange
 from pandora import constants as p_cst
 from pandora.check_configuration import check_datasets
 from pandora.state_machine import PandoraMachine
@@ -52,6 +50,8 @@ from cars.applications.dense_matching import (
 from cars.conf import mask_cst as msk_cst
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
+
+from .cpp import dense_matching_cpp
 
 
 def get_margins(margin, disp_min, disp_max):
@@ -314,7 +314,7 @@ def create_disp_dataset(  # noqa: C901
 
         # mask left classif outside right sensor
         if epi_msk_right is not None:
-            left_classif = mask_left_classif_from_right_mask(
+            left_classif = mask_left_classif_from_right_mask(  # here
                 left_classif,
                 epi_msk_right == msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                 np.floor(disp_min_grid).astype(np.int16),
@@ -344,6 +344,7 @@ def create_disp_dataset(  # noqa: C901
             left_from_right_classif.shape[0],
             axis=0,
         )
+        # pylint: disable=unsupported-assignment-operation
         left_from_right_classif[left_mask_stacked] = 0
 
     # Merge right classif
@@ -480,7 +481,6 @@ def add_crop_info(disp_ds, cropped_range):
     return disp_ds
 
 
-@njit
 def estimate_right_classif_on_left(
     right_classif, disp_map, disp_mask, disp_min, disp_max
 ):
@@ -501,45 +501,11 @@ def estimate_right_classif_on_left(
     :return: right classif on left image
     :rtype: np nadarray
     """
-
-    left_from_right_classif = np.empty(right_classif.shape)
-
-    data_shape = left_from_right_classif.shape
-    for row in prange(data_shape[1]):  # pylint: disable=E1133
-        for col in prange(data_shape[2]):  # pylint: disable=E1133
-            # find classif
-            disp = disp_map[row, col]
-            valid = not np.isnan(disp)
-            if disp_mask is not None:
-                valid = disp_mask[row, col]
-            if valid:
-                # direct value
-                disp = int(math.floor(disp))
-                left_from_right_classif[:, row, col] = right_classif[
-                    :, row, col + disp
-                ]
-            else:
-                # estimate with global range
-                classif_in_range = np.full(
-                    (left_from_right_classif.shape[0]), False
-                )
-
-                for classif_c in prange(  # pylint: disable=E1133
-                    classif_in_range.shape[0]
-                ):
-                    for col_classif in prange(  # pylint: disable=E1133
-                        max(0, col + disp_min),
-                        min(data_shape[2], col + disp_max),
-                    ):
-                        if right_classif[classif_c, row, col_classif]:
-                            classif_in_range[classif_c] = True
-
-                left_from_right_classif[:, row, col] = classif_in_range
-
-    return left_from_right_classif
+    return dense_matching_cpp.estimate_right_classif_on_left(
+        right_classif, disp_map, disp_mask, disp_min, disp_max
+    )
 
 
-@njit
 def mask_left_classif_from_right_mask(
     left_classif, right_mask, disp_min, disp_max
 ):
@@ -547,7 +513,7 @@ def mask_left_classif_from_right_mask(
     Mask left classif with right mask.
 
     :param left_classif: right classification
-    :type right_left_classifclassif: np ndarray
+    :type left_classif: np ndarray
     :param right_mask: right mask
     :type right_mask: np ndarray
     :param disp_min: disparity min
@@ -558,24 +524,9 @@ def mask_left_classif_from_right_mask(
     :return: masked left classif
     :rtype: np nadarray
     """
-
-    data_shape = left_classif.shape
-    for row in prange(data_shape[1]):  # pylint: disable=E1133
-        for col in prange(data_shape[2]):  # pylint: disable=E1133
-            # estimate with global range
-            all_masked = True
-            for col_classif in prange(  # pylint: disable=E1133
-                max(0, col + disp_min[row, col]),
-                min(data_shape[2], col + disp_max[row, col]),
-            ):
-                if not right_mask[row, col_classif]:
-                    all_masked = False
-
-            if all_masked:
-                # Remove classif
-                left_classif[:, row, col] = False
-
-    return left_classif
+    return dense_matching_cpp.mask_left_classif_from_right_mask(
+        left_classif, right_mask, disp_min, disp_max
+    )
 
 
 def merge_classif_left_right(
@@ -945,7 +896,6 @@ def compute_disparity(
     return disp_dataset
 
 
-@njit()
 def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
     """
     Estimate right grid min and max.
@@ -961,37 +911,31 @@ def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
     :return: disp_min_right_grid, disp_max_right_grid
     :rtype: numpy ndarray, numpy ndarray
     """
+    float_types = [np.float16, np.float32, np.float64, np.float128]
+    int_types = [
+        int,
+        np.int8,
+        np.uint8,
+        np.int16,
+        np.uint16,
+        np.int32,
+        np.uint32,
+        np.int64,
+        np.uint64,
+    ]
+    if disp_min_grid.dtype in float_types:
+        return dense_matching_cpp.estimate_right_grid_disp_float(
+            disp_min_grid, disp_max_grid
+        )
+    if disp_min_grid.dtype in int_types:
+        return dense_matching_cpp.estimate_right_grid_disp_int(
+            disp_min_grid, disp_max_grid
+        )
 
-    global_left_min = np.min(disp_min_grid)
-    global_left_max = np.max(disp_max_grid)
-
-    d_shp = disp_min_grid.shape
-
-    disp_min_right_grid = np.empty(d_shp)
-    disp_max_right_grid = np.empty(d_shp)
-
-    for row in prange(d_shp[0]):  # pylint: disable=not-an-iterable
-        for col in prange(d_shp[1]):  # pylint: disable=not-an-iterable
-            min_right = d_shp[1]
-            max_right = 0
-            is_correlated_left = False
-            for left_col in prange(d_shp[1]):  # pylint: disable=not-an-iterable
-                left_min = disp_min_grid[row, left_col] + left_col
-                left_max = disp_max_grid[row, left_col] + left_col
-                if left_min <= col <= left_max:
-                    is_correlated_left = True
-                    # can be found, is candidate to min and max
-                    min_right = min(min_right, left_col - col)
-                    max_right = max(max_right, left_col - col)
-
-            if is_correlated_left:
-                disp_min_right_grid[row, col] = min_right
-                disp_max_right_grid[row, col] = max_right
-            else:
-                disp_min_right_grid[row, col] = -global_left_max
-                disp_max_right_grid[row, col] = -global_left_min
-
-    return disp_min_right_grid, disp_max_right_grid
+    raise TypeError(
+        "estimate_right_grid_disp does not support"
+        f"{disp_min_grid.dtype} as an input type"
+    )
 
 
 def optimal_tile_size_pandora_plugin_libsgm(
