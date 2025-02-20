@@ -142,7 +142,7 @@ def test_end2end_dsm_fusion():
         #         )
         #     ),
         # )
-        
+
         # copy2(
         #     os.path.join(out_dir, "dump_dir/rasterization/", "weights.tif"),
         #     absolute_data_path(
@@ -171,7 +171,7 @@ def test_end2end_dsm_fusion():
         #         )
         #     ),
         # )
-        
+
         # copy2(
         #     os.path.join(out_dir, "dump_dir", "rasterization",
         #     "classification.tif"),
@@ -2005,9 +2005,6 @@ def test_end2end_ventoux_unique_split():
                         ],
                     },
                 },
-<<<<<<< HEAD
-                "output": {"directory": output_path, "resolution": 0.5},
-=======
                 "geometry_plugin": geometry_plugin_name,
                 "output": {
                     "directory": output_path,
@@ -2015,7 +2012,6 @@ def test_end2end_ventoux_unique_split():
                     "auxiliary": {"ambiguity": True},
                 },
                 "pipeline": "dense_depth_maps_to_dense_dsm",
->>>>>>> 6ec3984a (test: change ref)
                 "applications": {
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
