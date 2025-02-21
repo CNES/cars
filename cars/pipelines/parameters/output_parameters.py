@@ -114,6 +114,11 @@ def check_output_parameters(conf):
     ] = overloaded_conf[output_constants.AUXILIARY].get(
         output_constants.AUX_FILLING, False
     )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_AMBIGUITY
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_AMBIGUITY, False
+    )
 
     # Check schema
     output_schema = {
@@ -136,6 +141,7 @@ def check_output_parameters(conf):
         output_constants.AUX_PERFORMANCE_MAP: bool,
         output_constants.AUX_CONTRIBUTING_PAIR: bool,
         output_constants.AUX_FILLING: bool,
+        output_constants.AUX_AMBIGUITY: bool,
     }
 
     checker_auxiliary = Checker(auxiliary_schema)

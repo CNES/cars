@@ -28,6 +28,8 @@ import logging
 import os
 import traceback
 
+from cars.core import constants as cst
+
 # CARS imports
 from cars.orchestrator.registry.abstract_registry import (
     AbstractCarsDatasetRegistry,
@@ -278,7 +280,7 @@ class SingleCarsDatasetSaver:
         self.optional_data_list.append(optional_data)
         self.save_pc_by_pair_list.append(save_by_pair)
 
-    def save(self, future_result):
+    def save(self, future_result):  # noqa: C901 : too complex
         """
         Save future result
 
@@ -289,7 +291,20 @@ class SingleCarsDatasetSaver:
         try:
             if self.cars_ds.dataset_type == "arrays":
                 if not self.already_seen:
-                    self.add_confidences(future_result)
+                    self.add_confidences(future_result, cst.RASTER_CONFIDENCE)
+                    self.add_confidences(future_result, cst.RASTER_AMBIGUITY)
+
+                    # delete doublon because of the confidences adding
+                    for index, value in enumerate(self.file_names):
+                        if (
+                            cst.RASTER_AMBIGUITY in value
+                            and cst.DSM_ALT not in value
+                            and "depth_map" not in value
+                        ):
+                            self.tags.pop(index)
+                            self.dtypes.pop(index)
+                            self.nodatas.pop(index)
+                            self.file_names.pop(index)
 
                     # generate descriptors
                     for count, file_name in enumerate(self.file_names):
@@ -326,7 +341,20 @@ class SingleCarsDatasetSaver:
                 # type points
                 if not self.already_seen:
                     # get the confidence tags available in future result
-                    self.add_confidences(future_result)
+                    self.add_confidences(future_result, cst.RASTER_CONFIDENCE)
+                    self.add_confidences(future_result, cst.RASTER_AMBIGUITY)
+
+                    # delete doublon because of the confidences adding
+                    for index, value in enumerate(self.file_names):
+                        if (
+                            cst.RASTER_AMBIGUITY in value
+                            and cst.DSM_ALT not in value
+                            and "depth_map" not in value
+                        ):
+                            self.tags.pop(index)
+                            self.dtypes.pop(index)
+                            self.nodatas.pop(index)
+                            self.file_names.pop(index)
 
                     # create tmp_folder
                     self.folder_name = self.file_names[0]
@@ -353,7 +381,7 @@ class SingleCarsDatasetSaver:
             logging.error(traceback.format_exc())
             logging.error("Tile not saved")
 
-    def add_confidences(self, future_result):
+    def add_confidences(self, future_result, confidence_type):
         """
         Add all confidence data in the register
         Read confidence from future result outputs and rewrite
@@ -365,17 +393,18 @@ class SingleCarsDatasetSaver:
             Check if val key string contains confidence subtring
             """
             if isinstance(val, str):
-                return "confidence" in val
+                return confidence_type in val
             return False
 
         confidence_tags = list(filter(test_conf, future_result.keys()))
+
         index = None
-        if "confidence" in self.tags:
+        if confidence_type in self.tags:
             # get the confidence indexes in the registered tag
             index_table = [
                 idx
                 for idx, value in enumerate(self.tags)
-                if value == "confidence"
+                if value == confidence_type
             ]  # self.tags.index("confidence")
             for index in reversed(index_table):
                 ref_confidence_path = self.file_names[index]
@@ -387,12 +416,11 @@ class SingleCarsDatasetSaver:
                 self.nodatas.pop(index)
                 self.file_names.pop(index)
                 self.optional_data_list.pop(index)
-
                 for item in confidence_tags:
                     self.tags.append(item)
                     self.file_names.append(
                         ref_confidence_path.replace(
-                            "confidence", item.replace(".", "_")
+                            confidence_type, item.replace(".", "_")
                         )
                     )
                     self.dtypes.append(confidence_dtype)

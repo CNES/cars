@@ -300,9 +300,18 @@ def compute_vector_raster_and_stats(
     split_indexes.append(len(values_bands))
 
     # 2. confidences
-    confidences_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT, list_computed_layers
-    )
+    if list_computed_layers is not None:
+        if cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT not in list_computed_layers:
+            confidences_indexes = find_indexes_in_point_cloud(
+                cloud, cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT, list_computed_layers
+            )
+        else:
+            confidences_indexes = find_indexes_in_point_cloud(
+                cloud, cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT, list_computed_layers
+            )
+    else:
+        confidences_indexes = []
+
     values_bands.extend(confidences_indexes)
     split_indexes.append(len(confidences_indexes))
 
@@ -453,7 +462,7 @@ def compute_vector_raster_and_stats(
     )
 
 
-def create_raster_dataset(
+def create_raster_dataset(  # noqa: C901
     raster: np.ndarray,
     weights_sum: np.ndarray,
     x_start: float,
@@ -799,8 +808,8 @@ def rasterize(
         msk = np.isnan(out[0, :, :])
 
     if confidences is not None:
-        for key in confidences:
-            confidences[key] = confidences[key].reshape(shape_out)
+        for key, value in confidences.items():
+            confidences[key] = value.reshape(shape_out)
 
     if interval is not None:
         interval = interval.reshape(shape_out + (-1,))

@@ -124,7 +124,7 @@ class LineOfSightIntersection(
 
         return overloaded_conf
 
-    def save_triangulation_output(
+    def save_triangulation_output(  # noqa: C901 function is too complex
         self,
         epipolar_point_cloud,
         sensor_image_left,
@@ -137,6 +137,7 @@ class LineOfSightIntersection(
         save_output_mask=False,
         save_output_filling=False,
         save_output_performance_map=False,
+        save_output_ambiguity=False,
     ):
         """
         Save the triangulation output. The different TIFs composing the depth
@@ -173,6 +174,8 @@ class LineOfSightIntersection(
         :type save_output_filling: bool
         :param save_output_performance_map: Save performance map in output_dir
         :type save_output_performance_map: bool
+        :param save_output_ambiguity: Save ambiguity in output_dir
+        :type save_output_ambiguity: bool
         """
 
         if dump_dir:
@@ -255,6 +258,17 @@ class LineOfSightIntersection(
                 dtype=np.float64,
             )
 
+        if save_output_ambiguity or dump_dir:
+            map_output_dir = output_dir if save_output_ambiguity else dump_dir
+            self.orchestrator.add_to_save_lists(
+                os.path.join(map_output_dir, "ambiguity.tif"),
+                cst.EPI_AMBIGUITY,
+                epipolar_point_cloud,
+                cars_ds_name="depth_map_ambiguity",
+                optional_data=True,
+                dtype=np.float64,
+            )
+
         if save_output_classification or dump_dir:
             classif_output_dir = (
                 output_dir if save_output_classification else dump_dir
@@ -311,6 +325,7 @@ class LineOfSightIntersection(
         save_output_mask=False,
         save_output_filling=False,
         save_output_performance_map=False,
+        save_output_ambiguity=False,
         pair_key="PAIR_0",
     ):
         """
@@ -330,6 +345,8 @@ class LineOfSightIntersection(
         :type save_output_filling: bool
         :param save_output_performance_map: Save performance map in output_dir
         :type save_output_performance_map: bool
+        :param save_output_ambiguity: Save ambiguity in output_dir
+        :type save_output_ambiguity: bool
         :param pair_key: name of the current pair
         :type pair_key: str
         """
@@ -353,6 +370,11 @@ class LineOfSightIntersection(
         if save_output_performance_map:
             index[cst.INDEX_DEPTH_MAP_PERFORMANCE_MAP] = os.path.join(
                 pair_key, "performance_map.tif"
+            )
+
+        if save_output_ambiguity:
+            index[cst.INDEX_DEPTH_MAP_AMBIGUITY] = os.path.join(
+                pair_key, "ambiguity.tif"
             )
 
         if save_output_classification:
@@ -433,6 +455,7 @@ class LineOfSightIntersection(
         save_output_mask=False,
         save_output_filling=False,
         save_output_performance_map=False,
+        save_output_ambiguity=False,
     ):
         """
         Run Triangulation application.
@@ -524,6 +547,9 @@ class LineOfSightIntersection(
         :param save_output_performance_map: Save performance map in
                 depth_map_dir
         :type save_output_performance_map: bool
+        :param save_output_ambiguity: Save ambiguity in
+                depth_map_dir
+        :type save_output_ambiguity: bool
 
         :return: point cloud \
                 The CarsDataset contains:
@@ -682,6 +708,7 @@ class LineOfSightIntersection(
             save_output_mask,
             save_output_filling,
             save_output_performance_map,
+            save_output_ambiguity,
         )
         self.fill_index(
             save_output_coordinates,
@@ -690,6 +717,7 @@ class LineOfSightIntersection(
             save_output_mask,
             save_output_filling,
             save_output_performance_map,
+            save_output_ambiguity,
             pair_key,
         )
         # Save as point cloud

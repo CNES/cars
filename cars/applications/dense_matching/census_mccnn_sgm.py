@@ -101,6 +101,7 @@ class CensusMccnnSgm(
         self.generate_performance_map = self.used_config[
             "generate_performance_map"
         ]
+        self.generate_ambiguity = self.used_config["generate_ambiguity"]
         self.perf_ambiguity_threshold = self.used_config[
             "perf_ambiguity_threshold"
         ]
@@ -200,6 +201,10 @@ class CensusMccnnSgm(
             "generate_performance_map",
             overloaded_conf["save_intermediate_data"],
         )
+        overloaded_conf["generate_ambiguity"] = conf.get(
+            "generate_ambiguity",
+            overloaded_conf["save_intermediate_data"],
+        )
         overloaded_conf["generate_confidence_intervals"] = conf.get(
             "generate_confidence_intervals",
             overloaded_conf["save_intermediate_data"],
@@ -215,6 +220,7 @@ class CensusMccnnSgm(
             generate_performance_map=overloaded_conf[
                 "generate_performance_map"
             ],
+            generate_ambiguity=overloaded_conf["generate_ambiguity"],
             generate_confidence_intervals=overloaded_conf[
                 "generate_confidence_intervals"
             ],
@@ -263,6 +269,7 @@ class CensusMccnnSgm(
             "disp_max_threshold": Or(None, int),
             "save_intermediate_data": bool,
             "generate_performance_map": bool,
+            "generate_ambiguity": bool,
             "generate_confidence_intervals": bool,
             "perf_eta_max_ambiguity": float,
             "perf_eta_max_risk": float,

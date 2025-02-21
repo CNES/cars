@@ -23,6 +23,7 @@
 # attributes however we need, to stick to the "everything is attribute" logic
 # introduced in issue#895
 # pylint: disable=attribute-defined-outside-init
+# pylint: disable=too-many-nested-blocks
 """
 CARS default pipeline class file
 """
@@ -635,9 +636,17 @@ class DefaultPipeline(PipelineTemplate):
                 .get(out_cst.AUXILIARY, {})
                 .get(out_cst.AUX_PERFORMANCE_MAP, False)
             )
+            generate_ambiguity = (
+                self.used_conf[OUTPUT]
+                .get(out_cst.AUXILIARY, {})
+                .get(out_cst.AUX_AMBIGUITY, False)
+            )
             dense_matching_config = used_conf.get("dense_matching", {})
             if generate_performance_map is True:
                 dense_matching_config["generate_performance_map"] = True
+            if generate_ambiguity is True:
+                dense_matching_config["generate_ambiguity"] = True
+
             self.dense_matching_app = Application(
                 "dense_matching", cfg=dense_matching_config
             )
@@ -2058,6 +2067,8 @@ class DefaultPipeline(PipelineTemplate):
                 and self.auxiliary[out_cst.AUX_MASK],
                 save_output_performance_map=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_PERFORMANCE_MAP],
+                save_output_ambiguity=bool(depth_map_dir)
+                and self.auxiliary[out_cst.AUX_AMBIGUITY],
             )
 
             if self.quit_on_app("triangulation"):
@@ -2250,6 +2261,17 @@ class DefaultPipeline(PipelineTemplate):
             else None
         )
 
+        ambiguity_file_name = (
+            os.path.join(
+                self.out_dir,
+                out_cst.DSM_DIRECTORY,
+                "ambiguity.tif",
+            )
+            if self.save_output_dsm
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_AMBIGUITY]
+            else None
+        )
+
         classif_file_name = (
             os.path.join(
                 self.out_dir,
@@ -2308,6 +2330,7 @@ class DefaultPipeline(PipelineTemplate):
             color_file_name=color_file_name,
             classif_file_name=classif_file_name,
             performance_map_file_name=performance_map_file_name,
+            ambiguity_file_name=ambiguity_file_name,
             mask_file_name=mask_file_name,
             contributing_pair_file_name=contributing_pair_file_name,
             filling_file_name=filling_file_name,
@@ -2357,12 +2380,31 @@ class DefaultPipeline(PipelineTemplate):
             for key in dsm_dict.keys():
                 for path_name in dsm_dict[key].keys():
                     if dsm_dict[key][path_name] is not None:
-                        if path_name not in dict_path:
-                            dict_path[path_name] = [dsm_dict[key][path_name]]
+                        if not isinstance(dsm_dict[key][path_name], dict):
+                            if path_name not in dict_path:
+                                dict_path[path_name] = [
+                                    dsm_dict[key][path_name]
+                                ]
+                            else:
+                                dict_path[path_name].append(
+                                    dsm_dict[key][path_name]
+                                )
                         else:
-                            dict_path[path_name].append(
-                                dsm_dict[key][path_name]
-                            )
+                            for confidence_path_name in dsm_dict[key][
+                                path_name
+                            ].keys():
+                                if confidence_path_name not in dict_path:
+                                    dict_path[confidence_path_name] = [
+                                        dsm_dict[key][path_name][
+                                            confidence_path_name
+                                        ]
+                                    ]
+                                else:
+                                    dict_path[confidence_path_name].append(
+                                        dsm_dict[key][path_name][
+                                            confidence_path_name
+                                        ]
+                                    )
 
             color_file_name = (
                 os.path.join(
@@ -2391,6 +2433,16 @@ class DefaultPipeline(PipelineTemplate):
                     "performance_map.tif",
                 )
                 if "performance_map" in dict_path
+                else None
+            )
+
+            ambiguity_bool = any("ambiguity" in key for key in dict_path)
+            ambiguity_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                )
+                if ambiguity_bool
                 else None
             )
 
@@ -2441,6 +2493,7 @@ class DefaultPipeline(PipelineTemplate):
                 classif_file_name,
                 filling_file_name,
                 performance_map_file_name,
+                ambiguity_file_name,
                 mask_file_name,
                 contributing_all_pair_file_name,
             )

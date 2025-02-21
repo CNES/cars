@@ -40,6 +40,7 @@ AUX_CLASSIFICATION = "classification"
 AUX_PERFORMANCE_MAP = "performance_map"
 AUX_FILLING = "filling"
 AUX_CONTRIBUTING_PAIR = "contributing_pair"
+AUX_AMBIGUITY = "ambiguity"
 
 
 # Output tree constants

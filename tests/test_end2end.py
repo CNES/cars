@@ -142,7 +142,6 @@ def test_end2end_dsm_fusion():
         #         )
         #     ),
         # )
-        #
         # copy2(
         #     os.path.join(out_dir, "dump_dir/rasterization/", "weights.tif"),
         #     absolute_data_path(
@@ -171,7 +170,7 @@ def test_end2end_dsm_fusion():
         #         )
         #     ),
         # )
-        #
+
         # copy2(
         #     os.path.join(out_dir, "dump_dir", "rasterization",
         #     "classification.tif"),
@@ -1088,6 +1087,8 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["epsg"] = 32631
         # update output product
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
+
+        input_config_dense_dsm["output"]["auxiliary"] = {"ambiguity": True}
         # resolution
         input_config_dense_dsm["output"]["resolution"] = 0.5
 
@@ -1134,8 +1135,7 @@ def test_end2end_ventoux_unique():
         #  ),
         # )
         # copy2(
-        #  os.path.join(out_dir,  "dump_dir", "rasterization",
-        #                                "confidence_from_ambiguity.tif"),
+        #  os.path.join(out_dir,  "dsm", "confidence_from_ambiguity.tif"),
         #  absolute_data_path(
         #      os.path.join(
         #          ref_output_dir,
@@ -1176,8 +1176,8 @@ def test_end2end_ventoux_unique():
         #  ),
         # )
         # copy2(
-        #  os.path.join(out_dir,  "dump_dir", "rasterization",
-        #                        "confidence_from_ambiguity_before.tif"),
+        #  os.path.join(out_dir,  "dsm",
+        #              "confidence_from_ambiguity_before.tif"),
         #  absolute_data_path(
         #      os.path.join(
         #          ref_output_dir,
@@ -1229,8 +1229,7 @@ def test_end2end_ventoux_unique():
         assert_same_images(
             os.path.join(
                 out_dir,
-                "dump_dir",
-                "rasterization",
+                "dsm",
                 "confidence_from_ambiguity.tif",
             ),
             absolute_data_path(
@@ -1293,8 +1292,7 @@ def test_end2end_ventoux_unique():
         assert_same_images(
             os.path.join(
                 out_dir,
-                "dump_dir",
-                "rasterization",
+                "dsm",
                 "confidence_from_ambiguity_before.tif",
             ),
             absolute_data_path(
@@ -1940,6 +1938,7 @@ def test_end2end_ventoux_unique_split():
             "filling": True,
             "color": True,
             "performance_map": True,
+            "ambiguity": True,
         }
 
         pc_pipeline = default.DefaultPipeline(input_config_pc)
@@ -1951,9 +1950,7 @@ def test_end2end_ventoux_unique_split():
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
             depth_map_path = os.path.join(out_dir, "depth_map", "left_right")
-            dense_matching_path = os.path.join(
-                out_dir, "dump_dir", "dense_matching", "left_right"
-            )
+
             output_path = os.path.join(directory2, "outresults_dsm_from_pc")
 
             input_dsm_config = {
@@ -1975,12 +1972,12 @@ def test_end2end_ventoux_unique_split():
                             ),
                             "confidence": {
                                 "confidence_from_ambiguity2": os.path.join(
-                                    dense_matching_path,
-                                    "epi_confidence_from_ambiguity.tif",
+                                    depth_map_path,
+                                    "confidence_from_ambiguity.tif",
                                 ),
                                 "confidence_from_ambiguity1": os.path.join(
-                                    dense_matching_path,
-                                    "epi_confidence_from_ambiguity_before.tif",
+                                    depth_map_path,
+                                    "confidence_from_ambiguity_before.tif",
                                 ),
                             },
                         }
@@ -2007,7 +2004,11 @@ def test_end2end_ventoux_unique_split():
                         ],
                     },
                 },
-                "output": {"directory": output_path, "resolution": 0.5},
+                "output": {
+                    "directory": output_path,
+                    "resolution": 0.5,
+                    "auxiliary": {"ambiguity": True},
+                },
                 "applications": {
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
@@ -2101,8 +2102,8 @@ def test_end2end_ventoux_unique_split():
             #  ),
             # )
             # copy2(
-            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
-            #                            "confidence_from_ambiguity1.tif"),
+            #  os.path.join(out_dir_dsm,  "dsm",
+            #               "confidence_from_ambiguity1.tif"),
             #  absolute_data_path(
             #      os.path.join(
             #          ref_output_dir,
@@ -2112,8 +2113,8 @@ def test_end2end_ventoux_unique_split():
             #  ),
             # )
             # copy2(
-            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
-            #                            "confidence_from_ambiguity2.tif"),
+            #  os.path.join(out_dir_dsm,  "dsm",
+            #                "confidence_from_ambiguity2.tif"),
             #  absolute_data_path(
             #      os.path.join(
             #          ref_output_dir,
@@ -2212,8 +2213,7 @@ def test_end2end_ventoux_unique_split():
             assert_same_images(
                 os.path.join(
                     out_dir_dsm,
-                    "dump_dir",
-                    "rasterization",
+                    "dsm",
                     "confidence_from_ambiguity1.tif",
                 ),
                 absolute_data_path(
@@ -2229,8 +2229,7 @@ def test_end2end_ventoux_unique_split():
             assert_same_images(
                 os.path.join(
                     out_dir_dsm,
-                    "dump_dir",
-                    "rasterization",
+                    "dsm",
                     "confidence_from_ambiguity2.tif",
                 ),
                 absolute_data_path(
@@ -2266,6 +2265,8 @@ def test_end2end_ventoux_unique_split():
                 input_dsm_config["advanced"] = {"merging": False}
 
             input_dsm_config["output"]["product_level"] = ["dsm"]
+            input_dsm_config["output"]["auxiliary"] = {"ambiguity": True}
+
             input_dsm_config["output"]["directory"] = (
                 input_dsm_config["output"]["directory"] + "_no_merging"
             )
@@ -2337,8 +2338,8 @@ def test_end2end_ventoux_unique_split():
             #  ),
             # )
             # copy2(
-            # os.path.join(out_dir_dsm, "dump_dir", "rasterization",
-            #                  "confidence_from_ambiguity1.tif"),
+            # os.path.join(out_dir_dsm, "dsm",
+            #           "confidence_from_ambiguity1.tif"),
             #  absolute_data_path(
             #      os.path.join(
             #          ref_output_dir,
@@ -2348,8 +2349,8 @@ def test_end2end_ventoux_unique_split():
             #  ),
             # )
             # copy2(
-            #  os.path.join(out_dir_dsm, "dump_dir", "rasterization",
-            #                           "confidence_from_ambiguity2.tif"),
+            #  os.path.join(out_dir_dsm, "dsm",
+            #               "confidence_from_ambiguity2.tif"),
             #  absolute_data_path(
             #      os.path.join(
             #          ref_output_dir,
@@ -2453,8 +2454,7 @@ def test_end2end_ventoux_unique_split():
             assert_same_images(
                 os.path.join(
                     out_dir_dsm,
-                    "dump_dir",
-                    "rasterization",
+                    "dsm",
                     "confidence_from_ambiguity1.tif",
                 ),
                 absolute_data_path(
@@ -2470,8 +2470,7 @@ def test_end2end_ventoux_unique_split():
             assert_same_images(
                 os.path.join(
                     out_dir_dsm,
-                    "dump_dir",
-                    "rasterization",
+                    "dsm",
                     "confidence_from_ambiguity2.tif",
                 ),
                 absolute_data_path(
@@ -2752,6 +2751,8 @@ def test_end2end_use_epipolar_a_priori():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # product level
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
+        input_config_dense_dsm["output"]["auxiliary"] = {"ambiguity": True}
+
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
         # resolution
@@ -2809,8 +2810,8 @@ def test_end2end_use_epipolar_a_priori():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir,  "dump_dir", "rasterization",
-        #                                   "confidence_from_ambiguity.tif"),
+        #     os.path.join(out_dir,  "dsm",
+        #               "confidence_from_ambiguity_cars_1.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -2839,9 +2840,8 @@ def test_end2end_use_epipolar_a_priori():
         assert_same_images(
             os.path.join(
                 out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_ambiguity.tif",
+                "dsm",
+                "confidence_from_ambiguity_cars_1.tif",
             ),
             absolute_data_path(
                 os.path.join(
@@ -3482,6 +3482,7 @@ def test_end2end_ventoux_with_color():
 
         # update pipeline
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
+        input_config_dense_dsm["output"]["auxiliary"] = {"ambiguity": True}
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
 
@@ -3501,9 +3502,8 @@ def test_end2end_ventoux_with_color():
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "dump_dir",
-                    "rasterization",
-                    "confidence_from_ambiguity.tif",
+                    "dsm",
+                    "confidence_from_ambiguity_cars_1.tif",
                 )
             )
             is True
@@ -4563,11 +4563,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -62
-            assert out_disp_compute["global_disp_min"] < -61
+            assert out_disp_compute["global_disp_min"] > -68
+            assert out_disp_compute["global_disp_min"] < -60
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 43
-            assert out_disp_compute["global_disp_max"] < 45
+            assert out_disp_compute["global_disp_max"] < 46
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -4791,11 +4791,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -63
-            assert out_disp_compute["global_disp_min"] < -61
+            assert out_disp_compute["global_disp_min"] > -68
+            assert out_disp_compute["global_disp_min"] < -60
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 43
-            assert out_disp_compute["global_disp_max"] < 45
+            assert out_disp_compute["global_disp_max"] < 46
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
