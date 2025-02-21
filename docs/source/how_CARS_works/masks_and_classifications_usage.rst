@@ -14,7 +14,23 @@ Mask
 
 | The masks are resampled in epipolar geometry with the resampling application.
 | The masked values are not taken into account in the matching process (sparse or dense matching method) to avoid mismatch and useless processing.
-| Furthermore, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typicaly.
+| Furthermore, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typically.
+
+Below, an example of an area close to Nice with its associated water mask (calculated with SLURP) and the DSM calculated by masking the water zones.
+
+.. list-table:: Example mask usage
+   :widths: auto
+   :align: center
+
+   * - **Satellite Image**
+     - **Water Mask**
+     - **Masked DSM**
+   * - .. image:: ../images/mask_satellite_nice.png
+        :width: 100%
+     - .. image:: ../images/mask_watermask_nice.png
+        :width: 100%
+     - .. image:: ../images/mask_dsm_nice.png
+        :width: 100%
 
 Classification
 --------------
@@ -24,3 +40,20 @@ Classification
 
 | All non-zeros values of the classification image will be considered as invalid data.
 | The classification can be used in each application by band name list selection parameter. See application ``classification`` parameter :ref:`advanced configuration`.
+
+Below, an example of an area close to Nice with its associated classification image (calculated with SLURP). The first band corresponds to the water class and the second band to the vegetation class.
+
+.. list-table:: Example classification usage
+   :widths: auto
+   :align: center
+
+   * - **Satellite Image**
+     - **Classification (Band 1: "Water")**
+     - **Classification (Band 2: "Vegetation")**
+   * - .. image:: ../images/classif_satellite_nice.png
+        :width: 100%
+     - .. image:: ../images/classif_watermask_nice.png
+        :width: 100%
+     - .. image:: ../images/classif_vegetationmask_nice.png
+        :width: 100%
+
