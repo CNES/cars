@@ -955,6 +955,7 @@ def test_end2end_ventoux_unique():
         gt_used_conf_orchestrator = {
             "orchestrator": {
                 "mode": "multiprocessing",
+                "mp_mode": "forkserver",
                 "nb_workers": NB_WORKERS,
                 "profiling": {
                     "mode": "cars_profiling",
@@ -2668,6 +2669,7 @@ def test_end2end_use_epipolar_a_priori():
         gt_used_conf_orchestrator = {
             "orchestrator": {
                 "mode": "multiprocessing",
+                "mp_mode": "forkserver",
                 "nb_workers": NB_WORKERS,
                 "profiling": {
                     "mode": "cars_profiling",
