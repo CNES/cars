@@ -63,7 +63,7 @@ dependencies = [
     "cars-resample==0.1.*",
     "cars-filter==0.1.*",
     "vlsift==0.1.*",
-    "shareloc==0.2.5",
+    "shareloc==0.2.6",
     "bulldozer-dtm==1.0.*",
 ]
 
@@ -155,3 +155,6 @@ cars-starter = "cars.starter:cli"
 cars-extractroi = "cars.extractroi:main"
 cars-dashboard = "cars.orchestrator.tiles_profiler:main"
 cars-devibrate = "cars.devibrate:cli"
+
+[tool.cibuildwheel]
+skip = ["pp*", "*-win32"]
