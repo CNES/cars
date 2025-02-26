@@ -21,7 +21,7 @@
 """
 Contains abstract function for multiprocessing Cluster
 """
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 import copy
 import itertools
@@ -41,8 +41,6 @@ from functools import wraps
 from multiprocessing import freeze_support
 from queue import Queue
 
-import psutil
-
 # Third party imports
 from json_checker import And, Checker, Or
 
@@ -61,6 +59,9 @@ from cars.orchestrator.cluster.mp_cluster.mp_objects import (
     MpJob,
 )
 from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
+from cars.orchestrator.cluster.mp_cluster.multiprocessing_profiler import (
+    MultiprocessingProfiler,
+)
 
 SYS_PLATFORM = platform.system().lower()
 IS_WIN = "windows" == SYS_PLATFORM
@@ -70,7 +71,6 @@ TERMINATE = 1
 
 # Refresh time between every iteration, to prevent from freezing
 REFRESH_TIME = 0.05
-RAM_PER_WORKER_CHECK_SLEEP_TIME = 5
 
 job_counter = itertools.count()
 
@@ -186,16 +186,12 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             self.refresh_worker._state = RUN
             self.refresh_worker.start()
 
-            # Memory usage of Pool
-            self.memory_check_thread = threading.Thread(
-                target=check_pool_memory_usage,
-                args=(
-                    self.pool,
-                    self.checked_conf_cluster["max_ram_per_worker"],
-                ),
+            # Profile pool
+            self.profiler = MultiprocessingProfiler(
+                self.pool,
+                self.out_dir,
+                self.checked_conf_cluster["max_ram_per_worker"],
             )
-            self.memory_check_thread.daemon = True
-            self.memory_check_thread.start()
 
     def check_conf(self, conf):
         """
@@ -271,6 +267,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         Cleanup cluster
 
         """
+
+        # Save profiling
+        self.profiler.save_plot()
 
         # Terminate worker
         self.refresh_worker._state = TERMINATE  # pylint: disable=W0212
@@ -840,30 +839,3 @@ def update_job_id_priority(
     res = list(dict.fromkeys(res))
 
     return res
-
-
-def check_pool_memory_usage(pool, max_ram_per_worker):
-    """
-    Check memory usage of each worker in pool
-
-    :param pool: pool of worker
-    :param max_ram_per_worker: max ram to use per worker
-    """
-    while True:
-        for worker in pool._pool:  # pylint: disable=protected-access
-            pid = worker.pid
-            try:
-                process = psutil.Process(pid)
-                memory_usage_mb = process.memory_info().rss / (1024 * 1024)
-                if memory_usage_mb > max_ram_per_worker:
-                    logging.info(
-                        "Process {} is using {} Mb > "
-                        "max_ram_per_worker = {} Mb".format(
-                            pid, memory_usage_mb, max_ram_per_worker
-                        )
-                    )
-            except psutil.NoSuchProcess:
-                # Process no longer exists
-                pass
-
-        time.sleep(RAM_PER_WORKER_CHECK_SLEEP_TIME)

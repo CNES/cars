@@ -761,13 +761,12 @@ def get_slurm_data():
     slurm_nb_cpu = None
     slurm_max_ram = None
     try:
-        cmd = ["scontrol", "show", "job", "$SLURM_JOB_ID"]
         sub_res = subprocess.run(
-            cmd,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            "scontrol show job $SLURM_JOB_ID",
+            shell=True,
+            capture_output=True,
             text=True,
+            check=False,
         )
         slurm_infos = sub_res.stdout
 

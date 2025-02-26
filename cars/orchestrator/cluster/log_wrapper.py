@@ -736,7 +736,7 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
         out_dir,
         "logs",
         "profiling",
-        "profiling_plots.pdf",
+        "profiling_plots.png",
     )
     plt.savefig(profiling_plot)
 
