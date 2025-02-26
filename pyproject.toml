@@ -37,7 +37,7 @@ classifiers = [
 requires-python = ">= 3.9"
 # cars packages dependencies
 dependencies = [
-    "numpy>=1.17.0",
+    "numpy<2.0.0,>=1.17.0",
     "scipy>=1.7.1,!=1.10.0",
     "matplotlib",
     "affine",
@@ -58,7 +58,7 @@ dependencies = [
     "laspy[laszip]",
     "tbb==2020.3.254", # Intel optim for numba: KO for 2021 versions
     "numba",
-    "pandora[sgm]==1.6.3a1",
+    "pandora[sgm]==1.6.3",
     "cars-rasterize==0.2.*",
     "cars-resample==0.1.*",
     "cars-filter==0.1.*",
