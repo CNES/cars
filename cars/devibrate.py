@@ -536,14 +536,14 @@ def cars_devibrate(
     matches = os.path.join(
         out_dir,
         "dump_dir",
-        "sparse_matching",
+        "sparse_matching.sift",
         "_".join(pairing[0]),
         "filtered_matches.npy",
     )
     if not os.path.isfile(matches):
         raise RuntimeError(
-            "Matches must be saved : \n Add in CARS configuration file : \n"
-            " Set applications.sparse_matching.save_intermediate_data to true"
+            "Matches must be saved: Set applications.sparse_matching."
+            "sift.save_intermediate_data to true in CARS configuration file."
         )
 
     dsm_path = os.path.join(out_dir, "dsm", "dsm.tif")
