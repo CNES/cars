@@ -755,7 +755,7 @@ def get_slurm_data():
         value = None
         if match:
             value = match.group(1)
-        return value
+        return int(value)
 
     on_slurm = False
     slurm_nb_cpu = None
