@@ -1453,10 +1453,12 @@ def compute_disparity_wrapper(
 
     # Crop interval if needed
     mask_crop = np.zeros(disp_min_grid.shape, dtype=int)
+    is_cropped = False
     if crop_with_range is not None:
         current_min = np.min(disp_min_grid)
         current_max = np.max(disp_max_grid)
         if (current_max - current_min) > crop_with_range:
+            is_cropped = True
             logging.warning("disparity range for current tile is cropped")
             # crop
             new_min = (
@@ -1494,7 +1496,7 @@ def compute_disparity_wrapper(
         saving_info=saving_info,
         window=cars_dataset.get_window_dataset(left_image_object),
         profile=cars_dataset.get_profile_rasterio(left_image_object),
-        attributes=None,
+        attributes={cst.CROPPED_DISPARITY_RANGE: is_cropped},
         overlaps=None,  # overlaps are removed
     )
 

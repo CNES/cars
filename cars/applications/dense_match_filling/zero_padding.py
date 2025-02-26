@@ -38,6 +38,7 @@ from cars.applications.dense_match_filling import fill_disp_tools as fd_tools
 from cars.applications.dense_match_filling.dense_match_filling import (
     DenseMatchFilling,
 )
+from cars.core import constants as cst
 from cars.data_structures import cars_dataset
 
 
@@ -268,12 +269,15 @@ def fill_disparity_zeros_wrapper(
     result = copy.copy(disp)
 
     # Fill with attributes
+    attributes = {
+        cst.CROPPED_DISPARITY_RANGE: (ocht.get_disparity_range_cropped(disp))
+    }
     cars_dataset.fill_dataset(
         result,
         saving_info=saving_info,
         window=cars_dataset.window_array_to_dict(window),
         profile=None,
-        attributes=None,
+        attributes=attributes,
         overlaps=cars_dataset.overlap_array_to_dict(overlap),
     )
 

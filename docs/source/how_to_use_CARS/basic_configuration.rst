@@ -491,10 +491,12 @@ The structure follows this organization:
             `sequential` orchestrator purposes are mostly for studies, debug and notebooks. If you want to use it with large data, consider using a ROI and Epipolar A Priori. Only tiles needed for the specified ROI will be computed. If Epipolar A priori is not specified, Epipolar Resampling and Sparse Matching will be performed on the whole image, no matter what ROI field is filled with.
 
         .. note::
-            `auto` mode is a shortcut for *multiprocessing* orchestrator with parameters *nb_workers* and *max_ram_per_worker* set according to machine ressources and other parameters set to default value.
-            This mode does not allow additional parameters.
+            `auto` mode is a shortcut for *multiprocessing* orchestrator with parameters *nb_workers* and *max_ram_per_worker* are set:
+            * *max_ram_per_worker* : 2000
+            * *nb_workers* : Computed accordingly to the available RAM.
 
-            If CARS is launched on HPC cluster, this mode is not recommended because parameters would be set according to the full node resources.
+            At least 2000 Mb of RAM must be available to run CARS in auto mode.
+
             In this case, use multiprocessing mode and fill the parameters *nb_workers* and *max_ram_per_worker* according to the resources you requested.
 
 

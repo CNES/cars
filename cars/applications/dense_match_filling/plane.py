@@ -525,13 +525,17 @@ def wrapper_copy_disparity(
         disp, ["plane.hole_center", "plane.hole_border"]
     )
 
+    attributes = {
+        cst.CROPPED_DISPARITY_RANGE: (ocht.get_disparity_range_cropped(disp))
+    }
+
     # Fill with attributes
     cars_dataset.fill_dataset(
         res,
         saving_info=saving_info,
         window=cars_dataset.window_array_to_dict(window),
         profile=None,
-        attributes=None,
+        attributes=attributes,
         overlaps=cars_dataset.overlap_array_to_dict(overlap),
     )
 

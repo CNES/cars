@@ -1099,7 +1099,10 @@ def rasterization_wrapper(
     )
 
     # Fill raster
-    attributes = {"color_type": color_dtype}
+    attributes = {
+        "color_type": color_dtype,
+        cst.CROPPED_DISPARITY_RANGE: (ocht.get_disparity_range_cropped(cloud)),
+    }
     if raster is not None:
         cars_dataset.fill_dataset(
             raster,

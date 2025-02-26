@@ -47,6 +47,7 @@ from cars.applications.point_cloud_outlier_removal import (
 from cars.applications.triangulation.triangulation_tools import (
     generate_point_cloud_file_names,
 )
+from cars.core import constants as cst
 from cars.core import projection
 from cars.data_structures import cars_dataset
 
@@ -477,7 +478,7 @@ def small_component_removal_wrapper(
     new_cloud.attrs = copy.deepcopy(cloud.attrs)
 
     # Get current epsg
-    cloud_attributes = cars_dataset.get_attributes_dataframe(new_cloud)
+    cloud_attributes = cars_dataset.get_attributes(new_cloud)
     cloud_epsg = cloud_attributes["epsg"]
     current_epsg = cloud_epsg
 
@@ -625,10 +626,15 @@ def epipolar_small_component_removal_wrapper(
 
         # Fill attributes for LAZ saving
         color_type = point_cloud_tools.get_color_type([filtered_cloud])
+
         attributes = {
             "epsg": cloud_epsg,
             "color_type": color_type,
+            cst.CROPPED_DISPARITY_RANGE: ocht.get_disparity_range_cropped(
+                cloud
+            ),
         }
+
         cars_dataset.fill_dataframe(
             flatten_filtered_cloud,
             saving_info=saving_info_flatten,

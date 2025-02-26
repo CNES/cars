@@ -41,6 +41,8 @@ from functools import wraps
 from multiprocessing import freeze_support
 from queue import Queue
 
+import psutil
+
 # Third party imports
 from json_checker import And, Checker, Or
 
@@ -68,6 +70,7 @@ TERMINATE = 1
 
 # Refresh time between every iteration, to prevent from freezing
 REFRESH_TIME = 0.05
+RAM_PER_WORKER_CHECK_SLEEP_TIME = 5
 
 job_counter = itertools.count()
 
@@ -183,6 +186,17 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             self.refresh_worker._state = RUN
             self.refresh_worker.start()
 
+            # Memory usage of Pool
+            self.memory_check_thread = threading.Thread(
+                target=check_pool_memory_usage,
+                args=(
+                    self.pool,
+                    self.checked_conf_cluster["max_ram_per_worker"],
+                ),
+            )
+            self.memory_check_thread.daemon = True
+            self.memory_check_thread.start()
+
     def check_conf(self, conf):
         """
         Check configuration
@@ -208,7 +222,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         # Modify some env variables for memory  usage
         # TODO
-        # set max_ram_per_worker = total_ram / nb_worker or 4000 by default
         # set ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS = 1
 
         # Overload conf
@@ -827,3 +840,30 @@ def update_job_id_priority(
     res = list(dict.fromkeys(res))
 
     return res
+
+
+def check_pool_memory_usage(pool, max_ram_per_worker):
+    """
+    Check memory usage of each worker in pool
+
+    :param pool: pool of worker
+    :param max_ram_per_worker: max ram to use per worker
+    """
+    while True:
+        for worker in pool._pool:  # pylint: disable=protected-access
+            pid = worker.pid
+            try:
+                process = psutil.Process(pid)
+                memory_usage_mb = process.memory_info().rss / (1024 * 1024)
+                if memory_usage_mb > max_ram_per_worker:
+                    logging.info(
+                        "Process {} is using {} Mb > "
+                        "max_ram_per_worker = {} Mb".format(
+                            pid, memory_usage_mb, max_ram_per_worker
+                        )
+                    )
+            except psutil.NoSuchProcess:
+                # Process no longer exists
+                pass
+
+        time.sleep(RAM_PER_WORKER_CHECK_SLEEP_TIME)
