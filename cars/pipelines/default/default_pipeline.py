@@ -42,12 +42,15 @@ from cars.applications.application import Application
 from cars.applications.dem_generation import (
     dem_generation_constants as dem_gen_cst,
 )
-from cars.applications.dem_generation import dem_generation_tools
 from cars.applications.grid_generation import grid_correction
 from cars.applications.point_cloud_fusion import pc_tif_tools
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
+from cars.applications.sparse_matching.sparse_matching_tools import (
+    transform_triangulated_matches_to_dataframe,
+)
+from cars.core import constants_disparity as cst_disp
 from cars.core import preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands, rasterio_get_epsg
@@ -1218,47 +1221,31 @@ class DefaultPipeline(PipelineTemplate):
                         ].attributes["disp_to_alt_ratio"],
                     )
 
-                    self.cars_orchestrator.breakpoint()
-
-                    self.pairs[pair_key]["pandora_matches_array"] = (
-                        self.sparse_mtch_pandora_app.filter_matches(
-                            self.pairs[pair_key][
-                                "pandora_epipolar_matches_left"
-                            ],
-                            self.pairs[pair_key]["corrected_grid_left"],
-                            self.pairs[pair_key]["corrected_grid_right"],
-                            geom_plugin,
-                            orchestrator=self.cars_orchestrator,
-                            pair_key=pair_key,
-                            pair_folder=os.path.join(
-                                self.dump_dir,
-                                "sparse_matching.pandora",
-                                pair_key,
-                            ),
-                            save_matches=(
-                                self.sparse_mtch_pandora_app.get_save_matches()
-                            ),
-                        )
-                    )
-
-                    matches = np.row_stack(
-                        (
-                            self.pairs[pair_key]["pandora_matches_array"],
-                            self.pairs[pair_key]["corrected_matches_array"],
-                        )
-                    )
+                    matches = self.pairs[pair_key][
+                        "pandora_epipolar_matches_left"
+                    ]
                 else:
                     matches = self.pairs[pair_key]["corrected_matches_array"]
 
                 # Triangulate matches
-                self.pairs[pair_key]["triangulated_matches"] = (
-                    dem_generation_tools.triangulate_sparse_matches(
+                triangulated_matches_dataset = (
+                    self.triangulation_application.run(
                         self.pairs[pair_key]["sensor_image_left"],
                         self.pairs[pair_key]["sensor_image_right"],
-                        self.pairs[pair_key]["grid_left"],
+                        self.pairs[pair_key]["corrected_grid_left"],
                         self.pairs[pair_key]["corrected_grid_right"],
                         matches,
-                        geom_plugin,
+                        self.geom_plugin_without_dem_and_geoid,
+                        self.pairs[pair_key]["new_epipolar_image_left"],
+                        orchestrator=self.cars_orchestrator,
+                    )
+                )
+
+                self.cars_orchestrator.breakpoint()
+
+                self.pairs[pair_key]["triangulated_matches"] = (
+                    transform_triangulated_matches_to_dataframe(
+                        triangulated_matches_dataset
                     )
                 )
 
@@ -1475,7 +1462,7 @@ class DefaultPipeline(PipelineTemplate):
                     # Transform matches to new grids
                     new_grid_matches_array = (
                         geom_plugin.transform_matches_from_grids(
-                            matches,
+                            self.pairs[pair_key]["corrected_matches_array"],
                             self.pairs[pair_key]["corrected_grid_left"],
                             self.pairs[pair_key]["corrected_grid_right"],
                             self.pairs[pair_key]["new_grid_left"],
@@ -1538,14 +1525,22 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 if use_global_disp_range:
                     # Triangulate new matches
-                    self.pairs[pair_key]["triangulated_matches"] = (
-                        dem_generation_tools.triangulate_sparse_matches(
+                    triangulated_matches_dataset = (
+                        self.triangulation_application.run(
                             self.pairs[pair_key]["sensor_image_left"],
                             self.pairs[pair_key]["sensor_image_right"],
                             self.pairs[pair_key]["corrected_grid_left"],
                             self.pairs[pair_key]["corrected_grid_right"],
                             matches,
-                            geometry_plugin=geom_plugin,
+                            self.geom_plugin_without_dem_and_geoid,
+                            self.pairs[pair_key]["new_epipolar_image_left"],
+                            orchestrator=self.cars_orchestrator,
+                        )
+                    )
+
+                    self.pairs[pair_key]["triangulated_matches"] = (
+                        transform_triangulated_matches_to_dataframe(
+                            triangulated_matches_dataset
                         )
                     )
 
@@ -2011,12 +2006,12 @@ class DefaultPipeline(PipelineTemplate):
             epipolar_point_cloud = self.triangulation_application.run(
                 self.pairs[pair_key]["sensor_image_left"],
                 self.pairs[pair_key]["sensor_image_right"],
-                new_epipolar_image_left,
                 self.pairs[pair_key]["corrected_grid_left"],
                 self.pairs[pair_key]["corrected_grid_right"],
                 filled_with_2_epipolar_disparity_map,
-                self.epsg,
                 self.geom_plugin_without_dem_and_geoid,
+                new_epipolar_image_left,
+                self.epsg,
                 denoising_overload_fun=denoising_overload_fun,
                 source_pc_names=self.pairs_names,
                 orchestrator=self.cars_orchestrator,
