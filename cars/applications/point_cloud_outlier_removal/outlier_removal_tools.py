@@ -368,15 +368,17 @@ def epipolar_statistical_filtering(
 
     projection.point_cloud_conversion_dataset(epipolar_ds, epsg)
 
-    outlier_filter.epipolar_statistical_outlier_filtering(
-        epipolar_ds[cst.X],
-        epipolar_ds[cst.Y],
-        epipolar_ds[cst.Z],
-        k,
-        half_window_size,
-        dev_factor,
-        use_median,
-    )
+    if not np.all(np.isnan(epipolar_ds[cst.Z])):
+
+        outlier_filter.epipolar_statistical_outlier_filtering(
+            epipolar_ds[cst.X],
+            epipolar_ds[cst.Y],
+            epipolar_ds[cst.Z],
+            k,
+            half_window_size,
+            dev_factor,
+            use_median,
+        )
 
     projection.point_cloud_conversion_dataset(epipolar_ds, 4326)
 
