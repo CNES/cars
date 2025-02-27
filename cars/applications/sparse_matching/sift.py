@@ -134,9 +134,7 @@ class Sift(SparseMatching, short_name=["sift"]):
         overloaded_conf["elevation_delta_lower_bound"] = conf.get(
             "elevation_delta_lower_bound", None
         )
-        overloaded_conf["decimation_factor"] = conf.get(
-            "decimation_factor", 100
-        )
+        overloaded_conf["decimation_factor"] = conf.get("decimation_factor", 30)
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
             "elevation_delta_upper_bound", None
         )

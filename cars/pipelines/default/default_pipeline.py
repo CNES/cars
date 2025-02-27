@@ -867,9 +867,6 @@ class DefaultPipeline(PipelineTemplate):
                 )
             )
 
-        if self.sparse_mtch_sift_app.get_decimation_factor() == 100:
-            self.sparse_mtch_sift_app.set_decimation_factor(30)
-
         return application_conf
 
     def sensor_to_depth_maps(self):  # noqa: C901
@@ -1445,7 +1442,7 @@ class DefaultPipeline(PipelineTemplate):
                     # Estimate grid_correction
                     (
                         self.pairs[pair_key]["grid_correction_coef"],
-                        matches,
+                        self.pairs[pair_key]["corrected_matches_array"],
                         self.pairs[pair_key]["corrected_matches_cars_ds"],
                         _,
                         _,
