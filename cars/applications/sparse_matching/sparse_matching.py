@@ -36,7 +36,6 @@ from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 from cars.core import constants as cst
-from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 
 
@@ -253,6 +252,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_matches_left,
         grid_left,
         grid_right,
+        geom_plugin,
         orchestrator=None,
         pair_key="pair_0",
         pair_folder=None,
@@ -312,7 +312,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
                         row, col
                     ].to_numpy()
 
-                    sensor_matches = AbstractGeometry.matches_to_sensor_coords(
+                    sensor_matches = geom_plugin.matches_to_sensor_coords(
                         grid_left,
                         grid_right,
                         epipolar_matches,

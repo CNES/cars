@@ -1039,6 +1039,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pairs[pair_key]["sensor_image_right"],
                     self.pairs[pair_key]["grid_left"],
                     self.pairs[pair_key]["grid_right"],
+                    geom_plugin,
                     orchestrator=self.cars_orchestrator,
                     pair_folder=os.path.join(
                         self.dump_dir, "resampling", "initial", pair_key
@@ -1105,6 +1106,7 @@ class DefaultPipeline(PipelineTemplate):
                         self.pairs[pair_key]["epipolar_matches_left"],
                         self.pairs[pair_key]["grid_left"],
                         self.pairs[pair_key]["grid_right"],
+                        geom_plugin,
                         orchestrator=self.cars_orchestrator,
                         pair_key=pair_key,
                         pair_folder=os.path.join(
@@ -1175,6 +1177,7 @@ class DefaultPipeline(PipelineTemplate):
                         self.pairs[pair_key]["sensor_image_right"],
                         self.pairs[pair_key]["corrected_grid_left"],
                         self.pairs[pair_key]["corrected_grid_right"],
+                        geom_plugin,
                         orchestrator=self.cars_orchestrator,
                         pair_folder=os.path.join(
                             self.dump_dir,
@@ -1779,6 +1782,7 @@ class DefaultPipeline(PipelineTemplate):
                 self.pairs[pair_key]["sensor_image_right"],
                 self.pairs[pair_key]["corrected_grid_left"],
                 self.pairs[pair_key]["corrected_grid_right"],
+                geom_plugin,
                 orchestrator=self.cars_orchestrator,
                 pair_folder=os.path.join(
                     self.dump_dir, "resampling", "corrected_grid", pair_key
