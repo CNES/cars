@@ -47,6 +47,10 @@ TOTAL_PROCESS_MEMORY = "total_process_memory"
 AVAILABLE_RAM = "available_ram"
 TOTAL_RAM = "total_ram"
 
+MAIN_CPU_USAGE = "main_cpu_usage"
+TOTAL_PROCESS_CPU_USAGE = "total Proces_cpu_usage"
+MAIN_AND_PROCESS_CPU = "main_and_process_cpu"
+
 
 class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
     """
@@ -81,6 +85,9 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
                 TOTAL_PROCESS_MEMORY,
                 AVAILABLE_RAM,
                 TOTAL_RAM,
+                MAIN_CPU_USAGE,
+                TOTAL_PROCESS_CPU_USAGE,
+                MAIN_AND_PROCESS_CPU,
             ]
         )
         # Memory usage of Pool
@@ -122,6 +129,21 @@ def get_process_memory(process):
     return process.memory_info().rss / (1024 * 1024)
 
 
+def get_cpu_usage(process):
+    """
+    Get cpu usage
+
+    :param process: Process to monitor
+    """
+
+    try:
+        cpu_usage = process.cpu_percent(interval=1)
+    except Exception:
+        cpu_usage = 0
+
+    return cpu_usage
+
+
 def save_figure_in_thread(to_fill_dataframe, file_path):
     """
     Save data during compute
@@ -129,12 +151,11 @@ def save_figure_in_thread(to_fill_dataframe, file_path):
     :param to_fill_dataframe: dataframe to fill
     :param file_path: path to save path
     """
-    time.sleep(20)
 
     while True:
+        time.sleep(SAVE_TIME)
         # Save file
         save_data(to_fill_dataframe, file_path)
-        time.sleep(SAVE_TIME)
 
 
 def check_pool_memory_usage(
@@ -163,11 +184,14 @@ def check_pool_memory_usage(
 
         # Check main process
         main_current_memory = get_process_memory(main_process)
+        main_process_cpu = get_cpu_usage(main_process)
 
         # Check workers
         main_and_processes_total = main_current_memory
         total_memory = 0
         max_process_ram = 0
+        processes_cpu = 0
+        total_cpu = main_process_cpu
         for worker in pool._pool:  # pylint: disable=protected-access
             pid = worker.pid
             try:
@@ -177,6 +201,7 @@ def check_pool_memory_usage(
                 # Add to metrics
                 max_process_ram = max(max_process_ram, memory_usage_mb)
                 total_memory += memory_usage_mb
+                processes_cpu += get_cpu_usage(process)
 
                 # Check memory to inform user
                 if memory_usage_mb > max_ram_per_worker:
@@ -193,6 +218,8 @@ def check_pool_memory_usage(
         main_and_processes_total += total_memory
         available_ram_mb = main_and_processes_total + available
 
+        total_cpu += processes_cpu
+
         # Add to dataframe
         to_fill_dataframe.loc[len(to_fill_dataframe)] = [
             minutes,
@@ -202,6 +229,9 @@ def check_pool_memory_usage(
             total_memory,
             available_ram_mb,
             total_ram,
+            main_process_cpu,
+            processes_cpu,
+            total_cpu,
         ]
 
         time.sleep(RAM_PER_WORKER_CHECK_SLEEP_TIME)
@@ -215,7 +245,7 @@ def save_data(dataframe, file_path):
     :param file_path:
     """
 
-    fig, axs = plt.subplots(3, 1, figsize=(10, 15))
+    fig, axs = plt.subplots(5, 1, figsize=(10, 25))
 
     axs[0].set_title("Total memory used by CARS  Mb")
     axs[0].set_xlabel("Time (min)")
@@ -264,6 +294,35 @@ def save_data(dataframe, file_path):
         y=TOTAL_PROCESS_MEMORY,
         ax=axs[2],
         label="Total Process Memory",
+        color="blue",
+    )
+
+    axs[3].set_title("CARS CPU Usage")
+    axs[3].set_xlabel("Time (min)")
+    axs[3].set_ylabel("CPU (%")
+    dataframe.plot(
+        x=TIME,
+        y=TOTAL_PROCESS_CPU_USAGE,
+        ax=axs[3],
+        label="Total Process CPU ",
+        color="blue",
+    )
+    dataframe.plot(
+        x=TIME,
+        y=MAIN_AND_PROCESS_CPU,
+        ax=axs[3],
+        label="MAIN + Total Process CPU",
+        color="red",
+    )
+
+    axs[4].set_title("CARS CPU Usage of main process")
+    axs[4].set_xlabel("Time (min)")
+    axs[4].set_ylabel("CPU (%")
+    dataframe.plot(
+        x=TIME,
+        y=MAIN_CPU_USAGE,
+        ax=axs[4],
+        label="Main Process CPU ",
         color="blue",
     )
 
