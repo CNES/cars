@@ -540,7 +540,6 @@ def downsample(tab, resolution):
     roi[2] = roi_with_margins[2]
     roi[3] = roi_with_margins[3] - margins[3]
 
-    upsampled_dataset.attrs["roi_with_margins"] = roi_with_margins.astype(int)
     upsampled_dataset.attrs["roi"] = roi.astype(int)
 
     return upsampled_dataset, upscaled_factor
