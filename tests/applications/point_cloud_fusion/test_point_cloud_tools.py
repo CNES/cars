@@ -81,8 +81,14 @@ def test_create_combined_dense_cloud():
         if with_msk:
             ds_values[cst.EPI_MSK] = ([cst.ROW, cst.COL], msk)
         if with_conf_intervals:
-            ds_values[cst.Z_INF] = ([cst.ROW, cst.COL], z_inf_coord)
-            ds_values[cst.Z_SUP] = ([cst.ROW, cst.COL], z_sup_coord)
+            ds_values[cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS] = (
+                [cst.ROW, cst.COL],
+                z_inf_coord,
+            )
+            ds_values[cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS] = (
+                [cst.ROW, cst.COL],
+                z_sup_coord,
+            )
 
         cloud0 = xr.Dataset(
             ds_values,
@@ -402,8 +408,14 @@ def test_create_combined_dense_cloud():
             cst.X: ([cst.ROW, cst.COL], x_coord),
             cst.Y: ([cst.ROW, cst.COL], y_coord),
             cst.Z: ([cst.ROW, cst.COL], z_coord),
-            cst.Z_INF: ([cst.ROW, cst.COL], z_inf_coord),
-            cst.Z_SUP: ([cst.ROW, cst.COL], z_sup_coord),
+            cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS: (
+                [cst.ROW, cst.COL],
+                z_inf_coord,
+            ),
+            cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS: (
+                [cst.ROW, cst.COL],
+                z_sup_coord,
+            ),
             cst.POINT_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
         },
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
@@ -425,8 +437,14 @@ def test_create_combined_dense_cloud():
             cst.X: ([cst.ROW, cst.COL], x_coord),
             cst.Y: ([cst.ROW, cst.COL], y_coord),
             cst.Z: ([cst.ROW, cst.COL], z_coord),
-            cst.Z_INF: ([cst.ROW, cst.COL], z_inf_coord),
-            cst.Z_SUP: ([cst.ROW, cst.COL], z_sup_coord),
+            cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS: (
+                [cst.ROW, cst.COL],
+                z_inf_coord,
+            ),
+            cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS: (
+                [cst.ROW, cst.COL],
+                z_sup_coord,
+            ),
             cst.POINT_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
         },
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},

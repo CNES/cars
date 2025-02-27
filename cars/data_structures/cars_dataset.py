@@ -1136,6 +1136,9 @@ def save_dataset(
         bands_description = dataset.coords[cst.BAND_SOURCE_PC].values
     if tag in (cst.EPI_FILLING, cst.RASTER_FILLING):
         bands_description = dataset.coords[cst.BAND_FILLING].values
+    if tag in (cst.RASTER_PERFORMANCE_MAP, cst.RASTER_PERFORMANCE_MAP_RAW):
+        if cst.BAND_PERFORMANCE_MAP in dataset.coords:
+            bands_description = dataset.coords[cst.BAND_PERFORMANCE_MAP].values
 
     classes_info_tag = None
     if tag == cst.RASTER_PERFORMANCE_MAP:

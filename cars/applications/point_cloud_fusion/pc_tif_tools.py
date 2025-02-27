@@ -587,16 +587,16 @@ def generate_pc_wrapper(  # noqa: C901
             pass
         elif key in ["x", "y", "z"]:
             pass
-        elif key == "intervals_z_inf":
+        elif key == cst.POINT_CLOUD_LAYER_INF:
             data_z_inf = read_image_full(
-                cloud["intervals_z_inf"], window=window, squeeze=True
+                cloud[cst.POINT_CLOUD_LAYER_INF], window=window, squeeze=True
             )
-            values[cst.Z_INF] = ([cst.ROW, cst.COL], data_z_inf)
-        elif key == "intervals_z_sup":
+            values[cst.POINT_CLOUD_LAYER_INF] = ([cst.ROW, cst.COL], data_z_inf)
+        elif key == cst.POINT_CLOUD_LAYER_SUP:
             data_z_sup = read_image_full(
-                cloud["intervals_z_sup"], window=window, squeeze=True
+                cloud[cst.POINT_CLOUD_LAYER_SUP], window=window, squeeze=True
             )
-            values[cst.Z_SUP] = ([cst.ROW, cst.COL], data_z_sup)
+            values[cst.POINT_CLOUD_LAYER_SUP] = ([cst.ROW, cst.COL], data_z_sup)
         elif key == "point_cloud_epsg":
             attributes["epsg"] = cloud[key]
         elif key == "mask":
@@ -1015,14 +1015,14 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
         data_dict[cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT] = items[
             cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
         ]
-    if cst.POINT_CLOUD_PERFORMANCE_MAP in items:
-        data_dict[cst.POINT_CLOUD_PERFORMANCE_MAP] = items[
-            cst.POINT_CLOUD_PERFORMANCE_MAP
+    if cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT in items:
+        data_dict[cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT] = items[
+            cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT
         ]
-    if cst.Z_INF in items:
-        data_dict[cst.Z_INF] = items[cst.Z_INF]
-    if cst.Z_SUP in items:
-        data_dict[cst.Z_SUP] = items[cst.Z_SUP]
+    if cst.EPI_Z_INF in items:
+        data_dict[cst.POINT_CLOUD_LAYER_SUP] = items[cst.EPI_Z_INF]
+    if cst.EPI_Z_SUP in items:
+        data_dict[cst.POINT_CLOUD_LAYER_INF] = items[cst.EPI_Z_SUP]
 
     # create dict
     tile = {

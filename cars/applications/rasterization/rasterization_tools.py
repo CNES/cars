@@ -315,12 +315,13 @@ def compute_vector_raster_and_stats(
     values_bands.extend(confidences_indexes)
     split_indexes.append(len(confidences_indexes))
 
-    # 3. confidence interval
-    interval_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINT_CLOUD_INTERVALS_KEY_ROOT, list_computed_layers
+    # 3. sup and inf layers interval
+    layer_inf_sup_indexes = find_indexes_in_point_cloud(
+        cloud, cst.POINT_CLOUD_LAYER_SUP_OR_INF_ROOT, list_computed_layers
     )
-    values_bands.extend(interval_indexes)
-    split_indexes.append(len(interval_indexes))
+
+    values_bands.extend(layer_inf_sup_indexes)
+    split_indexes.append(len(layer_inf_sup_indexes))
 
     # 4. mask
     msk_indexes = find_indexes_in_point_cloud(
@@ -369,9 +370,9 @@ def compute_vector_raster_and_stats(
     values_bands.extend(filling_indexes)
     split_indexes.append(len(filling_indexes))
 
-    # 8. Performance map
+    # 8. Performance map from risk and intervals
     performance_map_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINT_CLOUD_PERFORMANCE_MAP, list_computed_layers
+        cloud, cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT, list_computed_layers
     )
     values_bands.extend(performance_map_indexes)
 
@@ -414,12 +415,12 @@ def compute_vector_raster_and_stats(
         for k, key in enumerate(confidences_indexes):
             confidences_out[key] = confidences[..., k]
 
-    interval_out = None
-    interval_stat_index = None
-    if len(interval_indexes) > 0:
-        interval_out = interval
-        interval_stat_index = [
-            values_bands.index(int_ind) for int_ind in interval_indexes
+    layers_inf_sup_out = None
+    layers_inf_sup_stat_index = None
+    if len(layer_inf_sup_indexes) > 0:
+        layers_inf_sup_out = interval
+        layers_inf_sup_stat_index = [
+            values_bands.index(int_ind) for int_ind in layer_inf_sup_indexes
         ]
 
     msk_out = None
@@ -453,12 +454,14 @@ def compute_vector_raster_and_stats(
         classif_out,
         classif_indexes,
         confidences_out,
-        interval_out,
-        interval_stat_index,
+        layers_inf_sup_out,
+        layers_inf_sup_stat_index,
+        layer_inf_sup_indexes,
         source_pc_out,
         filling_out,
         filling_indexes,
         performance_map,
+        performance_map_indexes,
     )
 
 
@@ -483,8 +486,9 @@ def create_raster_dataset(  # noqa: C901
     classif: np.ndarray = None,
     band_classif: List[str] = None,
     confidences: np.ndarray = None,
-    interval: np.ndarray = None,
-    interval_stat_index: List[int] = None,
+    layers_inf_sup: np.ndarray = None,
+    layers_inf_sup_stat_index: List[int] = None,
+    layer_inf_sup_indexes: List[str] = None,
     source_pc: np.ndarray = None,
     source_pc_names: List[str] = None,
     filling: np.ndarray = None,
@@ -492,6 +496,7 @@ def create_raster_dataset(  # noqa: C901
     performance_map: np.ndarray = None,
     performance_map_classified: np.ndarray = None,
     performance_map_classified_index: list = None,
+    band_performance_map: List[str] = None,
 ) -> xr.Dataset:
     """
     Create final raster xarray dataset
@@ -514,9 +519,10 @@ def create_raster_dataset(  # noqa: C901
     :param msk: raster msk
     :param classif: raster classif
     :param confidences: raster containing the confidences
-    :param interval: raster containing intervals inf and sup
-    :param interval_stat_index: list containing index of
+    :param layers_inf_sup: raster containing intervals inf and sup
+    :param layers_inf_sup_stat_index: list containing index of
         intervals in mean and stdev rasters
+    :param layer_inf_sup_indexes: list of band names
     :param source_pc: binary raster with source point cloud information
     :param source_pc_names: list of names of point cloud before merging :
         name of sensors pair or name of point cloud file
@@ -525,6 +531,8 @@ def create_raster_dataset(  # noqa: C901
         performance map
     :param performance_map_classified_index: indexes of
         performance_map_classified
+    :param band_performance_map: list of band names :
+        max 2 bands: risk / interval
     :return: the raster xarray dataset
     """
     raster_dims = (cst.Y, cst.X)
@@ -617,39 +625,85 @@ def create_raster_dataset(  # noqa: C901
         for key in confidences:
             raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
 
-    if interval is not None:
-        hgt_inf = np.nan_to_num(interval[0], nan=hgt_no_data)
-        raster_out[cst.RASTER_HGT_INF] = xr.DataArray(
-            hgt_inf, coords=raster_coords, dims=raster_dims
-        )
-        hgt_sup = np.nan_to_num(interval[1], nan=hgt_no_data)
-        raster_out[cst.RASTER_HGT_SUP] = xr.DataArray(
-            hgt_sup, coords=raster_coords, dims=raster_dims
-        )
-        hgt_inf_mean = np.nan_to_num(
-            mean[..., interval_stat_index[0]], nan=hgt_no_data
-        )
-        raster_out[cst.RASTER_HGT_INF_MEAN] = xr.DataArray(
-            hgt_inf_mean, coords=raster_coords, dims=raster_dims
-        )
-        hgt_sup_mean = np.nan_to_num(
-            mean[..., interval_stat_index[1]], nan=hgt_no_data
-        )
-        raster_out[cst.RASTER_HGT_SUP_MEAN] = xr.DataArray(
-            hgt_sup_mean, coords=raster_coords, dims=raster_dims
-        )
-        hgt_inf_stdev = np.nan_to_num(
-            stdev[..., interval_stat_index[0]], nan=hgt_no_data
-        )
-        raster_out[cst.RASTER_HGT_INF_STD_DEV] = xr.DataArray(
-            hgt_inf_stdev, coords=raster_coords, dims=raster_dims
-        )
-        hgt_sup_stdev = np.nan_to_num(
-            stdev[..., interval_stat_index[1]], nan=hgt_no_data
-        )
-        raster_out[cst.RASTER_HGT_SUP_STD_DEV] = xr.DataArray(
-            hgt_sup_stdev, coords=raster_coords, dims=raster_dims
-        )
+    if layers_inf_sup is not None:
+        # Get inf data
+        hgt_layers_list_inf = []
+        hgt_layers_list_sup = []
+        hgt_mean_layers_list_inf = []
+        hgt_mean_layers_list_sup = []
+        hgt_stdev_layers_list_inf = []
+        hgt_stdev_layers_list_sup = []
+        bands_sup = []
+        bands_inf = []
+        # Get Data
+        for current_layer, _ in enumerate(layers_inf_sup):
+            if "inf" in layer_inf_sup_indexes[current_layer]:
+                hgt_layers_list_inf.append(layers_inf_sup[current_layer])
+                hgt_mean_layers_list_inf.append(
+                    mean[..., layers_inf_sup_stat_index[current_layer]]
+                )
+                hgt_stdev_layers_list_inf.append(
+                    stdev[..., layers_inf_sup_stat_index[current_layer]]
+                )
+                bands_inf.append(layer_inf_sup_indexes[current_layer])
+            else:
+                hgt_layers_list_sup.append(layers_inf_sup[current_layer])
+                hgt_mean_layers_list_sup.append(
+                    mean[..., layers_inf_sup_stat_index[current_layer]]
+                )
+                hgt_stdev_layers_list_sup.append(
+                    stdev[..., layers_inf_sup_stat_index[current_layer]]
+                )
+                bands_sup.append(layer_inf_sup_indexes[current_layer])
+
+        for (
+            data_layer_list,
+            dataset_key,
+            band_key,
+            bands_name,
+        ) in zip(  # noqa: B905
+            [
+                hgt_layers_list_inf,
+                hgt_mean_layers_list_inf,
+                hgt_stdev_layers_list_inf,
+                hgt_layers_list_sup,
+                hgt_mean_layers_list_sup,
+                hgt_stdev_layers_list_sup,
+            ],
+            [
+                cst.RASTER_HGT_INF,
+                cst.RASTER_HGT_INF_MEAN,
+                cst.RASTER_HGT_INF_STD_DEV,
+                cst.RASTER_HGT_SUP,
+                cst.RASTER_HGT_SUP_MEAN,
+                cst.RASTER_HGT_SUP_STD_DEV,
+            ],
+            [
+                cst.BAND_LAYER_INF,
+                cst.BAND_LAYER_INF,
+                cst.BAND_LAYER_INF,
+                cst.BAND_LAYER_SUP,
+                cst.BAND_LAYER_SUP,
+                cst.BAND_LAYER_SUP,
+            ],
+            [bands_inf, bands_inf, bands_inf, bands_sup, bands_sup, bands_sup],
+        ):
+            # Stack data
+            data_layer = np.nan_to_num(
+                np.stack(data_layer_list, axis=0), nan=hgt_no_data
+            )
+            # Add to datasets
+            layer_out = xr.Dataset(
+                {
+                    dataset_key: (
+                        [band_key, cst.Y, cst.X],
+                        data_layer,
+                    )
+                },
+                coords={**raster_coords, band_key: bands_name},
+            )
+            # update raster output with filling information
+            raster_out = xr.merge((raster_out, layer_out))
 
     if source_pc is not None and source_pc_names is not None:
         source_pc = np.nan_to_num(source_pc, nan=msk_no_data)
@@ -685,13 +739,53 @@ def create_raster_dataset(  # noqa: C901
 
     if performance_map is not None:
         performance_map = np.nan_to_num(performance_map, nan=msk_no_data)
-        raster_out[cst.RASTER_PERFORMANCE_MAP_RAW] = xr.DataArray(
-            performance_map, dims=raster_dims
-        )
+        if len(performance_map.shape) == 3 and performance_map.shape[0] == 2:
+            # Has both performance from risk and intervals
+            perf_out = xr.Dataset(
+                {
+                    cst.RASTER_PERFORMANCE_MAP_RAW: (
+                        [cst.BAND_PERFORMANCE_MAP, cst.Y, cst.X],
+                        performance_map,
+                    )
+                },
+                coords={
+                    **raster_coords,
+                    cst.BAND_PERFORMANCE_MAP: band_performance_map,
+                },
+            )
+            # update raster output with performance information
+            raster_out = xr.merge((raster_out, perf_out))
+
+        else:
+            # Only one performance map
+            raster_out[cst.RASTER_PERFORMANCE_MAP_RAW] = xr.DataArray(
+                performance_map[0, :, :], dims=raster_dims
+            )
     if performance_map_classified is not None:
-        raster_out[cst.RASTER_PERFORMANCE_MAP] = xr.DataArray(
-            performance_map_classified, dims=raster_dims
-        )
+        if (
+            len(performance_map_classified.shape) == 3
+            and performance_map_classified.shape[0] == 2
+        ):
+            # Has both performance from risk and intervals
+            perf_classified_out = xr.Dataset(
+                {
+                    cst.RASTER_PERFORMANCE_MAP: (
+                        [cst.BAND_PERFORMANCE_MAP, cst.Y, cst.X],
+                        performance_map_classified,
+                    )
+                },
+                coords={
+                    **raster_coords,
+                    cst.BAND_PERFORMANCE_MAP: band_performance_map,
+                },
+            )
+            # update raster output with performance information
+            raster_out = xr.merge((raster_out, perf_classified_out))
+        else:
+            # Only one performance map
+            raster_out[cst.RASTER_PERFORMANCE_MAP] = xr.DataArray(
+                performance_map_classified[0, :, :], dims=raster_dims
+            )
         raster_out.attrs[cst.RIO_TAG_PERFORMANCE_MAP_CLASSES] = (
             performance_map_classified_index
         )
@@ -767,12 +861,14 @@ def rasterize(
         classif,
         classif_indexes,
         confidences,
-        interval,
-        interval_stat_index,
+        layer_inf_sup,
+        layer_inf_sup_stats_indexes,
+        layer_inf_sup_indexes,
         source_pc,
         filling,
         filling_indexes,
         performance_map_raw,
+        performance_map_raw_indexes,
     ) = compute_vector_raster_and_stats(
         cloud,
         x_start,
@@ -811,9 +907,9 @@ def rasterize(
         for key, value in confidences.items():
             confidences[key] = value.reshape(shape_out)
 
-    if interval is not None:
-        interval = interval.reshape(shape_out + (-1,))
-        interval = np.moveaxis(interval, 2, 0)
+    if layer_inf_sup is not None:
+        layer_inf_sup = layer_inf_sup.reshape(shape_out + (-1,))
+        layer_inf_sup = np.moveaxis(layer_inf_sup, 2, 0)
 
     if source_pc is not None:
         source_pc = source_pc.reshape(shape_out + (-1,))
@@ -826,7 +922,8 @@ def rasterize(
     performance_map_classified = None
     performance_map_classified_indexes = None
     if performance_map_raw is not None:
-        performance_map_raw = performance_map_raw.reshape(shape_out)
+        performance_map_raw = performance_map_raw.reshape(shape_out + (-1,))
+        performance_map_raw = np.moveaxis(performance_map_raw, 2, 0)
         if performance_map_classes is not None:
             (performance_map_classified, performance_map_classified_indexes) = (
                 classify_performance_map(
@@ -856,8 +953,9 @@ def rasterize(
         classif,
         classif_indexes,
         confidences,
-        interval,
-        interval_stat_index,
+        layer_inf_sup,
+        layer_inf_sup_stats_indexes,
+        layer_inf_sup_indexes,
         source_pc,
         source_pc_names,
         filling,
@@ -865,6 +963,7 @@ def rasterize(
         performance_map_raw,
         performance_map_classified,
         performance_map_classified_indexes,
+        performance_map_raw_indexes,
     )
 
     return raster_out

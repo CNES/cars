@@ -637,7 +637,6 @@ def pandora_matches(
     disp_upper_bound,
     disp_lower_bound,
     resolution,
-    disp_to_alt_ratio=None,
 ):
     """
     Calculate the pandora matches
@@ -650,8 +649,6 @@ def pandora_matches(
     :type corr_conf: dict
     :param resolution: the resolution of the resampling
     :type resolution: int
-    :param disp_to_alt_ratio: disp to alti ratio used for performance map
-    :type disp_to_alt_ratio: float
 
     :return: matches and disparity_map
     :rtype: datasets
@@ -727,7 +724,6 @@ def pandora_matches(
         corr_conf,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
-        disp_to_alt_ratio=disp_to_alt_ratio,
     )
 
     # get values

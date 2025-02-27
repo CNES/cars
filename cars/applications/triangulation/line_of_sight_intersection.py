@@ -130,7 +130,7 @@ class LineOfSightIntersection(
         sensor_image_left,
         output_dir,
         dump_dir=None,
-        intervals=None,
+        performance_maps_to_generate=None,
         save_output_coordinates=True,
         save_output_color=True,
         save_output_classification=False,
@@ -159,8 +159,10 @@ class LineOfSightIntersection(
         :param dump_dir: folder used as dump directory for current pair, None to
                 deactivate intermediate data writing
         :type dump_dir: str
-        :param intervals: Either None or a List of 2 intervals indicators
-        :type intervals: None or [str, str]
+        :param performance_maps_to_generate: None or list containing
+            "risk" or "intervals"
+        :type performance_maps_to_generate: None or list containing
+            "risk" or "intervals"
         :param save_output_coordinates: Save X, Y and Z coords in output_dir
         :type save_output_coordinates: bool
         :param save_output_color: Save color depth map in output_dir
@@ -249,14 +251,32 @@ class LineOfSightIntersection(
             map_output_dir = (
                 output_dir if save_output_performance_map else dump_dir
             )
-            self.orchestrator.add_to_save_lists(
-                os.path.join(map_output_dir, "performance_map.tif"),
-                cst.EPI_PERFORMANCE_MAP,
-                epipolar_point_cloud,
-                cars_ds_name="depth_map_performance_map",
-                optional_data=True,
-                dtype=np.float64,
-            )
+            performance_map_tail_path = "performance_map.tif"
+            if "intervals" in performance_maps_to_generate:
+                tail_path = performance_map_tail_path
+                if len(performance_maps_to_generate) == 2:
+                    tail_path = "performance_map_from_intervals.tif"
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(map_output_dir, tail_path),
+                    cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_INTERVALS,
+                    epipolar_point_cloud,
+                    cars_ds_name="depth_map_performance_map_from_intervals",
+                    optional_data=True,
+                    dtype=np.float64,
+                )
+
+            if "risk" in performance_maps_to_generate:
+                tail_path = performance_map_tail_path
+                if len(performance_maps_to_generate) == 2:
+                    tail_path = "performance_map_from_risk.tif"
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(map_output_dir, tail_path),
+                    cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_RISK,
+                    epipolar_point_cloud,
+                    cars_ds_name="depth_map_performance_map_from_risk",
+                    optional_data=True,
+                    dtype=np.float64,
+                )
 
         if save_output_ambiguity or dump_dir:
             map_output_dir = output_dir if save_output_ambiguity else dump_dir
@@ -294,19 +314,34 @@ class LineOfSightIntersection(
                 nodata=255,
             )
 
-        if dump_dir and intervals is not None:
-            self.orchestrator.add_to_save_lists(
-                os.path.join(dump_dir, "Z_inf.tif"),
-                cst.Z_INF,
-                epipolar_point_cloud,
-                cars_ds_name="depth_map_z_inf",
-            )
-            self.orchestrator.add_to_save_lists(
-                os.path.join(dump_dir, "Z_sup.tif"),
-                cst.Z_SUP,
-                epipolar_point_cloud,
-                cars_ds_name="depth_map_z_sup",
-            )
+        if dump_dir and performance_maps_to_generate is not None:
+            if "intervals" in performance_maps_to_generate:
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(dump_dir, "Z_inf_from_intervals.tif"),
+                    cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS,
+                    epipolar_point_cloud,
+                    cars_ds_name="depth_map_z_inf_from_intervals",
+                )
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(dump_dir, "Z_sup_from_intervals.tif"),
+                    cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS,
+                    epipolar_point_cloud,
+                    cars_ds_name="depth_map_z_sup_from_intervals",
+                )
+
+            if "risk" in performance_maps_to_generate:
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(dump_dir, "Z_inf_from_risk.tif"),
+                    cst.POINT_CLOUD_LAYER_INF_FROM_RISK,
+                    epipolar_point_cloud,
+                    cars_ds_name="depth_map_z_inf_from_risk",
+                )
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(dump_dir, "Z_sup_from_risk.tif"),
+                    cst.POINT_CLOUD_LAYER_SUP_FROM_RISK,
+                    epipolar_point_cloud,
+                    cars_ds_name="depth_map_z_sup_from_risk",
+                )
 
         if dump_dir:
             self.orchestrator.add_to_save_lists(
@@ -446,7 +481,7 @@ class LineOfSightIntersection(
         uncorrected_grid_right=None,
         geoid_path=None,
         cloud_id=None,
-        intervals=None,
+        performance_maps_parameters=None,
         depth_map_dir=None,
         point_cloud_dir=None,
         save_output_coordinates=False,
@@ -528,8 +563,9 @@ class LineOfSightIntersection(
         :type uncorrected_grid_right: CarsDataset
         :param geoid_path: geoid path
         :type geoid_path: str
-        :param intervals: Either None or a List of 2 intervals indicators
-        :type intervals: None or [str, str]
+        :param performance_maps_parameters: parameters used
+            to generate performance map
+        :type performance_maps_parameters: dict or None
         :param depth_map_dir: directory to write triangulation output depth
                 map.
         :type depth_map_dir: None or str
@@ -682,6 +718,17 @@ class LineOfSightIntersection(
                 "data format"
             )
 
+        # Check performance_maps_parameters
+        performance_maps_to_generate = None
+        if performance_maps_parameters is not None:
+            if "performance_map_method" not in performance_maps_parameters:
+                raise RuntimeError("No performance_map_method specified")
+            performance_maps_to_generate = performance_maps_parameters[
+                "performance_map_method"
+            ]
+            if "perf_ambiguity_threshold" not in performance_maps_parameters:
+                raise RuntimeError("No perf_ambiguity_threshold specified")
+
         # Create CarsDataset
         # Epipolar_point_cloud
         epipolar_point_cloud = cars_dataset.CarsDataset(
@@ -701,7 +748,7 @@ class LineOfSightIntersection(
             sensor_image_left,
             depth_map_dir,
             pair_dump_dir if self.save_intermediate_data else None,
-            intervals,
+            performance_maps_to_generate,
             save_output_coordinates,
             save_output_color,
             save_output_classification,
@@ -743,15 +790,6 @@ class LineOfSightIntersection(
             )
 
         # Generate Point clouds
-
-        # Determining if a lower disparity inf corresponds to a lower or higher
-        # hgt. It depends on the image pairing and geometrical models.
-        if (
-            intervals is not None
-        ) and geometry_plugin.sensors_arrangement_left_right(
-            sensor1, sensor2, geomodel1, geomodel2, grid_left, grid_right
-        ):
-            intervals[0], intervals[1] = intervals[1], intervals[0]
 
         # broadcast grids
         broadcasted_grid_left = self.orchestrator.cluster.scatter(grid_left)
@@ -806,7 +844,10 @@ class LineOfSightIntersection(
                         geoid_path=geoid_path,
                         denoising_overload_fun=denoising_overload_fun,
                         cloud_id=cloud_id,
-                        intervals=intervals,
+                        performance_maps_to_generate=(
+                            performance_maps_to_generate
+                        ),
+                        performance_maps_parameters=performance_maps_parameters,
                         point_cloud_csv_file_name=csv_pc_file_name,
                         point_cloud_laz_file_name=laz_pc_file_name,
                         saving_info_epipolar=full_saving_info_epipolar,
@@ -833,7 +874,8 @@ def triangulation_wrapper(
     geoid_path=None,
     denoising_overload_fun=None,
     cloud_id=None,
-    intervals=None,
+    performance_maps_to_generate=None,
+    performance_maps_parameters=None,
     point_cloud_csv_file_name=None,
     point_cloud_laz_file_name=None,
     saving_info_epipolar=None,
@@ -864,8 +906,11 @@ def triangulation_wrapper(
     :param geoid_path: Geoid used for altimetric reference. Defaults to None
         for using ellipsoid as altimetric reference.
     :type geoid_path: str
-    :param intervals: Either None or a List of 2 intervals indicators
-        :type intervals: None or [str, str]
+    :param performance_maps_to_generate: None or list containing
+        "risk" or "intervals"
+    :param performance_maps_parameters: parameters used to
+        generate performance map
+    :type performance_maps_parameters: dict or None
     :param denoising_overload_fun: function to overload dataset
     :type denoising_overload_fun: fun
 
@@ -898,37 +943,80 @@ def triangulation_wrapper(
             disp_ref,
         )
 
-        if intervals is not None:
-            points_inf = triangulation_tools.triangulate(
-                geometry_plugin,
-                sensor1,
-                sensor2,
-                geomodel1,
-                geomodel2,
-                grid1,
-                grid2,
-                disp_ref,
-                disp_key=intervals[0],
-            )
+        if performance_maps_to_generate is not None:
+            for perf_method in performance_maps_to_generate:
+                # Generate keys to use
+                if perf_method == "risk":
+                    # From pandora loader overload
+                    disp_keys = [
+                        "confidence_from_disp_inf_from_risk.cars_2",
+                        "confidence_from_disp_sup_from_risk.cars_2",
+                    ]
+                    cars_inf_key = cst.POINT_CLOUD_LAYER_INF_FROM_RISK
+                    cars_sup_key = cst.POINT_CLOUD_LAYER_SUP_FROM_RISK
+                    cars_perf_key = cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_RISK
+                    use_ambiguity = True
+                else:
+                    # From pandora loader overload
+                    disp_keys = [
+                        "confidence_from_interval_bounds_inf.cars_3",
+                        "confidence_from_interval_bounds_sup.cars_3",
+                    ]
+                    cars_inf_key = cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS
+                    cars_sup_key = cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS
+                    cars_perf_key = (
+                        cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_INTERVALS
+                    )
+                    use_ambiguity = False
 
-            points_sup = triangulation_tools.triangulate(
-                geometry_plugin,
-                sensor1,
-                sensor2,
-                geomodel1,
-                geomodel2,
-                grid1,
-                grid2,
-                disp_ref,
-                disp_key=intervals[1],
-            )
+                ambiguity_map = None
+                perf_ambiguity_threshold = None
+                if use_ambiguity:
+                    ambiguity_map = disp_ref["confidence_from_ambiguity.cars_1"]
+                    perf_ambiguity_threshold = performance_maps_parameters[
+                        "perf_ambiguity_threshold"
+                    ]
+                # triangulate disp inf and supp
+                points_inf = triangulation_tools.triangulate(
+                    geometry_plugin,
+                    sensor1,
+                    sensor2,
+                    geomodel1,
+                    geomodel2,
+                    grid1,
+                    grid2,
+                    disp_ref,
+                    disp_key=disp_keys[0],
+                )
 
-            points[cst.STEREO_REF][cst.Z_INF] = points_inf[cst.STEREO_REF][
-                cst.Z
-            ]
-            points[cst.STEREO_REF][cst.Z_SUP] = points_sup[cst.STEREO_REF][
-                cst.Z
-            ]
+                points_sup = triangulation_tools.triangulate(
+                    geometry_plugin,
+                    sensor1,
+                    sensor2,
+                    geomodel1,
+                    geomodel2,
+                    grid1,
+                    grid2,
+                    disp_ref,
+                    disp_key=disp_keys[1],
+                )
+
+                points[cst.STEREO_REF][cars_inf_key] = points_inf[
+                    cst.STEREO_REF
+                ][cst.Z]
+                points[cst.STEREO_REF][cars_sup_key] = points_sup[
+                    cst.STEREO_REF
+                ][cst.Z]
+                # Generate performance map
+                points[cst.STEREO_REF][cars_perf_key] = (
+                    triangulation_tools.compute_performance_map(
+                        points[cst.STEREO_REF][cst.Z],
+                        points[cst.STEREO_REF][cars_inf_key],
+                        points[cst.STEREO_REF][cars_sup_key],
+                        ambiguity_map=ambiguity_map,
+                        perf_ambiguity_threshold=perf_ambiguity_threshold,
+                    )
+                )
 
     elif isinstance(disp_ref, pandas.DataFrame):
         # Triangulate epipolar sparse matches

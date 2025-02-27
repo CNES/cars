@@ -399,38 +399,32 @@ The structure follows this organization:
                       -
                       - 60
                       - No
-                    * - generate_performance_map
-                      - Generate a performance map from disparity map
-                      - boolean
-                      -
-                      - False
-                      - No
-                    * - generate_confidence_intervals
-                      - Compute confidence intervals from disparity map.
-                      - boolean
-                      -
-                      - False
+                    * - performance_map_method
+                      - Compute performance map with selected method(s).
+                      - str, list, None
+                      - "risk", "intervals"
+                      - "risk"
                       - No
                     * - perf_eta_max_ambiguity
-                      - Ambiguity confidence eta max used for performance map
+                      - Ambiguity confidence eta max used for performance map (risk method)
                       - float
                       -
                       - 0.99
                       - No
                     * - perf_eta_max_risk
-                      - Risk confidence eta max used for performance map
+                      - Risk confidence eta max used for performance map (risk method)
                       - float
                       -
                       - 0.25
                       - No
                     * - perf_eta_step
-                      - Risk and Ambiguity confidence eta step used for performance map
+                      - Risk and Ambiguity confidence eta step used for performance map (risk method)
                       - float
                       -
                       - 0.04
                       - No
                     * - perf_ambiguity_threshold
-                      - Maximal ambiguity considered for performance map
+                      - Maximal ambiguity considered for performance map (risk method)
                       - float
                       -
                       - 0.6
@@ -952,7 +946,7 @@ The structure follows this organization:
             * - performance_map_classes
               - List defining interval: [a,b,c,d] generates [[a,b],[b,c],[c,d]] intervals used in the performance map classification. If null, raw performance map is given
               - list or None
-              - [0, 1.936, 2.2675, 2.59, 3.208, 4.846, 6.856]
+              - [0, 0.968, 1.13375, 1.295, 1.604, 2.423, 3.428]
               - No
             * - ground_truth_dsm
               - Datas to be reprojected from the application ground_truth_reprojection

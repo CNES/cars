@@ -112,7 +112,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         uncorrected_grid_right=None,
         geoid_path=None,
         cloud_id=None,
-        intervals=None,
+        performance_maps_parameters=None,
         depth_map_dir=None,
         point_cloud_dir=None,
         save_output_coordinates=False,
@@ -184,7 +184,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :param source_pc_names: source pc names
         :type source_pc_names: list[str]
         :param orchestrator: orchestrator used
-        :param pair_dump_dir: folder used for current pair
+        :param pair_dump_dir: folder used as dump directory for current pair
         :type pair_dump_dir: str
         :param pair_key: pair key id
         :type pair_key: str
@@ -193,24 +193,25 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type uncorrected_grid_right: CarsDataset
         :param geoid_path: geoid path
         :type geoid_path: str
-        :param intervals: Either None or a List of 2 intervals indicators
-        :type intervals: None or [str, str]
-        :param pair_output_dir: directory to write triangulation output depth
+        :param performance_maps_parameters: parameters used
+            to generate performance map
+        :type performance_maps_parameters: dict or None
+        :param depth_map_dir: directory to write triangulation output depth
                 map.
-        :type pair_output_dir: None or str
-        :param save_output_coordinates: Save X, Y, Z coords in pair_output_dir
+        :type depth_map_dir: None or str
+        :param save_output_coordinates: Save X, Y, Z coords in depth_map_dir
         :type save_output_coordinates: bool
-        :param save_output_color: Save color depth map in pair_output_dir
+        :param save_output_color: Save color depth map in depth_map_dir
         :type save_output_color: bool
         :param save_output_classification: Save classification depth map in
-                pair_output_dir
+                depth_map_dir
         :type save_output_classification: bool
-        :param save_output_mask: Save mask depth map in pair_output_dir
+        :param save_output_mask: Save mask depth map in depth_map_dir
         :type save_output_mask: bool
-        :param save_output_filling: Save filling depth map in pair_output_dir
+        :param save_output_filling: Save filling depth map in depth_map_dir
         :type save_output_filling: bool
         :param save_output_performance_map: Save performance map in
-                pair_output_dir
+                depth_map_dir
         :type save_output_performance_map: bool
 
         :return: point cloud \
