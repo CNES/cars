@@ -37,6 +37,7 @@ matplotlib.use("Agg")
 
 
 RAM_PER_WORKER_CHECK_SLEEP_TIME = 2
+INTERVAL_CPU = 0.2
 SAVE_TIME = 120
 
 TIME = "time"
@@ -52,6 +53,18 @@ TOTAL_PROCESS_CPU_USAGE = "total Proces_cpu_usage"
 MAIN_AND_PROCESS_CPU = "main_and_process_cpu"
 
 
+class Timer:  # pylint: disable=too-few-public-methods
+    """
+    Start time
+    """
+
+    def __init__(self):
+        """
+        Init
+        """
+        self.timer = time.time()
+
+
 class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
     """
     MultiprocessingProfiler
@@ -59,7 +72,9 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
     Used to profile memory in processes
     """
 
-    def __init__(self, pool, out_dir, max_ram_per_worker):
+    def __init__(
+        self, pool, out_dir, max_ram_per_worker, mp_dataframe=None, timer=None
+    ):
         """
         Init function of MultiprocessingProfiler
 
@@ -76,20 +91,26 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
         )
         self.max_ram_per_worker = max_ram_per_worker
 
-        self.memory_data = pd.DataFrame(
-            columns=[
-                TIME,
-                MAIN_MEMORY,
-                MAX_PROCESS_MEMORY,
-                MAIN_AND_PROCESS,
-                TOTAL_PROCESS_MEMORY,
-                AVAILABLE_RAM,
-                TOTAL_RAM,
-                MAIN_CPU_USAGE,
-                TOTAL_PROCESS_CPU_USAGE,
-                MAIN_AND_PROCESS_CPU,
-            ]
-        )
+        if mp_dataframe is not None and timer is not None:
+            self.memory_data = mp_dataframe
+            self.timer = timer
+        else:
+            self.timer = Timer()
+            self.memory_data = pd.DataFrame(
+                columns=[
+                    TIME,
+                    MAIN_MEMORY,
+                    MAX_PROCESS_MEMORY,
+                    MAIN_AND_PROCESS,
+                    TOTAL_PROCESS_MEMORY,
+                    AVAILABLE_RAM,
+                    TOTAL_RAM,
+                    MAIN_CPU_USAGE,
+                    TOTAL_PROCESS_CPU_USAGE,
+                    MAIN_AND_PROCESS_CPU,
+                ]
+            )
+
         # Memory usage of Pool
         self.monitor_thread = threading.Thread(
             target=check_pool_memory_usage,
@@ -98,6 +119,7 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
                 self.pool,
                 self.max_ram_per_worker,
                 self.memory_data,
+                self.timer,
             ),
         )
         self.monitor_thread.daemon = True
@@ -137,7 +159,7 @@ def get_cpu_usage(process):
     """
 
     try:
-        cpu_usage = process.cpu_percent(interval=1)
+        cpu_usage = process.cpu_percent(interval=0.1)
     except Exception:
         cpu_usage = 0
 
@@ -159,7 +181,7 @@ def save_figure_in_thread(to_fill_dataframe, file_path):
 
 
 def check_pool_memory_usage(
-    main_process_id, pool, max_ram_per_worker, to_fill_dataframe
+    main_process_id, pool, max_ram_per_worker, to_fill_dataframe, timer
 ):
     """
     Check memory usage of each worker in pool
@@ -168,9 +190,10 @@ def check_pool_memory_usage(
     :param pool: pool of worker
     :param max_ram_per_worker: max ram to use per worker
     :param to_fill_dataframe: dataframe to fill
+    :param timer: timer
     """
     main_process = psutil.Process(main_process_id)
-    start_time = time.time()
+    start_time = timer.timer
 
     while True:
         # Get time
@@ -192,6 +215,11 @@ def check_pool_memory_usage(
         max_process_ram = 0
         processes_cpu = 0
         total_cpu = main_process_cpu
+
+        size_pool = len(pool._pool)  # pylint: disable=protected-access
+        sleep_time = max(
+            0, RAM_PER_WORKER_CHECK_SLEEP_TIME - INTERVAL_CPU * size_pool
+        )
         for worker in pool._pool:  # pylint: disable=protected-access
             pid = worker.pid
             try:
@@ -234,7 +262,7 @@ def check_pool_memory_usage(
             total_cpu,
         ]
 
-        time.sleep(RAM_PER_WORKER_CHECK_SLEEP_TIME)
+        time.sleep(sleep_time)
 
 
 def save_data(dataframe, file_path):

@@ -83,7 +83,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
     # pylint: disable=too-many-instance-attributes
     @cars_profile(name="Multiprocessing orchestrator initialization")
-    def __init__(self, conf_cluster, out_dir, launch_worker=True):
+    def __init__(
+        self, conf_cluster, out_dir, launch_worker=True, data_to_propagate=None
+    ):
         """
         Init function of MultiprocessingCluster
 
@@ -101,7 +103,12 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         self.out_dir = out_dir
         # call parent init
-        super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
+        super().__init__(
+            conf_cluster,
+            out_dir,
+            launch_worker=launch_worker,
+            data_to_propagate=data_to_propagate,
+        )
 
         # retrieve parameters
         self.nb_workers = self.checked_conf_cluster["nb_workers"]
@@ -187,11 +194,24 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             self.refresh_worker.start()
 
             # Profile pool
+            mp_dataframe = None
+            timer = None
+            if self.data_to_propagate is not None:
+                mp_dataframe = self.data_to_propagate.get("mp_dataframe", None)
+                timer = self.data_to_propagate.get("mp_timer", None)
+
             self.profiler = MultiprocessingProfiler(
                 self.pool,
                 self.out_dir,
                 self.checked_conf_cluster["max_ram_per_worker"],
+                mp_dataframe=mp_dataframe,
+                timer=timer,
             )
+
+            self.data_to_propagate = {
+                "mp_dataframe": self.profiler.memory_data,
+                "mp_timer": self.profiler.timer,
+            }
 
     def check_conf(self, conf):
         """

@@ -538,12 +538,16 @@ class Orchestrator:
         Reset Cluster
 
         """
+
+        data_to_propagate = self.cluster.data_to_propagate
+
         if self.launch_worker:
             self.cluster.cleanup()
         self.cluster = AbstractCluster(  # pylint: disable=E0110
             self.orchestrator_conf,
             self.out_dir,
             launch_worker=self.launch_worker,
+            data_to_propagate=data_to_propagate,
         )
 
     def reset_registries(self):
