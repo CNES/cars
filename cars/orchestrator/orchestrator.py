@@ -814,23 +814,31 @@ def compute_conf_auto_mode(is_windows):
         available_cpu = 2
 
     if on_slurm:
-        available_ram = max_ram_slurm
+        ram_to_use = max_ram_slurm
     else:
-        available_ram = get_available_ram()
-        logging.info("available ram :  {}".format(available_ram))
+        ram_to_use = get_total_ram()
+        logging.info("total ram :  {}".format(ram_to_use))
 
-    # do not use all available ram
-    available_ram *= 0.8
+    # use 50% of total ram
+    ram_to_use *= 0.5
 
     # non configurable
     max_ram_per_worker = 2000
-    possible_workers = int(available_ram // max_ram_per_worker)
+    possible_workers = int(ram_to_use // max_ram_per_worker)
     if possible_workers == 0:
         logging.warning("Not enough memory available : failure might occur")
     nb_workers_to_use = max(1, min(possible_workers, available_cpu - 1))
 
     logging.info("Number of workers : {}".format(nb_workers_to_use))
     logging.info("Max memory per worker : {} MB".format(max_ram_per_worker))
+
+    # Check with available ram
+    available_ram = get_available_ram()
+    if int(nb_workers_to_use) * int(max_ram_per_worker) > available_ram:
+        logging.warning(
+            "CARS will use 50% of total RAM, "
+            " more than currently available RAM"
+        )
 
     return int(nb_workers_to_use), int(max_ram_per_worker)
 
@@ -844,6 +852,17 @@ def get_available_ram():
     ram = psutil.virtual_memory()
     available_ram_mb = ram.available / (1024 * 1024)
     return available_ram_mb
+
+
+def get_total_ram():
+    """
+    Get total ram
+
+    :return : available ram in Mb
+    """
+    ram = psutil.virtual_memory()
+    total_ram_mb = ram.available / (1024 * 1024)
+    return total_ram_mb
 
 
 def check_ram_usage():
