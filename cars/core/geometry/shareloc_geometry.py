@@ -33,6 +33,7 @@ import xarray as xr
 from json_checker import Checker
 from shareloc.dtm_reader import dtm_reader
 from shareloc.geofunctions import localization
+from shareloc.geofunctions.rectification_grid import RectificationGrid
 from shareloc.geofunctions.triangulation import epipolar_triangulation
 from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.grid import Grid
@@ -291,6 +292,17 @@ class SharelocGeometry(AbstractGeometry):
             grid1 = grid1.attributes["path"]
         if isinstance(grid2, cars_dataset.CarsDataset):
             grid2 = grid2.attributes["path"]
+        # interpolate if grid is a path
+        if isinstance(grid1, str):
+            grid1 = RectificationGrid(
+                grid1,
+                interpolator=self.interpolator,
+            )
+        if isinstance(grid2, str):
+            grid2 = RectificationGrid(
+                grid2,
+                interpolator=self.interpolator,
+            )
 
         # perform matches triangulation
         if mode is cst.MATCHES_MODE:
@@ -304,7 +316,6 @@ class SharelocGeometry(AbstractGeometry):
                 grid_right=grid2,
                 residues=True,
                 fill_nan=True,
-                interpolator=self.interpolator,
             )
 
             llh = point_wgs84.reshape((point_wgs84.shape[0], 1, 3))
@@ -320,7 +331,6 @@ class SharelocGeometry(AbstractGeometry):
                 grid_right=grid2,
                 residues=True,
                 fill_nan=True,
-                interpolator=self.interpolator,
             )
 
             row = np.array(

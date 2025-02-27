@@ -33,6 +33,7 @@ import numpy as np
 import pandas
 import xarray as xr
 from json_checker import Checker
+from shareloc.geofunctions.rectification_grid import RectificationGrid
 
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
