@@ -527,24 +527,21 @@ def downsample(tab, resolution):
     roi_with_margins[2] = np.floor(tab.roi_with_margins[2] * resolution)
     roi_with_margins[1] = np.floor(tab.roi_with_margins[1] * resolution)
     roi_with_margins[3] = roi_with_margins[1] + upsampled_raster.shape[0]
+    upsampled_dataset.attrs["roi_with_margins"] = roi_with_margins.astype(int)
+
+    # margins
+    margins = np.floor(tab.margins * resolution)
+    upsampled_dataset.attrs["margins"] = margins
 
     # roi
     roi = np.empty(4)
-    roi[0] = np.floor(tab.roi[0] * resolution)
-    roi[2] = np.floor(tab.roi[2] * resolution)
-    roi[1] = np.floor(tab.roi[1] * resolution)
-    roi[3] = np.floor(tab.roi[3] * resolution)
+    roi[0] = roi_with_margins[0]
+    roi[1] = roi_with_margins[1] - margins[1]
+    roi[2] = roi_with_margins[2]
+    roi[3] = roi_with_margins[3] - margins[3]
 
     upsampled_dataset.attrs["roi_with_margins"] = roi_with_margins.astype(int)
     upsampled_dataset.attrs["roi"] = roi.astype(int)
-
-    # margins
-    margins = np.empty(4)
-    margins[0] = -(roi[0] - roi_with_margins[0])
-    margins[1] = -(roi[1] - roi_with_margins[1])
-    margins[2] = roi_with_margins[2] - roi[2]
-    margins[3] = roi_with_margins[3] - roi[3]
-    upsampled_dataset.attrs["margins"] = margins
 
     return upsampled_dataset, upscaled_factor
 
