@@ -64,7 +64,7 @@ dependencies = [
     "cars-filter==0.1.*",
     "vlsift==0.1.*",
     "shareloc==0.2.7",
-    "bulldozer-dtm==1.0.*",
+    "bulldozer-dtm==1.1.*",
 ]
 
 [project.urls]
