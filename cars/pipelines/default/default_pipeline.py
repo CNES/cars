@@ -48,7 +48,6 @@ from cars.applications.point_cloud_fusion import pc_tif_tools
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
-from cars.core import constants_disparity as cst_disp
 from cars.core import preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands, rasterio_get_epsg
@@ -642,11 +641,15 @@ class DefaultPipeline(PipelineTemplate):
                 .get(out_cst.AUX_AMBIGUITY, False)
             )
             dense_matching_config = used_conf.get("dense_matching", {})
-            if generate_performance_map is True:
-                dense_matching_config["generate_performance_map"] = True
             if generate_ambiguity is True:
                 dense_matching_config["generate_ambiguity"] = True
 
+            if (
+                generate_performance_map is True
+                and dense_matching_config.get("performance_map_method", None)
+                is None
+            ):
+                dense_matching_config["performance_map_method"] = "risk"
             self.dense_matching_app = Application(
                 "dense_matching", cfg=dense_matching_config
             )
@@ -1837,9 +1840,6 @@ class DefaultPipeline(PipelineTemplate):
                 pair_key=pair_key,
                 disp_range_grid=disp_range_grid,
                 compute_disparity_masks=False,
-                disp_to_alt_ratio=self.pairs[pair_key][
-                    "corrected_grid_left"
-                ].attributes["disp_to_alt_ratio"],
             )
 
             if self.quit_on_app("dense_matching"):
@@ -1939,36 +1939,6 @@ class DefaultPipeline(PipelineTemplate):
                     self.input_roi_poly, self.input_roi_epsg, self.epsg
                 )
 
-            # Checking disparity intervals indicators
-            if self.used_conf[APPLICATIONS]["dense_matching"][
-                "generate_confidence_intervals"
-            ]:
-                intervals = [cst_disp.INTERVAL_INF, cst_disp.INTERVAL_SUP]
-                intervals_pair_flag = False
-                for key, item in self.dense_matching_app.corr_config[
-                    "pipeline"
-                ].items():
-                    if (
-                        cst_disp.CONFIDENCE_KEY in key
-                        and item["confidence_method"] == cst_disp.INTERVAL
-                    ):
-                        indicator = key.split(".")
-                        if not intervals_pair_flag:
-                            if len(indicator) > 1:
-                                intervals[0] += "." + indicator[-1]
-                                intervals[1] += "." + indicator[-1]
-                            # Only processing the first encountered interval
-                            intervals_pair_flag = True
-                        else:
-                            warn_msg = (
-                                "Multiple confidence intervals "
-                                "is not supported. {} will be "
-                                "ignored. Only {} will be processed"
-                            ).format(key, intervals)
-                            logging.warning(warn_msg)
-            else:
-                intervals = None
-
             if isinstance(output[sens_cst.GEOID], str):
                 output_geoid_path = output[sens_cst.GEOID]
             elif (
@@ -2052,7 +2022,9 @@ class DefaultPipeline(PipelineTemplate):
                 uncorrected_grid_right=self.pairs[pair_key]["grid_right"],
                 geoid_path=output_geoid_path,
                 cloud_id=cloud_id,
-                intervals=intervals,
+                performance_maps_parameters=(
+                    self.dense_matching_app.get_performance_map_parameters()
+                ),
                 depth_map_dir=depth_map_dir,
                 point_cloud_dir=triangulation_point_cloud_dir,
                 save_output_coordinates=last_depth_map_application

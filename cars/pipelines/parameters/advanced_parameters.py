@@ -69,7 +69,15 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, False)
 
     # default classes, in meters:
-    default_performance_classes = [0, 1.936, 2.2675, 2.59, 3.208, 4.846, 6.856]
+    default_performance_classes = [
+        0,
+        0.968,
+        1.13375,
+        1.295,
+        1.604,
+        2.423,
+        3.428,
+    ]
     overloaded_conf[adv_cst.PERFORMANCE_MAP_CLASSES] = conf.get(
         adv_cst.PERFORMANCE_MAP_CLASSES, default_performance_classes
     )

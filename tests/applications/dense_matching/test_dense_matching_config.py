@@ -48,8 +48,7 @@ def test_check_full_conf_pandora_conf_as_dict():
         "max_elevation_offset": 100,
         "disp_min_threshold": -40,
         "disp_max_threshold": 40,
-        "generate_performance_map": False,
-        "generate_confidence_intervals": False,
+        "performance_map_method": ["risk", "intervals"],
         "perf_eta_max_ambiguity": 0.99,
         "perf_eta_max_risk": 0.25,
         "perf_eta_step": 0.04,
@@ -111,8 +110,7 @@ def test_check_full_conf_pandora_conf_as_file():
         "max_elevation_offset": 100,
         "disp_min_threshold": -40,
         "disp_max_threshold": 40,
-        "generate_performance_map": False,
-        "generate_confidence_intervals": False,
+        "performance_map_method": ["risk", "intervals"],
         "perf_eta_max_ambiguity": 0.99,
         "perf_eta_max_risk": 0.25,
         "perf_eta_step": 0.04,
@@ -130,7 +128,7 @@ def test_check_full_conf_pandora_conf_as_file():
 @pytest.mark.unit_tests
 @pytest.mark.parametrize(
     "max_offset,confidence_intervals,expected_error",
-    [(10, False, ValueError), (30, True, KeyError)],
+    [(10, False, ValueError)],
 )
 def test_check_conf_with_error(
     max_offset, confidence_intervals, expected_error
@@ -141,11 +139,16 @@ def test_check_conf_with_error(
     Then, with incoherent confidence intervals conf
     not present in the loader conf
     """
+
+    performance_map_method = []
+    if confidence_intervals:
+        performance_map_method = ["intervals"]
+
     conf = {
         "method": "census_sgm",
         "min_elevation_offset": 20,
         "max_elevation_offset": max_offset,  # should be > min
-        "generate_confidence_intervals": confidence_intervals,
+        "performance_map_method": performance_map_method,
         "loader_conf": {
             "input": {},
             "pipeline": {

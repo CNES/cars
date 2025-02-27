@@ -28,7 +28,6 @@ TODO: Refactor in several files and remove too-many-lines
 # Standard imports
 from __future__ import absolute_import
 
-import copy
 import json
 import math
 import os
@@ -134,6 +133,14 @@ def test_end2end_dsm_fusion():
         #     ),
         # )
         # copy2(
+        #     os.path.join(out_dir, "dsm", "performance_map.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "performance_map_end2end_ventoux_lr.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
         #     os.path.join(out_dir, "dump_dir", "rasterization",
         #     "classification.tif"),
         #     absolute_data_path(
@@ -150,76 +157,49 @@ def test_end2end_dsm_fusion():
         #         )
         #     ),
         # )
-
-        input_dense_dsm_rl = copy.deepcopy(input_dense_dsm_lr)
-        input_dense_dsm_rl["inputs"]["sensors"]["left"] = input_dense_dsm_lr[
-            "inputs"
-        ]["sensors"]["right"]
-        input_dense_dsm_rl["inputs"]["sensors"]["right"] = input_dense_dsm_lr[
-            "inputs"
-        ]["sensors"]["left"]
-
-        dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm_rl)
-        dense_dsm_pipeline.run()
-
-        # copy2(
-        #     os.path.join(out_dir, "dsm", "dsm.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "phased_dsm_end2end_ventoux_rl.tif"
-        #         )
-        #     ),
-        # )
-
-        # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization",
-        #     "classification.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "classif_end2end_ventoux_rl.tif"
-        #         )
-        #     ),
-        # )
         # copy2(
         #     os.path.join(out_dir, "dump_dir/rasterization/", "weights.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "weights_end2end_ventoux_rl.tif"
+        #             ref_output_dir, "weights_end2end_ventoux_lr.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dump_dir/rasterization/", "dsm_inf.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "dsm_inf_end2end_ventoux_lr.tif"
         #         )
         #     ),
         # )
 
+        in_dsm = {
+            "dsm": absolute_data_path(
+                "ref_output/phased_dsm_end2end_ventoux_lr.tif"
+            ),
+            "weights": absolute_data_path(
+                "ref_output/weights_end2end_ventoux_lr.tif"
+            ),
+            "color": absolute_data_path(
+                "ref_output/color_end2end_ventoux_lr.tif"
+            ),
+            "classification": absolute_data_path(
+                "ref_output/classif_end2end_ventoux_lr.tif"
+            ),
+            "performance_map": absolute_data_path(
+                "ref_output/performance_map_end2end_ventoux_lr.tif"
+            ),
+            "dsm_inf": absolute_data_path(
+                "ref_output/dsm_inf_end2end_ventoux_lr.tif"
+            ),
+        }
+
         input_dsm_config = {
             "inputs": {
                 "dsms": {
-                    "one": {
-                        "dsm": absolute_data_path(
-                            "ref_output/phased_dsm_end2end_ventoux_lr.tif"
-                        ),
-                        "weights": absolute_data_path(
-                            "ref_output/weights_end2end_ventoux_lr.tif"
-                        ),
-                        "color": absolute_data_path(
-                            "ref_output/color_end2end_ventoux_lr.tif"
-                        ),
-                        "classification": absolute_data_path(
-                            "ref_output/classif_end2end_ventoux_lr.tif"
-                        ),
-                    },
-                    "two": {
-                        "dsm": absolute_data_path(
-                            "ref_output/phased_dsm_end2end_ventoux_rl.tif"
-                        ),
-                        "weights": absolute_data_path(
-                            "ref_output/weights_end2end_ventoux_rl.tif"
-                        ),
-                        "color": absolute_data_path(
-                            "ref_output/color_end2end_ventoux_lr.tif"
-                        ),
-                        "classification": absolute_data_path(
-                            "ref_output/classif_end2end_ventoux_rl.tif"
-                        ),
-                    },
+                    "one": in_dsm,
+                    "two": in_dsm,
                 }
             }
         }
@@ -275,33 +255,19 @@ def test_end2end_color_after_dsm_reentrance():
     test the colorisation after depth_map re entrance
     """
 
+    in_dsm = {
+        "dsm": absolute_data_path(
+            "ref_output/phased_dsm_end2end_ventoux_lr.tif"
+        ),
+        "weights": absolute_data_path(
+            "ref_output/weights_end2end_ventoux_lr.tif"
+        ),
+        "color": absolute_data_path("ref_output/color_end2end_ventoux_lr.tif"),
+    }
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_dsm_config = {
             "inputs": {
-                "dsms": {
-                    "one": {
-                        "dsm": absolute_data_path(
-                            "ref_output/phased_dsm_end2end_ventoux_lr.tif"
-                        ),
-                        "weights": absolute_data_path(
-                            "ref_output/weights_end2end_ventoux_lr.tif"
-                        ),
-                        "color": absolute_data_path(
-                            "ref_output/color_end2end_ventoux_lr.tif"
-                        ),
-                    },
-                    "two": {
-                        "dsm": absolute_data_path(
-                            "ref_output/phased_dsm_end2end_ventoux_rl.tif"
-                        ),
-                        "weights": absolute_data_path(
-                            "ref_output/weights_end2end_ventoux_rl.tif"
-                        ),
-                        "color": absolute_data_path(
-                            "ref_output/color_end2end_ventoux_lr.tif"
-                        ),
-                    },
-                },
+                "dsms": {"one": in_dsm, "two": in_dsm},
                 "sensors": {
                     "one": {
                         "image": absolute_data_path(
@@ -1867,7 +1833,6 @@ def test_end2end_ventoux_unique_split():
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
                 "save_intermediate_data": True,
-                "generate_confidence_intervals": False,
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
@@ -3457,8 +3422,7 @@ def test_end2end_ventoux_with_color():
                 "loader": "pandora",
                 "save_intermediate_data": True,
                 "use_global_disp_range": False,
-                "generate_performance_map": False,
-                "generate_confidence_intervals": False,
+                "performance_map_method": ["risk", "intervals"],
             },
             "triangulation": {
                 "save_intermediate_data": True,
@@ -3614,6 +3578,26 @@ def test_end2end_ventoux_with_color():
         #         )
         #     ),
         # )
+        # copy2(
+        #     os.path.join(
+        #     out_dir, "dump_dir", "rasterization", "performance_map.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "performance_map_end2end_ventoux_with_color.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dump_dir", "triangulation",
+        #     "left_right", "performance_map_from_risk.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "performance_map_from_risk_end2end_ventoux_with_color.tif"
+        #         )
+        #     ),
+        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -3630,6 +3614,36 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_with_color.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir, "dump_dir", "rasterization", "performance_map.tif"
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "performance_map_end2end_ventoux_with_color.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "triangulation",
+                "left_right",
+                "performance_map_from_risk.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "performance_map_from_risk_end2end_ventoux_with_color.tif",
                 )
             ),
             rtol=0.0002,

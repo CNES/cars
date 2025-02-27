@@ -527,7 +527,6 @@ class PandoraSparseMatching(
                             disp_upper_bound=disp_upper_bound,
                             disp_lower_bound=disp_lower_bound,
                             resolution=self.resolution,
-                            disp_to_alt_ratio=disp_to_alt_ratio,
                             saving_info_matches=full_saving_info_matches,
                             saving_info_disparity_map=full_saving_info_disp_map,
                         )
@@ -548,7 +547,6 @@ def compute_pandora_matches_wrapper(
     disp_upper_bound,
     disp_lower_bound,
     resolution,
-    disp_to_alt_ratio=None,
     saving_info_matches=None,
     saving_info_disparity_map=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
@@ -597,7 +595,6 @@ def compute_pandora_matches_wrapper(
                     disp_upper_bound,
                     disp_lower_bound,
                     res,
-                    disp_to_alt_ratio,
                 )
             else:
                 matches, _ = pandora_tools.pandora_matches(
@@ -607,7 +604,6 @@ def compute_pandora_matches_wrapper(
                     disp_upper_bound,
                     disp_lower_bound,
                     res,
-                    disp_to_alt_ratio,
                 )
 
             if list_matches is None:
@@ -622,7 +618,6 @@ def compute_pandora_matches_wrapper(
             disp_upper_bound,
             disp_lower_bound,
             resolution,
-            disp_to_alt_ratio,
         )
 
     # Resample the matches in full resolution

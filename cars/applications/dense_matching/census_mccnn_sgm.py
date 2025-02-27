@@ -97,14 +97,8 @@ class CensusMccnnSgm(
         self.disp_min_threshold = self.used_config["disp_min_threshold"]
         self.disp_max_threshold = self.used_config["disp_max_threshold"]
 
-        # Performance map
-        self.generate_performance_map = self.used_config[
-            "generate_performance_map"
-        ]
+        # Ambiguity
         self.generate_ambiguity = self.used_config["generate_ambiguity"]
-        self.perf_ambiguity_threshold = self.used_config[
-            "perf_ambiguity_threshold"
-        ]
 
         # Margins computation parameters
         # Use local disp
@@ -119,6 +113,23 @@ class CensusMccnnSgm(
 
         # init orchestrator
         self.orchestrator = None
+
+    def get_performance_map_parameters(self):
+        """
+        Get parameter linked to performance, that will be used in triangulation
+
+        :return: parameters to use
+        :type: dict
+        """
+
+        return {
+            "performance_map_method": self.used_config[
+                "performance_map_method"
+            ],
+            "perf_ambiguity_threshold": self.used_config[
+                "perf_ambiguity_threshold"
+            ],
+        }
 
     def check_conf(self, conf):
         """
@@ -197,18 +208,28 @@ class CensusMccnnSgm(
         )
 
         # Permormance map parameters
-        overloaded_conf["generate_performance_map"] = conf.get(
-            "generate_performance_map",
-            overloaded_conf["save_intermediate_data"],
-        )
         overloaded_conf["generate_ambiguity"] = conf.get(
             "generate_ambiguity",
             overloaded_conf["save_intermediate_data"],
         )
-        overloaded_conf["generate_confidence_intervals"] = conf.get(
-            "generate_confidence_intervals",
-            overloaded_conf["save_intermediate_data"],
+
+        # Permormance map parameters
+        default_perf_map_method = None
+        if overloaded_conf["save_intermediate_data"]:
+            default_perf_map_method = "risk"
+        overloaded_conf["performance_map_method"] = conf.get(
+            "performance_map_method",
+            default_perf_map_method,
         )
+
+        # Get performance map method
+        perf_map_method = overloaded_conf["performance_map_method"]
+        if isinstance(overloaded_conf["performance_map_method"], str):
+            perf_map_method = [perf_map_method]
+        elif perf_map_method is None:
+            perf_map_method = []
+
+        overloaded_conf["performance_map_method"] = perf_map_method
 
         # check loader
         loader_conf = conf.get("loader_conf", None)
@@ -217,13 +238,10 @@ class CensusMccnnSgm(
         pandora_loader = PandoraLoader(
             conf=loader_conf,
             method_name=overloaded_conf["method"],
-            generate_performance_map=overloaded_conf[
-                "generate_performance_map"
-            ],
+            generate_performance_map_from_risk="risk" in perf_map_method,
+            generate_performance_map_from_intervals="intervals"
+            in perf_map_method,
             generate_ambiguity=overloaded_conf["generate_ambiguity"],
-            generate_confidence_intervals=overloaded_conf[
-                "generate_confidence_intervals"
-            ],
             perf_eta_max_ambiguity=overloaded_conf["perf_eta_max_ambiguity"],
             perf_eta_max_risk=overloaded_conf["perf_eta_max_risk"],
             perf_eta_step=overloaded_conf["perf_eta_step"],
@@ -268,9 +286,11 @@ class CensusMccnnSgm(
             "disp_min_threshold": Or(None, int),
             "disp_max_threshold": Or(None, int),
             "save_intermediate_data": bool,
-            "generate_performance_map": bool,
             "generate_ambiguity": bool,
-            "generate_confidence_intervals": bool,
+            "performance_map_method": And(
+                list,
+                lambda x: all(y in ["risk", "intervals"] for y in x),
+            ),
             "perf_eta_max_ambiguity": float,
             "perf_eta_max_risk": float,
             "perf_eta_step": float,
@@ -1103,7 +1123,6 @@ class CensusMccnnSgm(
         pair_key="PAIR_0",
         disp_range_grid=None,
         compute_disparity_masks=False,
-        disp_to_alt_ratio=None,
     ):
         """
         Run Matching application.
@@ -1146,8 +1165,6 @@ class CensusMccnnSgm(
         :type pair_key: str
         :param disp_range_grid: minimum and maximum disparity grid
         :type disp_range_grid: CarsDataset
-        :param disp_to_alt_ratio: disp to alti ratio used for performance map
-        :type disp_to_alt_ratio: float
 
         :return: disparity map: \
             The CarsDataset contains:
@@ -1173,13 +1190,6 @@ class CensusMccnnSgm(
             )
         else:
             self.orchestrator = orchestrator
-
-        # crash if generate performance and disp_to_alt_ratio not set
-        if disp_to_alt_ratio is None and self.generate_performance_map:
-            raise RuntimeError(
-                "User wants to generate performance map without "
-                "providing disp_to_alt_ratio"
-            )
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
@@ -1359,13 +1369,6 @@ class CensusMccnnSgm(
                             broadcasted_disp_range_grid,
                             saving_info=full_saving_info,
                             compute_disparity_masks=compute_disparity_masks,
-                            generate_performance_map=(
-                                self.generate_performance_map
-                            ),
-                            perf_ambiguity_threshold=(
-                                self.perf_ambiguity_threshold
-                            ),
-                            disp_to_alt_ratio=disp_to_alt_ratio,
                             crop_with_range=crop_with_range,
                         )
 
@@ -1384,9 +1387,6 @@ def compute_disparity_wrapper(
     disp_range_grid,
     saving_info=None,
     compute_disparity_masks=False,
-    generate_performance_map=False,
-    perf_ambiguity_threshold=0.6,
-    disp_to_alt_ratio=None,
     crop_with_range=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
@@ -1482,9 +1482,6 @@ def compute_disparity_wrapper(
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
         compute_disparity_masks=compute_disparity_masks,
-        generate_performance_map=generate_performance_map,
-        perf_ambiguity_threshold=perf_ambiguity_threshold,
-        disp_to_alt_ratio=disp_to_alt_ratio,
         cropped_range=mask_crop,
     )
 

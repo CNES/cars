@@ -22,6 +22,7 @@
 Preprocessing module:
 contains functions used for triangulation
 """
+import copy
 
 # Third party imports
 import logging
@@ -481,3 +482,40 @@ def generate_point_cloud_file_names(
                     )
 
     return csv_pc_file_name, laz_pc_file_name
+
+
+def compute_performance_map(
+    alti_ref, z_inf, z_sup, ambiguity_map=None, perf_ambiguity_threshold=None
+):
+    """
+    Compute performance map
+
+    :param alti_ref: z
+    :type alti_ref: xarray Dataarray
+    :param z_inf: z inf map
+    :type z_inf: xarray Dataarray
+    :param z_sup: z sup map
+    :type z_sup: xarray Dataarray
+    :param ambiguity_map: None or ambiguity map
+    :type ambiguity_map: xarray Dataarray
+    :param perf_ambiguity_threshold: ambiguity threshold to use
+    :type perf_ambiguity_threshold: None or float
+
+    """
+    performance_map = copy.copy(alti_ref)
+
+    performance_map_values = np.maximum(
+        np.abs(alti_ref.values - z_inf.values),
+        np.abs(z_sup.values - alti_ref.values),
+    )
+
+    if ambiguity_map is not None:
+        ambiguity_map = 1 - ambiguity_map.values
+        mask_ambi = ambiguity_map > perf_ambiguity_threshold
+        w_ambi = ambiguity_map / perf_ambiguity_threshold
+        w_ambi[mask_ambi] = 1
+        performance_map_values *= w_ambi
+
+    performance_map.values = performance_map_values
+
+    return performance_map

@@ -106,6 +106,15 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def get_performance_map_parameters(self):
+        """
+        Get parameter linked to performance, that will be used in triangulation
+
+        :return: parameters to use
+        :type: dict
+        """
+
+    @abstractmethod
     def get_margins_fun(self, grid_left, disp_range_grid):
         """
         Get Margins function  that generates margins needed by

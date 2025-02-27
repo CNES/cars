@@ -40,8 +40,6 @@ from pandora.check_configuration import (
 from pandora.img_tools import get_metadata
 from pandora.state_machine import PandoraMachine
 
-from cars.core import constants_disparity as cst_disp
-
 
 class PandoraLoader:
     """
@@ -53,9 +51,9 @@ class PandoraLoader:
         self,
         conf=None,
         method_name=None,
-        generate_performance_map=False,
+        generate_performance_map_from_risk=False,
+        generate_performance_map_from_intervals=False,
         generate_ambiguity=False,
-        generate_confidence_intervals=False,
         perf_eta_max_ambiguity=0.99,
         perf_eta_max_risk=0.25,
         perf_eta_step=0.04,
@@ -75,6 +73,7 @@ class PandoraLoader:
         :param use_cross_validation: true to add crossvalidation
 
         """
+
         if method_name is None:
             method_name = "census_sgm"
 
@@ -146,27 +145,13 @@ class PandoraLoader:
         }
 
         confidences = {}
-        if generate_performance_map:
+        if generate_performance_map_from_risk:
             confidences.update(perf_ambiguity_conf)
             confidences.update(perf_risk_conf)
-        if generate_confidence_intervals:
-            if uses_cars_pandora_conf:
-                confidences.update(perf_ambiguity_conf)
-                confidences.update(intervals_conf)
-            else:
-                flag_intervals = True
-                # Check consistency between generate_confidence_intervals
-                # and loader_conf
-                for key, item in conf["pipeline"].items():
-                    if cst_disp.CONFIDENCE_KEY in key:
-                        if item["confidence_method"] == cst_disp.INTERVAL:
-                            flag_intervals = False
-                if flag_intervals:
-                    raise KeyError(
-                        "Interval computation has been requested "
-                        "but no interval confidence is in the "
-                        "dense_matching_configuration loader_conf"
-                    )
+        if generate_performance_map_from_intervals:
+            confidences.update(perf_ambiguity_conf)
+            confidences.update(intervals_conf)
+
         if generate_ambiguity:
             confidences.update(perf_ambiguity_conf)
 
@@ -179,7 +164,7 @@ class PandoraLoader:
         if use_cross_validation and "validation" not in conf["pipeline"]:
             conf["pipeline"].update(cross_validation_conf)
 
-        if generate_confidence_intervals:
+        if generate_performance_map_from_intervals:
             # To ensure the consistency between the disparity map
             # and the intervals, the median filter for intervals
             # must be similar to the median filter. The filter is

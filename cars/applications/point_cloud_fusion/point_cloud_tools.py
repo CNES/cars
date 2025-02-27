@@ -512,22 +512,6 @@ def create_combined_dense_cloud(  # noqa: C901
         flatten_cloud[cloud_indexes.index(cst.Y), :] = np.ravel(crop_y)
         flatten_cloud[cloud_indexes.index(cst.Z), :] = np.ravel(crop_z)
 
-        if (cst.Z_INF in cloud_indexes) and (cst.Z_SUP in cloud_indexes):
-            full_z_inf = point_cloud[cst.Z_INF].values
-            full_z_sup = point_cloud[cst.Z_SUP].values
-            crop_z_inf = full_z_inf[
-                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
-            ]
-            crop_z_sup = full_z_sup[
-                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
-            ]
-            flatten_cloud[cloud_indexes.index(cst.Z_INF), :] = np.ravel(
-                crop_z_inf
-            )
-            flatten_cloud[cloud_indexes.index(cst.Z_SUP), :] = np.ravel(
-                crop_z_sup
-            )
-
         # add index of original point cloud
         flatten_cloud[cloud_indexes.index(cst.POINT_CLOUD_GLOBAL_ID), :] = (
             cloud_global_id
@@ -539,8 +523,17 @@ def create_combined_dense_cloud(  # noqa: C901
             (cst.EPI_MSK, cst.POINT_CLOUD_MSK),
             (cst.EPI_CLASSIFICATION, cst.POINT_CLOUD_CLASSIF_KEY_ROOT),
             (cst.EPI_FILLING, cst.POINT_CLOUD_FILLING_KEY_ROOT),
-            (cst.EPI_PERFORMANCE_MAP, cst.POINT_CLOUD_PERFORMANCE_MAP),
         ]
+
+        # Add layer inf and sup
+        for array_name in point_cloud:
+            if cst.POINT_CLOUD_LAYER_SUP_OR_INF_ROOT in array_name:
+                arrays_to_add_to_point_cloud.append((array_name, array_name))
+
+        # add performance map
+        for array_name in point_cloud:
+            if cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT in array_name:
+                arrays_to_add_to_point_cloud.append((array_name, array_name))
 
         # add confidence layers
         for array_name in point_cloud:
@@ -630,10 +623,14 @@ def create_point_cloud_index(cloud_sample):
         cst.Z: "float64",
     }
 
-    # Add Z_inf and Z_sup if intervals have been computed
-    if (cst.Z_INF in cloud_sample) and (cst.Z_SUP in cloud_sample):
-        cloud_indexes_with_types[cst.Z_INF] = "float64"
-        cloud_indexes_with_types[cst.Z_SUP] = "float64"
+    # Add Z_inf Z_sup, and performance maps if computed
+    for key in list(cloud_sample.keys()):
+        if (
+            cst.POINT_CLOUD_LAYER_INF in key
+            or cst.POINT_CLOUD_LAYER_SUP in key
+            or cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT in key
+        ):
+            cloud_indexes_with_types[key] = "float32"
 
     # Add mask index
     if cst.EPI_MSK in cloud_sample:
@@ -662,10 +659,6 @@ def create_point_cloud_index(cloud_sample):
         for band in band_filling:
             band_index = "{}_{}".format(cst.POINT_CLOUD_FILLING_KEY_ROOT, band)
             cloud_indexes_with_types[band_index] = "uint8"
-
-    # Add performance_map indexes
-    if cst.EPI_PERFORMANCE_MAP in cloud_sample:
-        cloud_indexes_with_types[cst.POINT_CLOUD_PERFORMANCE_MAP] = "float32"
 
     # Add confidence indexes
     for key in cloud_sample:

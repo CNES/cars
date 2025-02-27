@@ -163,7 +163,9 @@ The structure follows this organization:
 
                     To generate confidence maps, `z_inf` and `z_sup`, the parameter `save_intermediate_data` of `triangulation` should be activated.
 
-                    To generate the performance map, the parameters `generate_performance_map` and `save_intermediate_data` of the `dense_matching` application must be activated.
+                    To generate the performance map, the parameters `performance_map_method` and `save_intermediate_data` of the `dense_matching` application must be activated. Or activate `performance_map` in `auxiliary`, with `product_level` `depth_map`
+                    A `performance_map.tif` file will be generated if only one method is selected. If both methods are selected, two files will be generated: `performance_map_from_risk.tif` and `performance_map_from_intervals.tif`.
+                    Select the file you want to re enter with.
 
                     It is possible to add sensors inputs while using depth_maps inputs
                     
@@ -231,9 +233,13 @@ The structure follows this organization:
 
                 .. note::
 
-                    To generate confidence maps, `z_inf` and `z_sup`, the parameter `save_intermediate_data` of `triangulation` should be activated.
+                    To generate confidence maps, `z_inf` and `z_sup`, the parameter `save_intermediate_data` of `rasterization` should be activated.
 
-                    To generate the performance map, the parameters `generate_performance_map` and `save_intermediate_data` of the `dense_matching` application must be activated.
+                    To generate the performance map, the parameters `performance_map_method` and `save_intermediate_data` of the `dense_matching` application must be activated. Or activate `performance_map` in `auxiliary`, with `product_level` `depth_map`
+                    A `performance_map.tif` file will be generated if only one method is selected. If both methods are selected, two files will be generated: `performance_map_from_risk.tif` and `performance_map_from_intervals.tif`.
+                    Select the file you want to re enter with.
+
+                    Only one method for performance map generation should have been selected: only two dimensions rasters for `dsm_inf*.tif`, `dsm_sup*.tif`, `performance_map.tif` are supported.
 
                     It is possible to add sensors inputs while using dsm inputs
                     
@@ -877,6 +883,10 @@ The structure follows this organization:
                         "filling": "filling.tif"
                     }
 
+                .. note::
+                    If `performance_map_method` in dense matching configuration is a list with more than one element, `performance_map.tif` will be a 3 dimension raster: each band contains the performance map for each method.
+                    Else, it will be a two dimension raster
+
             .. tab:: Depth map output
 
                 If product type `depth_map` is selected, a directory named `depth_map` will be created with a subfolder for every pair. The file `depth_map/index.json` shows the path of every generated file. For example :
@@ -907,6 +917,10 @@ The structure follows this organization:
                             "epsg": 4326
                         }
                     }
+
+                .. note::
+                    If `performance_map_method` in dense matching configuration is a list with more than one element, `performance_map_from_risk.tif` and `performance_map_from_intervals.tif` will be generated. Choose one to re enter with.
+
 
             .. tab:: Point cloud output
 

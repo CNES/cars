@@ -337,8 +337,8 @@ def test_simple_rasterization_dataset_1_intervals():
     cloud = xr.open_dataset(
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
-    cloud[cst.Z_INF] = cloud[cst.Z] - 0.5
-    cloud[cst.Z_SUP] = cloud[cst.Z] + 1
+    cloud[cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS] = cloud[cst.Z] - 0.5
+    cloud[cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS] = cloud[cst.Z] + 1
 
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
@@ -395,7 +395,6 @@ def test_simple_rasterization_dataset_1_intervals():
         sigma=sigma,
         radius=radius,
     )
-
     # Uncomment to update references
     # raster.to_netcdf(
     #     absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc"),
@@ -808,6 +807,8 @@ def test_mask_interp_case1(
         __,
         __,
         res,
+        __,
+        __,
         __,
         __,
         __,

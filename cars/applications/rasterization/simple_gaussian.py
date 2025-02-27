@@ -653,7 +653,7 @@ class SimpleGaussian(
                 optional_data=True,
             )
 
-            list_computed_layers += ["intervals", "stats"]
+            list_computed_layers += [cst.POINT_CLOUD_LAYER_SUP_OR_INF_ROOT]
             out_dsm_inf_file_name = os.path.join(out_dump_dir, "dsm_inf.tif")
             self.orchestrator.add_to_save_lists(
                 out_dsm_inf_file_name,
