@@ -522,10 +522,16 @@ def downsample(tab, resolution):
     upsampled_dataset.attrs["transform"] = transform
 
     # roi_with_margins
+    # Since we are working with bands and not tiles,
+    # the column coordinates of the roi_with_margins vector
+    # will match the image size. However, an issue may arise with row values.
+    # To prevent rounding errors, we set roi_with_margins[2]
+    # and add the image's row size to roi_with_margins[2].
     roi_with_margins = np.empty(4)
     roi_with_margins[0] = np.floor(tab.roi_with_margins[0] * resolution)
-    roi_with_margins[2] = np.floor(tab.roi_with_margins[2] * resolution)
     roi_with_margins[1] = np.floor(tab.roi_with_margins[1] * resolution)
+    roi_with_margins[2] = np.floor(tab.roi_with_margins[2] * resolution)
+    # Add the image's row size to prevent rounding issues
     roi_with_margins[3] = roi_with_margins[1] + upsampled_raster.shape[0]
     upsampled_dataset.attrs["roi_with_margins"] = roi_with_margins.astype(int)
 
