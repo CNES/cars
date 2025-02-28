@@ -35,7 +35,7 @@ import psutil
 # Agg backend for non interactive
 matplotlib.use("Agg")
 
-
+TERMINATE = 1
 RAM_PER_WORKER_CHECK_SLEEP_TIME = 2
 INTERVAL_CPU = 0.2
 SAVE_TIME = 120
@@ -133,12 +133,35 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
         self.saver_thread.daemon = True
         self.saver_thread.start()
 
+    def cleanup(self):
+        """
+        Cleanup
+        """
+
+        clean_thread(self.monitor_thread)
+        clean_thread(self.saver_thread)
+
     def save_plot(self):
         """
         Save plots
         """
         logging.info("Save profing plots ...")
-        save_data(self.memory_data, self.file_plot)
+        try:
+            save_data(self.memory_data, self.file_plot)
+        except Exception as exc:
+            logging.warning("unable to save monitoring graph : {}".format(exc))
+
+
+def clean_thread(thread):
+    """
+    Clean thread
+
+    :param thread: thread to clean
+    """
+    # Terminate worker
+    thread._state = TERMINATE  # pylint: disable=W0212
+    while thread.is_alive():
+        time.sleep(0)
 
 
 def get_process_memory(process):
@@ -178,7 +201,10 @@ def save_figure_in_thread(to_fill_dataframe, file_path):
     while True:
         time.sleep(SAVE_TIME)
         # Save file
-        save_data(to_fill_dataframe, file_path)
+        try:
+            save_data(to_fill_dataframe, file_path)
+        except Exception as exc:
+            logging.warning("unable to save monitoring graph : {}".format(exc))
 
 
 def check_pool_memory_usage(

@@ -291,6 +291,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         # Save profiling
         self.profiler.save_plot()
 
+        # clean profiler
+        self.profiler.cleanup()
+
         # Terminate worker
         self.refresh_worker._state = TERMINATE  # pylint: disable=W0212
         while self.refresh_worker.is_alive():
