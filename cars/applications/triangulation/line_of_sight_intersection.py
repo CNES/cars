@@ -792,6 +792,16 @@ class LineOfSightIntersection(
 
         # Generate Point clouds
 
+        # Interpolate grid
+        grid_left = RectificationGrid(
+            grid_left.attributes["path"],
+            interpolator=geometry_plugin.interpolator,
+        )
+        grid_right = RectificationGrid(
+            grid_right.attributes["path"],
+            interpolator=geometry_plugin.interpolator,
+        )
+
         # broadcast grids
         broadcasted_grid_left = self.orchestrator.cluster.scatter(grid_left)
         broadcasted_grid_right = self.orchestrator.cluster.scatter(grid_right)
