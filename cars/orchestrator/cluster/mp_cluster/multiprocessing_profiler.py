@@ -89,6 +89,7 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
         self.file_plot = os.path.join(
             self.out_dir, "logs", "profiling", "memory_profiling.png"
         )
+        os.makedirs(os.path.dirname(self.file_plot), exist_ok=True)
         self.max_ram_per_worker = max_ram_per_worker
 
         if mp_dataframe is not None and timer is not None:
