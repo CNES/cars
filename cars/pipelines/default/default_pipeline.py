@@ -1870,7 +1870,7 @@ class DefaultPipeline(PipelineTemplate):
                 uncorrected_grid_right=self.pairs[pair_key]["grid_right"],
                 geoid_path=output_geoid_path,
                 cloud_id=cloud_id,
-                performance_maps_parameters=(
+                performance_maps_param=(
                     self.dense_matching_app.get_performance_map_parameters()
                 ),
                 depth_map_dir=depth_map_dir,
