@@ -253,7 +253,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         """
         return MpDelayed
 
-    def cleanup(self):
+    def cleanup(self, keep_tmp_dir=False):
         """
         Cleanup cluster
 
@@ -268,19 +268,20 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.pool.terminate()
         self.pool.join()
 
-        # clean tmpdir if exists
-        self.wrapper.cleanup()
+        if not keep_tmp_dir:
+            # clean tmpdir if exists
+            self.wrapper.cleanup()
 
-        if self.tmp_dir is not None:
-            shutil.rmtree(self.tmp_dir)
+            if self.tmp_dir is not None:
+                shutil.rmtree(self.tmp_dir)
 
     def scatter(self, data):
         """
         Distribute data through workers
 
-        :param data: task data
+        :param data: data to dump
         """
-        return data
+        return self.wrapper.scatter_obj(data)
 
     def create_task_wrapped(self, func, nout=1):
         """

@@ -524,7 +524,7 @@ class Orchestrator:
 
         """
         if self.launch_worker:
-            self.cluster.cleanup()
+            self.cluster.cleanup(keep_tmp_dir=True)
         self.cluster = AbstractCluster(  # pylint: disable=E0110
             self.orchestrator_conf,
             self.out_dir,

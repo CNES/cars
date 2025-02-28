@@ -26,6 +26,7 @@ import threading
 import time
 
 from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data_rec
+from cars.orchestrator.cluster.mp_cluster.mp_wrapper import load_args_or_kwargs
 
 
 class MpJob:  # pylint: disable=R0903
@@ -528,4 +529,7 @@ class FactorizedObject:
             kwargs = replace_data_rec(
                 kwargs, transform_previous_data_to_results, previous_result
             )
+            # Load remaining args : scattered data
+            args = load_args_or_kwargs(args)
+            kwargs = load_args_or_kwargs(kwargs)
         return func(*args, **kwargs)

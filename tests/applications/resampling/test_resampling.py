@@ -39,6 +39,7 @@ from cars.applications.resampling import bicubic_resampling, resampling_tools
 from cars.conf import input_parameters as in_params
 from cars.core import constants as cst
 from cars.core import tiling
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.orchestrator import orchestrator
 from cars.pipelines.parameters import sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -426,6 +427,10 @@ def test_check_tiles_in_sensor():
             opt_epipolar_tile_size,
         )
 
+        geom_plugin = AbstractGeometry(  # pylint: disable=E0110
+            "SharelocGeometry"
+        )
+
         # Check if tiles are in sensors
         (
             in_sensor_left_array,
@@ -436,6 +441,7 @@ def test_check_tiles_in_sensor():
             epi_tilling_grid,
             grid_left,
             grid_right,
+            geom_plugin,
         )
 
         # Assert number of tiles used

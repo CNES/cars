@@ -22,9 +22,9 @@
 Contains functions for wrapper disk
 """
 
-# Standard imports
 import logging
 import os
+import pickle
 import shutil
 from abc import ABCMeta, abstractmethod
 from multiprocessing.pool import ThreadPool
@@ -33,6 +33,9 @@ import pandas
 
 # Third party imports
 import xarray as xr
+
+# Standard imports
+from cars.core.utils import safe_makedirs
 
 # CARS imports
 from cars.data_structures import cars_dataset, cars_dict
@@ -44,6 +47,7 @@ from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
 DENSE_NAME = "DenseDO"
 SPARSE_NAME = "SparseDO"
 DICT_NAME = "DictDO"
+SCATTERED_NAME = "ScatteredDO"
 
 
 class AbstractWrapper(metaclass=ABCMeta):
@@ -233,6 +237,22 @@ class WrapperDisk(AbstractWrapper):
         res = load(obj)
         return res
 
+    def scatter_obj(self, obj):
+        """
+        Distribute data through workers
+
+        :param obj: object to dump
+        """
+        directory = os.path.join(
+            self.tmp_dir, SCATTERED_NAME + "_" + repr(self.current_object_id)
+        )
+        safe_makedirs(directory)
+        self.current_object_id += 1
+        path = os.path.join(directory, "obj")
+        with open(path, "wb") as handle:
+            pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        return path
+
 
 def removing_disk_data(path):
     """
@@ -337,7 +357,12 @@ def is_dumped_object(obj):
 
     is_dumped = False
     if isinstance(obj, str):
-        if DENSE_NAME in obj or SPARSE_NAME in obj or DICT_NAME in obj:
+        if (
+            DENSE_NAME in obj
+            or SPARSE_NAME in obj
+            or DICT_NAME in obj
+            or SCATTERED_NAME in obj
+        ):
             is_dumped = True
 
     return is_dumped
@@ -357,17 +382,34 @@ def load(path):
         obj = path
         if DENSE_NAME in path:
             obj = cars_dataset.CarsDataset("arrays").load_single_tile(path)
-
         elif SPARSE_NAME in path:
             obj = cars_dataset.CarsDataset("points").load_single_tile(path)
         elif DICT_NAME in path:
             obj = cars_dataset.CarsDataset("dict").load_single_tile(path)
+        elif SCATTERED_NAME in path:
+            obj = load_scattered_data(path)
 
         else:
-            logging.warning("Not a dumped arrays or points or dict")
+            logging.warning(
+                "Not a dumped arrays or points or dict or scattered data"
+            )
 
     else:
         obj = None
+    return obj
+
+
+def load_scattered_data(path):
+    """
+    Load scattered object from disk
+
+    :param path: path
+    :type path: str
+
+    :return: object
+    """
+    with open(path, "rb") as handle:
+        obj = pickle.load(handle)
     return obj
 
 
