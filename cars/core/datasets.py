@@ -78,7 +78,9 @@ def create_im_dataset(
         # Reorder dimensions in color dataset in order that the first dimension
         # is band.
         if band_coords == cst.BAND_IM:
-            if np.any(descriptions) is None:
+            if descriptions is None or None in descriptions:
+                if nb_bands > 4:
+                    raise RuntimeError("Not implemented case")
                 default_band = ["R", "G", "B", "N"]
                 descriptions = default_band[:nb_bands]
 
@@ -96,7 +98,7 @@ def create_im_dataset(
             },
         )
     else:
-        if np.any(descriptions) is None:
+        if descriptions is None or None in descriptions:
             descriptions = None
         dataset = xr.Dataset(
             {cst.EPI_IMAGE: ([cst.ROW, cst.COL], img[0, ...])},

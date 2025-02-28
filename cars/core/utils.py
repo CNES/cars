@@ -25,6 +25,7 @@ contains some cars global shared general purpose functions
 # Standard imports
 import errno
 import os
+import re
 import shutil
 from typing import Tuple
 
@@ -72,6 +73,21 @@ def make_relative_path_absolute(path, directory):
     return out
 
 
+def safe_cast_float(data):
+    """
+    Safe cast to float data
+
+    :param data: string to get float in
+
+    :return float from data
+    """
+    if isinstance(data, str):
+        match = re.search(r"[-+]?\d*\.\d+|\d+", data)
+        if match:
+            return float(match.group())
+    return None
+
+
 def get_elevation_range_from_metadata(
     img: str, default_min: float = 0, default_max: float = 300
 ) -> Tuple[float, float]:
@@ -92,6 +108,8 @@ def get_elevation_range_from_metadata(
     with rio.open(img) as descriptor:
         gdal_height_offset = descriptor.get_tag_item("HEIGHT_OFF", "RPC")
         gdal_height_scale = descriptor.get_tag_item("HEIGHT_SCALE", "RPC")
+        gdal_height_offset = safe_cast_float(gdal_height_offset)
+        gdal_height_scale = safe_cast_float(gdal_height_scale)
 
         if gdal_height_scale is not None and gdal_height_offset is not None:
             if isinstance(gdal_height_offset, str):

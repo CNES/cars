@@ -59,3 +59,15 @@ def test_angle_vectors():
     angle_result = utils.angle_vectors(vector_1, vector_2)
 
     assert angle_result == angle_ref
+
+
+@pytest.mark.unit_tests
+def test_safe_cast_float():
+    """
+    Testing  safe_cast_float
+    """
+
+    data = "1256.36586 meters"
+    transformed_data = utils.safe_cast_float(data)
+
+    assert transformed_data == 1256.36586
