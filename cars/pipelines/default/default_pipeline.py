@@ -1227,6 +1227,7 @@ class DefaultPipeline(PipelineTemplate):
                             ],
                             self.pairs[pair_key]["corrected_grid_left"],
                             self.pairs[pair_key]["corrected_grid_right"],
+                            geom_plugin,
                             orchestrator=self.cars_orchestrator,
                             pair_key=pair_key,
                             pair_folder=os.path.join(
