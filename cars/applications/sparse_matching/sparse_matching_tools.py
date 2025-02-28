@@ -525,8 +525,8 @@ def downsample(tab, resolution):
     # Since we are working with bands and not tiles,
     # the column coordinates of the roi_with_margins vector
     # will match the image size. However, an issue may arise with row values.
-    # To prevent rounding errors, we set roi_with_margins[2]
-    # and add the image's row size to roi_with_margins[2].
+    # To prevent rounding errors, we set roi_with_margins[1]
+    # and add the image's row size to roi_with_margins[3].
     roi_with_margins = np.empty(4)
     roi_with_margins[0] = np.floor(tab.roi_with_margins[0] * resolution)
     roi_with_margins[1] = np.floor(tab.roi_with_margins[1] * resolution)
