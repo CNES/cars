@@ -479,8 +479,8 @@ def downsample(tab, resolution):
     """
     # Zoom is using round, that lead to some bugs,
     # so we had to redefine the resolution
-    coords_row = np.ceil(resolution * tab["im"].shape[0])
-    coords_col = np.ceil(resolution * tab["im"].shape[1])
+    coords_row = np.floor(resolution * tab["im"].shape[0])
+    coords_col = np.floor(resolution * tab["im"].shape[1])
     upscaled_factor = (
         coords_row / tab.im.shape[0],
         coords_col / tab.im.shape[1],
@@ -522,28 +522,31 @@ def downsample(tab, resolution):
     upsampled_dataset.attrs["transform"] = transform
 
     # roi_with_margins
+    # Since we are working with bands and not tiles,
+    # the column coordinates of the roi_with_margins vector
+    # will match the image size. However, an issue may arise with row values.
+    # To prevent rounding errors, we set roi_with_margins[1]
+    # and add the image's row size to roi_with_margins[3].
     roi_with_margins = np.empty(4)
-    roi_with_margins[0] = np.ceil(tab.roi_with_margins[0] * upscaled_factor[1])
-    roi_with_margins[1] = np.ceil(tab.roi_with_margins[1] * upscaled_factor[0])
-    roi_with_margins[2] = np.ceil(tab.roi_with_margins[2] * upscaled_factor[1])
-    roi_with_margins[3] = np.ceil(tab.roi_with_margins[3] * upscaled_factor[0])
+    roi_with_margins[0] = np.floor(tab.roi_with_margins[0] * resolution)
+    roi_with_margins[1] = np.floor(tab.roi_with_margins[1] * resolution)
+    roi_with_margins[2] = np.floor(tab.roi_with_margins[2] * resolution)
+    # Add the image's row size to prevent rounding issues
+    roi_with_margins[3] = roi_with_margins[1] + upsampled_raster.shape[0]
     upsampled_dataset.attrs["roi_with_margins"] = roi_with_margins.astype(int)
+
+    # margins
+    margins = np.floor(tab.margins * resolution)
+    upsampled_dataset.attrs["margins"] = margins
 
     # roi
     roi = np.empty(4)
-    roi[0] = np.ceil(tab.roi[0] * upscaled_factor[1])
-    roi[1] = np.ceil(tab.roi[1] * upscaled_factor[0])
-    roi[2] = np.ceil(tab.roi[2] * upscaled_factor[1])
-    roi[3] = np.ceil(tab.roi[3] * upscaled_factor[0])
-    upsampled_dataset.attrs["roi"] = roi.astype(int)
+    roi[0] = roi_with_margins[0]
+    roi[1] = roi_with_margins[1] - margins[1]
+    roi[2] = roi_with_margins[2]
+    roi[3] = roi_with_margins[3] - margins[3]
 
-    # margins
-    margins = np.empty(4)
-    margins[0] = -(roi[0] - roi_with_margins[0])
-    margins[1] = -(roi[1] - roi_with_margins[1])
-    margins[2] = roi_with_margins[2] - roi[2]
-    margins[3] = roi_with_margins[3] - roi[3]
-    upsampled_dataset.attrs["margins"] = margins
+    upsampled_dataset.attrs["roi"] = roi.astype(int)
 
     return upsampled_dataset, upscaled_factor
 

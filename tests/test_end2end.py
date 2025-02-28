@@ -2543,7 +2543,7 @@ def test_end2end_use_epipolar_a_priori():
                 == 612
             )
             assert (
-                -27
+                -29
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
