@@ -112,7 +112,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         uncorrected_grid_right=None,
         geoid_path=None,
         cloud_id=None,
-        performance_maps_parameters=None,
+        performance_maps_param=None,
         depth_map_dir=None,
         point_cloud_dir=None,
         save_output_coordinates=False,
@@ -193,9 +193,9 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type uncorrected_grid_right: CarsDataset
         :param geoid_path: geoid path
         :type geoid_path: str
-        :param performance_maps_parameters: parameters used
+        :param performance_maps_param: parameters used
             to generate performance map
-        :type performance_maps_parameters: dict or None
+        :type performance_maps_param: dict or None
         :param depth_map_dir: directory to write triangulation output depth
                 map.
         :type depth_map_dir: None or str

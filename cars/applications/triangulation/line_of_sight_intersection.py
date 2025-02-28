@@ -485,7 +485,7 @@ class LineOfSightIntersection(
         uncorrected_grid_right=None,
         geoid_path=None,
         cloud_id=None,
-        performance_maps_parameters=None,
+        performance_maps_param=None,
         depth_map_dir=None,
         point_cloud_dir=None,
         save_output_coordinates=False,
@@ -567,9 +567,9 @@ class LineOfSightIntersection(
         :type uncorrected_grid_right: CarsDataset
         :param geoid_path: geoid path
         :type geoid_path: str
-        :param performance_maps_parameters: parameters used
+        :param performance_maps_param: parameters used
             to generate performance map
-        :type performance_maps_parameters: dict or None
+        :type performance_maps_param: dict or None
         :param depth_map_dir: directory to write triangulation output depth
                 map.
         :type depth_map_dir: None or str
@@ -740,13 +740,13 @@ class LineOfSightIntersection(
 
             # Check performance_maps_parameters
             performance_maps_to_generate = None
-            if performance_maps_parameters is not None:
-                if "performance_map_method" not in performance_maps_parameters:
+            if performance_maps_param is not None:
+                if "performance_map_method" not in performance_maps_param:
                     raise RuntimeError("No performance_map_method specified")
-                performance_maps_to_generate = performance_maps_parameters[
+                performance_maps_to_generate = performance_maps_param[
                     "performance_map_method"
                 ]
-                if "perf_ambiguity_threshold" not in performance_maps_parameters:
+                if "perf_ambiguity_threshold" not in performance_maps_param:
                     raise RuntimeError("No perf_ambiguity_threshold specified")
 
             # Create CarsDataset
@@ -825,7 +825,9 @@ class LineOfSightIntersection(
 
             # broadcast grids
             broadcasted_grid_left = self.orchestrator.cluster.scatter(grid_left)
-            broadcasted_grid_right = self.orchestrator.cluster.scatter(grid_right)
+            broadcasted_grid_right = self.orchestrator.cluster.scatter(
+                grid_right
+            )
 
             # initialize empty index file for point cloud product if official
             # product is requested
@@ -857,34 +859,34 @@ class LineOfSightIntersection(
                             )
                         )
 
-                    # Compute points
-                    (
-                        epipolar_point_cloud[row][col],
-                        point_cloud[row][col],
-                    ) = self.orchestrator.cluster.create_task(
-                        triangulation_wrapper, nout=2
-                    )(
-                        epipolar_disparity_map[row, col],
-                        sensor1,
-                        sensor2,
-                        geomodel1,
-                        geomodel2,
-                        broadcasted_grid_left,
-                        broadcasted_grid_right,
-                        geometry_plugin,
-                        epsg,
-                        geoid_path=geoid_path,
-                        denoising_overload_fun=denoising_overload_fun,
-                        cloud_id=cloud_id,
-                        performance_maps_to_generate=(
-                            performance_maps_to_generate
-                        ),
-                        performance_maps_parameters=performance_maps_parameters,
-                        point_cloud_csv_file_name=csv_pc_file_name,
-                        point_cloud_laz_file_name=laz_pc_file_name,
-                        saving_info_epipolar=full_saving_info_epipolar,
-                        saving_info_flatten=full_saving_info_flatten,
-                    )
+                        # Compute points
+                        (
+                            epipolar_point_cloud[row][col],
+                            point_cloud[row][col],
+                        ) = self.orchestrator.cluster.create_task(
+                            triangulation_wrapper, nout=2
+                        )(
+                            epipolar_disparity_map[row, col],
+                            sensor1,
+                            sensor2,
+                            geomodel1,
+                            geomodel2,
+                            broadcasted_grid_left,
+                            broadcasted_grid_right,
+                            geometry_plugin,
+                            epsg,
+                            geoid_path=geoid_path,
+                            denoising_overload_fun=denoising_overload_fun,
+                            cloud_id=cloud_id,
+                            performance_maps_to_generate=(
+                                performance_maps_to_generate
+                            ),
+                            performance_maps_parameters=performance_maps_param,
+                            point_cloud_csv_file_name=csv_pc_file_name,
+                            point_cloud_laz_file_name=laz_pc_file_name,
+                            saving_info_epipolar=full_saving_info_epipolar,
+                            saving_info_flatten=full_saving_info_flatten,
+                        )
 
             # update point cloud index
             if point_cloud_dir:

@@ -110,12 +110,12 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "dichotomic")
-        overloaded_conf["resolution"] = conf.get("resolution", 200)
+        overloaded_conf["resolution"] = conf.get("resolution", 90)
         # default margin: (z max - zmin) * tan(teta)
         # with z max = 9000, z min = 0, teta = 30 degrees
         overloaded_conf["margin"] = conf.get("margin", 6000)
         overloaded_conf["height_margin"] = conf.get("height_margin", 20)
-        overloaded_conf["percentile"] = conf.get("percentile", 3)
+        overloaded_conf["percentile"] = conf.get("percentile", 1)
         overloaded_conf["min_number_matches"] = conf.get(
             "min_number_matches", 100
         )

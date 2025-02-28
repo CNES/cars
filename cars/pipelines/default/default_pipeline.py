@@ -36,8 +36,11 @@ import os
 
 import numpy as np
 
+import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
+
 # CARS imports
 from cars import __version__
+from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.dem_generation import (
     dem_generation_constants as dem_gen_cst,
@@ -50,7 +53,6 @@ from cars.applications.sparse_matching import (
 from cars.applications.sparse_matching.sparse_matching_tools import (
     transform_triangulated_matches_to_dataframe,
 )
-from cars.core import constants_disparity as cst_disp
 from cars.core import preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands, rasterio_get_epsg
@@ -1403,159 +1405,8 @@ class DefaultPipeline(PipelineTemplate):
         for cloud_id, (pair_key, _, _) in enumerate(self.list_sensor_pairs):
             # Geometry plugin with dem will be used for the grid generation
             geom_plugin = self.geom_plugin_with_dem_and_geoid
-            if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is False:
 
-                if (
-                    inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-                    is None
-                ):
-                    # Generate grids with new MNT
-                    (
-                        self.pairs[pair_key]["new_grid_left"],
-                        self.pairs[pair_key]["new_grid_right"],
-                    ) = self.epipolar_grid_generation_application.run(
-                        self.pairs[pair_key]["sensor_image_left"],
-                        self.pairs[pair_key]["sensor_image_right"],
-                        geom_plugin,
-                        orchestrator=self.cars_orchestrator,
-                        pair_folder=os.path.join(
-                            self.dump_dir,
-                            "epipolar_grid_generation",
-                            "new_mnt",
-                            pair_key,
-                        ),
-                        pair_key=pair_key,
-                    )
-
-                    # Correct grids with former matches
-                    # Transform matches to new grids
-                    new_grid_matches_array = (
-                        geom_plugin.transform_matches_from_grids(
-                            self.pairs[pair_key]["corrected_matches_array"],
-                            self.pairs[pair_key]["corrected_grid_left"],
-                            self.pairs[pair_key]["corrected_grid_right"],
-                            self.pairs[pair_key]["new_grid_left"],
-                            self.pairs[pair_key]["new_grid_right"],
-                        )
-                    )
-                    save_matches = self.sparse_mtch_sift_app.get_save_matches()
-                    # Estimate grid_correction
-                    (
-                        self.pairs[pair_key]["grid_correction_coef"],
-                        self.pairs[pair_key]["corrected_matches_array"],
-                        self.pairs[pair_key]["corrected_matches_cars_ds"],
-                        _,
-                        _,
-                    ) = grid_correction.estimate_right_grid_correction(
-                        new_grid_matches_array,
-                        self.pairs[pair_key]["new_grid_right"],
-                        save_matches=save_matches,
-                        initial_cars_ds=self.pairs[pair_key][
-                            "epipolar_matches_left"
-                        ],
-                        pair_folder=os.path.join(
-                            self.dump_dir, "grid_correction", "new", pair_key
-                        ),
-                        pair_key=pair_key,
-                        orchestrator=self.cars_orchestrator,
-                    )
-
-                    # Correct grid right
-
-                    self.pairs[pair_key]["corrected_grid_right"] = (
-                        grid_correction.correct_grid(
-                            self.pairs[pair_key]["new_grid_right"],
-                            self.pairs[pair_key]["grid_correction_coef"],
-                            save_corrected_grid,
-                            os.path.join(
-                                self.dump_dir,
-                                "grid_correction",
-                                "new",
-                                pair_key,
-                            ),
-                        )
-                    )
-
-                    # Use the new grid as uncorrected grid
-                    self.pairs[pair_key]["grid_right"] = self.pairs[pair_key][
-                        "new_grid_right"
-                    ]
-
-                    self.pairs[pair_key]["corrected_grid_left"] = self.pairs[
-                        pair_key
-                    ]["new_grid_left"]
-
-                # matches filter params
-                matches_filter_knn = (
-                    self.sparse_mtch_pandora_app.get_matches_filter_knn()
-                )
-                matches_filter_dev_factor = (
-                    self.sparse_mtch_pandora_app.get_matches_filter_dev_factor()
-                )
-                if use_global_disp_range:
-                    # Triangulate new matches
-                    triangulated_matches_dataset = (
-                        self.triangulation_application.run(
-                            self.pairs[pair_key]["sensor_image_left"],
-                            self.pairs[pair_key]["sensor_image_right"],
-                            self.pairs[pair_key]["corrected_grid_left"],
-                            self.pairs[pair_key]["corrected_grid_right"],
-                            matches,
-                            self.geom_plugin_without_dem_and_geoid,
-                            self.pairs[pair_key]["new_epipolar_image_left"],
-                            orchestrator=self.cars_orchestrator,
-                        )
-                    )
-
-                    self.cars_orchestrator.breakpoint()
-
-                    self.pairs[pair_key]["triangulated_matches"] = (
-                        transform_triangulated_matches_to_dataframe(
-                            triangulated_matches_dataset
-                        )
-                    )
-
-                    # filter triangulated_matches
-                    # Filter outliers
-                    filtered_matches = sparse_mtch_tools.clustering_matches(
-                        self.pairs[pair_key]["triangulated_matches"],
-                        connection_val=connection_val,
-                        nb_pts_threshold=nb_pts_threshold,
-                        clusters_distance_threshold=clusters_dist_thresh,
-                        filtered_elt_pos=filtered_elt_pos,
-                    )
-
-                    self.pairs[pair_key]["filtered_triangulated_matches"] = (
-                        sparse_mtch_tools.filter_point_cloud_matches(
-                            filtered_matches,
-                            matches_filter_knn=matches_filter_knn,
-                            matches_filter_dev_factor=matches_filter_dev_factor,
-                        )
-                    )
-
-                    # Compute disp_min and disp_max
-                    (
-                        dmin,
-                        dmax,
-                    ) = sparse_mtch_tools.compute_disp_min_disp_max(
-                        self.pairs[pair_key]["filtered_triangulated_matches"],
-                        self.cars_orchestrator,
-                        disp_margin=(
-                            self.sparse_mtch_sift_app.get_disparity_margin()
-                        ),
-                        pair_key=pair_key,
-                        disp_to_alt_ratio=self.pairs[pair_key][
-                            "corrected_grid_left"
-                        ].attributes["disp_to_alt_ratio"],
-                    )
-
-                    advanced_parameters.update_conf(
-                        self.config_full_res,
-                        dmin=dmin,
-                        dmax=dmax,
-                        pair_key=pair_key,
-                    )
-            else:
+            if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is True:
                 # Use epipolar a priori
                 # load the disparity range
                 [dmin, dmax] = self.used_conf[ADVANCED][
@@ -1622,22 +1473,8 @@ class DefaultPipeline(PipelineTemplate):
             dense_matching_pair_folder = os.path.join(
                 self.dump_dir, "dense_matching", pair_key
             )
-            if use_global_disp_range:
-                # Generate min and max disp grids from constants
-                # sensor image is not used here
-                # TODO remove when only local diparity range will be used
-                disp_range_grid = (
-                    self.dense_matching_app.generate_disparity_grids(
-                        self.pairs[pair_key]["sensor_image_right"],
-                        self.pairs[pair_key]["corrected_grid_right"],
-                        self.geom_plugin_with_dem_and_geoid,
-                        dmin=dmin,
-                        dmax=dmax,
-                        pair_folder=dense_matching_pair_folder,
-                        loc_inverse_orchestrator=self.cars_orchestrator,
-                    )
-                )
-            elif None in (altitude_delta_min, altitude_delta_max):
+
+            if None in (altitude_delta_min, altitude_delta_max):
                 # Generate min and max disp grids from dems
                 disp_range_grid = (
                     self.dense_matching_app.generate_disparity_grids(
@@ -1661,6 +1498,56 @@ class DefaultPipeline(PipelineTemplate):
                         altitude_delta_min=altitude_delta_min,
                         altitude_delta_max=altitude_delta_max,
                         dem_median=dem_median,
+                        pair_folder=dense_matching_pair_folder,
+                        loc_inverse_orchestrator=self.cars_orchestrator,
+                    )
+                )
+
+            if use_global_disp_range:
+                # Generate min and max disp grids from constants
+                # sensor image is not used here
+                # TODO remove when only local diparity range will be used
+
+                if (
+                    self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]
+                    is False
+                ):
+                    dmin = np.nanmin(
+                        disp_range_grid[0, 0]["disp_min_grid"].values
+                    )
+                    dmax = np.nanmax(
+                        disp_range_grid[0, 0]["disp_max_grid"].values
+                    )
+
+                    # update orchestrator_out_json
+                    dsp_marg = self.sparse_mtch_sift_app.get_disparity_margin()
+                    updating_infos = {
+                        application_constants.APPLICATION_TAG: {
+                            sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
+                                pair_key: {
+                                    sm_cst.DISPARITY_MARGIN_PARAM_TAG: dsp_marg,
+                                    sm_cst.MINIMUM_DISPARITY_TAG: dmin,
+                                    sm_cst.MAXIMUM_DISPARITY_TAG: dmax,
+                                }
+                            }
+                        }
+                    }
+                    self.cars_orchestrator.update_out_info(updating_infos)
+
+                    advanced_parameters.update_conf(
+                        self.config_full_res,
+                        dmin=dmin,
+                        dmax=dmax,
+                        pair_key=pair_key,
+                    )
+
+                disp_range_grid = (
+                    self.dense_matching_app.generate_disparity_grids(
+                        self.pairs[pair_key]["sensor_image_right"],
+                        self.pairs[pair_key]["corrected_grid_right"],
+                        self.geom_plugin_with_dem_and_geoid,
+                        dmin=dmin,
+                        dmax=dmax,
                         pair_folder=dense_matching_pair_folder,
                         loc_inverse_orchestrator=self.cars_orchestrator,
                     )
