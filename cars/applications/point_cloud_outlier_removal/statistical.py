@@ -116,11 +116,11 @@ class Statistical(
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
         overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
-        overloaded_conf["use_median"] = conf.get("use_median", True)
+        overloaded_conf["use_median"] = conf.get("use_median", False)
 
         # statistical outlier filtering
         overloaded_conf["activated"] = conf.get(
-            "activated", False
+            "activated", True
         )  # if false, the following
         # parameters are unused
         # k: number of neighbors
