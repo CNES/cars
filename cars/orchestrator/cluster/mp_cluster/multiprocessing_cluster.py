@@ -253,10 +253,10 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         """
         return MpDelayed
 
-    def cleanup(self, keep_tmp_dir=False):
+    def cleanup(self, keep_shared_dir=False):
         """
         Cleanup cluster
-
+        :param keep_shared_dir: do not clean directory of shared objects
         """
 
         # Terminate worker
@@ -268,10 +268,10 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.pool.terminate()
         self.pool.join()
 
-        if not keep_tmp_dir:
-            # clean tmpdir if exists
-            self.wrapper.cleanup()
+        # clean tmpdir if exists
+        self.wrapper.cleanup(keep_shared_dir=keep_shared_dir)
 
+        if not keep_shared_dir:
             if self.tmp_dir is not None:
                 shutil.rmtree(self.tmp_dir)
 

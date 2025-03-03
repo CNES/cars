@@ -529,7 +529,7 @@ class FactorizedObject:
             kwargs = replace_data_rec(
                 kwargs, transform_previous_data_to_results, previous_result
             )
-            # Load remaining args : scattered data
+            # Load remaining args : shared data
             args = load_args_or_kwargs(args)
             kwargs = load_args_or_kwargs(kwargs)
         return func(*args, **kwargs)
