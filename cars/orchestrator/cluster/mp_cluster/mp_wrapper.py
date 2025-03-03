@@ -25,6 +25,7 @@ Contains functions for wrapper disk
 # Standard imports
 import logging
 import os
+import pickle
 import shutil
 from abc import ABCMeta, abstractmethod
 from multiprocessing.pool import ThreadPool
@@ -35,6 +36,7 @@ import pandas
 import xarray as xr
 
 # CARS imports
+from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, cars_dict
 from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
 
@@ -44,6 +46,7 @@ from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
 DENSE_NAME = "DenseDO"
 SPARSE_NAME = "SparseDO"
 DICT_NAME = "DictDO"
+SHARED_NAME = "SharedDO"
 
 
 class AbstractWrapper(metaclass=ABCMeta):
@@ -74,7 +77,7 @@ class AbstractWrapper(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def cleanup(self):
+    def cleanup(self, **kwargs):
         """
         Cleanup tmp_dir
         """
@@ -130,7 +133,7 @@ class WrapperNone(AbstractWrapper):
 
         return new_func, kwargs
 
-    def cleanup(self):
+    def cleanup(self, **kwargs):
         """
         Cleanup tmp_dir
         """
@@ -154,18 +157,25 @@ class WrapperDisk(AbstractWrapper):
         Init function of WrapperDisk
         :param tmp_dir: temporary directory
         """
+        # Directory for data passing from a wrapper to another
         self.tmp_dir = os.path.join(tmp_dir, "tmp")
         if not os.path.exists(self.tmp_dir):
             os.makedirs(self.tmp_dir)
+
+        # Directory for data shared by multiple wrappers
+        self.shared_dir = os.path.join(tmp_dir, "shared")
+        if not os.path.exists(self.shared_dir):
+            os.makedirs(self.shared_dir)
 
         self.current_object_id = 0
 
         # Create a thead pool for removing data
         self.removing_pool = ThreadPool(1)
 
-    def cleanup(self):
+    def cleanup(self, keep_shared_dir=False):
         """
         Cleanup tmp_dir
+        :param keep_shared_dir: do not clean directory of shared objects
         """
 
         logging.info("Clean removing thread pool ...")
@@ -174,6 +184,10 @@ class WrapperDisk(AbstractWrapper):
 
         logging.info("Clean tmp directory ...")
         removing_disk_data(self.tmp_dir)
+
+        if not keep_shared_dir:
+            logging.info("Clean shared directory ...")
+            removing_disk_data(self.shared_dir)
 
     def cleanup_future_res(self, future_res):
         """
@@ -232,6 +246,22 @@ class WrapperDisk(AbstractWrapper):
         """
         res = load(obj)
         return res
+
+    def scatter_obj(self, obj):
+        """
+        Distribute data through workers
+
+        :param obj: object to dump
+        """
+        directory = os.path.join(
+            self.shared_dir, SHARED_NAME + "_" + repr(self.current_object_id)
+        )
+        safe_makedirs(directory)
+        self.current_object_id += 1
+        path = os.path.join(directory, "obj")
+        with open(path, "wb") as handle:
+            pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        return path
 
 
 def removing_disk_data(path):
@@ -337,7 +367,12 @@ def is_dumped_object(obj):
 
     is_dumped = False
     if isinstance(obj, str):
-        if DENSE_NAME in obj or SPARSE_NAME in obj or DICT_NAME in obj:
+        if (
+            DENSE_NAME in obj
+            or SPARSE_NAME in obj
+            or DICT_NAME in obj
+            or SHARED_NAME in obj
+        ):
             is_dumped = True
 
     return is_dumped
@@ -357,17 +392,34 @@ def load(path):
         obj = path
         if DENSE_NAME in path:
             obj = cars_dataset.CarsDataset("arrays").load_single_tile(path)
-
         elif SPARSE_NAME in path:
             obj = cars_dataset.CarsDataset("points").load_single_tile(path)
         elif DICT_NAME in path:
             obj = cars_dataset.CarsDataset("dict").load_single_tile(path)
+        elif SHARED_NAME in path:
+            obj = load_shared_data(path)
 
         else:
-            logging.warning("Not a dumped arrays or points or dict")
+            logging.warning(
+                "Not a dumped arrays or points or dict or shared data"
+            )
 
     else:
         obj = None
+    return obj
+
+
+def load_shared_data(path):
+    """
+    Load shared object from disk
+
+    :param path: path
+    :type path: str
+
+    :return: object
+    """
+    with open(path, "rb") as handle:
+        obj = pickle.load(handle)
     return obj
 
 

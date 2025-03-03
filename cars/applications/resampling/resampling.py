@@ -101,6 +101,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         sensor_image_right,
         grid_left,
         grid_right,
+        geom_plugin,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",

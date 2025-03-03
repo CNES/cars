@@ -138,7 +138,7 @@ class AbstractCluster(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def cleanup(self):
+    def cleanup(self, **kwargs):
         """
         Cleanup cluster
         """

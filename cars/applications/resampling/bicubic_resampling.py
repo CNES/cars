@@ -45,7 +45,6 @@ from cars.applications.resampling.resampling import Resampling
 from cars.core import constants as cst
 from cars.core import inputs, tiling
 from cars.core.datasets import get_color_bands
-from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -219,6 +218,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         sensor_image_right,
         grid_left,
         grid_right,
+        geom_plugin,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
@@ -544,6 +544,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             epi_tilling_grid,
             grid_left,
             grid_right,
+            geom_plugin,
         )
 
         # broadcast grids
@@ -837,6 +838,7 @@ def check_tiles_in_sensor(
     image_tiling,
     grid_left,
     grid_right,
+    geom_plugin,
 ):
     """
     Check if epipolar tiles will be used.
@@ -899,7 +901,7 @@ def check_tiles_in_sensor(
     (
         sensor_pos_left,
         sensor_pos_right,
-    ) = AbstractGeometry.matches_to_sensor_coords(
+    ) = geom_plugin.matches_to_sensor_coords(
         grid_left,
         grid_right,
         tiles_coords_as_matches,

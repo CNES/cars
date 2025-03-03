@@ -34,6 +34,7 @@ from scipy import interpolate
 from scipy.interpolate import LinearNDInterpolator
 from shapely.geometry import Polygon
 from shareloc import proj_utils
+from shareloc.geofunctions.rectification_grid import RectificationGrid
 
 from cars.core import constants as cst
 from cars.core import inputs, outputs
@@ -239,10 +240,10 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
         return geomodel
 
-    @staticmethod
     def matches_to_sensor_coords(
-        grid1: Union[str, cars_dataset.CarsDataset],
-        grid2: Union[str, cars_dataset.CarsDataset],
+        self,
+        grid1: Union[str, cars_dataset.CarsDataset, RectificationGrid],
+        grid2: Union[str, cars_dataset.CarsDataset, RectificationGrid],
         matches: np.ndarray,
         matches_type: str,
         matches_msk: np.ndarray = None,
@@ -319,12 +320,12 @@ class AbstractGeometry(metaclass=ABCMeta):
             )
 
         # convert epipolar matches to sensor coordinates
-        sensor_pos_left = AbstractGeometry(
-            {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
-        ).sensor_position_from_grid(grid1, vec_epi_pos_left)
-        sensor_pos_right = AbstractGeometry(
-            {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
-        ).sensor_position_from_grid(grid2, vec_epi_pos_right)
+        sensor_pos_left = self.sensor_position_from_grid(
+            grid1, vec_epi_pos_left
+        )
+        sensor_pos_right = self.sensor_position_from_grid(
+            grid2, vec_epi_pos_right
+        )
 
         if matches_type == cst.DISP_MODE:
             # rearrange matches in the original epipolar geometry
@@ -357,7 +358,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     def sensor_position_from_grid(
         self,
-        grid: Union[str, cars_dataset.CarsDataset],
+        grid: Union[str, cars_dataset.CarsDataset, RectificationGrid],
         positions: np.ndarray,
     ) -> np.ndarray:
         """
@@ -408,34 +409,40 @@ class AbstractGeometry(metaclass=ABCMeta):
             last_row = ori_row + step_row * grid_data.shape[0]
             last_col = ori_col + step_col * grid_data.shape[1]
 
-        else:
+        elif not isinstance(grid, RectificationGrid):
             raise RuntimeError(
-                "Grid type {} not a path or CarsDataset".format(type(grid))
+                "Grid type {} not a path or CarsDataset "
+                "or RectificationGrid".format(type(grid))
             )
 
-        cols = np.arange(ori_col, last_col, step_col)
-        rows = np.arange(ori_row, last_row, step_row)
+        if isinstance(grid, RectificationGrid):
+            sensor_positions = grid.interpolate(positions)
 
-        # create regular grid points positions
-        sensor_row_positions = row_dep
-        sensor_col_positions = col_dep
+        else:
+            cols = np.arange(ori_col, last_col, step_col)
+            rows = np.arange(ori_row, last_row, step_row)
 
-        # interpolate sensor positions
-        interpolator = interpolate.RegularGridInterpolator(
-            (cols, rows),
-            np.stack(
-                (
-                    sensor_row_positions.transpose(),
-                    sensor_col_positions.transpose(),
+            # create regular grid points positions
+            sensor_row_positions = row_dep
+            sensor_col_positions = col_dep
+
+            # interpolate sensor positions
+            interpolator = interpolate.RegularGridInterpolator(
+                (cols, rows),
+                np.stack(
+                    (
+                        sensor_row_positions.transpose(),
+                        sensor_col_positions.transpose(),
+                    ),
+                    axis=2,
                 ),
-                axis=2,
-            ),
-            method=self.interpolator,
-            bounds_error=False,
-            fill_value=None,
-        )
+                method=self.interpolator,
+                bounds_error=False,
+                fill_value=None,
+            )
 
-        sensor_positions = interpolator(positions)
+            sensor_positions = interpolator(positions)
+
         # swap
         sensor_positions[:, [0, 1]] = sensor_positions[:, [1, 0]]
 
