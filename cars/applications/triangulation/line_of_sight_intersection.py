@@ -1260,7 +1260,7 @@ def triangulation_wrapper_matches(
     cars_dataset.fill_dataframe(
         triangulated_matches,
         saving_info=full_saving_info_matches,
-        attributes=triangulated_matches.attrs["epsg"],
+        attributes={"epsg": triangulated_matches.attrs["epsg"]},
     )
 
     return triangulated_matches
