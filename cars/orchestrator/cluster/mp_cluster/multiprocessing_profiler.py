@@ -36,6 +36,7 @@ import psutil
 matplotlib.use("Agg")
 
 TERMINATE = 1
+RUN = 0
 RAM_PER_WORKER_CHECK_SLEEP_TIME = 2
 INTERVAL_CPU = 0.2
 SAVE_TIME = 120
@@ -124,6 +125,7 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
             ),
         )
         self.monitor_thread.daemon = True
+        self.monitor_thread._state = RUN
         self.monitor_thread.start()
 
         self.saver_thread = threading.Thread(
@@ -131,6 +133,7 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
             args=(self.memory_data, self.file_plot),
         )
         self.saver_thread.daemon = True
+        self.saver_thread._state = RUN
         self.saver_thread.start()
 
     def cleanup(self):
@@ -198,13 +201,20 @@ def save_figure_in_thread(to_fill_dataframe, file_path):
     :param file_path: path to save path
     """
 
-    while True:
-        time.sleep(SAVE_TIME)
-        # Save file
-        try:
-            save_data(to_fill_dataframe, file_path)
-        except Exception as exc:
-            logging.warning("unable to save monitoring graph : {}".format(exc))
+    thread = threading.current_thread()
+
+    start_time = time.time()
+    while thread._state == RUN:  # pylint: disable=protected-access
+        time.sleep(RAM_PER_WORKER_CHECK_SLEEP_TIME)
+        if time.time() - start_time > SAVE_TIME:
+            start_time = time.time()
+            # Save file
+            try:
+                save_data(to_fill_dataframe, file_path)
+            except Exception as exc:
+                logging.warning(
+                    "unable to save monitoring graph : {}".format(exc)
+                )
 
 
 def check_pool_memory_usage(
@@ -219,10 +229,13 @@ def check_pool_memory_usage(
     :param to_fill_dataframe: dataframe to fill
     :param timer: timer
     """
+
+    thread = threading.current_thread()
+
     main_process = psutil.Process(main_process_id)
     start_time = timer.timer
 
-    while True:
+    while thread._state == RUN:  # pylint: disable=protected-access
         # Get time
         current_time = time.time() - start_time
         minutes = current_time / 60
