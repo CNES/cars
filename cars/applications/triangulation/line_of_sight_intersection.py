@@ -622,6 +622,16 @@ class LineOfSightIntersection(
                 "data format"
             )
 
+        # Interpolate grid
+        rectified_grid_left = RectificationGrid(
+            grid_left.attributes["path"],
+            interpolator=geometry_plugin.interpolator,
+        )
+        rectified_grid_right = RectificationGrid(
+            grid_right.attributes["path"],
+            interpolator=geometry_plugin.interpolator,
+        )
+
         if epipolar_disparity_map.dataset_type != "points":
             if source_pc_names is None:
                 source_pc_names = ["PAIR_0"]
@@ -812,21 +822,12 @@ class LineOfSightIntersection(
                 )
 
             # Generate Point clouds
-
-            # Interpolate grid
-            grid_left = RectificationGrid(
-                grid_left.attributes["path"],
-                interpolator=geometry_plugin.interpolator,
-            )
-            grid_right = RectificationGrid(
-                grid_right.attributes["path"],
-                interpolator=geometry_plugin.interpolator,
-            )
-
             # broadcast grids
-            broadcasted_grid_left = self.orchestrator.cluster.scatter(grid_left)
-            broadcasted_grid_right = self.orchestrator.cluster.scatter(
-                grid_right
+            broadcasted_rectified_grid_left = self.orchestrator.cluster.scatter(
+                rectified_grid_left
+            )
+            broadcasted_rectified_grid_right = (
+                self.orchestrator.cluster.scatter(rectified_grid_right)
             )
 
             # initialize empty index file for point cloud product if official
@@ -871,8 +872,8 @@ class LineOfSightIntersection(
                             sensor2,
                             geomodel1,
                             geomodel2,
-                            broadcasted_grid_left,
-                            broadcasted_grid_right,
+                            broadcasted_rectified_grid_left,
+                            broadcasted_rectified_grid_right,
                             geometry_plugin,
                             epsg,
                             geoid_path=geoid_path,
@@ -907,7 +908,13 @@ class LineOfSightIntersection(
                 cars_ds_name="triangulated_matches",
             )
 
-            # broadcast grids
+            broadcasted_rectified_grid_left = self.orchestrator.cluster.scatter(
+                rectified_grid_left
+            )
+            broadcasted_rectified_grid_right = (
+                self.orchestrator.cluster.scatter(rectified_grid_right)
+            )
+
             broadcasted_grid_left = self.orchestrator.cluster.scatter(grid_left)
             broadcasted_grid_right = self.orchestrator.cluster.scatter(
                 grid_right
@@ -937,6 +944,8 @@ class LineOfSightIntersection(
                             sensor_image_right,
                             broadcasted_grid_left,
                             broadcasted_grid_right,
+                            broadcasted_rectified_grid_left,
+                            broadcasted_rectified_grid_right,
                             geometry_plugin,
                             full_saving_info_matches,
                         )
@@ -1213,6 +1222,8 @@ def triangulation_wrapper_matches(
     sensor2,
     grid1,
     grid2,
+    rectified_grid1,
+    rectified_grid2,
     geometry_plugin,
     full_saving_info_matches,
 ):
@@ -1227,14 +1238,18 @@ def triangulation_wrapper_matches(
     :type grid1: CarsDataset
     :param grid2: dataset of the secondary image grid file
     :type grid2: CarsDataset
+    :param rectified_grid1: rectification grid left
+    :type rectified_grid1: shareloc.rectificationGrid
+    :param rectified_grid2: rectification grid right
+    :type rectified_grid2: shareloc.rectificationGrid
     :param geometry_plugin: geometry plugin to use
     :type geometry_plugin: AbstractGeometry
     """
     epipolar_matches = matches.to_numpy()
 
     sensor_matches = geometry_plugin.matches_to_sensor_coords(
-        grid1,
-        grid2,
+        rectified_grid1,
+        rectified_grid2,
         epipolar_matches,
         cst.MATCHES_MODE,
     )
@@ -1253,6 +1268,8 @@ def triangulation_wrapper_matches(
         sensor2,
         grid1,
         grid2,
+        rectified_grid1,
+        rectified_grid2,
         matches,
         geometry_plugin,
     )

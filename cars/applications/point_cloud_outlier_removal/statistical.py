@@ -116,7 +116,7 @@ class Statistical(
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
         overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
-        overloaded_conf["use_median"] = conf.get("use_median", False)
+        overloaded_conf["use_median"] = conf.get("use_median", True)
 
         # statistical outlier filtering
         overloaded_conf["activated"] = conf.get(

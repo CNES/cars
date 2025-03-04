@@ -39,6 +39,8 @@ def triangulate_sparse_matches(
     sensor_image_right,
     grid_left,
     grid_right,
+    rectified_grid_left,
+    rectified_grid_right,
     matches,
     geometry_plugin,
 ):
@@ -53,6 +55,10 @@ def triangulate_sparse_matches(
     :type grid_left: CarsDataset CarsDataset
     :param grid_right: corrected grid right
     :type grid_right: CarsDataset
+    :param rectified_grid_left: rectification grid left
+    :type rectified_grid_left: shareloc.rectificationGrid
+    :param rectified_grid_right: rectification grid right
+    :type rectified_grid_right: shareloc.rectificationGrid
     :param matches: matches
     :type matches: np.ndarray
     :param geometry_plugin: geometry plugin to use
@@ -79,8 +85,8 @@ def triangulate_sparse_matches(
         sensor2,
         geomodel1,
         geomodel2,
-        grid_left,
-        grid_right,
+        rectified_grid_left,
+        rectified_grid_right,
         np.ascontiguousarray(matches),
     )
 
