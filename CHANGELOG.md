@@ -5,11 +5,11 @@
 ### Added
 
 - DEM Generation with Pandora matches from low resolution images [#943].
-- Add Global memory and cpu usage profiling.
+- Add global memory and cpu usage profiling.
 - Beefrost integration (External Dem reprojection on sensor and epipolar geometry) [#904].
-- Phased DSMs re entrance [#967].
-- Re entrance of sensor images in pipelines starting on depth maps or DSMs [#981].
-- Classified Performance map [#966].
+- Phased DSMs re-entrance [#967].
+- Re-entrance of sensor images in pipelines starting on depth maps or DSMs [#981].
+- Classified performance map [#966].
 - Colorisation and classification from sensor images after DSM generation [#938].
 
 ### Changed
@@ -17,7 +17,7 @@
 - Auto mode modified [#1004].
 - Performance map refactored [#977].
 - Point cloud outlier removal activated by default.
-- c++ optimisations [#925].
+- C++ optimisations [#925].
 - Ambiguity can be added in output auxiliary data. [#974]
 - "Pipeline" and "geometry_plugin" in "advanced" configuration [#990].
 - Cubic interpolation used in epipolar grid interpolation.
@@ -33,7 +33,7 @@
 ### Fixed
 
 - Outlier removal bug fix.
-- Wordwide vrt usage freeze fix [#936].
+- Worldwide vrt usage freeze fix [#936].
 
 ## 0.10.2 New console script cars-devibrate (December 2024)
 
