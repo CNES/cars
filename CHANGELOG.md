@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.11.0  Improving Disparity ranges (March 2025)
+
+### Added
+
+- DEM Generation with Pandora matches from low resolution images [#943].
+- Add global memory and cpu usage profiling.
+- Beefrost integration (External Dem reprojection on sensor and epipolar geometry) [#904].
+- Phased DSMs re-entrance [#967].
+- Re-entrance of sensor images in pipelines starting on depth maps or DSMs [#981].
+- Classified performance map [#966].
+- Colorisation and classification from sensor images after DSM generation [#938].
+
+### Changed
+
+- Auto mode modified [#1004].
+- Performance map refactored [#977].
+- Point cloud outlier removal activated by default.
+- C++ optimisations [#925].
+- Ambiguity can be added in output auxiliary data. [#974]
+- "Pipeline" and "geometry_plugin" in "advanced" configuration [#990].
+- Cubic interpolation used in epipolar grid interpolation.
+- Refactoring of documentation [#955].
+- User can change multiprocessing mode [#996].
+- Sift matches are decimated [975].
+- Inverse localisation for disparity grid, are parallelized [#870].
+- Removal of point cloud outlier filtering after point cloud fusion.
+- Update Pandora version [#918].
+- Update Bulldozer version [#1012].
+
+
+### Fixed
+
+- Outlier removal bug fix.
+- Worldwide vrt usage freeze fix [#936].
+
 ## 0.10.2 New console script cars-devibrate (December 2024)
 
 ### Added
