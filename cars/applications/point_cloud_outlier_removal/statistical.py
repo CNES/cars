@@ -120,7 +120,7 @@ class Statistical(
 
         # statistical outlier filtering
         overloaded_conf["activated"] = conf.get(
-            "activated", False
+            "activated", True
         )  # if false, the following
         # parameters are unused
         # k: number of neighbors

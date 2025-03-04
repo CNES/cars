@@ -765,3 +765,29 @@ def pandora_matches(
     matches_true_res = matches_true_res[order, :]
 
     return matches_true_res, epipolar_disparity_map
+
+
+def transform_triangulated_matches_to_dataframe(triangulated_matches):
+    """
+
+    :param triangulated_matches: triangulated matches
+    :type: cars_dataset
+    """
+    # Concatenated matches
+    list_matches = []
+    attrs = None
+    for row in range(triangulated_matches.shape[0]):
+        for col in range(triangulated_matches.shape[1]):
+            # CarsDataset containing Pandas DataFrame, not Delayed anymore
+            if triangulated_matches[row, col] is not None:
+                epipolar_matches = triangulated_matches[row, col]
+
+                if attrs is None:
+                    attrs = epipolar_matches.attrs
+
+                list_matches.append(epipolar_matches)
+
+    triangulated_matches_df = pandas.concat(list_matches, ignore_index=True)
+    triangulated_matches_df.attrs = attrs
+
+    return triangulated_matches_df

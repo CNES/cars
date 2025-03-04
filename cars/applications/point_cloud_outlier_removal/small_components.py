@@ -117,7 +117,7 @@ class SmallComponents(
 
         # small components
         overloaded_conf["activated"] = conf.get(
-            "activated", False
+            "activated", True
         )  # if false, the following
         # parameters are unused
         # on_ground_margin:

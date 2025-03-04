@@ -172,7 +172,7 @@ The structure follows this organization:
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-------------------------------------------+----------+
                 | sift_window_size                     | smaller values let the center of the descriptor count more                                     | int         | should be > 0          | 2                                         | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-------------------------------------------+----------+
-                | decimation_factor                    | Reduce the number of sifts                                                                     | int         | should be > 0          | 20 if pandora is activated, 100 otherwise | No       |
+                | decimation_factor                    | Reduce the number of sifts                                                                     | int         | should be > 0          | 30                                        | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-------------------------------------------+----------+
 
                 For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
@@ -229,11 +229,6 @@ The structure follows this organization:
                         }
                     },
 
-                .. note::
-                    * Sift will always be used during the cars execution
-                    * Pandora is optionnal, by default this one is not activated
-                    * You can use both sift and pandora during your execution, the combined matches will be used
-
             .. tab:: DEM Generation
 
                 **Name**: "dem_generation"
@@ -256,11 +251,11 @@ The structure follows this organization:
                 +=================================+============================================================+============+=================+===============+==========+
                 | method                          | Method for dem_generation                                  | string     | "dichotomic"    | "dichotomic"  | Yes      |
                 +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | resolution                      | Resolution of dem, in meter                                | int, float |  should be > 0  | 200           | No       |
+                | resolution                      | Resolution of dem, in meter                                | int, float |  should be > 0  | 90            | No       |
                 +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | margin                          | Margin to use on the border of dem, in meter               | int, float |  should be > 0  | 6000          | No       |
                 +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | percentile                      | Percentile of matches to ignore in min and max functions   | int        | should be > 0   | 3             | No       |
+                | percentile                      | Percentile of matches to ignore in min and max functions   | int        | should be > 0   | 1             | No       |
                 +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | min_number_matches              | Minimum number of matches needed to have a valid tile      | int        | should be > 0   | 30            | No       |
                 +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
@@ -668,7 +663,7 @@ The structure follows this organization:
                 +--------------------+-------------+---------+-----------------+---------------+----------+
                 | Name               | Description | Type    | Available value | Default value | Required |
                 +====================+=============+=========+=================+===============+==========+
-                | activated          |             | boolean |                 | false         | No       |
+                | activated          |             | boolean |                 | True          | No       |
                 +--------------------+-------------+---------+-----------------+---------------+----------+
                 | k                  |             | int     | should be > 0   | 50            | No       |
                 +--------------------+-------------+---------+-----------------+---------------+----------+
@@ -684,7 +679,7 @@ The structure follows this organization:
                 +-----------------------------+-------------+---------+-----------------+---------------+----------+
                 | Name                        | Description | Type    | Available value | Default value | Required |
                 +=============================+=============+=========+=================+===============+==========+
-                | activated                   |             | boolean |                 | false         | No       |
+                | activated                   |             | boolean |                 | True          | No       |
                 +-----------------------------+-------------+---------+-----------------+---------------+----------+
                 | on_ground_margin            |             | int     |                 | 10            | No       |
                 +-----------------------------+-------------+---------+-----------------+---------------+----------+
@@ -721,13 +716,11 @@ The structure follows this organization:
                             "method": "small_components",
                             "on_ground_margin": 10,
                             "save_intermediate_data": true,
-                            "activated": true
                         },
                         "point_cloud_outlier_removal.2": {
                             "method": "statistical",
                             "k": 10,
                             "save_intermediate_data": true,
-                            "activated": true
                         }
                     }
 

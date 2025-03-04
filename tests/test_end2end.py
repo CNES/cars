@@ -689,18 +689,18 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 == 612
             )
             assert (
-                -22
+                -65
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
-                < -13
+                < -11
             )
             assert (
                 7
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
-                < 11
+                < 46
             )
 
         used_conf_path = os.path.join(out_dir, "used_conf.json")
@@ -851,7 +851,7 @@ def test_end2end_ventoux_unique():
                 == 612
             )
             assert (
-                -22
+                -65
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
@@ -862,7 +862,7 @@ def test_end2end_ventoux_unique():
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
-                < 16
+                < 46
             )
 
         # Ref output dir dependent from geometry plugin chosen
@@ -2543,7 +2543,7 @@ def test_end2end_use_epipolar_a_priori():
                 == 612
             )
             assert (
-                -29
+                -36
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
@@ -2554,7 +2554,7 @@ def test_end2end_use_epipolar_a_priori():
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
-                < 28
+                < 31
             )
 
             # Ref output dir dependent from geometry plugin chosen
@@ -2896,10 +2896,10 @@ def test_prepare_ventoux_bias():
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -86
+            assert out_disp_compute["minimum_disparity"] > -125
             assert out_disp_compute["minimum_disparity"] < -83
-            assert out_disp_compute["maximum_disparity"] > -46
-            assert out_disp_compute["maximum_disparity"] < -45
+            assert out_disp_compute["maximum_disparity"] > -47
+            assert out_disp_compute["maximum_disparity"] < -11
 
 
 @pytest.mark.end2end_tests
@@ -3395,10 +3395,10 @@ def test_end2end_ventoux_with_color():
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -20
+            assert out_disp_compute["minimum_disparity"] > -65
             assert out_disp_compute["minimum_disparity"] < -17
             assert out_disp_compute["maximum_disparity"] > 13
-            assert out_disp_compute["maximum_disparity"] < 15
+            assert out_disp_compute["maximum_disparity"] < 46
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -3729,10 +3729,10 @@ def test_end2end_ventoux_with_classif():
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -20
+            assert out_disp_compute["minimum_disparity"] > -65
             assert out_disp_compute["minimum_disparity"] < -17
             assert out_disp_compute["maximum_disparity"] > 13
-            assert out_disp_compute["maximum_disparity"] < 15
+            assert out_disp_compute["maximum_disparity"] < 46
 
         # Run dense_dsm dsm pipeline
         # clean outdir

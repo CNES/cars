@@ -98,12 +98,12 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         self,
         sensor_image_left,
         sensor_image_right,
-        epipolar_image,
         grid_left,
         grid_right,
         epipolar_disparity_map,
-        epsg,
         geometry_plugin,
+        epipolar_image,
+        epsg=None,
         denoising_overload_fun=None,
         source_pc_names=None,
         orchestrator=None,
@@ -112,7 +112,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         uncorrected_grid_right=None,
         geoid_path=None,
         cloud_id=None,
-        performance_maps_parameters=None,
+        performance_maps_param=None,
         depth_map_dir=None,
         point_cloud_dir=None,
         save_output_coordinates=False,
@@ -136,8 +136,6 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
             Dict Must contain keys : "image", "color", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_right: CarsDataset
-        :param epipolar_image: tiled epipolar left image
-        :type epipolar_image: CarsDataset
         :param grid_left: left epipolar grid. Grid CarsDataset contains :
 
             - A single tile stored in [0,0], containing a (N, M, 2) shape \
@@ -179,6 +177,8 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
                     "elevation_delta_lower_bound","elevation_delta_upper_bound"
 
         :type epipolar_disparity_map: CarsDataset
+        :param epipolar_image: tiled epipolar left image
+        :type epipolar_image: CarsDataset
         :param denoising_overload_fun: function to overload dataset
         :type denoising_overload_fun: fun
         :param source_pc_names: source pc names
@@ -193,9 +193,9 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type uncorrected_grid_right: CarsDataset
         :param geoid_path: geoid path
         :type geoid_path: str
-        :param performance_maps_parameters: parameters used
+        :param performance_maps_param: parameters used
             to generate performance map
-        :type performance_maps_parameters: dict or None
+        :type performance_maps_param: dict or None
         :param depth_map_dir: directory to write triangulation output depth
                 map.
         :type depth_map_dir: None or str

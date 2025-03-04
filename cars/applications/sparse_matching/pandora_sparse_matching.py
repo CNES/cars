@@ -99,7 +99,6 @@ class PandoraSparseMatching(
         self.matches_filter_dev_factor = self.used_config[
             "matches_filter_dev_factor"
         ]
-        self.activated = self.used_config["activated"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -166,8 +165,6 @@ class PandoraSparseMatching(
             "matches_filter_dev_factor", 3.0
         )
 
-        overloaded_conf["activated"] = conf.get("activated", False)
-
         # check loader
         loader_conf = conf.get("loader_conf", None)
 
@@ -204,7 +201,6 @@ class PandoraSparseMatching(
             "filtered_elt_pos": bool,
             "matches_filter_knn": int,
             "matches_filter_dev_factor": Or(int, float),
-            "activated": bool,
             "save_intermediate_data": bool,
         }
 
