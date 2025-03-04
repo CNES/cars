@@ -1075,7 +1075,11 @@ def triangulation_wrapper(
         else:
             raise RuntimeError("wrong pc type for denoising func")
 
-    attributes = None
+    attributes = {
+        cst.CROPPED_DISPARITY_RANGE: (
+            ocht.get_disparity_range_cropped(disparity_object)
+        )
+    }
     cars_dataset.fill_dataset(
         pc_dataset,
         saving_info=saving_info_epipolar,

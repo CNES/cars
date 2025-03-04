@@ -21,7 +21,7 @@
 """
 Contains abstract function for multiprocessing Cluster
 """
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 import copy
 import itertools
@@ -59,6 +59,9 @@ from cars.orchestrator.cluster.mp_cluster.mp_objects import (
     MpJob,
 )
 from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
+from cars.orchestrator.cluster.mp_cluster.multiprocessing_profiler import (
+    MultiprocessingProfiler,
+)
 
 SYS_PLATFORM = platform.system().lower()
 IS_WIN = "windows" == SYS_PLATFORM
@@ -80,7 +83,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
     # pylint: disable=too-many-instance-attributes
     @cars_profile(name="Multiprocessing orchestrator initialization")
-    def __init__(self, conf_cluster, out_dir, launch_worker=True):
+    def __init__(
+        self, conf_cluster, out_dir, launch_worker=True, data_to_propagate=None
+    ):
         """
         Init function of MultiprocessingCluster
 
@@ -98,7 +103,12 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         self.out_dir = out_dir
         # call parent init
-        super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
+        super().__init__(
+            conf_cluster,
+            out_dir,
+            launch_worker=launch_worker,
+            data_to_propagate=data_to_propagate,
+        )
 
         # retrieve parameters
         self.nb_workers = self.checked_conf_cluster["nb_workers"]
@@ -183,6 +193,26 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             self.refresh_worker._state = RUN
             self.refresh_worker.start()
 
+            # Profile pool
+            mp_dataframe = None
+            timer = None
+            if self.data_to_propagate is not None:
+                mp_dataframe = self.data_to_propagate.get("mp_dataframe", None)
+                timer = self.data_to_propagate.get("mp_timer", None)
+
+            self.profiler = MultiprocessingProfiler(
+                self.pool,
+                self.out_dir,
+                self.checked_conf_cluster["max_ram_per_worker"],
+                mp_dataframe=mp_dataframe,
+                timer=timer,
+            )
+
+            self.data_to_propagate = {
+                "mp_dataframe": self.profiler.memory_data,
+                "mp_timer": self.profiler.timer,
+            }
+
     def check_conf(self, conf):
         """
         Check configuration
@@ -208,7 +238,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         # Modify some env variables for memory  usage
         # TODO
-        # set max_ram_per_worker = total_ram / nb_worker or 4000 by default
         # set ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS = 1
 
         # Overload conf
@@ -258,6 +287,12 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         Cleanup cluster
         :param keep_shared_dir: do not clean directory of shared objects
         """
+
+        # Save profiling
+        self.profiler.save_plot()
+
+        # clean profiler
+        self.profiler.cleanup()
 
         # Terminate worker
         self.refresh_worker._state = TERMINATE  # pylint: disable=W0212

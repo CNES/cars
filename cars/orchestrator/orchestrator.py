@@ -22,6 +22,8 @@
 this module contains the orchestrator class
 """
 
+# pylint: disable=too-many-lines
+
 import collections
 import logging
 
@@ -29,15 +31,23 @@ import logging
 import multiprocessing
 import os
 import platform
+import re
 import shutil
+import subprocess
 import sys
 
 # Third party imports
 import tempfile
+import threading
+import time
 import traceback
 
+import pandas
 import psutil
+import xarray
 from tqdm import tqdm
+
+from cars.core import constants as cst
 
 # CARS imports
 from cars.core.cars_logging import add_progress_message
@@ -58,6 +68,8 @@ from cars.orchestrator.tiles_profiler import TileProfiler
 
 SYS_PLATFORM = platform.system().lower()
 IS_WIN = "windows" == SYS_PLATFORM
+RAM_THRESHOLD_MB = 500
+RAM_CHECK_SLEEP_TIME = 5
 
 
 class Orchestrator:
@@ -113,22 +125,8 @@ class Orchestrator:
                     "Auto mode is used for orchestator: "
                     "parameters set by user are ignored"
                 )
-            available_cpu = (
-                multiprocessing.cpu_count()
-                if IS_WIN
-                else len(os.sched_getaffinity(0))
-            )
-            if available_cpu == 1:
-                logging.warning("Only one CPU detected.")
-            nb_workers = max(1, available_cpu - 1)
-            logging.info("Number of workers : {}".format(nb_workers))
-            available_ram_per_worker = (
-                psutil.virtual_memory().available / nb_workers // 1e6
-            )
-            max_ram_per_worker = available_ram_per_worker * 0.8
-            logging.info(
-                "Max memory per worker : {} MB".format(max_ram_per_worker)
-            )
+            # Compute parameters for auto mode
+            nb_workers, max_ram_per_worker = compute_conf_auto_mode(IS_WIN)
             orchestrator_conf = {
                 "mode": "multiprocessing",
                 "nb_workers": nb_workers,
@@ -186,6 +184,11 @@ class Orchestrator:
 
         # product index file
         self.product_index = {}
+
+        # Start tread used in ram check
+        ram_check_thread = threading.Thread(target=check_ram_usage)
+        ram_check_thread.daemon = True
+        ram_check_thread.start()
 
     def add_to_clean(self, tmp_dir):
         self.tmp_dir_list.append(tmp_dir)
@@ -422,6 +425,9 @@ class Orchestrator:
             else:
                 delayed_objects = only_remaining_delayed
 
+            if len(delayed_objects) == 0:
+                logging.info("No Object to compute")
+                return
             # Compute delayed
             future_objects = self.cluster.start_tasks(delayed_objects)
 
@@ -447,13 +453,15 @@ class Orchestrator:
             )
             nb_tiles_computed = 0
 
+            interval_was_cropped = False
             try:
                 for future_obj in self.cluster.future_iterator(
                     future_objects, timeout=self.task_timeout
                 ):
                     # get corresponding CarsDataset and save tile
                     if future_obj is not None:
-
+                        if get_disparity_range_cropped(future_obj):
+                            interval_was_cropped = True
                         # Apply function if exists
                         final_function = None
                         current_cars_ds = (
@@ -483,23 +491,30 @@ class Orchestrator:
             except TimeoutError:
                 logging.error("TimeOut")
 
+            if interval_was_cropped:
+                logging.warning(
+                    "Disparity range was cropped in DenseMatching, "
+                    "due to a lack of available memory for estimated"
+                    " disparity range"
+                )
+
             remaining_tiles = self.achievement_tracker.get_remaining_tiles()
             if len(remaining_tiles) > 0:
                 # Some tiles have not been computed
-                logging.error(
+                logging.info(
                     "{} tiles have not been computed".format(
                         len(remaining_tiles)
                     )
                 )
                 if only_remaining_delayed is None:
                     # First try
-                    logging.error("Retry failed tasks ...")
+                    logging.info("Retry failed tasks ...")
                     self.reset_cluster()
                     del pbar
                     self.compute_futures(only_remaining_delayed=remaining_tiles)
                 else:
                     # Second try
-                    logging.error("Pipeline will pursue without these tiles")
+                    logging.error("Pipeline will pursue without failed tiles")
                     self.cars_ds_replacer_registry.replace_lasting_jobs(
                         self.cluster.get_delayed_type()
                     )
@@ -523,12 +538,16 @@ class Orchestrator:
         Reset Cluster
 
         """
+
+        data_to_propagate = self.cluster.data_to_propagate
+
         if self.launch_worker:
             self.cluster.cleanup(keep_shared_dir=True)
         self.cluster = AbstractCluster(  # pylint: disable=E0110
             self.orchestrator_conf,
             self.out_dir,
             launch_worker=self.launch_worker,
+            data_to_propagate=data_to_propagate,
         )
 
     def reset_registries(self):
@@ -700,3 +719,170 @@ def update_saving_infos(saving_info_left, row=None, col=None):
         full_saving_infos[CARS_DS_COL] = col
 
     return full_saving_infos
+
+
+def get_disparity_range_cropped(obj):
+    """
+    Get CROPPED_DISPARITY_RANGE value in attributes
+
+    :param obj: object to look in
+
+    :rtype bool
+    """
+
+    value = False
+
+    if isinstance(obj, (xarray.Dataset, pandas.DataFrame)):
+        obj_attributes = cars_dataset.get_attributes(obj)
+        if obj_attributes is not None:
+            value = obj_attributes.get(cst.CROPPED_DISPARITY_RANGE, False)
+
+    return value
+
+
+def get_slurm_data():
+    """
+    Get slurm data
+    """
+
+    def get_data(chain, pattern):
+        """
+        Get data from pattern
+
+        :param chain: chain of character to parse
+        :param pattern: pattern to find
+
+        :return: found data
+        """
+
+        match = re.search(pattern, chain)
+        value = None
+        if match:
+            value = match.group(1)
+        return int(value)
+
+    on_slurm = False
+    slurm_nb_cpu = None
+    slurm_max_ram = None
+    try:
+        sub_res = subprocess.run(
+            "scontrol show job $SLURM_JOB_ID",
+            shell=True,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        slurm_infos = sub_res.stdout
+
+        slurm_nb_cpu = get_data(slurm_infos, r"ReqTRES=cpu=(\d+)")
+        slurm_max_ram = get_data(slurm_infos, r"ReqTRES=cpu=.*?mem=(\d+)")
+        # convert to Mb
+        slurm_max_ram *= 1024
+        logging.info("Available CPUs  in SLURM : {}".format(slurm_nb_cpu))
+        logging.info("Available RAM  in SLURM : {}".format(slurm_max_ram))
+
+    except Exception as _:
+        logging.debug("Not on Slurm cluster")
+
+    if slurm_nb_cpu is not None and slurm_max_ram is not None:
+        on_slurm = True
+
+    return on_slurm, slurm_nb_cpu, slurm_max_ram
+
+
+def compute_conf_auto_mode(is_windows):
+    """
+    Compute confuration to use in auto mode
+
+    :param is_windows: True if runs on windows
+    :type is_windows: bool
+    """
+
+    on_slurm, nb_cpu_slurm, max_ram_slurm = get_slurm_data()
+
+    if on_slurm:
+        available_cpu = nb_cpu_slurm
+    else:
+        available_cpu = (
+            multiprocessing.cpu_count()
+            if is_windows
+            else len(os.sched_getaffinity(0))
+        )
+        logging.info("available cpu : {}".format(available_cpu))
+
+    if available_cpu == 1:
+        logging.warning("Only one CPU detected.")
+        available_cpu = 2
+    elif available_cpu == 0:
+        logging.warning("No CPU detected.")
+        available_cpu = 2
+
+    if on_slurm:
+        ram_to_use = max_ram_slurm
+    else:
+        ram_to_use = get_total_ram()
+        logging.info("total ram :  {}".format(ram_to_use))
+
+    # use 50% of total ram
+    ram_to_use *= 0.5
+
+    # non configurable
+    max_ram_per_worker = 2000
+    possible_workers = int(ram_to_use // max_ram_per_worker)
+    if possible_workers == 0:
+        logging.warning("Not enough memory available : failure might occur")
+    nb_workers_to_use = max(1, min(possible_workers, available_cpu - 1))
+
+    logging.info("Number of workers : {}".format(nb_workers_to_use))
+    logging.info("Max memory per worker : {} MB".format(max_ram_per_worker))
+
+    # Check with available ram
+    available_ram = get_available_ram()
+    if int(nb_workers_to_use) * int(max_ram_per_worker) > available_ram:
+        logging.warning(
+            "CARS will use 50% of total RAM, "
+            " more than currently available RAM"
+        )
+
+    return int(nb_workers_to_use), int(max_ram_per_worker)
+
+
+def get_available_ram():
+    """
+    Get available ram
+
+    :return : available ram in Mb
+    """
+    ram = psutil.virtual_memory()
+    available_ram_mb = ram.available / (1024 * 1024)
+    return available_ram_mb
+
+
+def get_total_ram():
+    """
+    Get total ram
+
+    :return : available ram in Mb
+    """
+    ram = psutil.virtual_memory()
+    total_ram_mb = ram.available / (1024 * 1024)
+    return total_ram_mb
+
+
+def check_ram_usage():
+    """
+    Check RAM usage
+    """
+    while True:
+        # Get Ram information
+        available_ram_mb = get_available_ram()
+
+        if available_ram_mb < RAM_THRESHOLD_MB:
+            logging.warning(
+                "RAM available < {} Mb, available ram: {} Mb."
+                " Freeze might ocure".format(
+                    RAM_THRESHOLD_MB, int(available_ram_mb)
+                )
+            )
+
+        time.sleep(RAM_CHECK_SLEEP_TIME)

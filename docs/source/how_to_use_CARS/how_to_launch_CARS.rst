@@ -29,6 +29,10 @@ CARS cli takes only one ``.json`` file as command line argument:
 .. code-block:: console
 
     cars configfile.json
+
+.. warning::
+
+    A least 2 Go of RAM must be available. CARS will use 50% of total RAM.
     
 Note that ``cars-starter`` script can be used to instantiate this configuration file.
 

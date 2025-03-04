@@ -49,7 +49,7 @@ class AbstractCluster(metaclass=ABCMeta):
     out_dir: str
 
     def __new__(  # pylint: disable=W0613
-        cls, conf_cluster, out_dir, launch_worker=True
+        cls, conf_cluster, out_dir, launch_worker=True, data_to_propagate=None
     ):
         """
         Return the required cluster
@@ -99,15 +99,20 @@ class AbstractCluster(metaclass=ABCMeta):
         return decorator
 
     def __init__(
-        self, conf_cluster, out_dir, launch_worker=True
+        self, conf_cluster, out_dir, launch_worker=True, data_to_propagate=None
     ):  # pylint: disable=W0613
         """
         Init function of AbstractCluster
 
         :param conf_cluster: configuration for cluster
+        :param data_to_propagate: data to propagate to new cluster if reset
+        :type data_to_propagate: dict
 
         """
         self.out_dir = out_dir
+
+        # data to propagate
+        self.data_to_propagate = data_to_propagate
 
         self.worker_log_dir = os.path.join(out_dir, "logs", "workers_log")
         if not os.path.exists(self.worker_log_dir):

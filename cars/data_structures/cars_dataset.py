@@ -1440,15 +1440,15 @@ def separate_dicts(dictionary, list_tags):
     return dict1, dict2
 
 
-def get_attributes_dataframe(dataframe):
+def get_attributes(obj):
     """
-    Get attributes field in .attr of dataframe
+    Get attributes in .attrs of dataset or dataframe
 
-    :param dataframe: dataframe
-    :type dataframe: pandas dataframe
+    :param obj: dataset or dataframe
+    :type obj: xr.Dataset or pandas.Dataframe
     """
 
-    return dataframe.attrs.get(ATTRIBUTES, None)
+    return obj.attrs.get(ATTRIBUTES, None)
 
 
 def get_window_dataset(dataset):
@@ -1482,17 +1482,6 @@ def get_profile_rasterio(dataset):
     """
 
     return dataset.attrs.get(PROFILE, None)
-
-
-def get_attributes(dataset):
-    """
-    Get attributes in dataset
-
-    :param dataset: dataset
-    :type dataset: xr.Dataset
-    """
-
-    return dataset.attrs.get(ATTRIBUTES, None)
 
 
 def get_profile_for_tag_dataset(dataset, tag: str) -> Dict:

@@ -46,6 +46,7 @@ from cars.applications.point_cloud_fusion.point_cloud_fusion import (
 from cars.applications.triangulation.triangulation_tools import (
     generate_point_cloud_file_names,
 )
+from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -570,10 +571,14 @@ def compute_point_cloud_wrapper(
     # Remove None tiles
     clouds = []
     clouds_ids = []
+    disparity_range_is_cropped = False
     for value, pc_id in point_clouds:
         if value is not None:
             clouds.append(value)
             clouds_ids.append(pc_id)
+            # Check if disparity range was cropped during process
+            if ocht.get_disparity_range_cropped(value):
+                disparity_range_is_cropped = True
     if len(clouds) == 0:
         raise RuntimeError("All clouds are None")
 
@@ -624,6 +629,7 @@ def compute_point_cloud_wrapper(
         "color_type": color_type,
         "source_pc_names": source_pc_names,
         "number_of_pc": len(source_pc_names),
+        cst.CROPPED_DISPARITY_RANGE: disparity_range_is_cropped,
     }
     cars_dataset.fill_dataframe(
         pc_pandas, saving_info=saving_info, attributes=attributes
