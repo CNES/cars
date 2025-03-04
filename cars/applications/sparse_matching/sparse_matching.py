@@ -29,6 +29,7 @@ from typing import Dict
 
 import numpy as np
 import xarray as xr
+from shareloc.geofunctions.rectification_grid import RectificationGrid
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 import cars.orchestrator.orchestrator as ocht
@@ -300,7 +301,14 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_error_upper_bound = self.get_epipolar_error_upper_bound()
         epipolar_error_maximum_bias = self.get_epipolar_error_maximum_bias()
 
-        # Compute grid correction
+        grid_left = RectificationGrid(
+            grid_left.attributes["path"],
+            interpolator=geom_plugin.interpolator,
+        )
+        grid_right = RectificationGrid(
+            grid_right.attributes["path"],
+            interpolator=geom_plugin.interpolator,
+        )
 
         # Concatenated matches
         list_matches = []
