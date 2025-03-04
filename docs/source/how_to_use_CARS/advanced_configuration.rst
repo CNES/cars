@@ -663,7 +663,7 @@ The structure follows this organization:
                 +--------------------+-------------+---------+-----------------+---------------+----------+
                 | Name               | Description | Type    | Available value | Default value | Required |
                 +====================+=============+=========+=================+===============+==========+
-                | activated          |             | boolean |                 | false         | No       |
+                | activated          |             | boolean |                 | True          | No       |
                 +--------------------+-------------+---------+-----------------+---------------+----------+
                 | k                  |             | int     | should be > 0   | 50            | No       |
                 +--------------------+-------------+---------+-----------------+---------------+----------+
@@ -679,7 +679,7 @@ The structure follows this organization:
                 +-----------------------------+-------------+---------+-----------------+---------------+----------+
                 | Name                        | Description | Type    | Available value | Default value | Required |
                 +=============================+=============+=========+=================+===============+==========+
-                | activated                   |             | boolean |                 | false         | No       |
+                | activated                   |             | boolean |                 | True          | No       |
                 +-----------------------------+-------------+---------+-----------------+---------------+----------+
                 | on_ground_margin            |             | int     |                 | 10            | No       |
                 +-----------------------------+-------------+---------+-----------------+---------------+----------+
@@ -716,13 +716,11 @@ The structure follows this organization:
                             "method": "small_components",
                             "on_ground_margin": 10,
                             "save_intermediate_data": true,
-                            "activated": true
                         },
                         "point_cloud_outlier_removal.2": {
                             "method": "statistical",
                             "k": 10,
                             "save_intermediate_data": true,
-                            "activated": true
                         }
                     }
 
