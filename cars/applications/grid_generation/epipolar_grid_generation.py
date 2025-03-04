@@ -174,32 +174,54 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         geomodel2 = image_right[sens_cst.INPUT_GEO_MODEL]
 
         # Get satellites angles from ground: Azimuth to north, Elevation angle
-        (
-            left_az,
-            left_elev_angle,
-            right_az,
-            right_elev_angle,
-            convergence_angle,
-        ) = projection.get_ground_angles(
-            sensor1, sensor2, geomodel1, geomodel2, geometry_plugin
-        )
+        try:
+            (
+                left_az,
+                left_elev_angle,
+                right_az,
+                right_elev_angle,
+                convergence_angle,
+            ) = projection.get_ground_angles(
+                sensor1, sensor2, geomodel1, geomodel2, geometry_plugin
+            )
 
-        logging.info(
-            "Left satellite acquisition angles: "
-            "Azimuth angle: {:.1f} degrees, "
-            "Elevation angle: {:.1f} degrees".format(left_az, left_elev_angle)
-        )
+            logging.info(
+                "Left satellite acquisition angles: "
+                "Azimuth angle: {:.1f} degrees, "
+                "Elevation angle: {:.1f} degrees".format(
+                    left_az, left_elev_angle
+                )
+            )
 
-        logging.info(
-            "Right satellite acquisition angles: "
-            "Azimuth angle: {:.1f} degrees, "
-            "Elevation angle: {:.1f} degrees".format(right_az, right_elev_angle)
-        )
+            logging.info(
+                "Right satellite acquisition angles: "
+                "Azimuth angle: {:.1f} degrees, "
+                "Elevation angle: {:.1f} degrees".format(
+                    right_az, right_elev_angle
+                )
+            )
 
-        logging.info(
-            "Stereo satellite convergence angle from ground: "
-            "{:.1f} degrees".format(convergence_angle)
-        )
+            logging.info(
+                "Stereo satellite convergence angle from ground: "
+                "{:.1f} degrees".format(convergence_angle)
+            )
+        except Exception as exc:
+            logging.error(
+                "Error in Angles information retrieval: {}".format(exc)
+            )
+            (
+                left_az,
+                left_elev_angle,
+                right_az,
+                right_elev_angle,
+                convergence_angle,
+            ) = (
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
 
         # Generate rectification grids
         (
