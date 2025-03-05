@@ -951,6 +951,11 @@ The structure follows this organization:
               - dict
               -
               - No
+            * - phasing
+              - Phase to use for DSM
+              - dict
+              -
+              - No
             * - geometry_plugin
               - Name of the geometry plugin to use and optional parameters
               - str or dict
@@ -961,6 +966,18 @@ The structure follows this organization:
               - str
               - "default"
               - No
+
+        .. note::
+
+            Phase can be added to make sure multiple DSMs can be merged in "dsm -> dsm" pipeline.
+            "point" and "epsg" of point must be specified
+
+             .. code-block:: json
+
+                      "phasing": {
+                          "point": [32000, 30000],
+                          "epsg": 32530
+                      }
 
 
         .. tabs::
