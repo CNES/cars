@@ -143,13 +143,18 @@ The structure follows this organization:
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0          | 10            | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | -9000         | No       |
+                | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | None          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | 9000          | No       |
+                | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | None          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                           | int         | should be > 0          | 100           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
 
+
+                .. note::
+
+                    'elevation_delta_lower_bound' and 'elevation_delta_upper_bound' are overidden to  [-1000, 9000] in default pipeline if no initial elevation is set.
+                    If initial elevation is set, it is overridden to [-500, 1000].
 
                 **Sift:**
 
@@ -946,6 +951,11 @@ The structure follows this organization:
               - dict
               -
               - No
+            * - phasing
+              - Phase to use for DSM {"point" : (x,y) , "epsg": epsg}
+              - dict
+              -
+              - No
             * - geometry_plugin
               - Name of the geometry plugin to use and optional parameters
               - str or dict
@@ -1059,6 +1069,25 @@ The structure follows this organization:
                             }
                         }
 
+            .. tab:: Phasing
+
+                Phase can be added to make sure multiple DSMs can be merged in "dsm -> dsm" pipeline.
+                "point" and "epsg" of point must be specified
+
+                +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | Name              | Description              | Type           | Default value           | Available values                      | Required |
+                +===================+==========================+================+=========================+=======================================+==========+
+                | *point*           | Point to phase on        | tuple          | None                    |                                       | False    |
+                +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | *epsg*            | Epsg of point            | int            | None                    |                                       | False    |
+                +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+
+                 .. code-block:: json
+
+                          "phasing": {
+                              "point": [32000, 30000],
+                              "epsg": 32530
+                          }
 
             .. tab:: Geometry plugin
 
