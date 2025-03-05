@@ -967,18 +967,6 @@ The structure follows this organization:
               - "default"
               - No
 
-        .. note::
-
-            Phase can be added to make sure multiple DSMs can be merged in "dsm -> dsm" pipeline.
-            "point" and "epsg" of point must be specified
-
-             .. code-block:: json
-
-                      "phasing": {
-                          "point": [32000, 30000],
-                          "epsg": 32530
-                      }
-
 
         .. tabs::
 	
@@ -1081,6 +1069,25 @@ The structure follows this organization:
                             }
                         }
 
+            .. tab:: Phasing
+
+                Phase can be added to make sure multiple DSMs can be merged in "dsm -> dsm" pipeline.
+                "point" and "epsg" of point must be specified
+
+                +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | Name              | Description              | Type           | Default value           | Available values                      | Required |
+                +===================+==========================+================+=========================+=======================================+==========+
+                | *point*           | Point to phase on        | tuple          | None                    |                                       | False    |
+                +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | *epsg*            | Epsg of point            | int            | None                    |                                       | False    |
+                +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+
+                 .. code-block:: json
+
+                          "phasing": {
+                              "point": [32000, 30000],
+                              "epsg": 32530
+                          }
 
             .. tab:: Geometry plugin
 
