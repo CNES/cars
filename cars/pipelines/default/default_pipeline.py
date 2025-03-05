@@ -1406,7 +1406,89 @@ class DefaultPipeline(PipelineTemplate):
             # Geometry plugin with dem will be used for the grid generation
             geom_plugin = self.geom_plugin_with_dem_and_geoid
 
-            if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is True:
+            if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is False:
+
+                if (
+                    inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                    is None
+                ):
+                    # Generate grids with new MNT
+                    (
+                        self.pairs[pair_key]["new_grid_left"],
+                        self.pairs[pair_key]["new_grid_right"],
+                    ) = self.epipolar_grid_generation_application.run(
+                        self.pairs[pair_key]["sensor_image_left"],
+                        self.pairs[pair_key]["sensor_image_right"],
+                        geom_plugin,
+                        orchestrator=self.cars_orchestrator,
+                        pair_folder=os.path.join(
+                            self.dump_dir,
+                            "epipolar_grid_generation",
+                            "new_mnt",
+                            pair_key,
+                        ),
+                        pair_key=pair_key,
+                    )
+
+                    # Correct grids with former matches
+                    # Transform matches to new grids
+
+                    new_grid_matches_array = (
+                        geom_plugin.transform_matches_from_grids(
+                            self.pairs[pair_key]["corrected_matches_array"],
+                            self.pairs[pair_key]["corrected_grid_left"],
+                            self.pairs[pair_key]["corrected_grid_right"],
+                            self.pairs[pair_key]["new_grid_left"],
+                            self.pairs[pair_key]["new_grid_right"],
+                        )
+                    )
+                    save_matches = self.sparse_mtch_sift_app.get_save_matches()
+                    # Estimate grid_correction
+                    (
+                        self.pairs[pair_key]["grid_correction_coef"],
+                        self.pairs[pair_key]["corrected_matches_array"],
+                        self.pairs[pair_key]["corrected_matches_cars_ds"],
+                        _,
+                        _,
+                    ) = grid_correction.estimate_right_grid_correction(
+                        new_grid_matches_array,
+                        self.pairs[pair_key]["new_grid_right"],
+                        save_matches=save_matches,
+                        initial_cars_ds=self.pairs[pair_key][
+                            "epipolar_matches_left"
+                        ],
+                        pair_folder=os.path.join(
+                            self.dump_dir, "grid_correction", "new", pair_key
+                        ),
+                        pair_key=pair_key,
+                        orchestrator=self.cars_orchestrator,
+                    )
+
+                    # Correct grid right
+
+                    self.pairs[pair_key]["corrected_grid_right"] = (
+                        grid_correction.correct_grid(
+                            self.pairs[pair_key]["new_grid_right"],
+                            self.pairs[pair_key]["grid_correction_coef"],
+                            save_corrected_grid,
+                            os.path.join(
+                                self.dump_dir,
+                                "grid_correction",
+                                "new",
+                                pair_key,
+                            ),
+                        )
+                    )
+
+                    # Use the new grid as uncorrected grid
+                    self.pairs[pair_key]["grid_right"] = self.pairs[pair_key][
+                        "new_grid_right"
+                    ]
+
+                    self.pairs[pair_key]["corrected_grid_left"] = self.pairs[
+                        pair_key
+                    ]["new_grid_left"]
+            else:
                 # Use epipolar a priori
                 # load the disparity range
                 [dmin, dmax] = self.used_conf[ADVANCED][
