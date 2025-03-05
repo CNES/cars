@@ -952,8 +952,8 @@ The structure follows this organization:
               -
               - No
             * - phasing
-              - Phase to use for DSM
-              - dict {"point" : (x,y) , "epsg": epsg}
+              - Phase to use for DSM {"point" : (x,y) , "epsg": epsg}
+              - dict
               -
               - No
             * - geometry_plugin
