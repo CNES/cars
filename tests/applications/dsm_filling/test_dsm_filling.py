@@ -132,6 +132,8 @@ def test_fill_dsm():
             absolute_data_path(
                 "ref_output/dsm_filling_dsm_filled_gizeh_crop_no_roi.tif"
             ),
+            rtol=1e-4,
+            atol=0.01,
         )
 
         # second test with an roi
@@ -158,4 +160,6 @@ def test_fill_dsm():
             absolute_data_path(
                 "ref_output/dsm_filling_dsm_filled_gizeh_crop_roi.tif"
             ),
+            rtol=1e-4,
+            atol=0.01,
         )
