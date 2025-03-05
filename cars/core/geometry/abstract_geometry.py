@@ -443,8 +443,8 @@ class AbstractGeometry(metaclass=ABCMeta):
 
             sensor_positions = interpolator(positions)
 
-        # swap
-        sensor_positions[:, [0, 1]] = sensor_positions[:, [1, 0]]
+            # swap
+            sensor_positions[:, [0, 1]] = sensor_positions[:, [1, 0]]
 
         return sensor_positions
 
