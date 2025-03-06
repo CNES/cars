@@ -63,6 +63,14 @@ def get_utm_zone_as_epsg_code(lon, lat):
     :rtype: int
     """
 
+    if lon is None or lat is None or np.isnan(lon) or np.isnan(lat):
+        logging.warning(
+            "An incorrect position was given when trying "
+            "to select the right EPSG for computations. "
+            "The default EPSG 32632 will be used."
+        )
+        return 32632
+
     zone = utm.from_latlon(lat, lon)[2]
 
     north_south = 600 if lat >= 0 else 700
@@ -474,7 +482,7 @@ def compute_epsg(
         disp_max,
     )
 
-    epsg = get_utm_zone_as_epsg_code(*np.mean(terrain_dispmin, axis=0))
+    epsg = get_utm_zone_as_epsg_code(*np.nanmean(terrain_dispmin, axis=0))
 
     logging.info("EPSG code: {}".format(epsg))
 
