@@ -32,7 +32,7 @@ COPY . /app/cars
 
 # Install fiona and rasterio with gdal / proj from otb
 WORKDIR /app/cars
-RUN echo "CARS installation" && CARS_VENV=$VIRTUAL_ENV make clean && CARS_VENV=$VIRTUAL_ENV make install-gdal-dev
+RUN echo "CARS installation" && CARS_VENV=$VIRTUAL_ENV make clean && CARS_VENV=$VIRTUAL_ENV make install/dev-gdal
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # hadolint ignore=DL3013,SC2102
