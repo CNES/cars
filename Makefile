@@ -63,6 +63,15 @@ install/deps-gdal: install/deps ## create an healthy python environment for GDAL
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
 
+.PHONY: install/dev-gdal
+install/dev-gdal: install/deps-gdal ## install cars on healthy python env for gdal/proj
+	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs,notebook]
+	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
+	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
+	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
+	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
+
 .PHONY: install/deps
 install: install/deps ## install cars in dev editable mode (pip install --no-build-isolation -e .) without recompiling rasterio and fiona
 	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs,notebook]
