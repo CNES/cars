@@ -695,6 +695,11 @@ def load_single_tile_dict(tile_path_name: str):
 
     # get dataframe
     dict_file_name = os.path.join(tile_path_name, CARSDICT_FILE)
+
+    if not os.path.exists(dict_file_name):
+        logging.error("Tile {} does not exists".format(dict_file_name))
+        return None
+
     with open(dict_file_name, "rb") as handle:
         dict_cars = pickle.load(handle)
 
