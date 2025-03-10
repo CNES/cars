@@ -24,6 +24,8 @@ Test module for cars/core/preprocessing.py
 
 # Standard imports
 
+import numpy as np
+
 # Third party imports
 import pytest
 
@@ -36,5 +38,16 @@ def test_get_utm_zone_as_epsg_code():
     """
     Test if a point in Toulouse gives the correct EPSG code
     """
-    epsg = preprocessing.get_utm_zone_as_epsg_code(1.442299, 43.600764)
-    assert epsg == 32631
+    vals = [
+        (1.442299, 43.600764, 32631),
+        (None, 43.600764, 32632),
+        (1.442299, None, 32632),
+        (None, None, 32632),
+        (np.nan, 43.600764, 32632),
+        (1.442299, np.nan, 32632),
+        (np.nan, np.nan, 32632),
+    ]
+
+    for lon, lat, gt in vals:
+        epsg = preprocessing.get_utm_zone_as_epsg_code(lon, lat)
+        assert epsg == gt
