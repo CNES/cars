@@ -90,7 +90,7 @@ def process_image_file(
         validate_bounding_box(bbx, image_dataset)
         row, col = get_slices_from_bbx(image_dataset, bbx)
         window = rio.windows.Window.from_slices(row, col)
-        array = image_dataset.read(1, window=window)
+        array = image_dataset.read(window=window)
         profile = image_dataset.profile
         profile["driver"] = "GTiff"
         profile["width"] = window.width
@@ -102,7 +102,7 @@ def process_image_file(
             del profile["crs"]
         with rio.open(output_image_path, "w", **profile) as dst:
             # write data
-            dst.write(array, 1)
+            dst.write(array)
             # copy rpc
             dst.rpcs = image_dataset.rpcs
 
