@@ -38,7 +38,7 @@ This file keeps track of authors contributions.
 * Alice de Bardonneche-Richard <alice.de-bardonneche-richard@csgroup.eu>
 * Tommy Calendini <tommy.calendini@cs-soprasteria.com>
 * Dimitri Lallement <dimitri.lallement@cnes.fr>
-* Datafalk <louis@datafalk.com>
+* Datafalk <research@datafalk.com>
 * Marian Rassat <marian.rassat@cs-soprasteria.com>
 
 Update here with new contributors.
