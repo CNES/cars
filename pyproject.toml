@@ -65,6 +65,7 @@ dependencies = [
     "vlsift==0.1.*",
     "shareloc==0.2.7",
     "bulldozer-dtm==1.1.*",
+    "xdem==0.1.*"
 ]
 
 [project.urls]

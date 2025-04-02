@@ -1362,11 +1362,15 @@ class DefaultPipeline(PipelineTemplate):
 
             # Use initial elevation if provided, and generate dems
             # Generate MNT from matches
-            dem = self.dem_generation_application.run(
+            dem, new_init_elev = self.dem_generation_application.run(
                 self.triangulated_matches_list,
                 dem_generation_output_dir,
                 inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
+                self.cars_orchestrator,
                 dem_roi_to_use=self.dem_generation_roi,
+                initial_elevation=(
+                    inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                ),
             )
             # Same geometry plugin if we use exogenous dem
             # as initial elevation always used before if provided
@@ -1375,9 +1379,12 @@ class DefaultPipeline(PipelineTemplate):
                 inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
                 is not None
             ):
-                dem_median = inputs[sens_cst.INITIAL_ELEVATION][
-                    sens_cst.DEM_PATH
-                ]
+                if new_init_elev is None:
+                    dem_median = inputs[sens_cst.INITIAL_ELEVATION][
+                        sens_cst.DEM_PATH
+                    ]
+                else:
+                    dem_median = new_init_elev
 
             if (
                 dem_median
