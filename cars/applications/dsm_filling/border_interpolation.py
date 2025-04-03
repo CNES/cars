@@ -27,6 +27,8 @@ import os
 
 import numpy as np
 import rasterio as rio
+import scipy
+import skimage
 from json_checker import Checker, Or
 from shapely import Polygon
 
@@ -73,7 +75,6 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         rectification_schema = {
             "method": str,
             "classification": Or(None, [str]),
-            "fill_nodata": bool,
             "save_intermediate_data": bool,
         }
 
@@ -111,16 +112,16 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             os.makedirs(dump_dir)
 
         old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
+        new_dsm_path = os.path.join(dump_dir, "dsm_filled.tif")
 
         # get dsm to be filled and its metadata
         with rio.open(dsm_file) as in_dsm:
-            dsm = in_dsm.read()
-            dsm_msk = in_dsm.read_masks()
+            dsm = in_dsm.read(1)
             dsm_tr = in_dsm.transform
             dsm_crs = in_dsm.crs
             dsm_meta = in_dsm.meta
 
-        roi_raster = np.ones(dsm[0].shape)
+        roi_raster = np.ones(dsm.shape)
 
         if isinstance(roi_polys, list):
             roi_polys_outepsg = []
@@ -144,46 +145,60 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         # get dtm to fill the dsm
         with rio.open(dtm_file) as in_dtm:
-            dtm = in_dtm.read()
+            dtm = in_dtm.read(1)
 
         with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm)
+            out_dsm.write(dsm, 1)
 
         classif_descriptions = inputs.get_descriptions_bands(classif_file)
-        combined_mask = np.zeros_like(dsm[0]).astype(np.uint8)
+        combined_mask = np.zeros_like(dsm).astype(np.uint8)
         for label in self.classification:
             if label in classif_descriptions:
                 index_classif = classif_descriptions.index(label) + 1
                 with rio.open(classif_file) as in_classif:
-                    label_msk = in_classif.read(index_classif)
-                filling_mask = np.logical_and(label_msk, roi_raster > 0)
-                filling_mask = np.expand_dims(filling_mask, axis=0)
-            elif label == "nodata":
-                filling_mask = np.logical_and(dsm_msk == 0, roi_raster > 0)
+                    classif = in_classif.read(index_classif)
+                    classif_msk = in_classif.read_masks(1)
+                classif[classif_msk == 0] = 0
+                filling_mask = np.logical_and(classif, roi_raster > 0)
             else:
                 logging.error(
                     "Label {} not found in classification "
                     "descriptions {}".format(label, classif_descriptions)
                 )
                 continue
-            logging.info("Filling of {} with Bulldozer DTM".format(label))
-            dsm[filling_mask] = dtm[filling_mask]
-            combined_mask = np.logical_or(combined_mask, filling_mask[0])
+            logging.info(
+                "Filling of {} with Bulldozer DTM using "
+                "border interpolation".format(label)
+            )
+            filling_mask[classif_msk == 0] = 0
+            filling_mask = skimage.morphology.binary_opening(
+                filling_mask,
+                footprint=[(np.ones((5, 1)), 1), (np.ones((1, 5)), 1)],
+            )
+            features, num_features = scipy.ndimage.label(filling_mask)
+            logging.info("Filling of {} features".format(num_features))
+            features_boundaries = skimage.segmentation.expand_labels(
+                filling_mask, distance=10
+            )
+            features_boundaries[filling_mask] = 0
+            for feature_id in range(1, num_features + 1):
+                altitude = np.nanpercentile(dtm[features == feature_id], 10)
+                dsm[features == feature_id] = altitude
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
+        with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
+            out_dsm.write(dsm, 1)
         with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm)
+            out_dsm.write(dsm, 1)
 
         if filling_file is not None:
-
             with rio.open(filling_file, "r") as src:
                 fill_meta = src.meta
                 bands = [src.read(i + 1) for i in range(src.count)]
                 bands_desc = [src.descriptions[i] for i in range(src.count)]
-
             fill_meta["count"] += 1
-
             bands.append(combined_mask.astype(np.uint8))
-            bands_desc.append("filling_bulldozer")
+            bands_desc.append("border_interpolation")
 
             with rio.open(filling_file, "w", **fill_meta) as out:
                 for i, band in enumerate(bands):

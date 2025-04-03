@@ -2518,12 +2518,11 @@ class DefaultPipeline(PipelineTemplate):
             classif_file=classif_file_name,
             filling_file=filling_file_name,
             dtm_file=dtm_file_name,
-            dump_dir=dsm_filling_2_dump_dir,
+            dump_dir=dsm_filling_3_dump_dir,
             roi_polys=(
                 self.list_intersection_poly if self.compute_depth_map else None
             ),
             roi_epsg=self.epsg,
-            orchestrator=self.cars_orchestrator,
         )
 
         if not self.dsm_filling_3_application.save_intermediate_data:

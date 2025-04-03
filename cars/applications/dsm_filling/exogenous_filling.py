@@ -134,11 +134,12 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             os.makedirs(dump_dir)
 
         old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
+        new_dsm_path = os.path.join(dump_dir, "dsm_filled.tif")
 
         # get dsm to be filled and its metadata
         with rio.open(dsm_file) as in_dsm:
-            dsm = in_dsm.read()
-            dsm_msk = in_dsm.read_masks()
+            dsm = in_dsm.read(1)
+            dsm_msk = in_dsm.read_masks(1)
             dsm_tr = in_dsm.transform
             dsm_crs = in_dsm.crs
             dsm_tr_mat = np.array(
@@ -150,7 +151,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             )
             dsm_meta = in_dsm.meta
 
-        roi_raster = np.ones(dsm[0].shape)
+        roi_raster = np.ones(dsm.shape)
 
         if isinstance(roi_polys, list):
             roi_polys_outepsg = []
@@ -190,7 +191,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             ijs_window = np.array(
                 [
                     [0, 0],
-                    [dsm.shape[1], dsm.shape[2]],
+                    [dsm.shape[0], dsm.shape[1]],
                 ]
             )
             # third: project elev crs to elev pixel coords
@@ -207,7 +208,8 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
             # get initial elevation
             elev = in_elev.read(
-                out_shape=(1,) + dsm.shape[1:],
+                1,
+                out_shape=dsm.shape,
                 window=Window.from_slices(
                     (ijs_window_dem[0, 0], ijs_window_dem[1, 0]),
                     (ijs_window_dem[0, 1], ijs_window_dem[1, 1]),
@@ -217,19 +219,20 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         # Save old dsm
         with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm)
+            out_dsm.write(dsm, 1)
 
         # Fill DSM for every label
-        combined_mask = np.zeros_like(dsm[0]).astype(np.uint8)
+        combined_mask = np.zeros_like(dsm).astype(np.uint8)
         classif_descriptions = inputs.get_descriptions_bands(classif_file)
         for label in self.classification:
             filling_mask = np.logical_and(dsm_msk == 0, roi_raster > 0)
             if label in classif_descriptions:
                 index_classif = classif_descriptions.index(label) + 1
                 with rio.open(classif_file) as in_classif:
-                    label_msk = in_classif.read(index_classif)
-                filling_mask = np.logical_and(label_msk, roi_raster > 0)
-                filling_mask = np.expand_dims(filling_mask, axis=0)
+                    classif = in_classif.read(index_classif)
+                    classif_msk = in_classif.read_masks(1)
+                classif[classif_msk == 0] = 0
+                filling_mask = np.logical_and(classif, roi_raster > 0)
             elif label == "nodata":
                 filling_mask = np.logical_and(dsm_msk == 0, roi_raster > 0)
             else:
@@ -273,19 +276,19 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                     )
 
                 dsm[filling_mask] += applied_offset
-            combined_mask = np.logical_or(combined_mask, filling_mask[0])
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
+        with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
+            out_dsm.write(dsm, 1)
         with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm)
+            out_dsm.write(dsm, 1)
 
         if filling_file is not None:
             with rio.open(filling_file, "r") as src:
                 fill_meta = src.meta
                 bands = [src.read(i + 1) for i in range(src.count)]
                 bands_desc = [src.descriptions[i] for i in range(src.count)]
-
             fill_meta["count"] += 1
-
             bands.append(combined_mask)
             bands_desc.append("filling_exogenous")
 

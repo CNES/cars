@@ -25,4 +25,4 @@ CARS dsm filling module init file
 
 from cars.applications.dsm_filling.dsm_filling import DsmFilling
 
-from . import bulldozer_filling, exogenous_filling
+from . import border_interpolation, bulldozer_filling, exogenous_filling

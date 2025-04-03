@@ -120,7 +120,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
 
-        old_dsm_path = os.path.join(dump_dir, "dsm_not_smoothed.tif")
+        old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
+        new_dsm_path = os.path.join(dump_dir, "dsm_filled.tif")
 
         # create the config for the bulldozer execution
         bull_conf_path = os.path.join(
@@ -149,13 +150,13 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         # get dsm to be filled and its metadata
         with rio.open(dsm_file) as in_dsm:
-            dsm = in_dsm.read()
-            dsm_msk = in_dsm.read_masks()
+            dsm = in_dsm.read(1)
+            dsm_msk = in_dsm.read_masks(1)
             dsm_tr = in_dsm.transform
             dsm_crs = in_dsm.crs
             dsm_meta = in_dsm.meta
 
-        roi_raster = np.ones(dsm[0].shape)
+        roi_raster = np.ones(dsm.shape)
 
         if isinstance(roi_polys, list):
             roi_polys_outepsg = []
@@ -204,20 +205,21 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             )
         else:
             with rio.open(dtm_path) as in_dtm:
-                dtm = in_dtm.read()
+                dtm = in_dtm.read(1)
 
             with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
-                out_dsm.write(dsm)
+                out_dsm.write(dsm, 1)
 
             classif_descriptions = inputs.get_descriptions_bands(classif_file)
-            combined_mask = np.zeros_like(dsm[0]).astype(np.uint8)
+            combined_mask = np.zeros_like(dsm).astype(np.uint8)
             for label in self.classification:
                 if label in classif_descriptions:
                     index_classif = classif_descriptions.index(label) + 1
                     with rio.open(classif_file) as in_classif:
-                        label_msk = in_classif.read(index_classif)
-                    filling_mask = np.logical_and(label_msk, roi_raster > 0)
-                    filling_mask = np.expand_dims(filling_mask, axis=0)
+                        classif = in_classif.read(index_classif)
+                        classif_msk = in_classif.read_masks(1)
+                    classif[classif_msk == 0] = 0
+                    filling_mask = np.logical_and(classif, roi_raster > 0)
                 elif label == "nodata":
                     filling_mask = np.logical_and(dsm_msk == 0, roi_raster > 0)
                 else:
@@ -228,22 +230,21 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                     continue
                 logging.info("Filling of {} with Bulldozer DTM".format(label))
                 dsm[filling_mask] = dtm[filling_mask]
-                combined_mask = np.logical_or(combined_mask, filling_mask[0])
+                combined_mask = np.logical_or(combined_mask, filling_mask)
 
+            with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
+                out_dsm.write(dsm, 1)
             with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
-                out_dsm.write(dsm)
+                out_dsm.write(dsm, 1)
 
             if filling_file is not None:
-
                 with rio.open(filling_file, "r") as src:
                     fill_meta = src.meta
                     bands = [src.read(i + 1) for i in range(src.count)]
                     bands_desc = [src.descriptions[i] for i in range(src.count)]
-
                 fill_meta["count"] += 1
-
                 bands.append(combined_mask.astype(np.uint8))
-                bands_desc.append("filling_bulldozer")
+                bands_desc.append("bulldozer")
 
                 with rio.open(filling_file, "w", **fill_meta) as out:
                     for i, band in enumerate(bands):

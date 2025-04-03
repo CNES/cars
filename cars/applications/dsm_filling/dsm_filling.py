@@ -49,8 +49,6 @@ class DsmFilling(ApplicationTemplate, metaclass=ABCMeta):
         :return: an application_to_use object
         """
 
-        print(conf)
-
         dsm_filling_method = cls.default_application
         if bool(conf) is False:
             logging.info(
