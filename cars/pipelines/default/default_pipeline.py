@@ -263,8 +263,10 @@ class DefaultPipeline(PipelineTemplate):
         depth_to_dsm_apps = {
             "pc_denoising": 17,
             "point_cloud_rasterization": 18,
-            "dsm_filling": 19,
-            "auxiliary_filling": 20,
+            "dsm_filling.1": 19,
+            "dsm_filling.2": 20,
+            "dsm_filling.3": 21,
+            "auxiliary_filling": 22,
         }
 
         self.app_values = {}
@@ -487,7 +489,9 @@ class DefaultPipeline(PipelineTemplate):
             if self.save_output_dsm:
                 needed_applications += [
                     "point_cloud_rasterization",
-                    "dsm_filling",
+                    "dsm_filling.1",
+                    "dsm_filling.2",
+                    "dsm_filling.3",
                     "auxiliary_filling",
                 ]
 
@@ -548,7 +552,9 @@ class DefaultPipeline(PipelineTemplate):
         self.pc_outlier_removal_2_app = None
         self.rasterization_application = None
         self.pc_fusion_application = None
-        self.dsm_filling_application = None
+        self.dsm_filling_1_application = None
+        self.dsm_filling_2_application = None
+        self.dsm_filling_3_application = None
 
         if self.sensors_in_inputs:
             # Epipolar grid generation
@@ -718,12 +724,38 @@ class DefaultPipeline(PipelineTemplate):
                 used_conf["point_cloud_rasterization"] = (
                     self.rasterization_application.get_conf()
                 )
-                # DSM filling
-                self.dsm_filling_application = Application(
-                    "dsm_filling", cfg=conf.get("dsm_filling", {})
+                # DSM filling 1 : Exogenous filling
+                self.dsm_filling_1_application = Application(
+                    "dsm_filling",
+                    cfg=conf.get(
+                        "dsm_filling.1",
+                        {"method": "exogenous_filling"},
+                    ),
                 )
-                used_conf["dsm_filling"] = (
-                    self.dsm_filling_application.get_conf()
+                used_conf["dsm_filling.1"] = (
+                    self.dsm_filling_1_application.get_conf()
+                )
+                # DSM filling 2 : Bulldozer
+                self.dsm_filling_2_application = Application(
+                    "dsm_filling",
+                    cfg=conf.get(
+                        "dsm_filling.2",
+                        {"method": "bulldozer"},
+                    ),
+                )
+                used_conf["dsm_filling.2"] = (
+                    self.dsm_filling_2_application.get_conf()
+                )
+                # DSM filling 3 : Border interpolation
+                self.dsm_filling_3_application = Application(
+                    "dsm_filling",
+                    cfg=conf.get(
+                        "dsm_filling.3",
+                        {"method": "border_interpolation"},
+                    ),
+                )
+                used_conf["dsm_filling.3"] = (
+                    self.dsm_filling_3_application.get_conf()
                 )
                 # Auxiliary filling
                 self.auxiliary_filling_application = Application(
@@ -2264,6 +2296,10 @@ class DefaultPipeline(PipelineTemplate):
         Fill the dsm
         """
 
+        dsm_filling_1_dump_dir = os.path.join(self.dump_dir, "dsm_filling_1")
+        dsm_filling_2_dump_dir = os.path.join(self.dump_dir, "dsm_filling_2")
+        dsm_filling_3_dump_dir = os.path.join(self.dump_dir, "dsm_filling_3")
+
         dsm_file_name = (
             os.path.join(
                 self.out_dir,
@@ -2403,19 +2439,6 @@ class DefaultPipeline(PipelineTemplate):
             # dsm needs to be saved before filling
             self.cars_orchestrator.breakpoint()
         else:
-            filling_file_name = (
-                os.path.join(
-                    self.out_dir,
-                    out_cst.DSM_DIRECTORY,
-                    "filling.tif",
-                )
-                if self.save_output_dsm
-                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_FILLING
-                ]
-                else None
-            )
-
             color_file_name = (
                 os.path.join(
                     self.out_dir,
@@ -2440,21 +2463,73 @@ class DefaultPipeline(PipelineTemplate):
                 else None
             )
 
-        _ = self.dsm_filling_application.run(
-            orchestrator=self.cars_orchestrator,
-            # path to initial elevation file via geom plugin
-            initial_elevation=self.geom_plugin_with_dem_and_geoid,
-            dsm_path=dsm_file_name,
+            filling_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "filling.tif",
+                )
+                if self.save_output_dsm
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_FILLING
+                ]
+                else None
+            )
+
+        _ = self.dsm_filling_1_application.run(
+            dsm_file=dsm_file_name,
+            classif_file=classif_file_name,
+            filling_file=filling_file_name,
+            dump_dir=dsm_filling_1_dump_dir,
             roi_polys=(
                 self.list_intersection_poly if self.compute_depth_map else None
             ),
             roi_epsg=self.epsg,
             output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
-            filling_file_name=filling_file_name,
-            dump_dir=self.dump_dir,
+            geom_plugin=self.geom_plugin_with_dem_and_geoid,
         )
 
-        if self.quit_on_app("dsm_filling"):
+        if not self.dsm_filling_1_application.save_intermediate_data:
+            self.cars_orchestrator.add_to_clean(dsm_filling_1_dump_dir)
+
+        if self.quit_on_app("dsm_filling.1"):
+            return True
+
+        dtm_file_name = self.dsm_filling_2_application.run(
+            dsm_file=dsm_file_name,
+            classif_file=classif_file_name,
+            filling_file=filling_file_name,
+            dump_dir=dsm_filling_2_dump_dir,
+            roi_polys=(
+                self.list_intersection_poly if self.compute_depth_map else None
+            ),
+            roi_epsg=self.epsg,
+            orchestrator=self.cars_orchestrator,
+        )
+
+        if not self.dsm_filling_2_application.save_intermediate_data:
+            self.cars_orchestrator.add_to_clean(dsm_filling_2_dump_dir)
+
+        if self.quit_on_app("dsm_filling.2"):
+            return True
+
+        _ = self.dsm_filling_3_application.run(
+            dsm_file=dsm_file_name,
+            classif_file=classif_file_name,
+            filling_file=filling_file_name,
+            dtm_file=dtm_file_name,
+            dump_dir=dsm_filling_2_dump_dir,
+            roi_polys=(
+                self.list_intersection_poly if self.compute_depth_map else None
+            ),
+            roi_epsg=self.epsg,
+            orchestrator=self.cars_orchestrator,
+        )
+
+        if not self.dsm_filling_3_application.save_intermediate_data:
+            self.cars_orchestrator.add_to_clean(dsm_filling_3_dump_dir)
+
+        if self.quit_on_app("dsm_filling.3"):
             return True
 
         _ = self.auxiliary_filling_application.run(
