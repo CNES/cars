@@ -2331,57 +2331,6 @@ class DefaultPipeline(PipelineTemplate):
         dsm_filling_2_dump_dir = os.path.join(self.dump_dir, "dsm_filling_2")
         dsm_filling_3_dump_dir = os.path.join(self.dump_dir, "dsm_filling_3")
 
-        if (
-            self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
-                sens_cst.DEM_PATH
-            ]
-            is not None
-            and self.sensors_in_inputs
-        ):
-            self.list_sensor_pairs = sensor_inputs.generate_inputs(
-                self.used_conf[INPUTS], self.geom_plugin_without_dem_and_geoid
-            )
-
-            self.list_intersection_poly = []
-            for _, (
-                pair_key,
-                sensor_image_left,
-                sensor_image_right,
-            ) in enumerate(self.list_sensor_pairs):
-                pair_folder = os.path.join(
-                    self.dump_dir, "terrain_bbox", pair_key
-                )
-                safe_makedirs(pair_folder)
-                geojson1 = os.path.join(pair_folder, "left_envelope.geojson")
-                geojson2 = os.path.join(pair_folder, "right_envelope.geojson")
-                out_envelopes_intersection = os.path.join(
-                    pair_folder, "envelopes_intersection.geojson"
-                )
-
-                inter_poly, _ = projection.ground_intersection_envelopes(
-                    sensor_image_left[sens_cst.INPUT_IMG],
-                    sensor_image_right[sens_cst.INPUT_IMG],
-                    sensor_image_left[sens_cst.INPUT_GEO_MODEL],
-                    sensor_image_right[sens_cst.INPUT_GEO_MODEL],
-                    self.geom_plugin_with_dem_and_geoid,
-                    geojson1,
-                    geojson2,
-                    out_envelopes_intersection,
-                    envelope_file_driver="GeoJSON",
-                    intersect_file_driver="GeoJSON",
-                )
-
-                # Retrieve bounding box of the grd intersection of the envelopes
-                inter_poly, inter_epsg = read_vector(out_envelopes_intersection)
-
-                # Project polygon if epsg is different
-                if self.epsg != inter_epsg:
-                    inter_poly = projection.polygon_projection(
-                        inter_poly, inter_epsg, self.epsg
-                    )
-
-            self.list_intersection_poly.append(inter_poly)
-
         dsm_file_name = (
             os.path.join(
                 self.out_dir,
@@ -2550,6 +2499,74 @@ class DefaultPipeline(PipelineTemplate):
                 else None
             )
 
+        if not hasattr(self, "list_intersection_poly"):
+            if (
+                self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
+                    sens_cst.DEM_PATH
+                ]
+                is not None
+                and self.sensors_in_inputs
+            ):
+                self.list_sensor_pairs = sensor_inputs.generate_inputs(
+                    self.used_conf[INPUTS],
+                    self.geom_plugin_without_dem_and_geoid,
+                )
+
+                self.list_intersection_poly = []
+                for _, (
+                    pair_key,
+                    sensor_image_left,
+                    sensor_image_right,
+                ) in enumerate(self.list_sensor_pairs):
+                    pair_folder = os.path.join(
+                        self.dump_dir, "terrain_bbox", pair_key
+                    )
+                    safe_makedirs(pair_folder)
+                    geojson1 = os.path.join(
+                        pair_folder, "left_envelope.geojson"
+                    )
+                    geojson2 = os.path.join(
+                        pair_folder, "right_envelope.geojson"
+                    )
+                    out_envelopes_intersection = os.path.join(
+                        pair_folder, "envelopes_intersection.geojson"
+                    )
+
+                    inter_poly, _ = projection.ground_intersection_envelopes(
+                        sensor_image_left[sens_cst.INPUT_IMG],
+                        sensor_image_right[sens_cst.INPUT_IMG],
+                        sensor_image_left[sens_cst.INPUT_GEO_MODEL],
+                        sensor_image_right[sens_cst.INPUT_GEO_MODEL],
+                        self.geom_plugin_with_dem_and_geoid,
+                        geojson1,
+                        geojson2,
+                        out_envelopes_intersection,
+                        envelope_file_driver="GeoJSON",
+                        intersect_file_driver="GeoJSON",
+                    )
+
+                    # Retrieve bounding box of the grd inters of the envelopes
+                    inter_poly, inter_epsg = read_vector(
+                        out_envelopes_intersection
+                    )
+
+                    # Project polygon if epsg is different
+                    if self.epsg != inter_epsg:
+                        inter_poly = projection.polygon_projection(
+                            inter_poly, inter_epsg, self.epsg
+                        )
+
+                self.list_intersection_poly.append(inter_poly)
+            else:
+                self.list_intersection_poly = None
+
+
+        _ = self.dsm_filling_application.run(
+            orchestrator=self.cars_orchestrator,
+            # path to initial elevation file via geom plugin
+            initial_elevation=self.geom_plugin_with_dem_and_geoid,
+            dsm_path=dsm_file_name,
+            roi_polys=self.list_intersection_poly,
             filling_file_name = (
                 os.path.join(
                     self.out_dir,
@@ -2562,6 +2579,7 @@ class DefaultPipeline(PipelineTemplate):
                 ]
                 else None
             )
+        )
 
         _ = self.dsm_filling_1_application.run(
             dsm_file=dsm_file_name,
