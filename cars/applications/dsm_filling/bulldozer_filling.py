@@ -151,7 +151,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         # get dsm to be filled and its metadata
         with rio.open(dsm_file) as in_dsm:
             dsm = in_dsm.read(1)
-            dsm_msk = in_dsm.read_masks(1)
             dsm_tr = in_dsm.transform
             dsm_crs = in_dsm.crs
             dsm_meta = in_dsm.meta
@@ -221,7 +220,10 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                     classif[classif_msk == 0] = 0
                     filling_mask = np.logical_and(classif, roi_raster > 0)
                 elif label == "nodata":
-                    filling_mask = np.logical_and(dsm_msk == 0, roi_raster > 0)
+                    with rio.open(classif_file) as in_classif:
+                        classif_msk = in_classif.read_masks(1)
+                    classif = ~classif_msk
+                    filling_mask = np.logical_and(classif, roi_raster > 0)
                 else:
                     logging.error(
                         "Label {} not found in classification "

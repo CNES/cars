@@ -54,6 +54,9 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         # check conf
         self.used_method = self.used_config["method"]
         self.classification = self.used_config["classification"]
+        self.component_min_size = self.used_config["component_min_size"]
+        self.border_size = self.used_config["border_size"]
+        self.percentile = self.used_config["percentile"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
     def check_conf(self, conf):
@@ -68,6 +71,11 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["classification"] = conf.get("classification", None)
+        overloaded_conf["component_min_size"] = conf.get(
+            "component_min_size", 5
+        )
+        overloaded_conf["border_size"] = conf.get("border_size", 10)
+        overloaded_conf["percentile"] = conf.get("percentile", 10)
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -75,6 +83,9 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         rectification_schema = {
             "method": str,
             "classification": Or(None, [str]),
+            "component_min_size": int,
+            "border_size": int,
+            "percentile": Or(int, float),
             "save_intermediate_data": bool,
         }
 
@@ -173,16 +184,26 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             filling_mask[classif_msk == 0] = 0
             filling_mask = skimage.morphology.binary_opening(
                 filling_mask,
-                footprint=[(np.ones((5, 1)), 1), (np.ones((1, 5)), 1)],
+                footprint=[
+                    (np.ones((self.component_min_size, 1)), 1),
+                    (np.ones((1, self.component_min_size)), 1),
+                ],
             )
             features, num_features = scipy.ndimage.label(filling_mask)
             logging.info("Filling of {} features".format(num_features))
             features_boundaries = skimage.segmentation.expand_labels(
-                filling_mask, distance=10
+                filling_mask, distance=self.border_size
             )
             features_boundaries[filling_mask] = 0
+            borders_file_path = os.path.join(
+                dump_dir, "borders_of_{}.tif".format(label)
+            )
+            with rio.open(borders_file_path, "w", **dsm_meta) as out_borders:
+                out_borders.write(features_boundaries, 1)
             for feature_id in range(1, num_features + 1):
-                altitude = np.nanpercentile(dtm[features == feature_id], 10)
+                altitude = np.nanpercentile(
+                    dtm[features == feature_id], self.percentile
+                )
                 dsm[features == feature_id] = altitude
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
