@@ -853,7 +853,7 @@ class DefaultPipeline(PipelineTemplate):
                                     "classification"
                                 ]
                             ).issubset(
-                                set(descriptions)
+                                set(descriptions) | {"nodata"}
                             ):
                                 raise RuntimeError(
                                     "The {} bands description {} ".format(
@@ -2291,7 +2291,7 @@ class DefaultPipeline(PipelineTemplate):
 
         return False
 
-    def filling(self):
+    def filling(self):  # noqa: C901 : too complex
         """
         Fill the dsm
         """
@@ -2513,6 +2513,22 @@ class DefaultPipeline(PipelineTemplate):
         if self.quit_on_app("dsm_filling.2"):
             return True
 
+        _ = self.auxiliary_filling_application.run(
+            dsm_file=dsm_file_name,
+            color_file=color_file_name,
+            classif_file=classif_file_name,
+            dump_dir=self.dump_dir,
+            sensor_inputs=self.used_conf[INPUTS].get("sensors"),
+            pairing=self.used_conf[INPUTS].get("pairing"),
+            geom_plugin=self.geom_plugin_with_dem_and_geoid,
+            orchestrator=self.cars_orchestrator,
+        )
+
+        if self.quit_on_app("auxiliary_filling"):
+            return True
+
+        self.cars_orchestrator.breakpoint()
+
         _ = self.dsm_filling_3_application.run(
             dsm_file=dsm_file_name,
             classif_file=classif_file_name,
@@ -2528,21 +2544,7 @@ class DefaultPipeline(PipelineTemplate):
         if not self.dsm_filling_3_application.save_intermediate_data:
             self.cars_orchestrator.add_to_clean(dsm_filling_3_dump_dir)
 
-        if self.quit_on_app("dsm_filling.3"):
-            return True
-
-        _ = self.auxiliary_filling_application.run(
-            dsm_file=dsm_file_name,
-            color_file=color_file_name,
-            classif_file=classif_file_name,
-            dump_dir=self.dump_dir,
-            sensor_inputs=self.used_conf[INPUTS].get("sensors"),
-            pairing=self.used_conf[INPUTS].get("pairing"),
-            geom_plugin=self.geom_plugin_with_dem_and_geoid,
-            orchestrator=self.cars_orchestrator,
-        )
-
-        return self.quit_on_app("auxiliary_filling")
+        return self.quit_on_app("dsm_filling.3")
 
     def preprocess_depth_maps(self):
         """

@@ -55,7 +55,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         # check conf
         self.used_method = self.used_config["method"]
         self.classification = self.used_config["classification"]
-        self.fill_nodata = self.used_config["fill_nodata"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
     def check_conf(self, conf):
@@ -70,7 +69,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["classification"] = conf.get("classification", None)
-        overloaded_conf["fill_nodata"] = conf.get("fill_nodata", False)
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -78,7 +76,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         rectification_schema = {
             "method": str,
             "classification": Or(None, [str]),
-            "fill_nodata": bool,
             "save_intermediate_data": bool,
         }
 
@@ -109,13 +106,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             - a Shapely Polygon
         """
 
-        if not self.classification and not self.fill_nodata:
+        if not self.classification:
             return None
-
-        if self.fill_nodata:
-            if self.classification is None:
-                self.classification = []
-            self.classification.append("nodata")
 
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)

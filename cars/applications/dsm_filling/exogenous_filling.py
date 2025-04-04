@@ -56,8 +56,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         # check conf
         self.used_method = self.used_config["method"]
         self.classification = self.used_config["classification"]
-        self.fill_nodata = self.used_config["fill_nodata"]
-        self.fill_with_sea_level = self.used_config["fill_with_sea_level"]
+        self.fill_with_geoid = self.used_config["fill_with_geoid"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
     def check_conf(self, conf):
@@ -72,10 +71,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["classification"] = conf.get("classification", None)
-        overloaded_conf["fill_nodata"] = conf.get("fill_nodata", False)
-        overloaded_conf["fill_with_sea_level"] = conf.get(
-            "fill_with_sea_level", []
-        )
+        overloaded_conf["fill_with_geoid"] = conf.get("fill_with_geoid", None)
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -83,8 +79,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         rectification_schema = {
             "method": str,
             "classification": Or(None, [str]),
-            "fill_nodata": bool,
-            "fill_with_sea_level": [str],
+            "fill_with_geoid": Or(None, [str]),
             "save_intermediate_data": bool,
         }
 
@@ -116,13 +111,11 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             - a Shapely Polygon
         """
 
-        if not self.classification and not self.fill_nodata:
+        if not self.classification:
             return
 
-        if self.fill_nodata:
-            if self.classification is None:
-                self.classification = []
-            self.classification.append("nodata")
+        if self.fill_with_geoid is None:
+            self.fill_with_geoid = []
 
         if geom_plugin is None:
             logging.error(
@@ -245,7 +238,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 )
                 continue
 
-            if label in self.fill_with_sea_level:
+            if label in self.fill_with_geoid:
                 logging.info("Filling of {} with geoid".format(label))
                 dsm[filling_mask] = 0
             else:
