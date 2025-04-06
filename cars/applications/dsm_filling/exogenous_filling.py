@@ -55,6 +55,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         # check conf
         self.used_method = self.used_config["method"]
+        self.activated = self.used_config["activated"]
         self.classification = self.used_config["classification"]
         self.fill_with_geoid = self.used_config["fill_with_geoid"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -70,6 +71,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
+        overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["classification"] = conf.get("classification", None)
         overloaded_conf["fill_with_geoid"] = conf.get("fill_with_geoid", None)
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -78,6 +80,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         rectification_schema = {
             "method": str,
+            "activated": bool,
             "classification": Or(None, [str]),
             "fill_with_geoid": Or(None, [str]),
             "save_intermediate_data": bool,
@@ -111,8 +114,11 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             - a Shapely Polygon
         """
 
-        if not self.classification:
+        if not self.activated:
             return
+
+        if self.classification is None:
+            self.classification = ["nodata"]
 
         if self.fill_with_geoid is None:
             self.fill_with_geoid = []
@@ -132,7 +138,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         # get dsm to be filled and its metadata
         with rio.open(dsm_file) as in_dsm:
             dsm = in_dsm.read(1)
-            dsm_msk = in_dsm.read_masks(1)
             dsm_tr = in_dsm.transform
             dsm_crs = in_dsm.crs
             dsm_tr_mat = np.array(
@@ -181,19 +186,17 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 resampling=Resampling.bilinear,
             )
 
-            # Fill missing DSM values with the reprojected elevation data
-            temp_filled_dsm = dsm.copy()
-            temp_filled_dsm[dsm_msk == 0] = elev_data[dsm_msk == 0]
-
         # Save old dsm
         with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
             out_dsm.write(dsm, 1)
 
         # Fill DSM for every label
         combined_mask = np.zeros_like(dsm).astype(np.uint8)
-        classif_descriptions = inputs.get_descriptions_bands(classif_file)
+        if classif_file is not None:
+            classif_descriptions = inputs.get_descriptions_bands(classif_file)
+        else:
+            classif_descriptions = []
         for label in self.classification:
-            filling_mask = np.logical_and(dsm_msk == 0, roi_raster > 0)
             if label in classif_descriptions:
                 index_classif = classif_descriptions.index(label) + 1
                 with rio.open(classif_file) as in_classif:
@@ -202,9 +205,14 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 classif[classif_msk == 0] = 0
                 filling_mask = np.logical_and(classif, roi_raster > 0)
             elif label == "nodata":
-                with rio.open(classif_file) as in_classif:
-                    classif_msk = in_classif.read_masks(1)
-                classif = ~classif_msk
+                if classif_file is not None:
+                    with rio.open(classif_file) as in_classif:
+                        classif_msk = in_classif.read_masks(1)
+                    classif = ~classif_msk
+                else:
+                    with rio.open(dsm_file) as in_dsm:
+                        dsm_msk = in_dsm.read_masks(1)
+                    classif = ~dsm_msk
                 filling_mask = np.logical_and(classif, roi_raster > 0)
             else:
                 logging.error(

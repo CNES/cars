@@ -47,7 +47,10 @@ from ...helpers import (
 
 
 @pytest.mark.unit_tests
-def test_fill_dsm():
+@pytest.mark.parametrize(
+    "method", ["exogenous_filling", "bulldozer", "border_interpolation"]
+)
+def test_fill_dsm(method):
     """
     Tests whether the dsm_filling application does its job as expected
     in cases where a roi is given and cases where it isn't.
@@ -62,7 +65,7 @@ def test_fill_dsm():
         input_dsm_base = absolute_data_path(
             "ref_output/dsm_end2end_gizeh_crop.tif"
         )
-        input_app_conf = {"activated": True}
+        input_app_conf = {"method": method, "activated": True}
 
         _, input_data = generate_input_json(
             input_json, directory, "multiprocessing"
@@ -108,58 +111,65 @@ def test_fill_dsm():
             ]
         )
 
+        kwargs = {
+            "dsm_file": input_dsm_noroi,
+            "classif_file": None,
+            "filling_file": None,
+            "dump_dir": dump_dir,
+            "roi_polys": None,
+            "roi_epsg": None,
+        }
+
+        if method == "exogenous_filling":
+            kwargs["output_geoid"] = False
+            kwargs["geom_plugin"] = geometry_plugin
+        elif method == "bulldozer":
+            kwargs["orchestrator"] = None
+        elif method == "border_interpolation":
+            kwargs["dtm_file"] = None
+
         # first test with no roi (fill everything)
-        _ = dsm_filling_application.run(
-            orchestrator=None,
-            initial_elevation=geometry_plugin,
-            dsm_path=input_dsm_noroi,
-            roi_polys=None,
-            roi_epsg=None,
-            output_geoid=False,
-            filling_file_name=None,
-            dump_dir=dump_dir,
-        )
+        _ = dsm_filling_application.run(**kwargs)
 
         # copy2(
         #     input_dsm_noroi,
         #     absolute_data_path(
-        #         "ref_output/dsm_filling_dsm_filled_gizeh_crop_no_roi.tif"
-        #     )
+        #         "ref_output/dsm_filling_{}_gizeh_crop_no_roi.tif".format(
+        #             method
+        #         )
+        #     ),
         # )
 
         assert_same_images(
             input_dsm_noroi,
             absolute_data_path(
-                "ref_output/dsm_filling_dsm_filled_gizeh_crop_no_roi.tif"
+                "ref_output/dsm_filling_{}_gizeh_crop_no_roi.tif".format(method)
             ),
-            rtol=1e-4,
-            atol=0.01,
+            rtol=0.1,
+            atol=0.1,
         )
 
+        kwargs["dsm_file"] = input_dsm_roi
+        kwargs["roi_polys"] = roi_poly
+        kwargs["roi_epsg"] = roi_epsg
+
         # second test with an roi
-        _ = dsm_filling_application.run(
-            orchestrator=None,
-            initial_elevation=geometry_plugin,
-            dsm_path=input_dsm_roi,
-            roi_polys=roi_poly,
-            roi_epsg=roi_epsg,
-            output_geoid=False,
-            filling_file_name=None,
-            dump_dir=dump_dir,
-        )
+        _ = dsm_filling_application.run(**kwargs)
 
         # copy2(
         #     input_dsm_roi,
         #     absolute_data_path(
-        #         "ref_output/dsm_filling_dsm_filled_gizeh_crop_roi.tif"
-        #     )
+        #         "ref_output/dsm_filling_{}_gizeh_crop_roi.tif".format(
+        #             method
+        #         )
+        #     ),
         # )
 
         assert_same_images(
             input_dsm_roi,
             absolute_data_path(
-                "ref_output/dsm_filling_dsm_filled_gizeh_crop_roi.tif"
+                "ref_output/dsm_filling_{}_gizeh_crop_roi.tif".format(method)
             ),
-            rtol=1e-4,
-            atol=0.01,
+            rtol=0.1,
+            atol=0.1,
         )

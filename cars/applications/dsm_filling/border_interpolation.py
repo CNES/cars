@@ -53,6 +53,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         # check conf
         self.used_method = self.used_config["method"]
+        self.activated = self.used_config["activated"]
         self.classification = self.used_config["classification"]
         self.component_min_size = self.used_config["component_min_size"]
         self.border_size = self.used_config["border_size"]
@@ -70,6 +71,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
+        overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["classification"] = conf.get("classification", None)
         overloaded_conf["component_min_size"] = conf.get(
             "component_min_size", 5
@@ -82,6 +84,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         rectification_schema = {
             "method": str,
+            "activated": bool,
             "classification": Or(None, [str]),
             "component_min_size": int,
             "border_size": int,
@@ -116,8 +119,14 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             - a Shapely Polygon
         """
 
-        if not self.classification:
+        if not self.activated:
             return
+
+        if self.classification is None:
+            self.classification = ["nodata"]
+            logging.error(
+                "Filling method 'border_interpolation' needs a classification"
+            )
 
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
@@ -155,13 +164,26 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             )
 
         # get dtm to fill the dsm
-        with rio.open(dtm_file) as in_dtm:
-            dtm = in_dtm.read(1)
+        if dtm_file is not None:
+            logging.info(
+                "Use DTM file {} for border interpolation".format(dtm_file)
+            )
+            with rio.open(dtm_file) as in_dtm:
+                dtm = in_dtm.read(1)
+        else:
+            logging.info(
+                "No DTM provided : DSM {} will be used for "
+                "border interpolation".format(dsm_file)
+            )
+            dtm = dsm
 
         with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
             out_dsm.write(dsm, 1)
 
-        classif_descriptions = inputs.get_descriptions_bands(classif_file)
+        if classif_file is not None:
+            classif_descriptions = inputs.get_descriptions_bands(classif_file)
+        else:
+            classif_descriptions = []
         combined_mask = np.zeros_like(dsm).astype(np.uint8)
         for label in self.classification:
             if label in classif_descriptions:
