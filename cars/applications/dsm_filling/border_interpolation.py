@@ -140,6 +140,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             dsm_tr = in_dsm.transform
             dsm_crs = in_dsm.crs
             dsm_meta = in_dsm.meta
+            dsm_nodata = in_dsm.nodata
 
         roi_raster = np.ones(dsm.shape)
 
@@ -170,12 +171,15 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             )
             with rio.open(dtm_file) as in_dtm:
                 dtm = in_dtm.read(1)
+                dtm_nodata = in_dtm.nodata
         else:
             logging.info(
                 "No DTM provided : DSM {} will be used for "
                 "border interpolation".format(dsm_file)
             )
-            dtm = dsm
+            dtm = dsm.copy()
+            dtm_nodata = dsm_nodata
+        dtm[dtm == dtm_nodata] = np.nan
 
         with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
             out_dsm.write(dsm, 1)

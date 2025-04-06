@@ -4889,7 +4889,6 @@ def test_end2end_paca_with_mask():
             },
             "dense_matching": {
                 "method": "census_sgm",
-                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
             "point_cloud_outlier_removal.1": {
@@ -4909,7 +4908,8 @@ def test_end2end_paca_with_mask():
                 "color_no_data": 0,
                 "msk_no_data": 254,
             },
-            "dsm_filling": {"method": "bulldozer", "activated": True},
+            "dsm_filling.1": {"method": "exogenous_filling", "activated": True},
+            "dsm_filling.2": {"method": "bulldozer", "activated": True},
             "auxiliary_filling": {
                 "save_intermediate_data": True,
                 "mode": "full",
@@ -4955,7 +4955,7 @@ def test_end2end_paca_with_mask():
 
         # Uncomment the following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir,  "dsm", "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_paca_bulldozer.tif")
         #     ),
@@ -4964,8 +4964,7 @@ def test_end2end_paca_with_mask():
         #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir,
-        #             "color_end2end_paca_aux_filling.tif"
+        #             ref_output_dir, "color_end2end_paca_aux_filling.tif"
         #         )
         #     ),
         # ),
@@ -4974,12 +4973,12 @@ def test_end2end_paca_with_mask():
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "classification_end2end_paca_aux_filling.tif"
+        #             "classification_end2end_paca_aux_filling.tif",
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir,  "dsm", "mask.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -5035,7 +5034,14 @@ def test_end2end_paca_with_mask():
                     "method": "zero_padding",
                     "classification": ["water", "road"],
                 },
-                "dsm_filling": {"activated": False},
+                "dsm_filling.1": {
+                    "method": "exogenous_filling",
+                    "activated": False,
+                },
+                "dsm_filling.2": {
+                    "method": "bulldozer",
+                    "activated": False,
+                },
             }
         )
 
@@ -5107,6 +5113,99 @@ def test_end2end_paca_with_mask():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "mask_end2end_paca_matches_filling.tif"
+                )
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+
+        # clean out dir for second run
+        shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
+
+        input_config_dense_dsm["applications"].update(
+            {
+                "dense_match_filling.2": {
+                    "method": "zero_padding",
+                    "classification": ["water", "road"],
+                },
+                "dsm_filling.1": {
+                    "method": "exogenous_filling",
+                    "activated": True,
+                },
+                "dsm_filling.2": {
+                    "method": "bulldozer",
+                    "activated": True,
+                    "classification": ["water", "road"],
+                },
+                "auxiliary_filling": {"activated": False},
+                "dsm_filling.3": {
+                    "method": "border_interpolation",
+                    "activated": True,
+                    "classification": ["water", "road"],
+                },
+            }
+        )
+
+        dense_dsm_pipeline_border_interpolation = default.DefaultPipeline(
+            input_config_dense_dsm
+        )
+
+        dense_dsm_pipeline_border_interpolation.run()
+
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "dsm_end2end_paca_border_interpolation.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "color.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "color_end2end_paca_border_interpolation.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "mask_end2end_paca_border_interpolation.tif",
+        #         )
+        #     ),
+        # )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "dsm_end2end_paca_border_interpolation.tif"
+                )
+            ),
+            rtol=1.0e-5,
+            atol=2.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "color.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "color_end2end_paca_border_interpolation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "mask.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "mask_end2end_paca_border_interpolation.tif"
                 )
             ),
             rtol=1.0e-7,

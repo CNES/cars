@@ -239,18 +239,17 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 )
 
                 if isinstance(output_geoid, bool) and output_geoid is False:
-                    # out geoid is ellipsoid: add ellipsoid->geoid offset
-                    applied_offset -= interpolate_geoid_height(
+                    # out geoid is ellipsoid: add geoid-ellipsoid distance
+                    applied_offset += interpolate_geoid_height(
                         geom_plugin.geoid, pts_to_project_on_geoid
                     )
                 elif isinstance(output_geoid, str):
-                    # outgeoid is a new geoid whose path is in output_geoid:
-                    # remove ellipsoid->geoid offset
-                    # then add ellipsoid->outgeoid
-                    applied_offset -= interpolate_geoid_height(
+                    # out geoid is a new geoid whose path is in output_geoid:
+                    # add carsgeoid-ellipsoid then add ellipsoid-outgeoid
+                    applied_offset += interpolate_geoid_height(
                         geom_plugin.geoid, pts_to_project_on_geoid
                     )
-                    applied_offset += interpolate_geoid_height(
+                    applied_offset -= interpolate_geoid_height(
                         output_geoid, pts_to_project_on_geoid
                     )
 
