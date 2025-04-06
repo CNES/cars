@@ -29,7 +29,7 @@ import numpy as np
 import rasterio as rio
 from json_checker import Checker, Or
 from rasterio.enums import Resampling
-from rasterio.windows import Window
+from rasterio.warp import reproject
 from shapely import Polygon
 from shareloc.dtm_reader import interpolate_geoid_height
 
@@ -168,47 +168,22 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         # get the initial elevation
         with rio.open(geom_plugin.dem) as in_elev:
+            # Reproject the elevation data to match the DSM
+            elev_data = np.empty(dsm.shape, dtype=in_elev.dtypes[0])
 
-            elev_tr = in_elev.transform
-            elev_crs = in_elev.crs
-            elev_tr_mat = np.array(
-                [
-                    [elev_tr[0], elev_tr[1], elev_tr[2]],
-                    [elev_tr[3], elev_tr[4], elev_tr[5]],
-                    [0, 0, 1],
-                ]
-            )
-            elev_tr_inv_mat = np.linalg.inv(elev_tr_mat)
-
-            # get reading window
-            ijs_window = np.array(
-                [
-                    [0, 0],
-                    [dsm.shape[0], dsm.shape[1]],
-                ]
-            )
-            # third: project elev crs to elev pixel coords
-            ijs_window_dem = dft.project(
-                # second: project dsm crs to elev crs
-                projection.point_cloud_conversion(
-                    # first: project dsm pixel coords to dsm crs
-                    dft.project(ijs_window[:, [1, 0]], dsm_tr_mat),
-                    dsm_crs.to_epsg(),
-                    elev_crs.to_epsg(),
-                ),
-                elev_tr_inv_mat,
-            )[:, [1, 0]]
-
-            # get initial elevation
-            elev = in_elev.read(
-                1,
-                out_shape=dsm.shape,
-                window=Window.from_slices(
-                    (ijs_window_dem[0, 0], ijs_window_dem[1, 0]),
-                    (ijs_window_dem[0, 1], ijs_window_dem[1, 1]),
-                ),
+            reproject(
+                source=rio.band(in_elev, 1),
+                destination=elev_data,
+                src_transform=in_elev.transform,
+                src_crs=in_elev.crs,
+                dst_transform=dsm_tr,
+                dst_crs=dsm_crs,
                 resampling=Resampling.bilinear,
             )
+
+            # Fill missing DSM values with the reprojected elevation data
+            temp_filled_dsm = dsm.copy()
+            temp_filled_dsm[dsm_msk == 0] = elev_data[dsm_msk == 0]
 
         # Save old dsm
         with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
@@ -243,7 +218,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 dsm[filling_mask] = 0
             else:
                 logging.info("Filling of {} with DEM and geoid".format(label))
-                dsm[filling_mask] = elev[filling_mask]
+                dsm[filling_mask] = elev_data[filling_mask]
 
             # apply offset to project on geoid if needed
             if output_geoid is not True:
@@ -256,18 +231,18 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 )
 
                 if isinstance(output_geoid, bool) and output_geoid is False:
-                    # out geoid is ellipsoid: add geoid-ellipsoid distance
-                    applied_offset += interpolate_geoid_height(
+                    # out geoid is ellipsoid: add ellipsoid->geoid offset
+                    applied_offset -= interpolate_geoid_height(
                         geom_plugin.geoid, pts_to_project_on_geoid
                     )
                 elif isinstance(output_geoid, str):
-                    # out geoid is a new geoid whose path is in output_geoid:
-                    # add carsgeoid-ellipsoid distance
-                    # then add ellipsoid-outgeoid
-                    applied_offset += interpolate_geoid_height(
+                    # outgeoid is a new geoid whose path is in output_geoid:
+                    # remove ellipsoid->geoid offset
+                    # then add ellipsoid->outgeoid
+                    applied_offset -= interpolate_geoid_height(
                         geom_plugin.geoid, pts_to_project_on_geoid
                     )
-                    applied_offset -= interpolate_geoid_height(
+                    applied_offset += interpolate_geoid_height(
                         output_geoid, pts_to_project_on_geoid
                     )
 
