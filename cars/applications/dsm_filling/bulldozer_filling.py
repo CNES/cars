@@ -200,64 +200,62 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 "Bulldozer failed on its second execution."
                 + " The DSM could not be filled."
             )
+            return None
+        with rio.open(dtm_path) as in_dtm:
+            dtm = in_dtm.read(1)
+
+        with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
+            out_dsm.write(dsm, 1)
+
+        if classif_file is not None:
+            classif_descriptions = inputs.get_descriptions_bands(classif_file)
         else:
-            with rio.open(dtm_path) as in_dtm:
-                dtm = in_dtm.read(1)
-
-            with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
-                out_dsm.write(dsm, 1)
-
-            if classif_file is not None:
-                classif_descriptions = inputs.get_descriptions_bands(
-                    classif_file
-                )
-            else:
-                classif_descriptions = []
-            combined_mask = np.zeros_like(dsm).astype(np.uint8)
-            for label in self.classification:
-                if label in classif_descriptions:
-                    index_classif = classif_descriptions.index(label) + 1
+            classif_descriptions = []
+        combined_mask = np.zeros_like(dsm).astype(np.uint8)
+        for label in self.classification:
+            if label in classif_descriptions:
+                index_classif = classif_descriptions.index(label) + 1
+                with rio.open(classif_file) as in_classif:
+                    classif = in_classif.read(index_classif)
+                    classif_msk = in_classif.read_masks(1)
+                classif[classif_msk == 0] = 0
+                filling_mask = np.logical_and(classif, roi_raster > 0)
+            elif label == "nodata":
+                if classif_file is not None:
                     with rio.open(classif_file) as in_classif:
-                        classif = in_classif.read(index_classif)
                         classif_msk = in_classif.read_masks(1)
-                    classif[classif_msk == 0] = 0
-                    filling_mask = np.logical_and(classif, roi_raster > 0)
-                elif label == "nodata":
-                    if classif_file is not None:
-                        with rio.open(classif_file) as in_classif:
-                            classif_msk = in_classif.read_masks(1)
-                        classif = ~classif_msk
-                    else:
-                        with rio.open(dsm_file) as in_dsm:
-                            dsm_msk = in_dsm.read_masks(1)
-                        classif = ~dsm_msk
-                    filling_mask = np.logical_and(classif, roi_raster > 0)
+                    classif = ~classif_msk
                 else:
-                    logging.error(
-                        "Label {} not found in classification "
-                        "descriptions {}".format(label, classif_descriptions)
-                    )
-                    continue
-                logging.info("Filling of {} with Bulldozer DTM".format(label))
-                dsm[filling_mask] = dtm[filling_mask]
-                combined_mask = np.logical_or(combined_mask, filling_mask)
+                    with rio.open(dsm_file) as in_dsm:
+                        dsm_msk = in_dsm.read_masks(1)
+                    classif = ~dsm_msk
+                filling_mask = np.logical_and(classif, roi_raster > 0)
+            else:
+                logging.error(
+                    "Label {} not found in classification "
+                    "descriptions {}".format(label, classif_descriptions)
+                )
+                continue
+            logging.info("Filling of {} with Bulldozer DTM".format(label))
+            dsm[filling_mask] = dtm[filling_mask]
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
-            with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
-                out_dsm.write(dsm, 1)
-            with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
-                out_dsm.write(dsm, 1)
+        with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
+            out_dsm.write(dsm, 1)
+        with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
+            out_dsm.write(dsm, 1)
 
-            if filling_file is not None:
-                with rio.open(filling_file, "r") as src:
-                    fill_meta = src.meta
-                    bands = [src.read(i + 1) for i in range(src.count)]
-                    bands_desc = [src.descriptions[i] for i in range(src.count)]
-                fill_meta["count"] += 1
-                bands.append(combined_mask.astype(np.uint8))
-                bands_desc.append("bulldozer")
+        if filling_file is not None:
+            with rio.open(filling_file, "r") as src:
+                fill_meta = src.meta
+                bands = [src.read(i + 1) for i in range(src.count)]
+                bands_desc = [src.descriptions[i] for i in range(src.count)]
+            fill_meta["count"] += 1
+            bands.append(combined_mask.astype(np.uint8))
+            bands_desc.append("bulldozer")
 
-                with rio.open(filling_file, "w", **fill_meta) as out:
-                    for i, band in enumerate(bands):
-                        out.write(band, i + 1)
-                        out.set_band_description(i + 1, bands_desc[i])
+            with rio.open(filling_file, "w", **fill_meta) as out:
+                for i, band in enumerate(bands):
+                    out.write(band, i + 1)
+                    out.set_band_description(i + 1, bands_desc[i])
         return dtm_path
