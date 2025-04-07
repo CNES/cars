@@ -468,6 +468,17 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             # save the coreg shift info in cars's main orchestrator
             cars_orchestrator.update_out_info(coreg_info)
 
+            if (
+                abs(coreg_offsets["shift_x"]) > 180
+                or abs(coreg_offsets["shift_y"]) > 180
+            ):
+                logging.warning(
+                    "The initial elevation will be used as-is, as "
+                    "the coregistration offsets were found to be too "
+                    "big to be believable."
+                )
+                return dem, None
+
             return dem, initial_elevation_out_path
 
         return dem, None
