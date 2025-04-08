@@ -31,11 +31,9 @@ from json_checker import Checker, Or
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
 from shapely import Polygon
-from shareloc.dtm_reader import interpolate_geoid_height
 
 from cars.core import inputs, projection
 
-from . import dsm_filling_tools as dft
 from .dsm_filling import DsmFilling
 
 
@@ -140,13 +138,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             dsm = in_dsm.read(1)
             dsm_tr = in_dsm.transform
             dsm_crs = in_dsm.crs
-            dsm_tr_mat = np.array(
-                [
-                    [dsm_tr[0], dsm_tr[1], dsm_tr[2]],
-                    [dsm_tr[3], dsm_tr[4], dsm_tr[5]],
-                    [0, 0, 1],
-                ]
-            )
             dsm_meta = in_dsm.meta
 
         roi_raster = np.ones(dsm.shape)
@@ -171,7 +162,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 [roi_poly_outepsg], out_shape=roi_raster.shape, transform=dsm_tr
             )
 
-        # get the initial elevation
+        # Get the initial elevation
         with rio.open(geom_plugin.dem) as in_elev:
             # Reproject the elevation data to match the DSM
             elev_data = np.empty(dsm.shape, dtype=in_elev.dtypes[0])
@@ -185,6 +176,28 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 dst_crs=dsm_crs,
                 resampling=Resampling.bilinear,
             )
+
+        reprojected_dem_path = os.path.join(dump_dir, "reprojected_dem.tif")
+        with rio.open(reprojected_dem_path, "w", **dsm_meta) as out_elev:
+            out_elev.write(elev_data, 1)
+
+        with rio.open(geom_plugin.geoid) as in_geoid:
+            # Reproject the geoid data to match the DSM
+            geoid_data = np.empty(dsm.shape, dtype=in_geoid.dtypes[0])
+
+            reproject(
+                source=rio.band(in_geoid, 1),
+                destination=geoid_data,
+                src_transform=in_geoid.transform,
+                src_crs=in_geoid.crs,
+                dst_transform=dsm_tr,
+                dst_crs=dsm_crs,
+                resampling=Resampling.bilinear,
+            )
+
+        reprojected_geoid_path = os.path.join(dump_dir, "reprojected_geoid.tif")
+        with rio.open(reprojected_geoid_path, "w", **dsm_meta) as out_geoid:
+            out_geoid.write(geoid_data, 1)
 
         # Save old dsm
         with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
@@ -230,30 +243,15 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
             # apply offset to project on geoid if needed
             if output_geoid is not True:
-                to_fill_ijs = np.argwhere(filling_mask)
-                to_fill_xys = dft.project(to_fill_ijs[:, [1, 0]], dsm_tr_mat)
-
-                applied_offset = np.zeros(len(to_fill_ijs))  # (n,)
-                pts_to_project_on_geoid = projection.point_cloud_conversion(
-                    to_fill_xys, dsm_crs.to_epsg(), 4326
-                )
-
                 if isinstance(output_geoid, bool) and output_geoid is False:
                     # out geoid is ellipsoid: add geoid-ellipsoid distance
-                    applied_offset += interpolate_geoid_height(
-                        geom_plugin.geoid, pts_to_project_on_geoid
-                    )
+                    dsm[filling_mask] += geoid_data[filling_mask]
                 elif isinstance(output_geoid, str):
                     # out geoid is a new geoid whose path is in output_geoid:
                     # add carsgeoid-ellipsoid then add ellipsoid-outgeoid
-                    applied_offset += interpolate_geoid_height(
-                        geom_plugin.geoid, pts_to_project_on_geoid
-                    )
-                    applied_offset -= interpolate_geoid_height(
-                        output_geoid, pts_to_project_on_geoid
-                    )
+                    dsm[filling_mask] += geoid_data[filling_mask]
+                    dsm[filling_mask] -= geoid_data[filling_mask]
 
-                dsm[filling_mask] += applied_offset
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
         with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
