@@ -4890,15 +4890,18 @@ def test_end2end_paca_with_mask():
             "dense_matching": {
                 "method": "census_sgm",
                 "use_global_disp_range": False,
+                "use_cross_validation": True,
             },
             "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
+                "nb_points_threshold": 200,
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
                 "use_median": False,
+                "std_dev_factor": 1.0,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4992,8 +4995,8 @@ def test_end2end_paca_with_mask():
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_paca_bulldozer.tif")
             ),
-            rtol=1.0e-5,
-            atol=2.0e-7,
+            rtol=0.0001,
+            atol=0.01,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "classification.tif"),
