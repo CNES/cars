@@ -479,7 +479,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
                 )
                 return dem, None
 
-            return dem, initial_elevation_out_path
+            if self.coregistration:
+                return dem, initial_elevation_out_path
 
         return dem, None
 

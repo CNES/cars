@@ -1450,6 +1450,11 @@ class DefaultPipeline(PipelineTemplate):
                 if (
                     inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
                     is None
+                    # cover the case where the geom plugin doesn't use init elev
+                    or (
+                        inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                        != geom_plugin.dem
+                    )
                 ):
                     # Generate grids with new MNT
                     (
