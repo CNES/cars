@@ -217,8 +217,12 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             )
             features, num_features = scipy.ndimage.label(filling_mask)
             logging.info("Filling of {} features".format(num_features))
-            features_boundaries = skimage.segmentation.expand_labels(
-                features, distance=self.border_size
+            features_boundaries = skimage.morphology.dilation(
+                features,
+                footprint=[
+                    (np.ones((self.border_size, 1)), 1),
+                    (np.ones((1, self.border_size)), 1),
+                ],
             )
             features_boundaries[filling_mask] = 0
             borders_file_path = os.path.join(
@@ -230,7 +234,8 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
                 altitude = np.nanpercentile(
                     dtm[features_boundaries == feature_id], self.percentile
                 )
-                dsm[features == feature_id] = altitude
+                if altitude is not None:
+                    dsm[features == feature_id] = altitude
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
         with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
