@@ -77,8 +77,7 @@ class Application:
         except KeyError:
             logging.error("No application named {0} supported".format(name))
             return None
-
-        app = app_class(cfg)
+        app = app_class(conf=cfg)
         return app
 
     @classmethod

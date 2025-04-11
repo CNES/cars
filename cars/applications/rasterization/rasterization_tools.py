@@ -61,7 +61,6 @@ def compute_xy_starts_and_sizes(
     # Derive xstart
     xmin = np.nanmin(cloud[cst.X].values)
     xmax = np.nanmax(cloud[cst.X].values)
-    logging.debug("Points x coordinate range: [{},{}]".format(xmin, xmax))
 
     # Clamp to a regular grid
     x_start = np.floor(xmin / resolution) * resolution
@@ -69,7 +68,6 @@ def compute_xy_starts_and_sizes(
     # Derive ystart
     ymin = np.nanmin(cloud[cst.Y].values)
     ymax = np.nanmax(cloud[cst.Y].values)
-    logging.debug("Points y coordinate range: [{},{}]".format(ymin, ymax))
 
     # Clamp to a regular grid
     y_start = np.ceil(ymax / resolution) * resolution
@@ -842,12 +840,6 @@ def rasterize(
     if cloud.size == 0:
         logging.debug("No points to rasterize, returning None")
         return None
-
-    logging.debug(
-        "Rasterization grid: start=[{},{}], size=[{},{}], resolution={}".format(
-            x_start, y_start, x_size, y_size, resolution
-        )
-    )
 
     (
         out,

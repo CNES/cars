@@ -388,13 +388,18 @@ class SimpleGaussian(
                     )
 
         # Derive output image files parameters to pass to rasterio
-        xsize, ysize = tiling.roi_to_start_and_size(bounds, resolution)[2:]
+        _, _, xsize, ysize = tiling.roi_to_start_and_size(bounds, resolution)
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
-        if isinstance(point_clouds, tuple):
-            source_pc_names = point_clouds[0][0].attributes["source_pc_names"]
-        else:
-            source_pc_names = point_clouds.attributes["source_pc_names"]
+        try:
+            if isinstance(point_clouds, tuple):
+                source_pc_names = point_clouds[0][0].attributes[
+                    "source_pc_names"
+                ]
+            else:
+                source_pc_names = point_clouds.attributes["source_pc_names"]
+        except KeyError:
+            source_pc_names = None
 
         # Save objects
 
@@ -1019,8 +1024,11 @@ def rasterization_wrapper(
     else:
         cloud_epsg = attributes.get("epsg")
 
-    if "number_of_pc" not in attributes and source_pc_names is not None:
-        attributes["number_of_pc"] = len(source_pc_names)
+    if "number_of_pc" not in attributes:
+        if source_pc_names is not None:
+            attributes["number_of_pc"] = len(source_pc_names)
+        else:
+            attributes["number_of_pc"] = None
 
     # update attributes
     cloud.attrs = {}

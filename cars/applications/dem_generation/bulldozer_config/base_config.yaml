@@ -1,0 +1,42 @@
+#-------------------------#
+#       Parameters        #
+#-------------------------#
+# [Required] - Input DSM path (expected format: "<folder_1>/<folder_2>/<file>.<[tif/tiff]>") 
+dsm_path : "input_dsm_path/dsm.tif"
+# [Required] - Output directory path (if the directory doesn't exist, create it)
+output_dir : "output_dir_path"
+
+#-------------------------#
+#         Options         #
+#-------------------------#
+# [Optional] - If True, generates the Digital Height Model (DHM=DSM-DTM) in the output directory 
+generate_dhm : True
+# [Optional] - Foreground max object size (in meter)
+max_object_size : 16
+# [Optional] - Path to the binary ground classification mask (expected format: "<folder_1>/<folder_2>/<mask>.<[tif/tiff]>") 
+ground_mask_path : null
+# [Optional] - If True, activate ground anchor detection (ground pre-detection)
+activate_ground_anchors : False
+# [Optional] - Max number of CPU core to use. If null, use maximum number of available CPU core 
+nb_max_workers : null
+# [Optional] - If True, keep the intermediate results
+developer_mode : False
+
+#-------------------------#
+#     Expert options      #
+#-------------------------#
+# /!\ Modify those data at your own risk (it is suggested to keep the default values) /!\
+
+# [Optional] - Number of regular mask filtering iterations. If null, use the default value: max_object_size/4
+reg_filtering_iter: null
+# [Optional] - Altimetric height accuracy of the input DSM (m). If null, use the default value: 2*planimetric resolution
+dsm_z_accuracy: null
+# [Optional] - Maximum slope of the observed landscape terrain (%)
+max_ground_slope: 20.0
+# [Optional] - Number of unhook iterations
+prevent_unhook_iter : 10
+# [Optional] - Number of gravity step iterations
+num_outer_iter : 25
+# [Optional] - Number of tension iterations
+num_inner_iter : 5
+

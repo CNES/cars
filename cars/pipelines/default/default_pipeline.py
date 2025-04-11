@@ -1379,6 +1379,7 @@ class DefaultPipeline(PipelineTemplate):
                 initial_elevation=(
                     inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
                 ),
+                cars_orchestrator=self.cars_orchestrator,
             )
             # Same geometry plugin if we use exogenous dem
             # as initial elevation always used before if provided
@@ -2142,7 +2143,7 @@ class DefaultPipeline(PipelineTemplate):
                         pair_folder=os.path.join(
                             self.dump_dir, "terrain_bbox", pair_key
                         ),
-                        check_inputs=True,
+                        check_inputs=False,
                     )
                 )
                 self.list_terrain_roi.append(current_terrain_roi_bbox)

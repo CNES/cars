@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the abstract resampling application class.
+This module contains the abstract dem_generation application class.
 """
 import logging
 from abc import ABCMeta, abstractmethod
@@ -38,7 +38,7 @@ class DemGeneration(ApplicationTemplate, metaclass=ABCMeta):
     available_applications: Dict = {}
     default_application = "dichotomic"
 
-    def __new__(cls, orchestrator=None, conf=None):  # pylint: disable=W0613
+    def __new__(cls, conf=None):  # pylint: disable=W0613
         """
         Return the required application
         :raises:
