@@ -24,11 +24,11 @@ This module contains the bulldozer dsm filling application class.
 
 import logging
 import os
+import shutil
 
 import numpy as np
 import rasterio as rio
 from json_checker import Checker, Or
-from rasterio.enums import Resampling
 from rasterio.warp import reproject
 from shapely import Polygon
 
@@ -56,6 +56,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         self.activated = self.used_config["activated"]
         self.classification = self.used_config["classification"]
         self.fill_with_geoid = self.used_config["fill_with_geoid"]
+        self.interpolation_method = self.used_config["interpolation_method"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
     def check_conf(self, conf):
@@ -72,6 +73,17 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["classification"] = conf.get("classification", None)
         overloaded_conf["fill_with_geoid"] = conf.get("fill_with_geoid", None)
+        overloaded_conf["interpolation_method"] = conf.get(
+            "interpolation_method", "bilinear"
+        )
+
+        if overloaded_conf["interpolation_method"] not in ["bilinear", "cubic"]:
+            raise RuntimeError(
+                "Invalid interpolation method"
+                f"{overloaded_conf['interpolation_method']}, "
+                "supported modes are bilinear and cubic."
+            )
+
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -81,6 +93,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             "activated": bool,
             "classification": Or(None, [str]),
             "fill_with_geoid": Or(None, [str]),
+            "interpolation_method": str,
             "save_intermediate_data": bool,
         }
 
@@ -174,34 +187,65 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 src_crs=in_elev.crs,
                 dst_transform=dsm_tr,
                 dst_crs=dsm_crs,
-                resampling=Resampling.bilinear,
+                resampling=self.interpolation_method,
             )
 
-        reprojected_dem_path = os.path.join(dump_dir, "reprojected_dem.tif")
-        with rio.open(reprojected_dem_path, "w", **dsm_meta) as out_elev:
-            out_elev.write(elev_data, 1)
+        if self.save_intermediate_data:
+            reprojected_dem_path = os.path.join(dump_dir, "reprojected_dem.tif")
+            with rio.open(reprojected_dem_path, "w", **dsm_meta) as out_elev:
+                out_elev.write(elev_data, 1)
 
         with rio.open(geom_plugin.geoid) as in_geoid:
             # Reproject the geoid data to match the DSM
-            geoid_data = np.empty(dsm.shape, dtype=in_geoid.dtypes[0])
+            input_geoid_data = np.empty(dsm.shape, dtype=in_geoid.dtypes[0])
 
             reproject(
                 source=rio.band(in_geoid, 1),
-                destination=geoid_data,
+                destination=input_geoid_data,
                 src_transform=in_geoid.transform,
                 src_crs=in_geoid.crs,
                 dst_transform=dsm_tr,
                 dst_crs=dsm_crs,
-                resampling=Resampling.bilinear,
+                resampling=self.interpolation_method,
             )
 
-        reprojected_geoid_path = os.path.join(dump_dir, "reprojected_geoid.tif")
-        with rio.open(reprojected_geoid_path, "w", **dsm_meta) as out_geoid:
-            out_geoid.write(geoid_data, 1)
+        if self.save_intermediate_data:
+            reprojected_geoid_path = os.path.join(
+                dump_dir, "reprojected_input_geoid.tif"
+            )
+            with rio.open(reprojected_geoid_path, "w", **dsm_meta) as out_geoid:
+                out_geoid.write(input_geoid_data, 1)
+
+        if isinstance(output_geoid, str):
+            with rio.open(output_geoid) as in_geoid:
+                # Reproject the geoid data to match the DSM
+                output_geoid_data = np.empty(
+                    dsm.shape, dtype=in_geoid.dtypes[0]
+                )
+
+                reproject(
+                    source=rio.band(in_geoid, 1),
+                    destination=output_geoid_data,
+                    src_transform=in_geoid.transform,
+                    src_crs=in_geoid.crs,
+                    dst_transform=dsm_tr,
+                    dst_crs=dsm_crs,
+                    resampling=self.interpolation_method,
+                )
+
+            if self.save_intermediate_data:
+                reprojected_geoid_path = os.path.join(
+                    dump_dir, "reprojected_output_geoid.tif"
+                )
+                with rio.open(
+                    reprojected_geoid_path, "w", **dsm_meta
+                ) as out_geoid:
+                    out_geoid.write(input_geoid_data, 1)
 
         # Save old dsm
-        with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm, 1)
+        if self.save_intermediate_data:
+            with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
+                out_dsm.write(dsm, 1)
 
         # Fill DSM for every label
         combined_mask = np.zeros_like(dsm).astype(np.uint8)
@@ -245,19 +289,19 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             if output_geoid is not True:
                 if isinstance(output_geoid, bool) and output_geoid is False:
                     # out geoid is ellipsoid: add geoid-ellipsoid distance
-                    dsm[filling_mask] += geoid_data[filling_mask]
+                    dsm[filling_mask] += input_geoid_data[filling_mask]
                 elif isinstance(output_geoid, str):
                     # out geoid is a new geoid whose path is in output_geoid:
                     # add carsgeoid-ellipsoid then add ellipsoid-outgeoid
-                    dsm[filling_mask] += geoid_data[filling_mask]
-                    dsm[filling_mask] -= geoid_data[filling_mask]
+                    dsm[filling_mask] += input_geoid_data[filling_mask]
+                    dsm[filling_mask] -= output_geoid_data[filling_mask]
 
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
-        with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm, 1)
         with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
             out_dsm.write(dsm, 1)
+        if self.save_intermediate_data:
+            shutil.copy2(new_dsm_path, new_dsm_path)
 
         if filling_file is not None:
             with rio.open(filling_file, "r") as src:

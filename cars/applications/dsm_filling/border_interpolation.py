@@ -24,6 +24,7 @@ This module contains the bulldozer dsm filling application class.
 
 import logging
 import os
+import shutil
 
 import numpy as np
 import rasterio as rio
@@ -181,8 +182,9 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             dtm_nodata = dsm_nodata
         dtm[dtm == dtm_nodata] = np.nan
 
-        with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm, 1)
+        if self.save_intermediate_data:
+            with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
+                out_dsm.write(dsm, 1)
 
         if classif_file is not None:
             classif_descriptions = inputs.get_descriptions_bands(classif_file)
@@ -228,8 +230,11 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             borders_file_path = os.path.join(
                 dump_dir, "borders_of_{}.tif".format(label)
             )
-            with rio.open(borders_file_path, "w", **dsm_meta) as out_borders:
-                out_borders.write(features_boundaries, 1)
+            if self.save_intermediate_data:
+                with rio.open(
+                    borders_file_path, "w", **dsm_meta
+                ) as out_borders:
+                    out_borders.write(features_boundaries, 1)
             for feature_id in range(1, num_features + 1):
                 altitude = np.nanpercentile(
                     dtm[features_boundaries == feature_id], self.percentile
@@ -238,10 +243,10 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
                     dsm[features == feature_id] = altitude
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
-        with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm, 1)
         with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
             out_dsm.write(dsm, 1)
+        if self.save_intermediate_data:
+            shutil.copy2(new_dsm_path, new_dsm_path)
 
         if filling_file is not None:
             with rio.open(filling_file, "r") as src:

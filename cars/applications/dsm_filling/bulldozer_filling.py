@@ -25,6 +25,7 @@ This module contains the bulldozer dsm filling application class.
 import contextlib
 import logging
 import os
+import shutil
 
 import numpy as np
 import rasterio as rio
@@ -204,8 +205,9 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         with rio.open(dtm_path) as in_dtm:
             dtm = in_dtm.read(1)
 
-        with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm, 1)
+        if self.save_intermediate_data:
+            with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
+                out_dsm.write(dsm, 1)
 
         if classif_file is not None:
             classif_descriptions = inputs.get_descriptions_bands(classif_file)
@@ -240,10 +242,10 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             dsm[filling_mask] = dtm[filling_mask]
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
-        with rio.open(new_dsm_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm, 1)
         with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
             out_dsm.write(dsm, 1)
+        if self.save_intermediate_data:
+            shutil.copy2(new_dsm_path, new_dsm_path)
 
         if filling_file is not None:
             with rio.open(filling_file, "r") as src:
