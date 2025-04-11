@@ -29,6 +29,7 @@ import shutil
 import numpy as np
 import rasterio as rio
 from json_checker import Checker, Or
+from rasterio.enums import Resampling
 from rasterio.warp import reproject
 from shapely import Polygon
 
@@ -134,6 +135,14 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         if self.fill_with_geoid is None:
             self.fill_with_geoid = []
 
+        interpolation_methods_dict = {
+            "bilinear": Resampling.bilinear,
+            "cubic": Resampling.cubic,
+        }
+        interpolation_method = interpolation_methods_dict.get(
+            self.interpolation_method, Resampling.bilinear
+        )
+
         if geom_plugin is None:
             logging.error(
                 "No DEM was provided, exogenous_filling will not run."
@@ -187,7 +196,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 src_crs=in_elev.crs,
                 dst_transform=dsm_tr,
                 dst_crs=dsm_crs,
-                resampling=self.interpolation_method,
+                resampling=interpolation_method,
             )
 
         if self.save_intermediate_data:
@@ -206,7 +215,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                 src_crs=in_geoid.crs,
                 dst_transform=dsm_tr,
                 dst_crs=dsm_crs,
-                resampling=self.interpolation_method,
+                resampling=interpolation_method,
             )
 
         if self.save_intermediate_data:
@@ -230,7 +239,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                     src_crs=in_geoid.crs,
                     dst_transform=dsm_tr,
                     dst_crs=dsm_crs,
-                    resampling=self.interpolation_method,
+                    resampling=interpolation_method,
                 )
 
             if self.save_intermediate_data:
