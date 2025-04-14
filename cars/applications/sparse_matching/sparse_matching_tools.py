@@ -475,7 +475,7 @@ def downsample(tab, resolution, dim_max):
     :type tab: cars dataset
     :param resolution: the resolution of the resampling
     :type resolution: float
-    :param dim_max : the maximum dimensions
+    :param dim_max: the maximum dimensions
     :type dim_max: list
 
     :return: the downsampled image
