@@ -99,6 +99,7 @@ class PandoraSparseMatching(
         self.matches_filter_dev_factor = self.used_config[
             "matches_filter_dev_factor"
         ]
+        self.confidence_filtering = self.used_config["confidence_filtering"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -130,7 +131,7 @@ class PandoraSparseMatching(
         overloaded_conf["connection_val"] = conf.get("connection_val", 3.0)
         overloaded_conf["nb_pts_threshold"] = conf.get("nb_pts_threshold", 80)
         overloaded_conf["resolution"] = conf.get("resolution", 4)
-        overloaded_conf["strip_margin"] = conf.get("strip_margin", 10)
+        overloaded_conf["strip_margin"] = conf.get("strip_margin", 30)
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
             "epipolar_error_upper_bound", 10.0
@@ -142,6 +143,10 @@ class PandoraSparseMatching(
         # minimum number of matches to continue with
         overloaded_conf["minimum_nb_matches"] = conf.get(
             "minimum_nb_matches", 100
+        )
+
+        overloaded_conf["confidence_filtering"] = conf.get(
+            "confidence_filtering", True
         )
 
         overloaded_conf["elevation_delta_lower_bound"] = conf.get(
@@ -198,6 +203,7 @@ class PandoraSparseMatching(
             "connection_val": And(float, lambda x: x > 0),
             "nb_pts_threshold": And(int, lambda x: x > 0),
             "clusters_distance_threshold": Or(None, float),
+            "confidence_filtering": bool,
             "filtered_elt_pos": bool,
             "matches_filter_knn": int,
             "matches_filter_dev_factor": Or(int, float),
@@ -461,6 +467,24 @@ class PandoraSparseMatching(
                 )
 
                 self.orchestrator.add_to_save_lists(
+                    os.path.join(pair_folder, "epi_disp_mask.tif"),
+                    "disp_msk",
+                    pandora_epipolar_disparity_map,
+                    cars_ds_name="epi_disp_mask",
+                )
+
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_confidence.tif",
+                    ),
+                    cst_disp.CONFIDENCE,
+                    pandora_epipolar_disparity_map,
+                    cars_ds_name="confidence",
+                    optional_data=True,
+                )
+
+                self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_pandora_matches_left"),
                     None,
                     pandora_epipolar_matches,
@@ -496,6 +520,11 @@ class PandoraSparseMatching(
                     -self.elevation_delta_upper_bound / disp_to_alt_ratio
                 )
 
+            # Get the max dim to register the disparity map correctly
+            row_max = pandora_epipolar_matches.tiling_grid[-1, -1][1]
+            col_max = pandora_epipolar_matches.tiling_grid[-1, -1][3]
+            dim_max = [row_max, col_max]
+
             # Generate disparity maps
             for col in range(pandora_epipolar_matches.shape[1]):
                 for row in range(pandora_epipolar_matches.shape[0]):
@@ -520,6 +549,8 @@ class PandoraSparseMatching(
                             epipolar_image_left[row, col],
                             epipolar_image_right[row, col],
                             self.corr_config,
+                            self.confidence_filtering,
+                            dim_max=dim_max,
                             disp_upper_bound=disp_upper_bound,
                             disp_lower_bound=disp_lower_bound,
                             resolution=self.resolution,
@@ -540,6 +571,8 @@ def compute_pandora_matches_wrapper(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     corr_conf,
+    confidence_filtering,
+    dim_max,
     disp_upper_bound,
     disp_lower_bound,
     resolution,
@@ -570,6 +603,10 @@ def compute_pandora_matches_wrapper(
     :type disp_lower_bound: float
     :param corr_conf: pandora conf
     :type corr_conf: dict
+    :param confidence_filtering: True to filter the disp map
+    :type confidence_filtering: bool
+    :param dim_max: the maximum dimensions
+    :type dim_max: list
     :param resolution: resolution for downsampling
     :type resolution: int or list
     :param disp_to_alt_ratio: disp to alti ratio used for performance map
@@ -580,23 +617,30 @@ def compute_pandora_matches_wrapper(
     Right pandora matches object (if exists)
 
     """
+
     list_matches = None
     if isinstance(resolution, list):
         for res in resolution:
             if res == np.max(resolution):
-                matches, disp_map_dataset = pandora_tools.pandora_matches(
-                    left_image_object,
-                    right_image_object,
-                    corr_conf,
-                    disp_upper_bound,
-                    disp_lower_bound,
-                    res,
+                matches, disp_map_dataset, window, profile = (
+                    pandora_tools.pandora_matches(
+                        left_image_object,
+                        right_image_object,
+                        corr_conf,
+                        dim_max,
+                        confidence_filtering,
+                        disp_upper_bound,
+                        disp_lower_bound,
+                        res,
+                    )
                 )
             else:
-                matches, _ = pandora_tools.pandora_matches(
+                matches, _, _, _ = pandora_tools.pandora_matches(
                     left_image_object,
                     right_image_object,
                     corr_conf,
+                    dim_max,
+                    confidence_filtering,
                     disp_upper_bound,
                     disp_lower_bound,
                     res,
@@ -607,13 +651,17 @@ def compute_pandora_matches_wrapper(
             else:
                 list_matches = np.row_stack((list_matches, matches))
     else:
-        matches, disp_map_dataset = pandora_tools.pandora_matches(
-            left_image_object,
-            right_image_object,
-            corr_conf,
-            disp_upper_bound,
-            disp_lower_bound,
-            resolution,
+        matches, disp_map_dataset, window, profile = (
+            pandora_tools.pandora_matches(
+                left_image_object,
+                right_image_object,
+                corr_conf,
+                dim_max,
+                confidence_filtering,
+                disp_upper_bound,
+                disp_lower_bound,
+                resolution,
+            )
         )
 
     # Resample the matches in full resolution
@@ -629,8 +677,8 @@ def compute_pandora_matches_wrapper(
     cars_dataset.fill_dataset(
         disp_map_dataset,
         saving_info=saving_info_disparity_map,
-        window=cars_dataset.get_window_dataset(left_image_object),
-        profile=cars_dataset.get_profile_rasterio(left_image_object),
+        window=window,
+        profile=profile,
         attributes=None,
         overlaps=None,  # overlaps are removed
     )
