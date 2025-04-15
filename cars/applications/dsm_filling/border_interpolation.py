@@ -246,7 +246,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
             out_dsm.write(dsm, 1)
         if self.save_intermediate_data:
-            shutil.copy2(new_dsm_path, new_dsm_path)
+            shutil.copy2(dsm_file, new_dsm_path)
 
         if filling_file is not None:
             with rio.open(filling_file, "r") as src:
