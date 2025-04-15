@@ -650,8 +650,9 @@ def compute_pandora_matches_wrapper(
                 list_matches = matches
             else:
                 list_matches = np.row_stack((list_matches, matches))
+        final_matches = list_matches
     else:
-        matches, disp_map_dataset, window, profile = (
+        final_matches, disp_map_dataset, window, profile = (
             pandora_tools.pandora_matches(
                 left_image_object,
                 right_image_object,
@@ -665,7 +666,7 @@ def compute_pandora_matches_wrapper(
         )
 
     # Resample the matches in full resolution
-    left_pandora_matches_dataframe = pandas.DataFrame(matches)
+    left_pandora_matches_dataframe = pandas.DataFrame(final_matches)
 
     cars_dataset.fill_dataframe(
         left_pandora_matches_dataframe,
