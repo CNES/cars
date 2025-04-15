@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-This module contains the bulldozer dsm filling application class.
+This module contains the exogenous dsm filling application class.
 """
 
 import logging
@@ -45,9 +45,9 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
     def __init__(self, conf=None):
         """
-        Init function of BulldozerFilling
+        Init function of ExogenousFilling
 
-        :param conf: configuration for BulldozerFilling
+        :param conf: configuration for ExogenousFilling
         :return: an application_to_use object
         """
         super().__init__(conf=conf)

@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-This module contains the bulldozer dsm filling application class.
+This module contains the border interpolation dsm filling application class.
 """
 
 import logging
@@ -45,7 +45,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
     def __init__(self, conf=None):
         """
-        Init function of BulldozerFilling
+        Init function of BorderInterpolation
 
         :param conf: configuration for BulldozerFilling
         :return: an application_to_use object
