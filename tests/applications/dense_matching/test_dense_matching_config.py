@@ -40,7 +40,7 @@ def test_check_full_conf_pandora_conf_as_dict():
     Test configuration check for dense matching application
     """
     conf = {
-        "method": "census_sgm",
+        "method": "census_sgm_default",
         "min_epi_tile_size": 300,
         "max_epi_tile_size": 1500,
         "epipolar_tile_margin_in_percent": 60,
@@ -99,10 +99,10 @@ def test_check_full_conf_pandora_conf_as_file():
     """
     loader_conf_path = os.path.dirname(dense_matching_loaders_init_file)
     census_loader_conf_path = os.path.join(
-        loader_conf_path, "config_census_sgm.json"
+        loader_conf_path, "config_census_sgm_default.json"
     )
     conf = {
-        "method": "census_sgm",
+        "method": "census_sgm_default",
         "min_epi_tile_size": 300,
         "max_epi_tile_size": 1500,
         "epipolar_tile_margin_in_percent": 60,
@@ -145,7 +145,7 @@ def test_check_conf_with_error(
         performance_map_method = ["intervals"]
 
     conf = {
-        "method": "census_sgm",
+        "method": "census_sgm_default",
         "min_elevation_offset": 20,
         "max_elevation_offset": max_offset,  # should be > min
         "performance_map_method": performance_map_method,

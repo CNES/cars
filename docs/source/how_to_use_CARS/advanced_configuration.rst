@@ -336,8 +336,8 @@ The structure follows this organization:
                     * - method
                       - Method for dense matching
                       - string
-                      - "census_sgm", "mccnn_sgm"
-                      - "census_sgm"
+                      - "census_sgm_default", "mccnn_sgm", "census11_sgm_20_80", "census11_sgm_20_160", "census11_sgm_38_464", "census11_sgm_72_309"
+                      - "census_sgm_default"
                       - No
                     * - loader
                       - external library use to compute dense matching
@@ -462,7 +462,7 @@ The structure follows this organization:
 
                     "applications": {
                         "dense_matching": {
-                            "method": "census_sgm",
+                            "method": "census_sgm_default",
                             "loader": "pandora",
                             "loader_conf": "path_to_user_pandora_configuration"
                         }
@@ -473,6 +473,26 @@ The structure follows this organization:
                     * Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
                     * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
                     * To save the confidence, the save_intermediate_data parameter should be activated.
+
+                .. list-table::
+                    :widths: 19 19
+                    :header-rows: 1
+
+                    * - Conf_name
+                      - Purpose
+                    * - census_sgm_default
+                      - This configuration is the one that works in most of cases using census 5 with sgm (p1 = 8, p2 = 32)
+                    * - mccnn_sgm
+                      - This configuration is the one that works in most of cases using mccnn with sgm (p1 = 2.3, p2 = 55.9)
+                    * - census11_sgm_20_80
+                      - This configuration is suitable for urban scene. It uses census11 with sgm (p1 = 20, p2 = 80)
+                    * - census11_sgm_20_160
+                      - This configuration is suitable for shadow scene. It uses census11 with sgm (p1 = 20, p2 = 160)
+                    * - census11_sgm_38_464
+                      - This configuration is suitable for mountain or vegetation scene. It uses census11 with sgm (p1 = 38, p2 = 464)
+                    * - census11_sgm_72_309
+                      - This configuration is suitable for homogeneous scene. It uses census11 with sgm (p1 = 72, p2 = 309)
+
 
 
             .. tab:: Dense match filling

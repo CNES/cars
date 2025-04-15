@@ -44,7 +44,7 @@ def test_configure_pandora_default():
     Test configure pandora correlator (default configuration)
     """
 
-    pandora_loader = PandoraLoader(conf=None, method_name="census_sgm")
+    pandora_loader = PandoraLoader(conf=None, method_name="census_sgm_default")
     corr_config = pandora_loader.get_conf()
     assert (
         corr_config["pipeline"]["matching_cost"]["matching_cost_method"]
