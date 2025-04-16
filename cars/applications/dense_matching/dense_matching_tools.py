@@ -282,6 +282,7 @@ def create_disp_dataset(  # noqa: C901
 
     # Retrieve masks from pandora
     pandora_masks = get_masks_from_pandora(disp, compute_disparity_masks)
+    pandora_masks[cst_disp.VALID][np.isnan(disp_map)] = 0
 
     # Retrieve colors
     color = None
@@ -324,6 +325,7 @@ def create_disp_dataset(  # noqa: C901
             int(np.floor(np.min(disp_min_grid))),
             int(np.ceil(np.max(disp_max_grid))),
         )
+
         # mask outside left sensor
         left_mask = (
             ref_dataset[cst.EPI_MSK].values
@@ -336,7 +338,6 @@ def create_disp_dataset(  # noqa: C901
         )
         # pylint: disable=unsupported-assignment-operation
         left_from_right_classif[left_mask_stacked] = 0
-
     # Merge right classif
     classif, band_classif = merge_classif_left_right(
         left_classif,
@@ -775,6 +776,7 @@ def compute_disparity(
     check_datasets(left_dataset, right_dataset)
 
     # Run the Pandora pipeline
+
     ref, _ = pandora.run(
         pandora_machine,
         left_dataset,
