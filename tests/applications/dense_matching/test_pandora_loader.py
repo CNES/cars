@@ -187,3 +187,55 @@ def test_overload_pandora_conf_with_confidence():
 
     # transform to string to test order
     assert " ".join(ref.keys()) == " ".join(new_conf.keys())
+
+
+def test_disparity_denoiser_in_conf():
+    """ "
+    Test if disparity denoiser filter is used
+    """
+
+    pandora_config = {
+        "input": {"nodata_left": "NaN", "nodata_right": "NaN"},
+        "pipeline": {
+            "right_disp_map": {"method": "accurate"},
+            "matching_cost": {
+                "matching_cost_method": "census",
+                "window_size": 5,
+                "subpix": 1,
+            },
+            "optimization": {
+                "optimization_method": "sgm",
+                "penalty": {
+                    "P1": 8,
+                    "P2": 24,
+                    "p2_method": "constant",
+                    "penalty_method": "sgm_penalty",
+                },
+                "overcounting": False,
+                "min_cost_paths": False,
+            },
+            "disparity": {
+                "disparity_method": "wta",
+                "invalid_disparity": "NaN",
+            },
+            "refinement": {"refinement_method": "vfit"},
+            "filter": {
+                "filter_method": "disparity_denoiser",
+                "filter_size": 3,
+                "band": "r",
+            },
+            "validation": {"validation_method": "cross_checking"},
+        },
+    }
+
+    pandora_loader = PandoraLoader(conf=pandora_config, method_name=None)
+
+    corr_config = pandora_loader.get_conf()
+
+    assert (
+        corr_config["pipeline"]["filter"]["filter_method"]
+        == "disparity_denoiser"
+    )
+
+    # Check that band parameter has been overrided
+    assert corr_config["pipeline"]["filter"]["band"] is None
