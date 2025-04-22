@@ -484,13 +484,13 @@ The structure follows this organization:
                       - This configuration is the one that works in most of cases using census 5 with sgm (p1 = 8, p2 = 32)
                     * - mccnn_sgm
                       - This configuration is the one that works in most of cases using mccnn with sgm (p1 = 2.3, p2 = 55.9)
-                    * - census11_sgm_20_80
+                    * - census_sgm_urban
                       - This configuration is suitable for urban scene. It uses census11 with sgm (p1 = 20, p2 = 80)
-                    * - census11_sgm_20_160
+                    * - census_sgm_shadow
                       - This configuration is suitable for shadow scene. It uses census11 with sgm (p1 = 20, p2 = 160)
-                    * - census11_sgm_38_464
+                    * - census_sgm_mountain_and_vegetation
                       - This configuration is suitable for mountain or vegetation scene. It uses census11 with sgm (p1 = 38, p2 = 464)
-                    * - census11_sgm_72_309
+                    * - census11_sgm_homogeneous
                       - This configuration is suitable for homogeneous scene. It uses census11 with sgm (p1 = 72, p2 = 309)
 
 
