@@ -847,17 +847,21 @@ def transform_input_pc(
                 computed_epi_pc[row, col] = computed_epi_pc[row, col].data
 
         # Add min max for current point cloud CarsDataset
-        computed_epi_pc.attributes["xmin"] = min(pc_xmin_list)
-        computed_epi_pc.attributes["ymin"] = min(pc_ymin_list)
-        computed_epi_pc.attributes["xmax"] = max(pc_xmax_list)
-        computed_epi_pc.attributes["ymax"] = max(pc_ymax_list)
-        computed_epi_pc.attributes["epsg"] = epsg
+        if len(pc_xmin_list) > 0:
+            computed_epi_pc.attributes["xmin"] = min(pc_xmin_list)
+            computed_epi_pc.attributes["ymin"] = min(pc_ymin_list)
+            computed_epi_pc.attributes["xmax"] = max(pc_xmax_list)
+            computed_epi_pc.attributes["ymax"] = max(pc_ymax_list)
+            computed_epi_pc.attributes["epsg"] = epsg
 
     # Define a terrain tiling from the terrain bounds (in terrain epsg)
-    global_xmin = min(xmin_list)
-    global_xmax = max(xmax_list)
-    global_ymin = min(ymin_list)
-    global_ymax = max(ymax_list)
+    if len(xmin_list) > 0:
+        global_xmin = min(xmin_list)
+        global_xmax = max(xmax_list)
+        global_ymin = min(ymin_list)
+        global_ymax = max(ymax_list)
+    else:
+        raise RuntimeError("All the depth maps are full of nan")
 
     if roi_poly is not None:
         (
@@ -892,13 +896,14 @@ def compute_max_nb_point_clouds(list_epipolar_point_clouds_by_tiles):
 
     list_pc_polygon = []
     for epi_pc_cars_ds in list_epipolar_point_clouds_by_tiles:
-        xmin = epi_pc_cars_ds.attributes["xmin"]
-        xmax = epi_pc_cars_ds.attributes["xmax"]
-        ymin = epi_pc_cars_ds.attributes["ymin"]
-        ymax = epi_pc_cars_ds.attributes["ymax"]
+        if "xmin" in epi_pc_cars_ds.attributes:
+            xmin = epi_pc_cars_ds.attributes["xmin"]
+            xmax = epi_pc_cars_ds.attributes["xmax"]
+            ymin = epi_pc_cars_ds.attributes["ymin"]
+            ymax = epi_pc_cars_ds.attributes["ymax"]
 
-        x_y_min_max = [xmin, xmax, ymin, ymax]
-        list_pc_polygon.append((convert_to_polygon(x_y_min_max), 1))
+            x_y_min_max = [xmin, xmax, ymin, ymax]
+            list_pc_polygon.append((convert_to_polygon(x_y_min_max), 1))
 
     # Compute polygon intersection. A polygon is reprensented with a tuple:
     # (shapely_polygon, nb_polygon intersection)
@@ -943,27 +948,30 @@ def compute_average_distance(list_epipolar_point_clouds_by_tiles):
     # Get average for each point
     list_average_dist = []
     for epi_pc_cars_ds in list_epipolar_point_clouds_by_tiles:
-        xmin = epi_pc_cars_ds.attributes["xmin"]
-        xmax = epi_pc_cars_ds.attributes["xmax"]
-        ymin = epi_pc_cars_ds.attributes["ymin"]
-        ymax = epi_pc_cars_ds.attributes["ymax"]
-        data_epsg = epi_pc_cars_ds.attributes["epsg"]
+        if "xmin" in epi_pc_cars_ds.attributes:
+            xmin = epi_pc_cars_ds.attributes["xmin"]
+            xmax = epi_pc_cars_ds.attributes["xmax"]
+            ymin = epi_pc_cars_ds.attributes["ymin"]
+            ymax = epi_pc_cars_ds.attributes["ymax"]
+            data_epsg = epi_pc_cars_ds.attributes["epsg"]
 
-        x_y_min_max = [xmin, xmax, ymin, ymax]
-        # Create polygon
-        poly = convert_to_polygon(x_y_min_max)
-        # Transform polygon to epsg meter
-        epsg_meter = 4978
-        meter_poly = projection.polygon_projection(poly, data_epsg, epsg_meter)
+            x_y_min_max = [xmin, xmax, ymin, ymax]
+            # Create polygon
+            poly = convert_to_polygon(x_y_min_max)
+            # Transform polygon to epsg meter
+            epsg_meter = 4978
+            meter_poly = projection.polygon_projection(
+                poly, data_epsg, epsg_meter
+            )
 
-        # Compute perimeter in meter
-        perimeter_meters = length(meter_poly)
-        # Compute perimeter in pixel
-        nb_row = np.max(epi_pc_cars_ds.tiling_grid[:, :, 1])
-        nb_col = np.max(epi_pc_cars_ds.tiling_grid[:, :, 3])
-        perimeter_pixels = 2 * nb_row + 2 * nb_col
-        # Compute average distance
-        list_average_dist.append(perimeter_meters / perimeter_pixels)
+            # Compute perimeter in meter
+            perimeter_meters = length(meter_poly)
+            # Compute perimeter in pixel
+            nb_row = np.max(epi_pc_cars_ds.tiling_grid[:, :, 1])
+            nb_col = np.max(epi_pc_cars_ds.tiling_grid[:, :, 3])
+            perimeter_pixels = 2 * nb_row + 2 * nb_col
+            # Compute average distance
+            list_average_dist.append(perimeter_meters / perimeter_pixels)
 
     return max(list_average_dist)
 
