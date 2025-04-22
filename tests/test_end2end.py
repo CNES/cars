@@ -114,6 +114,7 @@ def test_end2end_dsm_fusion():
         input_dense_dsm_lr["output"]["auxiliary"] = {
             "mask": True,
             "performance_map": True,
+            "weights": True,
             "filling": True,
             "color": True,
             "contributing_pair": True,
@@ -169,7 +170,7 @@ def test_end2end_dsm_fusion():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir/rasterization/", "weights.tif"),
+        #     os.path.join(out_dir, "dsm", "weights.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "weights_end2end_ventoux_lr.tif"
@@ -226,6 +227,7 @@ def test_end2end_dsm_fusion():
         input_dsm_config["output"]["auxiliary"] = {
             "mask": True,
             "performance_map": True,
+            "weights": True,
             "filling": True,
             "color": True,
             "contributing_pair": True,
@@ -240,6 +242,14 @@ def test_end2end_dsm_fusion():
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "phased_dsm_end2end_ventoux_fusion.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "weights.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "weights_end2end_ventoux_fusion.tif"
         #         )
         #     ),
         # )
@@ -284,6 +294,16 @@ def test_end2end_dsm_fusion():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "phased_dsm_end2end_ventoux_fusion.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "weights.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "weights_end2end_ventoux_fusion.tif"
                 )
             ),
             atol=0.0001,
@@ -3110,6 +3130,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             "product_level": ["depth_map", "point_cloud", "dsm"],
             "auxiliary": {
                 "color": True,
+                "weights": True,
                 "filling": True,
                 "mask": True,
                 "classification": True,
@@ -3142,6 +3163,14 @@ def test_end2end_ventoux_full_output_no_elevation():
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "color_end2end_ventoux_no_elevation.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "weights.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "weights_end2end_ventoux_no_elevation.tif"
         #         )
         #     ),
         # )
@@ -3264,6 +3293,16 @@ def test_end2end_ventoux_full_output_no_elevation():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "weights.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "weights_end2end_ventoux_no_elevation.tif"
                 )
             ),
             rtol=0.0002,
@@ -3440,6 +3479,7 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "dsm": "dsm.tif",
                 "color": "color.tif",
                 "mask": "mask.tif",
+                "weights": "weights.tif",
                 "classification": "classification.tif",
                 "performance_map": None,
                 "contributing_pair": "contributing_pair.tif",
@@ -3739,6 +3779,16 @@ def test_end2end_ventoux_with_color():
         #     ),
         # )
         # copy2(
+        #     os.path.join(
+        #     out_dir, "dump_dir", "rasterization", "weights.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "weights_end2end_ventoux_with_color.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
         #     os.path.join(out_dir, "dump_dir", "triangulation",
         #     "left_right", "performance_map_from_risk.tif"),
         #     absolute_data_path(
@@ -3777,6 +3827,17 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     ref_output_dir,
                     "performance_map_end2end_ventoux_with_color.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dump_dir", "rasterization", "weights.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "weights_end2end_ventoux_with_color.tif",
                 )
             ),
             rtol=0.0002,

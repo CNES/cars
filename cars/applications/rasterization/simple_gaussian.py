@@ -209,6 +209,7 @@ class SimpleGaussian(
         resolution,
         orchestrator=None,
         dsm_file_name=None,
+        weights_file_name=None,
         color_file_name=None,
         mask_file_name=None,
         classif_file_name=None,
@@ -258,6 +259,8 @@ class SimpleGaussian(
         :param orchestrator: orchestrator used
         :param dsm_file_name: path of dsm
         :type dsm_file_name: str
+        :param weights_file_name: path of dsm weights
+        :type weights_file_name: str
         :param color_file_name: path of color
         :type color_file_name: str
         :param mask_file_name: path of color
@@ -420,7 +423,25 @@ class SimpleGaussian(
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm",
             )
+
+        out_weights_file_name = weights_file_name
+        if out_weights_file_name is not None:
+            # add contributing pair filename to index
+            self.orchestrator.update_index(
+                {
+                    "dsm": {
+                        cst.INDEX_DSM_WEIGHTS: os.path.basename(
+                            out_weights_file_name
+                        )
+                    }
+                }
+            )
+        else:
+            # Always write weights.tif, but dump_dir is in the orchestrator
+            # clean list if save_intermediate_data is not activated
             out_weights_file_name = os.path.join(out_dump_dir, "weights.tif")
+        if out_weights_file_name is not None:
+            list_computed_layers += ["weights"]
             self.orchestrator.add_to_save_lists(
                 out_weights_file_name,
                 cst.RASTER_WEIGHTS_SUM,

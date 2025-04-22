@@ -89,6 +89,11 @@ def check_output_parameters(conf):
             output_constants.AUX_COLOR, True
         )
     )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_WEIGHTS
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_WEIGHTS, False
+    )
     overloaded_conf[output_constants.AUXILIARY][output_constants.AUX_MASK] = (
         overloaded_conf[output_constants.AUXILIARY].get(
             output_constants.AUX_MASK, False
@@ -136,6 +141,7 @@ def check_output_parameters(conf):
     # check auxiliary keys
     auxiliary_schema = {
         output_constants.AUX_COLOR: bool,
+        output_constants.AUX_WEIGHTS: bool,
         output_constants.AUX_MASK: bool,
         output_constants.AUX_CLASSIFICATION: bool,
         output_constants.AUX_PERFORMANCE_MAP: bool,
@@ -184,6 +190,7 @@ def intialize_product_index(orchestrator, product_levels, input_pairs):
             cst.INDEX_DSM_PERFORMANCE_MAP: None,
             cst.INDEX_DSM_CONTRIBUTING_PAIR: None,
             cst.INDEX_DSM_FILLING: None,
+            cst.INDEX_DSM_WEIGHTS: None,
         }
 
     if "point_cloud" in product_levels:

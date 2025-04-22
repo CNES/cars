@@ -142,6 +142,7 @@ MATCHES_MODE = "matches"
 
 # DSM index
 INDEX_DSM_ALT = "dsm"
+INDEX_DSM_WEIGHTS = "weights"
 INDEX_DSM_COLOR = "color"
 INDEX_DSM_MASK = "mask"
 INDEX_DSM_CLASSIFICATION = "classification"

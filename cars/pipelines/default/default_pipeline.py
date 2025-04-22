@@ -2139,6 +2139,17 @@ class DefaultPipeline(PipelineTemplate):
             else None
         )
 
+        weights_file_name = (
+            os.path.join(
+                self.out_dir,
+                out_cst.DSM_DIRECTORY,
+                "weights.tif",
+            )
+            if self.save_output_dsm
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_WEIGHTS]
+            else None
+        )
+
         color_file_name = (
             os.path.join(
                 self.out_dir,
@@ -2229,6 +2240,7 @@ class DefaultPipeline(PipelineTemplate):
             resolution=self.resolution,
             orchestrator=self.cars_orchestrator,
             dsm_file_name=dsm_file_name,
+            weights_file_name=weights_file_name,
             color_file_name=color_file_name,
             classif_file_name=classif_file_name,
             performance_map_file_name=performance_map_file_name,
