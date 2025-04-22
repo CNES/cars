@@ -42,7 +42,7 @@ import rasterio
 from shapely.ops import transform
 
 # CARS imports
-from cars.core import roi_tools
+from cars.core import inputs, roi_tools
 from cars.pipelines.default import default_pipeline as default
 
 # CARS Tests imports
@@ -81,10 +81,18 @@ def test_end2end_dsm_fusion():
         )
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "sparse_matching.sift": {
+                "method": "sift",
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+                "disparity_margin": 0.25,
+                "save_intermediate_data": True,
+                "decimation_factor": 80,
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
-                "use_global_disp_range": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -106,6 +114,10 @@ def test_end2end_dsm_fusion():
         input_dense_dsm_lr["output"]["auxiliary"] = {
             "mask": True,
             "performance_map": True,
+            "filling": True,
+            "color": True,
+            "contributing_pair": True,
+            "classification": True,
         }
 
         dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm_lr)
@@ -141,8 +153,7 @@ def test_end2end_dsm_fusion():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization",
-        #     "classification.tif"),
+        #     os.path.join(out_dir, "dsm", "classification.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "classif_end2end_ventoux_lr.tif"
@@ -150,10 +161,10 @@ def test_end2end_dsm_fusion():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir/rasterization/", "weights.tif"),
+        #     os.path.join(out_dir, "dsm", "contributing_pair.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "weights_end2end_ventoux_lr.tif"
+        #             ref_output_dir, "contributing_pair_end2end_ventoux_lr.tif"
         #         )
         #     ),
         # )
@@ -193,6 +204,9 @@ def test_end2end_dsm_fusion():
             "dsm_inf": absolute_data_path(
                 "ref_output/dsm_inf_end2end_ventoux_lr.tif"
             ),
+            "contributing_pair": absolute_data_path(
+                "ref_output/contributing_pair_end2end_ventoux_lr.tif"
+            ),
         }
 
         input_dsm_config = {
@@ -204,8 +218,19 @@ def test_end2end_dsm_fusion():
             }
         }
 
+        input_dsm_config["advanced"] = {}
+        input_dsm_config["advanced"]["dsm_merging_tile_size"] = 100
+
         input_dsm_config["output"] = {}
         input_dsm_config["output"]["directory"] = directory
+        input_dsm_config["output"]["auxiliary"] = {
+            "mask": True,
+            "performance_map": True,
+            "filling": True,
+            "color": True,
+            "contributing_pair": True,
+            "classification": True,
+        }
 
         dsm_merging_pipeline = default.DefaultPipeline(input_dsm_config)
         dsm_merging_pipeline.run()
@@ -226,6 +251,33 @@ def test_end2end_dsm_fusion():
         #         )
         #     ),
         # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "contributing_pair_end2end_ventoux_fusion.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "classification.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "classification_end2end_ventoux_fusion.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "performance_map.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "performance_map_end2end_ventoux_fusion.tif"
+        #         )
+        #     ),
+        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -241,6 +293,104 @@ def test_end2end_dsm_fusion():
             os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_fusion.tif")
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "contributing_pair_end2end_ventoux_fusion.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "classification_end2end_ventoux_fusion.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "performance_map_end2end_ventoux_fusion.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        # assertion on descriptions and classes
+
+        assert inputs.get_descriptions_bands(
+            os.path.join(out_dir, "dsm", "color.tif")
+        ) == (None, None, None, None)
+        assert inputs.get_descriptions_bands(
+            os.path.join(out_dir, "dsm", "classification.tif")
+        ) == ("forest", "shadow", "water")
+        assert inputs.get_descriptions_bands(
+            os.path.join(out_dir, "dsm", "contributing_pair.tif")
+        ) == ("left_right",)
+        assert str(
+            inputs.rasterio_get_tags(
+                os.path.join(out_dir, "dsm", "performance_map.tif")
+            )["CLASSES"]
+        ) == str(
+            {
+                0: (0, 0.968),
+                1: (0.968, 1.13375),
+                2: (1.13375, 1.295),
+                3: (1.295, 1.604),
+                4: (1.604, 2.423),
+                5: (2.423, 3.428),
+                6: (3.428, math.inf),
+            }
+        )
+
+        # Run the same mergin, for only basic data
+        in_dsm_base = {
+            "dsm": absolute_data_path(
+                "ref_output/phased_dsm_end2end_ventoux_lr.tif"
+            ),
+            "weights": absolute_data_path(
+                "ref_output/weights_end2end_ventoux_lr.tif"
+            ),
+        }
+
+        input_dsm_config_base = {
+            "inputs": {
+                "dsms": {
+                    "one": in_dsm_base,
+                    "two": in_dsm_base,
+                }
+            }
+        }
+
+        input_dsm_config_base["output"] = {}
+        input_dsm_config_base["output"]["directory"] = os.path.join(
+            directory, "other"
+        )
+        os.makedirs(input_dsm_config_base["output"]["directory"], exist_ok=True)
+
+        dsm_merging_pipeline = default.DefaultPipeline(input_dsm_config_base)
+        dsm_merging_pipeline.run()
+
+        assert_same_images(
+            os.path.join(
+                input_dsm_config_base["output"]["directory"], "dsm", "dsm.tif"
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "phased_dsm_end2end_ventoux_fusion.tif"
+                )
             ),
             atol=0.0001,
             rtol=1e-6,

@@ -2315,6 +2315,7 @@ class DefaultPipeline(PipelineTemplate):
                     "color.tif",
                 )
                 if "color" in dict_path
+                or self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_COLOR]
                 else None
             )
 
@@ -2355,6 +2356,9 @@ class DefaultPipeline(PipelineTemplate):
                     "classification.tif",
                 )
                 if "classification" in dict_path
+                or self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_CLASSIFICATION
+                ]
                 else None
             )
 
@@ -2389,6 +2393,7 @@ class DefaultPipeline(PipelineTemplate):
                 dict_path,
                 self.cars_orchestrator,
                 self.roi_poly,
+                self.used_conf[ADVANCED][adv_cst.DSM_MERGING_TILE_SIZE],
                 dsms_merging_dump_dir,
                 dsm_file_name,
                 color_file_name,
