@@ -97,34 +97,35 @@ class PandoraLoader:
                 # Read conf
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
                     conf = json.load(fstream)
-            elif "20_80" in method_name:
+            elif "urban" in method_name:
                 # Use census sgm conf
                 conf_file_path = os.path.join(
-                    package_path, "config_census11_sgm_20_80.json"
+                    package_path, "config_census_sgm_urban.json"
                 )
                 # read conf
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
                     conf = json.load(fstream)
-            elif "20_160" in method_name:
+            elif "shadow" in method_name:
                 # Use census sgm conf
                 conf_file_path = os.path.join(
-                    package_path, "config_census11_sgm_20_160.json"
+                    package_path, "config_census_sgm_shadow.json"
                 )
                 # read conf
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
                     conf = json.load(fstream)
-            elif "38_464" in method_name:
+            elif "mountain" in method_name:
                 # Use census sgm conf
                 conf_file_path = os.path.join(
-                    package_path, "config_census11_sgm_38_464.json"
+                    package_path,
+                    "config_census_sgm_mountain_and_vegetation.json",
                 )
                 # read conf
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
                     conf = json.load(fstream)
-            elif "72_309" in method_name:
+            elif "homogeneous" in method_name:
                 # Use census sgm conf
                 conf_file_path = os.path.join(
-                    package_path, "config_census11_sgm_72_309.json"
+                    package_path, "config_census_sgm_homogeneous.json"
                 )
                 # read conf
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
