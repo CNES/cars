@@ -1133,15 +1133,19 @@ def save_dataset(
         new_profile["dtype"] = "float32"
 
     bands_description = None
-    if tag in (cst.EPI_CLASSIFICATION, cst.RASTER_CLASSIF):
+    if tag in (cst.EPI_CLASSIFICATION, cst.RASTER_CLASSIF, cst.DSM_CLASSIF):
         bands_description = dataset.coords[cst.BAND_CLASSIF].values
-    if tag in (cst.EPI_COLOR, cst.POINT_CLOUD_CLR_KEY_ROOT):
+    if tag in (cst.EPI_COLOR, cst.POINT_CLOUD_CLR_KEY_ROOT, cst.DSM_COLOR):
         bands_description = dataset.coords[cst.BAND_IM].values
-    if tag == cst.RASTER_SOURCE_PC:
+    if tag in (cst.RASTER_SOURCE_PC, cst.DSM_SOURCE_PC):
         bands_description = dataset.coords[cst.BAND_SOURCE_PC].values
-    if tag in (cst.EPI_FILLING, cst.RASTER_FILLING):
+    if tag in (cst.EPI_FILLING, cst.RASTER_FILLING, cst.DSM_FILLING):
         bands_description = dataset.coords[cst.BAND_FILLING].values
-    if tag in (cst.RASTER_PERFORMANCE_MAP, cst.RASTER_PERFORMANCE_MAP_RAW):
+    if tag in (
+        cst.RASTER_PERFORMANCE_MAP,
+        cst.RASTER_PERFORMANCE_MAP_RAW,
+        cst.DSM_PERFORMANCE_MAP,
+    ):
         if cst.BAND_PERFORMANCE_MAP in dataset.coords:
             bands_description = dataset.coords[cst.BAND_PERFORMANCE_MAP].values
 

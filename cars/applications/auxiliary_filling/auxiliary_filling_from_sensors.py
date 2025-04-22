@@ -181,14 +181,16 @@ class AuxiliaryFillingFromSensors(
             os.makedirs(dump_dir)
 
         color_not_filled_file = os.path.join(dump_dir, "color_not_filled.tif")
-        shutil.move(color_file, color_not_filled_file)
+        if os.path.exists(color_file):
+            shutil.move(color_file, color_not_filled_file)
 
         classification_not_filled_file = None
         if classif_file is not None:
             classification_not_filled_file = os.path.join(
                 dump_dir, "classification_not_filled.tif"
             )
-            shutil.move(classif_file, classification_not_filled_file)
+            if os.path.exists(classif_file):
+                shutil.move(classif_file, classification_not_filled_file)
 
         # Clean dump_dir at the end of processing if required
         if not self.used_config["save_intermediate_data"]:
@@ -218,31 +220,39 @@ class AuxiliaryFillingFromSensors(
         # Initialize no data value
         classification_no_data_value = 0
         color_no_data_value = 0
+        color_dtype = np.float32
+        classif_dtype = np.uint8
 
-        with rio.open(color_not_filled_file, "r") as descriptor:
-            color_no_data_value = descriptor.nodata
+        if os.path.exists(color_not_filled_file):
+            with rio.open(color_not_filled_file, "r") as descriptor:
+                color_no_data_value = descriptor.nodata
+                color_dtype = descriptor.profile.get("dtype", np.float32)
 
-            self.orchestrator.add_to_save_lists(
-                os.path.join(dump_dir, color_file),
-                cst.RASTER_COLOR_IMG,
-                aux_filled_image,
-                nodata=color_no_data_value,
-                dtype=descriptor.profile.get("dtype", np.float32),
-                cars_ds_name="filled_color",
-            )
+        self.orchestrator.add_to_save_lists(
+            os.path.join(dump_dir, color_file),
+            cst.RASTER_COLOR_IMG,
+            aux_filled_image,
+            nodata=color_no_data_value,
+            dtype=color_dtype,
+            cars_ds_name="filled_color",
+        )
 
         if classif_file is not None:
-            with rio.open(classification_not_filled_file, "r") as descriptor:
-                classification_no_data_value = descriptor.nodata
+            if os.path.exists(classification_not_filled_file):
+                with rio.open(
+                    classification_not_filled_file, "r"
+                ) as descriptor:
+                    classification_no_data_value = descriptor.nodata
+                    classif_dtype = descriptor.profile.get("dtype", np.uint8)
 
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(dump_dir, classif_file),
-                    cst.RASTER_CLASSIF,
-                    aux_filled_image,
-                    dtype=descriptor.profile.get("dtype", np.uint8),
-                    nodata=classification_no_data_value,
-                    cars_ds_name="filled_classification",
-                )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(dump_dir, classif_file),
+                cst.RASTER_CLASSIF,
+                aux_filled_image,
+                dtype=classif_dtype,
+                nodata=classification_no_data_value,
+                cars_ds_name="filled_classification",
+            )
 
         # Get saving infos in order to save tiles when they are computed
         [saving_info] = self.orchestrator.get_saving_infos([aux_filled_image])
@@ -400,34 +410,72 @@ def filling_from_sensor_wrapper(
     with rio.open(dsm_file) as dsm_image:
         alt_values = dsm_image.read(1, window=rio_window)
         target_mask = dsm_image.read_masks(1, window=rio_window)
+        dsm_profile = dsm_image.profile
 
     nodata_color = None
     nodata_classif = None
 
-    with rio.open(color_file) as color_image:
-        profile = color_image.profile
-        nodata_color = color_image.nodata
+    if os.path.exists(color_file):
+        with rio.open(color_file) as color_image:
+            profile = color_image.profile
+            nodata_color = color_image.nodata
 
-        number_of_color_bands = color_image.count
+            number_of_color_bands = color_image.count
+            color_band_names = list(color_image.descriptions)
 
-        color_values = color_image.read(window=rio_window)
+            color_values = color_image.read(window=rio_window)
 
-        if mode == "fill_nan":
-            target_mask = target_mask & ~color_image.read_masks(
-                1, window=rio_window
-            )
+            if mode == "fill_nan":
+                target_mask = target_mask & ~color_image.read_masks(
+                    1, window=rio_window
+                )
+    else:
+        profile = dsm_profile
+        number_of_color_bands = inputs.rasterio_get_nb_bands(
+            sensor_inputs[list(sensor_inputs.keys())[0]].get("color", None)
+        )
+        color_values = np.full(
+            (number_of_color_bands, *target_mask.shape), np.nan
+        )
+        color_band_names = inputs.get_descriptions_bands(
+            sensor_inputs[list(sensor_inputs.keys())[0]].get("color", None)
+        )
+        # update profile
+        profile.update(count=number_of_color_bands)
 
     number_of_classification_bands = 0
     classification_values = None
     classification_band_names = None
     if classification_file is not None:
-        with rio.open(classification_file) as classification_image:
-            nodata_classif = None
+        if os.path.exists(classification_file):
+            with rio.open(classification_file) as classification_image:
+                nodata_classif = None
 
-            number_of_classification_bands = classification_image.count
+                number_of_classification_bands = classification_image.count
 
-            classification_values = classification_image.read(window=rio_window)
-            classification_band_names = list(classification_image.descriptions)
+                classification_values = classification_image.read(
+                    window=rio_window
+                )
+                classification_band_names = list(
+                    classification_image.descriptions
+                )
+        else:
+            profile = dsm_profile
+            number_of_classification_bands = inputs.rasterio_get_nb_bands(
+                sensor_inputs[list(sensor_inputs.keys())[0]].get(
+                    "classification", None
+                )
+            )
+            classification_values = np.full(
+                (number_of_classification_bands, *target_mask.shape), np.nan
+            )
+            classification_band_names = inputs.get_descriptions_bands(
+                sensor_inputs[list(sensor_inputs.keys())[0]].get(
+                    "classification", None
+                )
+            )
+            # update profile
+            profile.update(count=number_of_classification_bands)
 
     # 1D index list from target mask
     index_1d = target_mask.flatten().nonzero()[0]
@@ -483,19 +531,23 @@ def filling_from_sensor_wrapper(
     values = {}
     coords = {cst.ROW: row_arr, cst.COL: col_arr}
 
-    band_names = ["R", "G", "B", "NIR"]
+    if len(color_band_names) == 0 or None in color_band_names:
+        color_band_names = [
+            str(current_band) for current_band in range(number_of_color_bands)
+        ]
+
     values[cst.RASTER_COLOR_IMG] = (
         [cst.BAND_IM, cst.ROW, cst.COL],
         color_values,
     )
-    coords[cst.BAND_IM] = band_names[:number_of_color_bands]
+    coords[cst.BAND_IM] = list(color_band_names)
 
     if classification_values is not None:
         values[cst.RASTER_CLASSIF] = (
             [cst.BAND_CLASSIF, cst.ROW, cst.COL],
             classification_values,
         )
-        coords[cst.BAND_CLASSIF] = classification_band_names
+        coords[cst.BAND_CLASSIF] = list(classification_band_names)
 
     attributes = {}
 

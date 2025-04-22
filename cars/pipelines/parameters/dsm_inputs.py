@@ -172,7 +172,7 @@ def check_dsm_inputs(conf, config_json_dir=None):
         ][dsm_key].get("performance_map", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_SOURCE_PC] = conf[
             dsm_cst.DSMS
-        ][dsm_key].get("source_pc", None)
+        ][dsm_key].get("contributing_pair", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_FILLING] = conf[
             dsm_cst.DSMS
         ][dsm_key].get("filling", None)
@@ -277,45 +277,6 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             )
 
 
-def get_optimal_tile_size(
-    max_ram_per_worker,
-    global_bounds,
-    resolution=0.5,
-):
-    """
-    Get the optimal tile size to use, depending on memory available
-
-    :param max_ram_per_worker: maximum ram available
-    :type max_ram_per_worker: int
-    :param global_bounds: bounds of the final dsm
-    :type global_bounds: list
-    :param resolution: resolution
-    :type resolution: float
-
-    :return: optimal tile size in meter
-    :rtype: float
-
-    """
-
-    tot_height = 7000 * (global_bounds[3] - global_bounds[1]) / resolution
-    tot_width = 7000 * (global_bounds[2] - global_bounds[0]) / resolution
-
-    import_ = 200  # MiB
-    tile_size_height = int(
-        np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot_height)
-    )
-    tile_size_width = int(
-        np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot_width)
-    )
-
-    logging.info(
-        "Estimated optimal tile size for dsms_merging: {} meters".format(
-            (tile_size_height, tile_size_width)
-        )
-    )
-    return tile_size_height, tile_size_width
-
-
 def check_phasing(dsm_dict):
     """
     Check if the dsm are phased, and if resolution and epsg code are equivalent
@@ -370,6 +331,7 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
     dict_path,
     orchestrator,
     roi_poly,
+    terrain_tile_size,
     dump_dir=None,
     dsm_file_name=None,
     color_file_name=None,
@@ -386,6 +348,8 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
     :param dict_path: path of all variables from all dsms
     :type dict_path: dict
     :param orchestrator: orchestrator used
+    :param terrain_tile_size: tile size to use
+    :type terrain_tile_size: int
     :param dump_dir: output path
     :type dump_dir: str
     :param dsm_file_name: name of the dsm output file
@@ -457,19 +421,14 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
 
     # Tiling of the dataset
     [xmin, ymin, xmax, ymax] = global_bounds
-    terrain_tile_height, terrain_tile_width = get_optimal_tile_size(
-        orchestrator.cluster.checked_conf_cluster["max_ram_per_worker"],
-        global_bounds,
-        resolution[1],
-    )
 
     terrain_raster.tiling_grid = tiling.generate_tiling_grid(
         xmin,
         ymin,
         xmax,
         ymax,
-        terrain_tile_height,
-        terrain_tile_width,
+        terrain_tile_size,
+        terrain_tile_size,
     )
 
     xsize, ysize = tiling.roi_to_start_and_size(global_bounds, resolution[1])[
@@ -500,6 +459,20 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
             "no_data": dsm_nodata,
         }
     )
+
+    # Get sources pc
+    full_sources_band_descriptions = None
+    if cst.DSM_SOURCE_PC in list(dict_path.keys()):
+        full_sources_band_descriptions = []
+        for source_pc in dict_path[cst.DSM_SOURCE_PC]:
+            full_sources_band_descriptions += list(
+                inputs.get_descriptions_bands(source_pc)
+            )
+
+        # remove copies
+        full_sources_band_descriptions = list(
+            dict.fromkeys(full_sources_band_descriptions)
+        )
 
     # Setup dump directory
     if dump_dir is not None:
@@ -556,6 +529,11 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
         )
 
     [saving_info] = orchestrator.get_saving_infos([terrain_raster])
+    logging.info(
+        "Merge DSM info in {} x {} tiles".format(
+            terrain_raster.shape[0], terrain_raster.shape[1]
+        )
+    )
     for col in range(terrain_raster.shape[1]):
         for row in range(terrain_raster.shape[0]):
             # update saving infos for potential replacement
@@ -572,6 +550,7 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
                 resolution,
                 raster_profile,
                 full_saving_info,
+                full_sources_band_descriptions,
             )
 
     return terrain_raster
@@ -583,6 +562,7 @@ def dsm_merging_wrapper(  # noqa C901
     resolution,
     profile,
     saving_info=None,
+    full_sources_band_descriptions=None,
 ):
     """
     Merge all the variables
@@ -647,40 +627,46 @@ def dsm_merging_wrapper(  # noqa C901
             method = "basic"
 
         # take band description information
-        band_description = inputs.get_descriptions_bands(dict_path[key][0])
-
-        if band_description[0] is not None:
-            if len(band_description) == 1:
-                band_description = np.array([band_description[0]])
-            elif key != cst.DSM_CLASSIF:
-                band_description = np.array([band_description])
-            else:
-                band_description = list(band_description)
+        band_descriptions = list(
+            inputs.get_descriptions_bands(dict_path[key][0])
+        )
+        nb_bands = inputs.rasterio_get_nb_bands(dict_path[key][0])
+        if len(band_descriptions) == 0:
+            band_descriptions = []
+        elif (
+            key
+            in [
+                cst.DSM_COLOR,
+                cst.DSM_SOURCE_PC,
+                cst.DSM_CLASSIF,
+                cst.DSM_FILLING,
+            ]
+            and None in band_descriptions
+        ):
+            band_descriptions = [
+                str(current_band) for current_band in range(nb_bands)
+            ]
 
         # Define the dimension of the data in the dataset
         if key == cst.DSM_COLOR:
-            if len(band_description) == 3:
-                band_description = ["R", "G", "B"]
-            else:
-                band_description = ["R", "G", "B", "N"]
-            dataset.coords[cst.BAND_IM] = (cst.BAND_IM, band_description)
+            dataset.coords[cst.BAND_IM] = (cst.BAND_IM, band_descriptions)
             dim = [cst.BAND_IM, cst.Y, cst.X]
         elif key == cst.DSM_SOURCE_PC:
             dataset.coords[cst.BAND_SOURCE_PC] = (
                 cst.BAND_SOURCE_PC,
-                band_description,
+                full_sources_band_descriptions,
             )
             dim = [cst.BAND_SOURCE_PC, cst.Y, cst.X]
         elif key == cst.DSM_CLASSIF:
             dataset.coords[cst.BAND_CLASSIF] = (
                 cst.BAND_CLASSIF,
-                band_description,
+                band_descriptions,
             )
             dim = [cst.BAND_CLASSIF, cst.Y, cst.X]
         elif key == cst.DSM_FILLING:
             dataset.coords[cst.BAND_FILLING] = (
                 cst.BAND_FILLING,
-                band_description,
+                band_descriptions,
             )
             dim = [cst.BAND_FILLING, cst.Y, cst.X]
         else:
@@ -688,7 +674,7 @@ def dsm_merging_wrapper(  # noqa C901
 
         # Update data
         if key == cst.DSM_ALT:
-            # Update dsm_value et weights once
+            # Update dsm_value and weights once
             value, weights = assemblage(
                 dict_path[key],
                 dict_path[cst.DSM_WEIGHTS_SUM],
@@ -697,11 +683,24 @@ def dsm_merging_wrapper(  # noqa C901
                 tile_bounds,
                 height,
                 width,
-                band_description,
+                band_descriptions,
             )
 
             dataset[key] = (dim, value)
             dataset[cst.DSM_WEIGHTS_SUM] = (dim, weights)
+        elif key == cst.DSM_SOURCE_PC:
+            value, _ = assemblage(
+                dict_path[key],
+                dict_path[cst.DSM_WEIGHTS_SUM],
+                method,
+                list_intersection,
+                tile_bounds,
+                height,
+                width,
+                full_sources_band_descriptions,
+                merge_sources=True,
+            )
+            dataset[key] = (dim, value)
         elif key != cst.DSM_WEIGHTS_SUM:
             # Update other variables
             value, _ = assemblage(
@@ -712,10 +711,19 @@ def dsm_merging_wrapper(  # noqa C901
                 tile_bounds,
                 height,
                 width,
-                band_description,
+                band_descriptions,
             )
 
             dataset[key] = (dim, value)
+
+        # add performance map classes
+        if key == cst.DSM_PERFORMANCE_MAP:
+            perf_map_classes = inputs.rasterio_get_tags(dict_path[key][0])[
+                "CLASSES"
+            ]
+            dataset.attrs[cst.RIO_TAG_PERFORMANCE_MAP_CLASSES] = (
+                perf_map_classes
+            )
 
     # Define the tile transform
     bounds = [tile_bounds[0], tile_bounds[2], tile_bounds[1], tile_bounds[3]]
@@ -756,7 +764,8 @@ def assemblage(
     tile_bounds,
     height,
     width,
-    band_description=None,
+    band_descriptions=None,
+    merge_sources=False,
 ):
     """
     Update data
@@ -773,17 +782,22 @@ def assemblage(
     :type height: int
     :param width: the width of the tile
     :type width: int
-    :param band_description: the band description of the data
-    :type band_description: str of list
+    :param band_descriptions: the band description of the data
+    :type band_descriptions: str of list
+    :param merge_sources: merge source pc, using full band_description
+    :type merge_sources: bool
 
     """
     # Initialize the tile
-    nb_bands = inputs.rasterio_get_nb_bands(out[0])
+    if merge_sources:
+        nb_bands = len(band_descriptions)
+    else:
+        nb_bands = inputs.rasterio_get_nb_bands(out[0])
 
     dtype = inputs.rasterio_get_dtype(out[0])
     nodata = inputs.rasterio_get_nodata(out[0])
 
-    if band_description[0] is not None:
+    if band_descriptions[0] is not None:
         tile = np.full((nb_bands, height, width), nodata, dtype=dtype)
     else:
         tile = np.full((height, width), nodata, dtype=dtype)
@@ -803,12 +817,22 @@ def assemblage(
                 )
 
                 # Extract the data
-                if band_description[0] is not None:
+                current_nb_bands = src.count
+                if current_nb_bands > 1:
                     data = src.read(window=window)
                     _, rows, cols = data.shape
                 else:
                     data = src.read(1, window=window)
                     rows, cols = data.shape
+
+                indexes = list(range(current_nb_bands))
+                if merge_sources:
+                    # Extract current band description
+                    current_band_descriptions = list(src.descriptions)
+                    # Get position
+                    indexes = []
+                    for current_band in current_band_descriptions:
+                        indexes.append(band_descriptions.index(current_band))
 
                 current_weights_window = drt.read(1, window=window)
 
@@ -828,40 +852,36 @@ def assemblage(
 
                     tab_y = np.arange(y_offset, y_offset + rows)
 
-                    ind_y, ind_x = np.ix_(tab_y, tab_x)  # pylint: disable=W0632
-
-                    if rows == 1:
-                        ind_y = np.full_like(ind_x, tab_y[0])
-
                     # Update data
-                    if band_description[0] is not None:
-                        tile[:, ind_y, ind_x] = np.reshape(
+                    if band_descriptions[0] is not None:
+
+                        tile[np.ix_(indexes, tab_y, tab_x)] = np.reshape(
                             update_data(
-                                tile[:, ind_y, ind_x],
+                                tile[np.ix_(indexes, tab_y, tab_x)],
                                 data,
                                 current_weights_window,
-                                weights[ind_y, ind_x],
+                                weights[np.ix_(tab_y, tab_x)],
                                 nodata,
                                 method=method,
                             ),
-                            tile[:, ind_y, ind_x].shape,
+                            tile[np.ix_(indexes, tab_y, tab_x)].shape,
                         )
                     else:
-                        tile[ind_y, ind_x] = np.reshape(
+                        tile[np.ix_(tab_y, tab_x)] = np.reshape(
                             update_data(
-                                tile[ind_y, ind_x],
+                                tile[np.ix_(tab_y, tab_x)],
                                 data,
                                 current_weights_window,
-                                weights[ind_y, ind_x],
+                                weights[np.ix_(tab_y, tab_x)],
                                 nodata,
                                 method=method,
                             ),
-                            tile[ind_y, ind_x].shape,
+                            tile[np.ix_(tab_y, tab_x)].shape,
                         )
 
                     # Update weights
-                    weights[ind_y, ind_x] = update_weights(
-                        weights[ind_y, ind_x], current_weights_window
+                    weights[np.ix_(tab_y, tab_x)] = update_weights(
+                        weights[np.ix_(tab_y, tab_x)], current_weights_window
                     )
 
     return tile, weights

@@ -941,6 +941,11 @@ The structure follows this organization:
               - bool
               - False
               - No
+            * - dsm_merging_tile_size
+              - Tile size to use in dsms merging
+              - int
+              - 4000
+              - No
             * - performance_map_classes
               - List defining interval: [a,b,c,d] generates [[a,b],[b,c],[c,d]] intervals used in the performance map classification. If null, raw performance map is given
               - list or None

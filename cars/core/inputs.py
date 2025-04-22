@@ -156,6 +156,17 @@ def rasterio_get_nb_bands(raster_file: str) -> int:
         return descriptor.count
 
 
+def rasterio_get_tags(raster_file: str) -> dict:
+    """
+    Get the tags in an image file
+
+    :param raster_file: Image file
+    :return: The metadata
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        return descriptor.tags()
+
+
 def rasterio_get_image_type(raster_file: str) -> list:
     """
     Get the image type

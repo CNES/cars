@@ -27,7 +27,7 @@ import os
 
 import numpy as np
 import rasterio as rio
-from json_checker import Checker, OptionalKey, Or
+from json_checker import And, Checker, OptionalKey, Or
 
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import depth_map_inputs
@@ -67,6 +67,9 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     overloaded_conf[adv_cst.PHASING] = conf.get(adv_cst.PHASING, None)
 
     overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, False)
+    overloaded_conf[adv_cst.DSM_MERGING_TILE_SIZE] = conf.get(
+        adv_cst.DSM_MERGING_TILE_SIZE, 4000
+    )
 
     # default classes, in meters:
     default_performance_classes = [
@@ -163,6 +166,7 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.PERFORMANCE_MAP_CLASSES: Or(None, list),
         adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
         adv_cst.PIPELINE: str,
+        adv_cst.DSM_MERGING_TILE_SIZE: And(int, lambda x: x > 0),
     }
     if check_epipolar_a_priori:
         schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool
