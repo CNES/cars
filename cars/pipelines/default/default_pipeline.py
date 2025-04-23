@@ -2499,6 +2499,19 @@ class DefaultPipeline(PipelineTemplate):
                 else None
             )
 
+            filling_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "filling.tif",
+                )
+                if self.save_output_dsm
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_FILLING
+                ]
+                else None
+            )
+
         if not hasattr(self, "list_intersection_poly"):
             if (
                 self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
@@ -2560,27 +2573,6 @@ class DefaultPipeline(PipelineTemplate):
             else:
                 self.list_intersection_poly = None
 
-
-        _ = self.dsm_filling_application.run(
-            orchestrator=self.cars_orchestrator,
-            # path to initial elevation file via geom plugin
-            initial_elevation=self.geom_plugin_with_dem_and_geoid,
-            dsm_path=dsm_file_name,
-            roi_polys=self.list_intersection_poly,
-            filling_file_name = (
-                os.path.join(
-                    self.out_dir,
-                    out_cst.DSM_DIRECTORY,
-                    "filling.tif",
-                )
-                if self.save_output_dsm
-                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_FILLING
-                ]
-                else None
-            )
-        )
-
         _ = self.dsm_filling_1_application.run(
             dsm_file=dsm_file_name,
             classif_file=classif_file_name,
@@ -2603,9 +2595,7 @@ class DefaultPipeline(PipelineTemplate):
             classif_file=classif_file_name,
             filling_file=filling_file_name,
             dump_dir=dsm_filling_2_dump_dir,
-            roi_polys=(
-                self.list_intersection_poly if self.compute_depth_map else None
-            ),
+            roi_polys=self.list_intersection_poly,
             roi_epsg=self.epsg,
             orchestrator=self.cars_orchestrator,
         )
@@ -2638,9 +2628,7 @@ class DefaultPipeline(PipelineTemplate):
             filling_file=filling_file_name,
             dtm_file=dtm_file_name,
             dump_dir=dsm_filling_3_dump_dir,
-            roi_polys=(
-                self.list_intersection_poly if self.compute_depth_map else None
-            ),
+            roi_polys=self.list_intersection_poly,
             roi_epsg=self.epsg,
         )
 
