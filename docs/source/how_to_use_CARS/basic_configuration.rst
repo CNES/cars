@@ -596,7 +596,7 @@ The structure follows this organization:
                 "orchestrator":
                 {
                     "mode" : "sequential",
-                    "profiling" : {},
+                    "profiling" : {}
                 }
             }
 

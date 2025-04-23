@@ -29,7 +29,7 @@ We recommend to use a `virtualenv`_ environment, so that :term:`CARS` do not int
 
 .. code-block:: console
 
-    make install-dev # CARS installed in ``venv`` virtualenv
+    make install/dev # CARS installed in ``venv`` virtualenv
 
 * Run CARS in `virtualenv`_
 

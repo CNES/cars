@@ -120,13 +120,11 @@ The structure follows this organization:
 
                 Compute keypoints matches on pair images
 
-                **Configuration**
+                **Common parameters**
 
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | Name                                 | Description                                                                                    | Type        | Available value        | Default value | Required |
                 +======================================+================================================================================================+=============+========================+===============+==========+
-                | method                               | Method for sparse matching                                                                     | string      | "sift", "pandora"      | "sift"        | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                       | float       |                        | 0.02          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0          | 10.0          | No       |
@@ -161,8 +159,6 @@ The structure follows this organization:
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-------------------------------------------+----------+
                 | Name                                 | Description                                                                                    | Type        | Available value        | Default value                             | Required |
                 +======================================+================================================================================================+=============+========================+===========================================+==========+
-                | disparity_outliers_rejection_percent | Percentage of outliers to reject                                                               | float       | between 0 and 1        | 0.1                                       | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-------------------------------------------+----------+
                 | sift_matching_threshold              | Threshold for the ratio to nearest second match                                                | float       | should be > 0          | 0.7                                       | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-------------------------------------------+----------+
                 | sift_n_octave                        | The number of octaves of the Difference of Gaussians scale space                               | int         | should be > 0          | 8                                         | No       |
@@ -207,15 +203,13 @@ The structure follows this organization:
 
                 .. warning::
 
-                    There is a particular case with the *sparse_matching* application because it can be called twice.
-                    So you can configure the application twice , once for the *sift*, the other for *pandora* method.
                     Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
                     those two applications with :
 
-                    *sparse_matching.sift*
-                    *sparse_matching.pandora*
+                    * *sparse_matching.sift*
+                    * *sparse_matching.pandora*
 
-                    Each one is associated to a particular *sparse_matching* method*
+                    Each one is associated to a particular *sparse_matching* method.
                     Therefore, is it not possible to use the key *sparse_matching* and to select the method.
 
 
