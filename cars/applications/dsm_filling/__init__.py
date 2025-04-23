@@ -23,5 +23,6 @@ CARS dsm filling module init file
 """
 # flake8: noqa: F401
 
-import cars.applications.dsm_filling.dsm_filling
-from cars.applications.dsm_filling.bulldozer_filling import BulldozerFilling
+from cars.applications.dsm_filling.dsm_filling import DsmFilling
+
+from . import border_interpolation, bulldozer_filling, exogenous_filling

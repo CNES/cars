@@ -594,8 +594,17 @@ def create_combined_dense_cloud(  # noqa: C901
             nb_points, flatten_cloud, crop_terrain_tile_data_msk
         )
 
-        # Remove points with nan values
-        flatten_cloud = flatten_cloud[~np.any(np.isnan(flatten_cloud), axis=1)]
+        # Remove points with nan values on X, Y or Z
+        xyz_indexes = np.array(
+            [
+                cloud_indexes.index(cst.X),
+                cloud_indexes.index(cst.Y),
+                cloud_indexes.index(cst.Z),
+            ]
+        )
+        flatten_cloud = flatten_cloud[
+            ~np.any(np.isnan(flatten_cloud[:, xyz_indexes]), axis=1)
+        ]
 
         # Add current cloud to the combined one
         combined_cloud = np.concatenate([combined_cloud, flatten_cloud], axis=0)

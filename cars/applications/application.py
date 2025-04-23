@@ -70,7 +70,6 @@ class Application:
         :param cfg: configuration {'matching_cost_method': value}
         :type cfg: dictionary
         """
-
         app = None
 
         try:

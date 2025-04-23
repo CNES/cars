@@ -167,7 +167,7 @@ class AuxiliaryFillingFromSensors(
         # Default orchestrator
         if orchestrator is None:
             # Create default sequential orchestrator for current application
-            # be awere, no out_json will be shared between orchestrators
+            # be aware, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(
                 orchestrator_conf={"mode": "sequential"}

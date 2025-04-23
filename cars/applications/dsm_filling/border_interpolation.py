@@ -19,18 +19,17 @@
 # limitations under the License.
 #
 """
-This module contains the bulldozer dsm filling application class.
+This module contains the border interpolation dsm filling application class.
 """
 
-import contextlib
 import logging
 import os
 import shutil
 
 import numpy as np
 import rasterio as rio
-import yaml
-from bulldozer.pipeline.bulldozer_pipeline import dsm_to_dtm
+import scipy
+import skimage
 from json_checker import Checker, Or
 from shapely import Polygon
 
@@ -39,14 +38,14 @@ from cars.core import inputs, projection
 from .dsm_filling import DsmFilling
 
 
-class BulldozerFilling(DsmFilling, short_name="bulldozer"):
+class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
     """
-    Bulldozer filling
+    Border interpolation
     """
 
     def __init__(self, conf=None):
         """
-        Init function of BulldozerFilling
+        Init function of BorderInterpolation
 
         :param conf: configuration for BulldozerFilling
         :return: an application_to_use object
@@ -57,6 +56,9 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         self.used_method = self.used_config["method"]
         self.activated = self.used_config["activated"]
         self.classification = self.used_config["classification"]
+        self.component_min_size = self.used_config["component_min_size"]
+        self.border_size = self.used_config["border_size"]
+        self.percentile = self.used_config["percentile"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
     def check_conf(self, conf):
@@ -72,6 +74,11 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["classification"] = conf.get("classification", None)
+        overloaded_conf["component_min_size"] = conf.get(
+            "component_min_size", 5
+        )
+        overloaded_conf["border_size"] = conf.get("border_size", 10)
+        overloaded_conf["percentile"] = conf.get("percentile", 10)
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -80,6 +87,9 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             "method": str,
             "activated": bool,
             "classification": Or(None, [str]),
+            "component_min_size": int,
+            "border_size": int,
+            "percentile": Or(int, float),
             "save_intermediate_data": bool,
         }
 
@@ -94,10 +104,10 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         dsm_file,
         classif_file,
         filling_file,
+        dtm_file,
         dump_dir,
         roi_polys,
         roi_epsg,
-        orchestrator,
     ):
         """
         Run dsm filling using initial elevation and the current dsm
@@ -111,10 +121,13 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         """
 
         if not self.activated:
-            return None
+            return
 
         if self.classification is None:
             self.classification = ["nodata"]
+            logging.error(
+                "Filling method 'border_interpolation' needs a classification"
+            )
 
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
@@ -122,37 +135,13 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
         new_dsm_path = os.path.join(dump_dir, "dsm_filled.tif")
 
-        # create the config for the bulldozer execution
-        bull_conf_path = os.path.join(
-            os.path.dirname(__file__), "bulldozer_config/base_config.yaml"
-        )
-        with open(bull_conf_path, "r", encoding="utf8") as bull_conf_file:
-            bull_conf = yaml.safe_load(bull_conf_file)
-
-        bull_conf["dsm_path"] = dsm_file
-        bull_conf["output_dir"] = os.path.join(dump_dir, "bulldozer")
-
-        if orchestrator is not None:
-            if (
-                orchestrator.get_conf()["mode"] == "multiprocessing"
-                or orchestrator.get_conf()["mode"] == "local_dask"
-            ):
-                bull_conf["nb_max_workers"] = orchestrator.get_conf()[
-                    "nb_workers"
-                ]
-
-        bull_conf_path = os.path.join(dump_dir, "bulldozer_config.yaml")
-        with open(bull_conf_path, "w", encoding="utf8") as bull_conf_file:
-            yaml.dump(bull_conf, bull_conf_file)
-
-        dtm_path = os.path.join(bull_conf["output_dir"], "dtm.tif")
-
         # get dsm to be filled and its metadata
         with rio.open(dsm_file) as in_dsm:
             dsm = in_dsm.read(1)
             dsm_tr = in_dsm.transform
             dsm_crs = in_dsm.crs
             dsm_meta = in_dsm.meta
+            dsm_nodata = in_dsm.nodata
 
         roi_raster = np.ones(dsm.shape)
 
@@ -176,34 +165,22 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 [roi_poly_outepsg], out_shape=roi_raster.shape, transform=dsm_tr
             )
 
-        try:
-            try:
-                # suppress prints in bulldozer by redirecting stdout&stderr
-                with open(os.devnull, "w", encoding="utf8") as devnull:
-                    with (
-                        contextlib.redirect_stdout(devnull),
-                        contextlib.redirect_stderr(devnull),
-                    ):
-                        dsm_to_dtm(bull_conf_path)
-            except Exception:
-                logging.info(
-                    "Bulldozer failed on its first execution. Retrying"
-                )
-                # suppress prints in bulldozer by redirecting stdout&stderr
-                with open(os.devnull, "w", encoding="utf8") as devnull:
-                    with (
-                        contextlib.redirect_stdout(devnull),
-                        contextlib.redirect_stderr(devnull),
-                    ):
-                        dsm_to_dtm(bull_conf_path)
-        except Exception:
-            logging.error(
-                "Bulldozer failed on its second execution."
-                + " The DSM could not be filled."
+        # get dtm to fill the dsm
+        if dtm_file is not None:
+            logging.info(
+                "Use DTM file {} for border interpolation".format(dtm_file)
             )
-            return None
-        with rio.open(dtm_path) as in_dtm:
-            dtm = in_dtm.read(1)
+            with rio.open(dtm_file) as in_dtm:
+                dtm = in_dtm.read(1)
+                dtm_nodata = in_dtm.nodata
+        else:
+            logging.info(
+                "No DTM provided : DSM {} will be used for "
+                "border interpolation".format(dsm_file)
+            )
+            dtm = dsm.copy()
+            dtm_nodata = dsm_nodata
+        dtm[dtm == dtm_nodata] = np.nan
 
         if self.save_intermediate_data:
             with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
@@ -222,24 +199,48 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                     classif_msk = in_classif.read_masks(1)
                 classif[classif_msk == 0] = 0
                 filling_mask = np.logical_and(classif, roi_raster > 0)
-            elif label == "nodata":
-                if classif_file is not None:
-                    with rio.open(classif_file) as in_classif:
-                        classif_msk = in_classif.read_masks(1)
-                    classif = ~classif_msk
-                else:
-                    with rio.open(dsm_file) as in_dsm:
-                        dsm_msk = in_dsm.read_masks(1)
-                    classif = ~dsm_msk
-                filling_mask = np.logical_and(classif, roi_raster > 0)
             else:
                 logging.error(
                     "Label {} not found in classification "
                     "descriptions {}".format(label, classif_descriptions)
                 )
                 continue
-            logging.info("Filling of {} with Bulldozer DTM".format(label))
-            dsm[filling_mask] = dtm[filling_mask]
+            logging.info(
+                "Filling of {} with Bulldozer DTM using "
+                "border interpolation".format(label)
+            )
+            filling_mask[classif_msk == 0] = 0
+            filling_mask = skimage.morphology.binary_opening(
+                filling_mask,
+                footprint=[
+                    (np.ones((self.component_min_size, 1)), 1),
+                    (np.ones((1, self.component_min_size)), 1),
+                ],
+            )
+            features, num_features = scipy.ndimage.label(filling_mask)
+            logging.info("Filling of {} features".format(num_features))
+            features_boundaries = skimage.morphology.dilation(
+                features,
+                footprint=[
+                    (np.ones((self.border_size, 1)), 1),
+                    (np.ones((1, self.border_size)), 1),
+                ],
+            )
+            features_boundaries[filling_mask] = 0
+            borders_file_path = os.path.join(
+                dump_dir, "borders_of_{}.tif".format(label)
+            )
+            if self.save_intermediate_data:
+                with rio.open(
+                    borders_file_path, "w", **dsm_meta
+                ) as out_borders:
+                    out_borders.write(features_boundaries, 1)
+            for feature_id in range(1, num_features + 1):
+                altitude = np.nanpercentile(
+                    dtm[features_boundaries == feature_id], self.percentile
+                )
+                if altitude is not None:
+                    dsm[features == feature_id] = altitude
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
         with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
@@ -254,10 +255,9 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 bands_desc = [src.descriptions[i] for i in range(src.count)]
             fill_meta["count"] += 1
             bands.append(combined_mask.astype(np.uint8))
-            bands_desc.append("bulldozer")
+            bands_desc.append("border_interpolation")
 
             with rio.open(filling_file, "w", **fill_meta) as out:
                 for i, band in enumerate(bands):
                     out.write(band, i + 1)
                     out.set_band_description(i + 1, bands_desc[i])
-        return dtm_path

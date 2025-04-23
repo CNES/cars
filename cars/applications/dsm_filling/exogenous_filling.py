@@ -19,19 +19,18 @@
 # limitations under the License.
 #
 """
-This module contains the bulldozer dsm filling application class.
+This module contains the exogenous dsm filling application class.
 """
 
-import contextlib
 import logging
 import os
 import shutil
 
 import numpy as np
 import rasterio as rio
-import yaml
-from bulldozer.pipeline.bulldozer_pipeline import dsm_to_dtm
 from json_checker import Checker, Or
+from rasterio.enums import Resampling
+from rasterio.warp import reproject
 from shapely import Polygon
 
 from cars.core import inputs, projection
@@ -39,16 +38,16 @@ from cars.core import inputs, projection
 from .dsm_filling import DsmFilling
 
 
-class BulldozerFilling(DsmFilling, short_name="bulldozer"):
+class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
     """
-    Bulldozer filling
+    Exogenous filling
     """
 
     def __init__(self, conf=None):
         """
-        Init function of BulldozerFilling
+        Init function of ExogenousFilling
 
-        :param conf: configuration for BulldozerFilling
+        :param conf: configuration for ExogenousFilling
         :return: an application_to_use object
         """
         super().__init__(conf=conf)
@@ -57,6 +56,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         self.used_method = self.used_config["method"]
         self.activated = self.used_config["activated"]
         self.classification = self.used_config["classification"]
+        self.fill_with_geoid = self.used_config["fill_with_geoid"]
+        self.interpolation_method = self.used_config["interpolation_method"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
     def check_conf(self, conf):
@@ -72,6 +73,18 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["classification"] = conf.get("classification", None)
+        overloaded_conf["fill_with_geoid"] = conf.get("fill_with_geoid", None)
+        overloaded_conf["interpolation_method"] = conf.get(
+            "interpolation_method", "bilinear"
+        )
+
+        if overloaded_conf["interpolation_method"] not in ["bilinear", "cubic"]:
+            raise RuntimeError(
+                "Invalid interpolation method"
+                f"{overloaded_conf['interpolation_method']}, "
+                "supported modes are bilinear and cubic."
+            )
+
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -80,6 +93,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             "method": str,
             "activated": bool,
             "classification": Or(None, [str]),
+            "fill_with_geoid": Or(None, [str]),
+            "interpolation_method": str,
             "save_intermediate_data": bool,
         }
 
@@ -97,7 +112,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         dump_dir,
         roi_polys,
         roi_epsg,
-        orchestrator,
+        output_geoid,
+        geom_plugin,
     ):
         """
         Run dsm filling using initial elevation and the current dsm
@@ -111,41 +127,33 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         """
 
         if not self.activated:
-            return None
+            return
 
         if self.classification is None:
             self.classification = ["nodata"]
+
+        if self.fill_with_geoid is None:
+            self.fill_with_geoid = []
+
+        interpolation_methods_dict = {
+            "bilinear": Resampling.bilinear,
+            "cubic": Resampling.cubic,
+        }
+        interpolation_method = interpolation_methods_dict.get(
+            self.interpolation_method, Resampling.bilinear
+        )
+
+        if geom_plugin is None:
+            logging.error(
+                "No DEM was provided, exogenous_filling will not run."
+            )
+            return
 
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
 
         old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
         new_dsm_path = os.path.join(dump_dir, "dsm_filled.tif")
-
-        # create the config for the bulldozer execution
-        bull_conf_path = os.path.join(
-            os.path.dirname(__file__), "bulldozer_config/base_config.yaml"
-        )
-        with open(bull_conf_path, "r", encoding="utf8") as bull_conf_file:
-            bull_conf = yaml.safe_load(bull_conf_file)
-
-        bull_conf["dsm_path"] = dsm_file
-        bull_conf["output_dir"] = os.path.join(dump_dir, "bulldozer")
-
-        if orchestrator is not None:
-            if (
-                orchestrator.get_conf()["mode"] == "multiprocessing"
-                or orchestrator.get_conf()["mode"] == "local_dask"
-            ):
-                bull_conf["nb_max_workers"] = orchestrator.get_conf()[
-                    "nb_workers"
-                ]
-
-        bull_conf_path = os.path.join(dump_dir, "bulldozer_config.yaml")
-        with open(bull_conf_path, "w", encoding="utf8") as bull_conf_file:
-            yaml.dump(bull_conf, bull_conf_file)
-
-        dtm_path = os.path.join(bull_conf["output_dir"], "dtm.tif")
 
         # get dsm to be filled and its metadata
         with rio.open(dsm_file) as in_dsm:
@@ -176,44 +184,84 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 [roi_poly_outepsg], out_shape=roi_raster.shape, transform=dsm_tr
             )
 
-        try:
-            try:
-                # suppress prints in bulldozer by redirecting stdout&stderr
-                with open(os.devnull, "w", encoding="utf8") as devnull:
-                    with (
-                        contextlib.redirect_stdout(devnull),
-                        contextlib.redirect_stderr(devnull),
-                    ):
-                        dsm_to_dtm(bull_conf_path)
-            except Exception:
-                logging.info(
-                    "Bulldozer failed on its first execution. Retrying"
-                )
-                # suppress prints in bulldozer by redirecting stdout&stderr
-                with open(os.devnull, "w", encoding="utf8") as devnull:
-                    with (
-                        contextlib.redirect_stdout(devnull),
-                        contextlib.redirect_stderr(devnull),
-                    ):
-                        dsm_to_dtm(bull_conf_path)
-        except Exception:
-            logging.error(
-                "Bulldozer failed on its second execution."
-                + " The DSM could not be filled."
-            )
-            return None
-        with rio.open(dtm_path) as in_dtm:
-            dtm = in_dtm.read(1)
+        # Get the initial elevation
+        with rio.open(geom_plugin.dem) as in_elev:
+            # Reproject the elevation data to match the DSM
+            elev_data = np.empty(dsm.shape, dtype=in_elev.dtypes[0])
 
+            reproject(
+                source=rio.band(in_elev, 1),
+                destination=elev_data,
+                src_transform=in_elev.transform,
+                src_crs=in_elev.crs,
+                dst_transform=dsm_tr,
+                dst_crs=dsm_crs,
+                resampling=interpolation_method,
+            )
+
+        if self.save_intermediate_data:
+            reprojected_dem_path = os.path.join(dump_dir, "reprojected_dem.tif")
+            with rio.open(reprojected_dem_path, "w", **dsm_meta) as out_elev:
+                out_elev.write(elev_data, 1)
+
+        with rio.open(geom_plugin.geoid) as in_geoid:
+            # Reproject the geoid data to match the DSM
+            input_geoid_data = np.empty(dsm.shape, dtype=in_geoid.dtypes[0])
+
+            reproject(
+                source=rio.band(in_geoid, 1),
+                destination=input_geoid_data,
+                src_transform=in_geoid.transform,
+                src_crs=in_geoid.crs,
+                dst_transform=dsm_tr,
+                dst_crs=dsm_crs,
+                resampling=interpolation_method,
+            )
+
+        if self.save_intermediate_data:
+            reprojected_geoid_path = os.path.join(
+                dump_dir, "reprojected_input_geoid.tif"
+            )
+            with rio.open(reprojected_geoid_path, "w", **dsm_meta) as out_geoid:
+                out_geoid.write(input_geoid_data, 1)
+
+        if isinstance(output_geoid, str):
+            with rio.open(output_geoid) as in_geoid:
+                # Reproject the geoid data to match the DSM
+                output_geoid_data = np.empty(
+                    dsm.shape, dtype=in_geoid.dtypes[0]
+                )
+
+                reproject(
+                    source=rio.band(in_geoid, 1),
+                    destination=output_geoid_data,
+                    src_transform=in_geoid.transform,
+                    src_crs=in_geoid.crs,
+                    dst_transform=dsm_tr,
+                    dst_crs=dsm_crs,
+                    resampling=interpolation_method,
+                )
+
+            if self.save_intermediate_data:
+                reprojected_geoid_path = os.path.join(
+                    dump_dir, "reprojected_output_geoid.tif"
+                )
+                with rio.open(
+                    reprojected_geoid_path, "w", **dsm_meta
+                ) as out_geoid:
+                    out_geoid.write(input_geoid_data, 1)
+
+        # Save old dsm
         if self.save_intermediate_data:
             with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
                 out_dsm.write(dsm, 1)
 
+        # Fill DSM for every label
+        combined_mask = np.zeros_like(dsm).astype(np.uint8)
         if classif_file is not None:
             classif_descriptions = inputs.get_descriptions_bands(classif_file)
         else:
             classif_descriptions = []
-        combined_mask = np.zeros_like(dsm).astype(np.uint8)
         for label in self.classification:
             if label in classif_descriptions:
                 index_classif = classif_descriptions.index(label) + 1
@@ -238,8 +286,25 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                     "descriptions {}".format(label, classif_descriptions)
                 )
                 continue
-            logging.info("Filling of {} with Bulldozer DTM".format(label))
-            dsm[filling_mask] = dtm[filling_mask]
+
+            if label in self.fill_with_geoid:
+                logging.info("Filling of {} with geoid".format(label))
+                dsm[filling_mask] = 0
+            else:
+                logging.info("Filling of {} with DEM and geoid".format(label))
+                dsm[filling_mask] = elev_data[filling_mask]
+
+            # apply offset to project on geoid if needed
+            if output_geoid is not True:
+                if isinstance(output_geoid, bool) and output_geoid is False:
+                    # out geoid is ellipsoid: add geoid-ellipsoid distance
+                    dsm[filling_mask] += input_geoid_data[filling_mask]
+                elif isinstance(output_geoid, str):
+                    # out geoid is a new geoid whose path is in output_geoid:
+                    # add carsgeoid-ellipsoid then add ellipsoid-outgeoid
+                    dsm[filling_mask] += input_geoid_data[filling_mask]
+                    dsm[filling_mask] -= output_geoid_data[filling_mask]
+
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
         with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
@@ -253,11 +318,10 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 bands = [src.read(i + 1) for i in range(src.count)]
                 bands_desc = [src.descriptions[i] for i in range(src.count)]
             fill_meta["count"] += 1
-            bands.append(combined_mask.astype(np.uint8))
-            bands_desc.append("bulldozer")
+            bands.append(combined_mask)
+            bands_desc.append("filling_exogenous")
 
             with rio.open(filling_file, "w", **fill_meta) as out:
                 for i, band in enumerate(bands):
                     out.write(band, i + 1)
                     out.set_band_description(i + 1, bands_desc[i])
-        return dtm_path

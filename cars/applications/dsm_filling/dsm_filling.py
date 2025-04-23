@@ -38,7 +38,7 @@ class DsmFilling(ApplicationTemplate, metaclass=ABCMeta):
     available_applications: Dict = {}
     default_application = "bulldozer"
 
-    def __new__(cls, orchestrator=None, conf=None):  # pylint: disable=W0613
+    def __new__(cls, conf=None):  # pylint: disable=W0613
         """
         Return the required application
         :raises:

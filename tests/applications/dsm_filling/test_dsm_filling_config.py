@@ -25,17 +25,56 @@ Test module for config of cars/applications/dsm_filling/bulldozer_filling.py
 # Third party imports
 import pytest
 
-# CARS imports
+from cars.applications.dsm_filling.border_interpolation import (
+    BorderInterpolation,
+)
 from cars.applications.dsm_filling.bulldozer_filling import BulldozerFilling
+
+# CARS imports
+from cars.applications.dsm_filling.exogenous_filling import ExogenousFilling
 
 
 @pytest.mark.unit_tests
-def test_check_full_conf():
+def test_check_full_conf_exogenous_filling():
     """
     Test configuration check for dsm filling application
     """
     conf = {
+        "method": "exogenous_filling",
         "activated": True,
+        "classification": ["cloud", "lake", "sea"],
+        "fill_with_geoid": ["sea"],
+        "save_intermediate_data": False,
+    }
+    _ = ExogenousFilling(conf)
+
+
+@pytest.mark.unit_tests
+def test_check_full_conf_bulldozer_filling():
+    """
+    Test configuration check for dsm filling application
+    """
+    conf = {
+        "method": "bulldozer",
+        "activated": True,
+        "classification": ["cloud", "lake", "sea"],
         "save_intermediate_data": False,
     }
     _ = BulldozerFilling(conf)
+
+
+@pytest.mark.unit_tests
+def test_check_full_conf_border_interpolation():
+    """
+    Test configuration check for dsm filling application
+    """
+    conf = {
+        "method": "border_interpolation",
+        "activated": True,
+        "classification": ["cloud", "lake", "sea"],
+        "component_min_size": 5,
+        "border_size": 10,
+        "percentile": 10,
+        "save_intermediate_data": False,
+    }
+    _ = BorderInterpolation(conf)

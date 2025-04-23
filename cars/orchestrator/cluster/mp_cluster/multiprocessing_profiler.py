@@ -148,7 +148,7 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
         """
         Save plots
         """
-        logging.info("Save profing plots ...")
+        logging.info("Save profiling plots ...")
         try:
             save_data(self.memory_data, self.file_plot)
         except Exception as exc:
