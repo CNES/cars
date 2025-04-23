@@ -134,6 +134,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         resolution,
         orchestrator=None,
         dsm_file_name=None,
+        weights_file_name=None,
         color_file_name=None,
         mask_file_name=None,
         classif_file_name=None,
@@ -158,6 +159,8 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         :param orchestrator: orchestrator used
         :param dsm_file_name: path of dsm
         :type dsm_file_name: str
+        :param weights_file_name: path of dsm weights
+        :type weights_file_name: str
         :param color_file_name: path of color
         :type color_file_name: str
         :param mask_file_name: path of color

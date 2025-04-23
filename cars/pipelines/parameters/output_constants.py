@@ -35,6 +35,7 @@ AUXILIARY = "auxiliary"
 
 # Auxiliary keys
 AUX_COLOR = "color"
+AUX_WEIGHTS = "weights"
 AUX_MASK = "mask"
 AUX_CLASSIFICATION = "classification"
 AUX_PERFORMANCE_MAP = "performance_map"
