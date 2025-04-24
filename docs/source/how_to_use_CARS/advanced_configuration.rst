@@ -336,7 +336,7 @@ The structure follows this organization:
                     * - method
                       - Method for dense matching
                       - string
-                      - "census_sgm_default", "mccnn_sgm", "census11_sgm_20_80", "census11_sgm_20_160", "census11_sgm_38_464", "census11_sgm_72_309"
+                      - "census_sgm_default", "mccnn_sgm", "census_sgm_urban", "census_sgm_shadow", "census_sgm_mountain_and_vegetation", "census_sgm_homogeneous"
                       - "census_sgm_default"
                       - No
                     * - loader

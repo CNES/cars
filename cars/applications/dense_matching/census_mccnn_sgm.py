@@ -70,10 +70,10 @@ class CensusMccnnSgm(
     DenseMatching,
     short_name=[
         "census_sgm_default",
-        "census11_sgm_20_80",
-        "census11_sgm_20_160",
-        "census11_sgm_38_464",
-        "census11_sgm_72_309",
+        "census_sgm_urban",
+        "census_sgm_shadow",
+        "census_sgm_mountain_and_vegetation",
+        "census_sgm_homogeneous",
         "mccnn_sgm",
     ],
 ):  # pylint: disable=R0903,disable=R0902
