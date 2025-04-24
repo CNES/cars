@@ -88,6 +88,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         self.min_dem = self.used_config["min_dem"]
         self.max_dem = self.used_config["max_dem"]
         self.coregistration = self.used_config["coregistration"]
+        self.coregistration_max_shift = self.used_config[
+            "coregistration_max_shift"
+        ]
         self.save_intermediate_data = self.used_config[
             application_constants.SAVE_INTERMEDIATE_DATA
         ]
@@ -133,6 +136,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         )
 
         overloaded_conf["coregistration"] = conf.get("coregistration", True)
+        overloaded_conf["coregistration_max_shift"] = conf.get(
+            "coregistration_max_shift", 180
+        )
 
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
@@ -149,6 +155,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "max_dem": And(Or(int, float), lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
             "coregistration": bool,
+            "coregistration_max_shift": And(Or(int, float), lambda x: x > 0),
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
@@ -448,9 +455,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         self.orchestrator.breakpoint()
 
         # after saving, fit initial elevation if required
-        if initial_elevation is not None and (
-            self.save_intermediate_data or self.coregistration
-        ):
+        if initial_elevation is not None and self.coregistration:
             initial_elevation_out_path = os.path.join(
                 output_dir, "initial_elevation_fit.tif"
             )
@@ -469,8 +474,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             cars_orchestrator.update_out_info(coreg_info)
 
             if (
-                abs(coreg_offsets["shift_x"]) > 180
-                or abs(coreg_offsets["shift_y"]) > 180
+                abs(coreg_offsets["shift_x"]) > self.coregistration_max_shift
+                or abs(coreg_offsets["shift_y"]) > self.coregistration_max_shift
             ):
                 logging.warning(
                     "The initial elevation will be used as-is, as "
@@ -479,8 +484,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
                 )
                 return dem, None
 
-            if self.coregistration:
-                return dem, initial_elevation_out_path
+            return dem, initial_elevation_out_path
 
         return dem, None
 
