@@ -58,7 +58,7 @@ class PandoraLoader:
         perf_eta_max_ambiguity=0.99,
         perf_eta_max_risk=0.25,
         perf_eta_step=0.04,
-        use_cross_validation=False,
+        use_cross_validation=True,
         denoise_disparity_map=False,
     ):
         """
@@ -178,10 +178,16 @@ class PandoraLoader:
             }
         }
         # Cross validation
-        cross_validation_conf = {
+        cross_validation_acc_conf = {
             "validation": {
                 "validation_method": "cross_checking_accurate",
                 "cross_checking_threshold": 1.0,
+            }
+        }
+
+        cross_validation_fast_conf = {
+            "validation": {
+                "validation_method": "cross_checking_fast",
             }
         }
 
@@ -206,8 +212,11 @@ class PandoraLoader:
             )
 
         # update with cross validation
-        if use_cross_validation and "validation" not in conf["pipeline"]:
-            conf["pipeline"].update(cross_validation_conf)
+        if "validation" not in conf["pipeline"]:
+            if use_cross_validation in ("true", "fast"):
+                conf["pipeline"].update(cross_validation_fast_conf)
+            elif use_cross_validation == "accurate":
+                conf["pipeline"].update(cross_validation_acc_conf)
 
         if (
             denoise_disparity_map
