@@ -93,6 +93,25 @@ def test_check_full_conf_pandora_conf_as_dict():
 
 
 @pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "method_name",
+    [
+        "census_sgm_default",
+        "census_sgm_urban",
+        "census_sgm_shadow",
+        "census_sgm_mountain_and_vegetation",
+        "census_sgm_homogeneous",
+    ],
+)
+def test_check_each_pandora_conf_as_dict(method_name):
+    """
+    Test configuration check for dense matching application
+    """
+    conf = {"method": method_name}
+    _ = CensusMccnnSgm(conf)
+
+
+@pytest.mark.unit_tests
 def test_check_full_conf_pandora_conf_as_file():
     """
     Test configuration check for dense matching application
