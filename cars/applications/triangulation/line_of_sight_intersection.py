@@ -1238,6 +1238,11 @@ def triangulation_wrapper_matches(
     :param geometry_plugin: geometry plugin to use
     :type geometry_plugin: AbstractGeometry
     """
+
+    # Ignore this tile if there are not match
+    if matches is None or matches.empty:
+        return None
+
     epipolar_matches = matches.to_numpy()
 
     sensor_matches = geometry_plugin.matches_to_sensor_coords(
