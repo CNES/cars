@@ -863,10 +863,10 @@ def confidence_filtering(dataset, disp_map, requested_confidence):
     data_risk = dataset[requested_confidence[0]].values
     data_bounds_sup = dataset[requested_confidence[1]].values
 
-    nan_ratio = generic_filter(disp_map, nan_ratio_func, size=7)
+    nan_ratio = generic_filter(disp_map, nan_ratio_func, size=20)
     var_map = generic_filter(data_risk, np.nanmean, size=7)
 
-    mask = ((data_bounds_sup > 5) | (data_bounds_sup < -20)) | (
+    mask = ((data_bounds_sup > 5) | (data_bounds_sup <= -20)) | (
         (var_map > 60) & (nan_ratio > 0.1)
     )
     disp_map[mask] = np.nan
