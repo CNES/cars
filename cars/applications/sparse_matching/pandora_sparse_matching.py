@@ -191,6 +191,7 @@ class PandoraSparseMatching(
         # TODO modify, use loader directly
         pandora_loader = PandoraLoader(
             conf=loader_conf,
+            method_name="census_sgm_sparse",
             use_cross_validation=True,
         )
 
