@@ -213,7 +213,7 @@ class PandoraLoader:
 
         # update with cross validation
         if "validation" not in conf["pipeline"]:
-            if use_cross_validation in ("true", "fast"):
+            if use_cross_validation in (True, "fast"):
                 conf["pipeline"].update(cross_validation_fast_conf)
             elif use_cross_validation == "accurate":
                 conf["pipeline"].update(cross_validation_acc_conf)
