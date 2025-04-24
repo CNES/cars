@@ -101,6 +101,14 @@ class PandoraSparseMatching(
         ]
         self.confidence_filtering = self.used_config["confidence_filtering"]
 
+        # parameter for confidence filtering
+        self.upper_bound = self.used_config["upper_bound"]
+        self.lower_bound = self.used_config["lower_bound"]
+        self.risk_max = self.used_config["risk_max"]
+        self.nan_threshold = self.used_config["nan_threshold"]
+        self.win_nanratio = self.used_config["win_nanratio"]
+        self.win_mean_risk_max = self.used_config["win_mean_risk_max"]
+
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
@@ -133,6 +141,13 @@ class PandoraSparseMatching(
         overloaded_conf["resolution"] = conf.get("resolution", 4)
         overloaded_conf["strip_margin"] = conf.get("strip_margin", 30)
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
+        overloaded_conf["upper_bound"] = conf.get("upper_bound", 5)
+        overloaded_conf["lower_bound"] = conf.get("lower_bound", -20)
+        overloaded_conf["risk_max"] = conf.get("risk_max", 60)
+        overloaded_conf["nan_threshold"] = conf.get("nan_threshold", 0.01)
+        overloaded_conf["win_nanratio"] = conf.get("win_nanratio", 20)
+        overloaded_conf["win_mean_risk_max"] = conf.get("win_mean_risk_max", 7)
+
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
             "epipolar_error_upper_bound", 10.0
         )
@@ -208,6 +223,12 @@ class PandoraSparseMatching(
             "matches_filter_knn": int,
             "matches_filter_dev_factor": Or(int, float),
             "save_intermediate_data": bool,
+            "upper_bound": int,
+            "lower_bound": int,
+            "risk_max": int,
+            "nan_threshold": float,
+            "win_nanratio": int,
+            "win_mean_risk_max": int,
         }
 
         # Check conf
@@ -554,6 +575,12 @@ class PandoraSparseMatching(
                             disp_upper_bound=disp_upper_bound,
                             disp_lower_bound=disp_lower_bound,
                             resolution=self.resolution,
+                            upper_bound=self.upper_bound,
+                            lower_bound=self.lower_bound,
+                            risk_max=self.risk_max,
+                            nan_threshold=self.nan_threshold,
+                            win_nanratio=self.win_nanratio,
+                            win_mean_risk_max=self.win_mean_risk_max,
                             saving_info_matches=full_saving_info_matches,
                             saving_info_disparity_map=full_saving_info_disp_map,
                         )
@@ -576,6 +603,12 @@ def compute_pandora_matches_wrapper(
     disp_upper_bound,
     disp_lower_bound,
     resolution,
+    upper_bound,
+    lower_bound,
+    risk_max,
+    nan_threshold,
+    win_nanratio,
+    win_mean_risk_max,
     saving_info_matches=None,
     saving_info_disparity_map=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
@@ -609,9 +642,20 @@ def compute_pandora_matches_wrapper(
     :type dim_max: list
     :param resolution: resolution for downsampling
     :type resolution: int or list
+    :param upper_bound: the upper bound for intervals
+    :type upper_bound: int
+    :param lower_bound: the lower bound for intervals
+    :type lower_bound: int
+    :param risk_max: the maximum risk
+    :type risk_max: int
+    :param nan_threshold: the threshold for nanratio
+    :type nan_threshold: float
+    :param win_nanratio: the window size for nanratio
+    :type win_nanratio: int
+    :param win_mean_risk_max: the window size for mean risk max
+    :type win_mean_risk_max: int
     :param disp_to_alt_ratio: disp to alti ratio used for performance map
     :type disp_to_alt_ratio: float
-
 
     :return: Left pandora matches object,\
     Right pandora matches object (if exists)
@@ -632,6 +676,12 @@ def compute_pandora_matches_wrapper(
                         disp_upper_bound,
                         disp_lower_bound,
                         res,
+                        upper_bound,
+                        lower_bound,
+                        risk_max,
+                        nan_threshold,
+                        win_nanratio,
+                        win_mean_risk_max,
                     )
                 )
             else:
@@ -644,15 +694,20 @@ def compute_pandora_matches_wrapper(
                     disp_upper_bound,
                     disp_lower_bound,
                     res,
+                    upper_bound,
+                    lower_bound,
+                    risk_max,
+                    nan_threshold,
+                    win_nanratio,
+                    win_mean_risk_max,
                 )
 
             if list_matches is None:
                 list_matches = matches
             else:
                 list_matches = np.row_stack((list_matches, matches))
-        final_matches = list_matches
     else:
-        final_matches, disp_map_dataset, window, profile = (
+        list_matches, disp_map_dataset, window, profile = (
             pandora_tools.pandora_matches(
                 left_image_object,
                 right_image_object,
@@ -662,11 +717,17 @@ def compute_pandora_matches_wrapper(
                 disp_upper_bound,
                 disp_lower_bound,
                 resolution,
+                upper_bound,
+                lower_bound,
+                risk_max,
+                nan_threshold,
+                win_nanratio,
+                win_mean_risk_max,
             )
         )
 
     # Resample the matches in full resolution
-    left_pandora_matches_dataframe = pandas.DataFrame(final_matches)
+    left_pandora_matches_dataframe = pandas.DataFrame(list_matches)
 
     cars_dataset.fill_dataframe(
         left_pandora_matches_dataframe,
