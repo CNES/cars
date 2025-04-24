@@ -171,9 +171,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         triangulated_matches_list,
         output_dir,
         geoid_path,
-        cars_orchestrator,
         dem_roi_to_use=None,
         initial_elevation=None,
+        cars_orchestrator=None,
     ):
         """
         Run dichotomic dem generation using matches

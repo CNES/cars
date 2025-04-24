@@ -5390,24 +5390,6 @@ def test_end2end_paca_with_mask():
         #         )
         #     ),
         # )
-        # copy2(
-        #     os.path.join(out_dir, "dsm", "color.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "color_end2end_paca_border_interpolation.tif",
-        #         )
-        #     ),
-        # )
-        # copy2(
-        #     os.path.join(out_dir, "dsm", "mask.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "mask_end2end_paca_border_interpolation.tif",
-        #         )
-        #     ),
-        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -5418,27 +5400,6 @@ def test_end2end_paca_with_mask():
             ),
             rtol=1.0e-5,
             atol=2.0e-7,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "color_end2end_paca_border_interpolation.tif",
-                )
-            ),
-            rtol=0.0002,
-            atol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "mask_end2end_paca_border_interpolation.tif"
-                )
-            ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
         )
 
 

@@ -36,6 +36,7 @@ import pandas
 import rasterio as rio
 import skimage
 import xarray as xr
+import xdem
 import yaml
 from affine import Affine
 from bulldozer.pipeline.bulldozer_pipeline import dsm_to_dtm
@@ -57,7 +58,7 @@ from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
-class Rasterization(DemGeneration, short_name="rasterization"):
+class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
     """
     Rasterization
     """
@@ -89,6 +90,10 @@ class Rasterization(DemGeneration, short_name="rasterization"):
             "bulldozer_max_object_size"
         ]
         self.compute_stats = self.used_config["compute_stats"]
+        self.coregistration = self.used_config["coregistration"]
+        self.coregistration_max_shift = self.used_config[
+            "coregistration_max_shift"
+        ]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # Init orchestrator
@@ -114,7 +119,7 @@ class Rasterization(DemGeneration, short_name="rasterization"):
             overloaded_conf = {}
 
         # Overload conf
-        overloaded_conf["method"] = conf.get("method", "dichotomic")
+        overloaded_conf["method"] = conf.get("method", "bulldozer_on_raster")
         overloaded_conf["resolution"] = conf.get("resolution", 2)
         overloaded_conf["margin"] = conf.get("margin", 300)
         overloaded_conf["morphological_filters_size"] = conf.get(
@@ -131,6 +136,10 @@ class Rasterization(DemGeneration, short_name="rasterization"):
             "bulldozer_max_object_size", 8
         )
         overloaded_conf["compute_stats"] = conf.get("compute_stats", True)
+        overloaded_conf["coregistration"] = conf.get("coregistration", True)
+        overloaded_conf["coregistration_max_shift"] = conf.get(
+            "coregistration_max_shift", 180
+        )
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
@@ -146,6 +155,8 @@ class Rasterization(DemGeneration, short_name="rasterization"):
             "height_margin": And(Or(float, int), lambda x: x > 0),
             "bulldozer_max_object_size": And(int, lambda x: x > 0),
             "compute_stats": bool,
+            "coregistration": bool,
+            "coregistration_max_shift": And(Or(int, float), lambda x: x > 0),
             "save_intermediate_data": bool,
         }
 
@@ -162,6 +173,7 @@ class Rasterization(DemGeneration, short_name="rasterization"):
         output_dir,
         geoid_path,
         dem_roi_to_use=None,
+        initial_elevation=None,
         cars_orchestrator=None,
     ):
         """
@@ -306,10 +318,9 @@ class Rasterization(DemGeneration, short_name="rasterization"):
         dem_data -= input_geoid_data
 
         # apply height margin
-        footprint = [
-            (np.ones((self.morphological_filters_size, 1)), 1),
-            (np.ones((1, self.morphological_filters_size)), 1),
-        ]
+        footprint = skimage.morphology.disk(
+            self.morphological_filters_size // 2, decomposition="sequence"
+        )
         logging.info("Generation of DEM min")
         dem_data[not_filled_pixels] = -nodata
         dem_min = (
@@ -423,7 +434,7 @@ class Rasterization(DemGeneration, short_name="rasterization"):
         )
         temp_output_path = launch_bulldozer(
             dem_min_path,
-            output_dir,
+            os.path.join(output_dir, "dem_min_bulldozer"),
             cars_orchestrator,
             self.bulldozer_max_object_size,
         )
@@ -438,7 +449,7 @@ class Rasterization(DemGeneration, short_name="rasterization"):
         reverse_dem(dem_max_path)
         temp_output_path = launch_bulldozer(
             dem_max_path,
-            output_dir,
+            os.path.join(output_dir, "dem_max_bulldozer"),
             cars_orchestrator,
             self.bulldozer_max_object_size,
         )
@@ -478,7 +489,39 @@ class Rasterization(DemGeneration, short_name="rasterization"):
             )
             compute_stats(diff)
 
-        return dem
+        # after saving, fit initial elevation if required
+        if initial_elevation is not None and self.coregistration:
+            initial_elevation_out_path = os.path.join(
+                output_dir, "initial_elevation_fit.tif"
+            )
+
+            coreg_offsets = fit_initial_elevation_on_dem_median(
+                initial_elevation, dem_median_path, initial_elevation_out_path
+            )
+
+            coreg_info = {
+                application_constants.APPLICATION_TAG: {
+                    "dem_generation": {"coregistration": coreg_offsets}
+                }
+            }
+
+            # save the coreg shift info in cars's main orchestrator
+            cars_orchestrator.update_out_info(coreg_info)
+
+            if (
+                abs(coreg_offsets["shift_x"]) > self.coregistration_max_shift
+                or abs(coreg_offsets["shift_y"]) > self.coregistration_max_shift
+            ):
+                logging.warning(
+                    "The initial elevation will be used as-is, as "
+                    "the coregistration offsets were found to be too "
+                    "big to be believable."
+                )
+                return dem, None
+
+            return dem, initial_elevation_out_path
+
+        return dem, None
 
 
 def edit_transform(input_dem, resolution=None, transform=None):
@@ -548,7 +591,7 @@ def launch_bulldozer(
         bull_conf = yaml.safe_load(bull_conf_file)
 
     bull_conf["dsm_path"] = input_dem
-    bull_conf["output_dir"] = os.path.join(output_dir, "dem_min_bulldozer")
+    bull_conf["output_dir"] = output_dir
     if cars_orchestrator is not None:
         if (
             cars_orchestrator.get_conf()["mode"] == "multiprocessing"
@@ -561,6 +604,7 @@ def launch_bulldozer(
         bull_conf["nb_max_workers"] = 4
     bull_conf["max_object_size"] = max_object_size
 
+    os.makedirs(output_dir, exist_ok=True)
     bull_conf_path = os.path.join(output_dir, "bulldozer_config.yaml")
     with open(bull_conf_path, "w", encoding="utf8") as bull_conf_file:
         yaml.dump(bull_conf, bull_conf_file)
@@ -610,10 +654,75 @@ def compute_stats(diff):
     p99 = ("p99", np.nanpercentile(diff, 99))
     maxi = ("Max", np.nanmax(diff))
     logging.info(  # pylint: disable=logging-fstring-interpolation
-        f"|{mini[0]:6} | {median[0]:6} | {p90[0]:6} | "
+        f"| {mini[0]:6} | {median[0]:6} | {p90[0]:6} | "
         f"{p95[0]:6} | {p99[0]:6} | {maxi[0]:6} |"
     )
     logging.info(  # pylint: disable=logging-fstring-interpolation
         f"| {mini[1]:6.2f} | {median[1]:6.2f} | {p90[1]:6.2f} | "
         f"{p95[1]:6.2f} | {p99[1]:6.2f} | {maxi[1]:6.2f} |"
     )
+
+
+def fit_initial_elevation_on_dem_median(
+    dem_to_fit_path: str, dem_ref_path: str, dem_out_path: str
+):
+    """
+    Coregistrates the two DEMs given then saves the result.
+    The initial elevation will be cropped to reduce computation costs.
+    Returns the transformation applied.
+
+    :param dem_to_fit_path: Path to the dem to be fitted
+    :type dem_to_fit_path: str
+    :param dem_ref_path: Path to the dem to fit onto
+    :type dem_ref_path: str
+    :param dem_out_path: Path to save the resulting dem into
+    :type dem_out_path: str
+
+    :return: coregistration transformation applied
+    :rtype: dict
+    """
+    # suppress all outputs of xdem
+    with open(os.devnull, "w", encoding="utf8") as devnull:
+        with (
+            contextlib.redirect_stdout(devnull),
+            contextlib.redirect_stderr(devnull),
+        ):
+
+            # load DEMs
+            dem_to_fit = xdem.DEM(dem_to_fit_path)
+            dem_ref = xdem.DEM(
+                dem_ref_path, nodata=0
+            )  # 0s are nodata in dem_ref
+
+            # get the crs needed to reproject the data
+            crs_out = dem_ref.crs
+            crs_metric = dem_ref.get_metric_crs()
+
+            # Crop dem_to_fit with a reprojected version of dem_ref to reduce
+            # computation costs. This is fine since dem_ref has big margins
+            # and we want to fix small shifts.
+            dem_to_fit = dem_to_fit.crop(
+                dem_ref.reproject(dem_to_fit)
+            ).reproject(
+                # reproject dem_to_fit in the metric crs
+                crs=crs_metric
+            )
+            # reproject dem_ref in the metric crs as well
+            dem_ref = dem_ref.reproject(crs=crs_metric)
+
+            coreg_pipeline = xdem.coreg.NuthKaab()
+
+            # fit dem_to_fit onto dem_ref, crop it, then reproject it
+            # set a random state to always get the same results
+            fit_dem = (
+                coreg_pipeline.fit_and_apply(
+                    dem_ref, dem_to_fit, random_state=0
+                )
+                .crop(dem_ref)
+                .reproject(crs=crs_out)
+            )
+
+            # save the results
+            fit_dem.save(dem_out_path)
+
+    return coreg_pipeline.meta["outputs"]["affine"]

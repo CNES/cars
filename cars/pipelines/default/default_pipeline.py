@@ -1374,7 +1374,6 @@ class DefaultPipeline(PipelineTemplate):
                 self.triangulated_matches_list,
                 dem_generation_output_dir,
                 inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
-                self.cars_orchestrator,
                 dem_roi_to_use=self.dem_generation_roi,
                 initial_elevation=(
                     inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]

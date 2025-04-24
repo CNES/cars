@@ -36,7 +36,7 @@ class DemGeneration(ApplicationTemplate, metaclass=ABCMeta):
     """
 
     available_applications: Dict = {}
-    default_application = "dichotomic"
+    default_application = "bulldozer_on_raster"
 
     def __new__(cls, conf=None):  # pylint: disable=W0613
         """
