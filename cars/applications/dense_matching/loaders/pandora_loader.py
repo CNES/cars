@@ -59,6 +59,7 @@ class PandoraLoader:
         perf_eta_max_risk=0.25,
         perf_eta_step=0.04,
         use_cross_validation=False,
+        denoise_disparity_map=False,
     ):
         """
         Init function of PandoraLoader
@@ -72,6 +73,7 @@ class PandoraLoader:
         :param method_name: name of method to use
         :param performance_map_conf: true if generate performance maps
         :param use_cross_validation: true to add crossvalidation
+        :param denoise_disparity_map: true to add the disparity denoiser filter
 
         """
 
@@ -183,6 +185,10 @@ class PandoraLoader:
             }
         }
 
+        disparity_denoiser_conf = {
+            "filter": {"filter_method": "disparity_denoiser"}
+        }
+
         confidences = {}
         if generate_performance_map_from_risk:
             confidences.update(perf_ambiguity_conf)
@@ -202,6 +208,13 @@ class PandoraLoader:
         # update with cross validation
         if use_cross_validation and "validation" not in conf["pipeline"]:
             conf["pipeline"].update(cross_validation_conf)
+
+        if (
+            denoise_disparity_map
+            and conf["pipeline"]["filter"]["filter_method"]
+            != "disparity_denoiser"
+        ):
+            conf["pipeline"].update(disparity_denoiser_conf)
 
         if generate_performance_map_from_intervals:
             # To ensure the consistency between the disparity map

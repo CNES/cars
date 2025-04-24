@@ -117,6 +117,8 @@ class CensusMccnnSgm(
             "disp_range_propagation_filter_size"
         ]
         self.use_cross_validation = self.used_config["use_cross_validation"]
+        self.denoise_disparity_map = self.used_config["denoise_disparity_map"]
+
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
@@ -177,6 +179,9 @@ class CensusMccnnSgm(
         )
         overloaded_conf["max_elevation_offset"] = conf.get(
             "max_elevation_offset", None
+        )
+        overloaded_conf["denoise_disparity_map"] = conf.get(
+            "denoise_disparity_map", False
         )
 
         # Disparity threshold
@@ -255,6 +260,7 @@ class CensusMccnnSgm(
             perf_eta_max_risk=overloaded_conf["perf_eta_max_risk"],
             perf_eta_step=overloaded_conf["perf_eta_step"],
             use_cross_validation=overloaded_conf["use_cross_validation"],
+            denoise_disparity_map=overloaded_conf["denoise_disparity_map"],
         )
         overloaded_conf["loader"] = loader
 
@@ -312,6 +318,7 @@ class CensusMccnnSgm(
             "perf_eta_step": float,
             "perf_ambiguity_threshold": float,
             "use_cross_validation": bool,
+            "denoise_disparity_map": bool,
             "use_global_disp_range": bool,
             "local_disp_grid_step": int,
             "disp_range_propagation_filter_size": And(
