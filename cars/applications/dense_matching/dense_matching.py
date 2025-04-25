@@ -36,7 +36,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
     """
 
     available_applications: Dict = {}
-    default_application = "census_sgm"
+    default_application = "census_sgm_default"
 
     def __new__(cls, conf=None):  # pylint: disable=W0613
         """

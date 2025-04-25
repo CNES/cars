@@ -67,7 +67,15 @@ from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 class CensusMccnnSgm(
-    DenseMatching, short_name=["census_sgm", "mccnn_sgm"]
+    DenseMatching,
+    short_name=[
+        "census_sgm_default",
+        "census_sgm_urban",
+        "census_sgm_shadow",
+        "census_sgm_mountain_and_vegetation",
+        "census_sgm_homogeneous",
+        "mccnn_sgm",
+    ],
 ):  # pylint: disable=R0903,disable=R0902
     """
     Census SGM & MCCNN SGM matching class
@@ -151,7 +159,7 @@ class CensusMccnnSgm(
 
         # Overload conf
         overloaded_conf["method"] = conf.get(
-            "method", "census_sgm"
+            "method", "census_sgm_default"
         )  # change it if census_sgm is not default
         # method called in dense_matching.py
         overloaded_conf["min_epi_tile_size"] = conf.get(

@@ -91,7 +91,7 @@ def test_end2end_dsm_fusion():
                 "decimation_factor": 80,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
             },
             "point_cloud_rasterization": {
@@ -538,7 +538,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "nb_pts_threshold": 100,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": True,
             },
@@ -1158,7 +1158,7 @@ def test_end2end_ventoux_unique():
                 "save_intermediate_data": True,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
                 "loader_conf": {
@@ -1559,7 +1559,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_global_disp_range": False,
                 "loader_conf": {
                     "input": {},
@@ -1717,7 +1717,7 @@ def test_end2end_ventoux_unique():
         # update applications
         dense_dsm_applications = {
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
@@ -1793,7 +1793,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 "save_intermediate_data": True,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
             },
         }
@@ -2000,7 +2000,7 @@ def test_end2end_ventoux_unique_split():
                 "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
                 "save_intermediate_data": True,
@@ -2881,7 +2881,7 @@ def test_end2end_use_epipolar_a_priori():
                 "save_intermediate_data": True,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
@@ -3119,7 +3119,7 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "elevation_delta_upper_bound": 700.0,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
             },
         }
@@ -3608,7 +3608,7 @@ def test_end2end_ventoux_with_color():
                 "save_intermediate_data": True,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "loader": "pandora",
                 "save_intermediate_data": True,
@@ -3962,7 +3962,7 @@ def test_end2end_ventoux_with_classif():
                 "color_no_data": 0,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "loader": "pandora",
                 "save_intermediate_data": True,
@@ -4151,7 +4151,7 @@ def test_compute_dsm_with_roi_ventoux():
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
@@ -4324,7 +4324,7 @@ def test_compute_dsm_with_snap_to_img1():
                 "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
@@ -4447,7 +4447,7 @@ def test_end2end_quality_stats():
                 "save_intermediate_data": True,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
@@ -4740,7 +4740,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
@@ -4870,7 +4870,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
@@ -4966,7 +4966,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
@@ -5100,7 +5100,7 @@ def test_end2end_paca_with_mask():
                 "minimum_nb_matches": 10,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_global_disp_range": False,
                 "use_cross_validation": True,
             },
@@ -5450,7 +5450,7 @@ def test_end2end_disparity_filling():
         )
         dense_dsm_applications = {
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "min_epi_tile_size": 100,
                 "save_intermediate_data": True,
@@ -5587,7 +5587,7 @@ def test_end2end_disparity_filling_with_zeros():
                 "save_intermediate_data": True,
             },
             "dense_matching": {
-                "method": "census_sgm",
+                "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "save_intermediate_data": True,
                 "use_global_disp_range": True,

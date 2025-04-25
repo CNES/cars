@@ -75,7 +75,7 @@ class PandoraLoader:
         """
 
         if method_name is None:
-            method_name = "census_sgm"
+            method_name = "census_sgm_default"
 
         self.pandora_config = None
 
@@ -90,18 +90,50 @@ class PandoraLoader:
             uses_cars_pandora_conf = True
             package_path = os.path.dirname(__file__)
 
-            if "mccnn" in method_name:
+            if method_name == "mccnn_sgm":
                 # Use mccn_conf
 
                 conf_file_path = os.path.join(package_path, "config_mccnn.json")
                 # Read conf
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
                     conf = json.load(fstream)
-
-            elif "census" in method_name:
+            elif method_name == "census_sgm_urban":
                 # Use census sgm conf
                 conf_file_path = os.path.join(
-                    package_path, "config_census_sgm.json"
+                    package_path, "config_census_sgm_urban.json"
+                )
+                # read conf
+                with open(conf_file_path, "r", encoding="utf8") as fstream:
+                    conf = json.load(fstream)
+            elif method_name == "census_sgm_shadow":
+                # Use census sgm conf
+                conf_file_path = os.path.join(
+                    package_path, "config_census_sgm_shadow.json"
+                )
+                # read conf
+                with open(conf_file_path, "r", encoding="utf8") as fstream:
+                    conf = json.load(fstream)
+            elif method_name == "census_sgm_mountain_and_vegetation":
+                # Use census sgm conf
+                conf_file_path = os.path.join(
+                    package_path,
+                    "config_census_sgm_mountain_and_vegetation.json",
+                )
+                # read conf
+                with open(conf_file_path, "r", encoding="utf8") as fstream:
+                    conf = json.load(fstream)
+            elif method_name == "census_sgm_homogeneous":
+                # Use census sgm conf
+                conf_file_path = os.path.join(
+                    package_path, "config_census_sgm_homogeneous.json"
+                )
+                # read conf
+                with open(conf_file_path, "r", encoding="utf8") as fstream:
+                    conf = json.load(fstream)
+            elif method_name == "census_sgm_default":
+                # Use census sgm conf
+                conf_file_path = os.path.join(
+                    package_path, "config_census_sgm_default.json"
                 )
                 # read conf
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
