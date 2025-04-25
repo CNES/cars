@@ -666,12 +666,6 @@ def pandora_matches(
     disp_upper_bound,
     disp_lower_bound,
     resolution,
-    upper_bound,
-    lower_bound,
-    risk_max,
-    nan_threshold,
-    win_nanratio,
-    win_mean_risk_max,
 ):
     """
     Calculate the pandora matches
@@ -685,21 +679,9 @@ def pandora_matches(
     :param dim_max: the maximum dimensions
     :type dim_max: list
     :param conf_filtering: True to filter the disp map
-    :type conf_filtering: bool
+    :type conf_filtering: dict
     :param resolution: the resolution of the resampling
     :type resolution: int
-    :param upper_bound: the upper bound for intervals
-    :type upper_bound: int
-    :param lower_bound: the lower bound for intervals
-    :type lower_bound: int
-    :param risk_max: the maximum risk
-    :type risk_max: int
-    :param nan_threshold: the threshold for nanratio
-    :type nan_threshold: float
-    :param win_nanratio: the window size for nanratio
-    :type win_nanratio: int
-    :param win_mean_risk_max: the window size for mean risk max
-    :type win_mean_risk_max: int
 
     :return: matches and disparity_map
     :rtype: datasets
@@ -790,18 +772,13 @@ def pandora_matches(
 
     if (
         all(key in epipolar_disparity_map for key in requested_confidence)
-        and conf_filtering
+        and conf_filtering["activated"] is True
     ):
         confidence_filtering(
             epipolar_disparity_map,
             disp_map,
             requested_confidence,
-            upper_bound,
-            lower_bound,
-            risk_max,
-            nan_threshold,
-            win_nanratio,
-            win_mean_risk_max,
+            conf_filtering,
         )
 
     # Construct the matches using the disparity map
@@ -879,12 +856,7 @@ def confidence_filtering(
     dataset,
     disp_map,
     requested_confidence,
-    upper_bound,
-    lower_bound,
-    risk_max,
-    nan_threshold,
-    win_nanratio,
-    win_mean_risk_max,
+    conf_filtering,
 ):
     """
     Filter the disparity map by using the confidence
@@ -895,28 +867,26 @@ def confidence_filtering(
     :type disp_map: numpy darray
     :param requested_confidence: the confidence to use
     :type requested_confidence: list
-    :param upper_bound: the upper bound for intervals
-    :type upper_bound: int
-    :param lower_bound: the lower bound for intervals
-    :type lower_bound: int
-    :param risk_max: the maximum risk
-    :type risk_max: int
-    :param nan_threshold: the threshold for nanratio
-    :type nan_threshold: float
-    :param win_nanratio: the window size for nanratio
-    :type win_nanratio: int
-    :param win_mean_risk_max: the window size for mean risk max
-    :type win_mean_risk_max: int
+    :param conf_filtering: the confidence_filtering parameters
+    :type conf_filtering: dict
     """
     data_risk = dataset[requested_confidence[0]].values
     data_bounds_sup = dataset[requested_confidence[1]].values
 
-    nan_ratio = generic_filter(disp_map, nan_ratio_func, size=win_nanratio)
-    var_map = generic_filter(data_risk, np.nanmean, size=win_mean_risk_max)
+    nan_ratio = generic_filter(
+        disp_map, nan_ratio_func, size=conf_filtering["win_nanratio"]
+    )
+    var_map = generic_filter(
+        data_risk, np.nanmean, size=conf_filtering["win_mean_risk_max"]
+    )
 
     mask = (
-        (data_bounds_sup > upper_bound) | (data_bounds_sup <= lower_bound)
-    ) | ((var_map > risk_max) & (nan_ratio > nan_threshold))
+        (data_bounds_sup > conf_filtering["upper_bound"])
+        | (data_bounds_sup <= conf_filtering["lower_bound"])
+    ) | (
+        (var_map > conf_filtering["risk_max"])
+        & (nan_ratio > conf_filtering["nan_threshold"])
+    )
     disp_map[mask] = np.nan
 
     var_mean_risk = xr.DataArray(var_map, dims=dataset.dims.keys())
