@@ -528,6 +528,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         )
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "dem_generation": {"resolution": 30},
             "sparse_matching.sift": {
                 "decimation_factor": 80,
             },
