@@ -657,8 +657,9 @@ def launch_bulldozer(
     except Exception:
         logging.error(
             "Bulldozer failed on its second execution."
-            + " The DSM could not be filled."
+            + " The DSM could not be smoothed."
         )
+        output_dem = None
 
     return output_dem
 
