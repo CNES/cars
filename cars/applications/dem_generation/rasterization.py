@@ -364,7 +364,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         )
 
         footprint = skimage.morphology.disk(
-            self.fillnodata_max_search_distance, decomposition="sequence"
+            self.fillnodata_max_search_distance // 2, decomposition="sequence"
         )
         eroded_mask = skimage.morphology.binary_erosion(
             mask, footprint=footprint
