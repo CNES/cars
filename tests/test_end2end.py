@@ -4513,8 +4513,8 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -37
-            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_min"] > -27
+            assert out_disp_compute["global_disp_min"] < -22
             assert out_disp_compute["global_disp_max"] > 25
             assert out_disp_compute["global_disp_max"] < 32
 
@@ -4803,12 +4803,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -68
-            assert out_disp_compute["global_disp_min"] < -60
-            # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 43
-            assert out_disp_compute["global_disp_max"] < 46
+            assert out_disp_compute["global_disp_min"] > -34
+            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_max"] > 26
+            assert out_disp_compute["global_disp_max"] < 29
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -5031,12 +5029,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -68
-            assert out_disp_compute["global_disp_min"] < -60
-            # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 43
-            assert out_disp_compute["global_disp_max"] < 46
+            assert out_disp_compute["global_disp_min"] > -34
+            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_max"] > 26
+            assert out_disp_compute["global_disp_max"] < 29
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"

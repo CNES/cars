@@ -269,32 +269,62 @@ The structure follows this organization:
 
                 **Configuration**
 
+                +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+---------------+----------+
+                | Name                            | Description                                                              | Type       | Available value                      | Default value | Required |
+                +=================================+==========================================================================+============+======================================+===============+==========+
+                | method                          | Method for dem_generation                                                | string     | "dichotomic", "bulldozer_on_raster"  | "dichotomic"  | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+---------------+----------+
+                | height_margin                   | Height margin [margin min, margin max], in meter                         | int        |                                      | 20            | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+---------------+----------+
+                | min_dem                         | Min value that has to be reached by dem_min                              | int        | should be < 0                        | -500          | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+---------------+----------+
+                | max_dem                         | Max value that has to be reached by dem_max                              | int        | should be > 0                        | 1000          | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+---------------+----------+
+                | coregistration                  | Use the median dem to correct shifts in the initial elevation provided   | boolean    |                                      | true          | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+---------------+----------+
+                | coregistration_max_shift        | Maximum shift allowed on X/Y axes for the coregistered initial elevation | int, float | should be > 0                        | 180           | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+---------------+----------+
+                | save_intermediate_data          | Save DEM as TIF                                                          | boolean    |                                      | false         | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+---------------+----------+
+
+                **Method dichotomic**
+
+                Generates DEM min and max from percentiles of matches altitude grouped by cells of a regular grid
+
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | Name                            | Description                                                              | Type       | Available value | Default value | Required |
                 +=================================+==========================================================================+============+=================+===============+==========+
-                | method                          | Method for dem_generation                                                | string     | "dichotomic"    | "dichotomic"  | Yes      |
-                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | resolution                      | Resolution of dem, in meter                                              | int, float | should be > 0   | 90            | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | margin                          | Margin to use on the border of dem, in meter                             | int, float | should be > 0   | 6000          | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata                             | int        | should be > 0   | 3             | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | percentile                      | Percentile of matches to ignore in min and max functions                 | int        | should be > 0   | 1             | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | min_number_matches              | Minimum number of matches needed to have a valid tile                    | int        | should be > 0   | 30            | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | height_margin                   | Height margin [margin min, margin max], in meter                         | int        |                 | 20            | No       |
+
+                **Method bulldozer_on_raster**
+
+                Rasterizes all matches on a regular grid and performs morphological operations and Bulldozer processing to compute DEM min and max
+
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata                             | int        | should be > 0   | 3             | No       |
+                | Name                            | Description                                                              | Type       | Available value | Default value | Required |
+                +=================================+==========================================================================+============+=================+===============+==========+
+                | resolution                      | Resolution of dem, in meter                                              | int, float | should be > 0   | 90            | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | min_dem                         | Min value that has to be reached by dem_min                              | int        | should be < 0   | -500          | No       |
+                | margin                          | Margin to use on the border of dem, in meter                             | int, float | should be > 0   | 300           | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | max_dem                         | Max value that has to be reached by dem_max                              | int        | should be > 0   | 1000          | No       |
+                | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata                             | int        | should be > 0   | 100           | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | coregistration                  | Use the median dem to correct shifts in the initial elevation provided   | boolean    |                 | true          | No       |
+                | morphological_filters_size      | Size (in pixels) of erosion and dilation filters used to generate DEM    | int        | should be > 0   | 30            | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | coregistration_max_shift        | Maximum shift allowed on X/Y axes for the coregistered initial elevation | int, float | should be > 0   | 180           | No       |
+                | median_filter_size              | Size (in pixels) of median filter used to generate median DEM            | int        | should be > 0   | 5             | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | save_intermediate_data          | Save DEM as TIF                                                          | boolean    |                 | false         | No       |
+                | bulldozer_max_object_size       | Bulldozer parameter "max_object_size"                                    | int        | should be > 0   | 16            | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | compute_stats                   | Compute statistics of difference between DEM min/max and original DSM    | boolean    |                 | true          | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
 
                 **Example**

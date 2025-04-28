@@ -946,7 +946,7 @@ class SimpleGaussian(
         return terrain_raster
 
 
-def rasterization_wrapper(
+def rasterization_wrapper(  # noqa: C901
     cloud,
     resolution,
     epsg,
@@ -1093,6 +1093,10 @@ def rasterization_wrapper(
     xstart, ystart, xsize, ysize = tiling.roi_to_start_and_size(
         terrain_region, resolution
     )
+
+    if xsize == 0 or ysize == 0:
+        logging.warning("Tile is empty")
+        return None
 
     if window is None:
         transform = rio.Affine(*profile["transform"][0:6])

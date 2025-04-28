@@ -22,99 +22,65 @@
 this module contains tools for the dem generation
 """
 
+import logging
+
 # Third party imports
-import numpy as np
-import pandas
-
-from cars.applications.triangulation import triangulation_tools
-
-# CARS imports
-from cars.core import constants as cst
-from cars.core import preprocessing, projection
-from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
+import xdem
 
 
-def triangulate_sparse_matches(
-    sensor_image_left,
-    sensor_image_right,
-    grid_left,
-    grid_right,
-    interpolated_grid_left,
-    interpolated_grid_right,
-    matches,
-    geometry_plugin,
+def fit_initial_elevation_on_dem_median(
+    dem_to_fit_path: str, dem_ref_path: str, dem_out_path: str
 ):
     """
-    Triangulate matches in a metric system
+    Coregistrates the two DEMs given then saves the result.
+    The initial elevation will be cropped to reduce computation costs.
+    Returns the transformation applied.
 
-    :param sensor_image_right: sensor image right
-    :type sensor_image_right: CarsDataset
-    :param sensor_image_left: sensor image left
-    :type sensor_image_left: CarsDataset
-    :param grid_left: grid left
-    :type grid_left: CarsDataset CarsDataset
-    :param grid_right: corrected grid right
-    :type grid_right: CarsDataset
-    :param interpolated_grid_left: rectification grid left
-    :type interpolated_grid_left: shareloc.rectificationGrid
-    :param interpolated_grid_right: rectification grid right
-    :type interpolated_grid_right: shareloc.rectificationGrid
-    :param matches: matches
-    :type matches: np.ndarray
-    :param geometry_plugin: geometry plugin to use
-    :type geometry_plugin: AbstractGeometry
-    :param srtm_dir: srtm directory
-    :type srtm_dir: str
-    :param default_alt: default altitude
-    :type default_alt: float
-    :param pair_folder: folder used for current pair
-    :type pair_folder: str
+    :param dem_to_fit_path: Path to the dem to be fitted
+    :type dem_to_fit_path: str
+    :param dem_ref_path: Path to the dem to fit onto
+    :type dem_ref_path: str
+    :param dem_out_path: Path to save the resulting dem into
+    :type dem_out_path: str
 
-    :return: disp min and disp max
-    :rtype: float, float
+    :return: coregistration transformation applied
+    :rtype: dict
     """
 
-    sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
-    sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
-    geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
-    geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
+    # load DEMs
+    dem_to_fit = xdem.DEM(dem_to_fit_path)
+    dem_ref = xdem.DEM(dem_ref_path)  # 0s are nodata in dem_ref
 
-    point_cloud = triangulation_tools.triangulate_matches(
-        geometry_plugin,
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        interpolated_grid_left,
-        interpolated_grid_right,
-        np.ascontiguousarray(matches),
-    )
+    # get the crs needed to reproject the data
+    crs_out = dem_ref.crs
+    crs_metric = dem_ref.get_metric_crs()
 
-    # compute epsg
-    epsg = preprocessing.compute_epsg(
-        sensor_image_left,
-        sensor_image_right,
-        grid_left,
-        grid_right,
-        geometry_plugin,
-        disp_min=0,
-        disp_max=0,
-    )
-    # Project point cloud to UTM
-    projection.point_cloud_conversion_dataset(point_cloud, epsg)
+    # Crop dem_to_fit with dem_ref to reduce
+    # computation costs. This is fine since dem_ref has big margins
+    # and we want to fix small shifts.
+    bbox = dem_ref.bounds
+    dem_to_fit = dem_to_fit.crop(bbox).reproject(crs=crs_metric)
+    # Reproject dem_ref to dem_to_fit resolution to reduce computation costs
+    dem_ref = dem_ref.reproject(dem_to_fit)
 
-    # Convert point cloud to pandas format to allow statistical filtering
-    labels = [cst.X, cst.Y, cst.Z, cst.DISPARITY, cst.POINT_CLOUD_CORR_MSK]
-    cloud_array = []
-    cloud_array.append(point_cloud[cst.X].values)
-    cloud_array.append(point_cloud[cst.Y].values)
-    cloud_array.append(point_cloud[cst.Z].values)
-    cloud_array.append(point_cloud[cst.DISPARITY].values)
-    cloud_array.append(point_cloud[cst.POINT_CLOUD_CORR_MSK].values)
-    pd_cloud = pandas.DataFrame(
-        np.transpose(np.array(cloud_array)), columns=labels
-    )
+    coreg_pipeline = xdem.coreg.NuthKaab()
 
-    pd_cloud.attrs["epsg"] = epsg
+    try:
+        # fit dem_to_fit onto dem_ref, crop it, then reproject it
+        # set a random state to always get the same results
+        fit_dem = (
+            coreg_pipeline.fit_and_apply(dem_ref, dem_to_fit, random_state=0)
+            .crop(dem_ref)
+            .reproject(crs=crs_out)
+        )
+        # save the results
+        fit_dem.save(dem_out_path)
+        coreg_offsets = coreg_pipeline.meta["outputs"]["affine"]
+    except (ValueError, AssertionError):
+        logging.warning(
+            "xDEM coregistration failed. This can happen when sensor images "
+            "are too small. No shift will be applied on DEM"
+        )
+        coreg_offsets = None
 
-    return pd_cloud
+    return coreg_offsets

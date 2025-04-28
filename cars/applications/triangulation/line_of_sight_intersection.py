@@ -38,13 +38,11 @@ from shareloc.geofunctions.rectification_grid import RectificationGrid
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.dem_generation.dem_generation_tools import (
-    triangulate_sparse_matches,
-)
 from cars.applications.grid_generation import grids
 from cars.applications.point_cloud_fusion import point_cloud_tools
 from cars.applications.triangulation import (
     triangulation_constants,
+    triangulation_sparse_tools,
     triangulation_tools,
 )
 from cars.applications.triangulation.triangulation import Triangulation
@@ -1261,15 +1259,17 @@ def triangulation_wrapper_matches(
     )
 
     # Triangulate matches
-    triangulated_matches = triangulate_sparse_matches(
-        sensor1,
-        sensor2,
-        grid1,
-        grid2,
-        interpolated_grid1,
-        interpolated_grid2,
-        matches,
-        geometry_plugin,
+    triangulated_matches = (
+        triangulation_sparse_tools.triangulate_sparse_matches(
+            sensor1,
+            sensor2,
+            grid1,
+            grid2,
+            interpolated_grid1,
+            interpolated_grid2,
+            matches,
+            geometry_plugin,
+        )
     )
 
     cars_dataset.fill_dataframe(
