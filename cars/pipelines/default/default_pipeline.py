@@ -836,6 +836,9 @@ class DefaultPipeline(PipelineTemplate):
             self.sparse_mtch_pandora_app.get_conf()
         )
 
+        if not initial_elevation:
+            self.sparse_mtch_pandora_app.confidence_filtering = False
+
         # check classification application parameter compare
         # to each sensors inputs classification list
         for application_key in application_conf:

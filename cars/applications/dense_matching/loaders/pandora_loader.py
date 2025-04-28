@@ -138,7 +138,14 @@ class PandoraLoader:
                 # read conf
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
                     conf = json.load(fstream)
-
+            elif method_name == "census_sgm_sparse":
+                # Use census sgm conf
+                conf_file_path = os.path.join(
+                    package_path, "config_census_sgm_sparse.json"
+                )
+                # read conf
+                with open(conf_file_path, "r", encoding="utf8") as fstream:
+                    conf = json.load(fstream)
             else:
                 logging.error(
                     "No method named {} in pandora loader".format(method_name)
@@ -162,7 +169,6 @@ class PandoraLoader:
                 "eta_step": perf_eta_step,
             }
         }
-
         intervals_conf = {
             "cost_volume_confidence.cars_3": {
                 "confidence_method": "interval_bounds",

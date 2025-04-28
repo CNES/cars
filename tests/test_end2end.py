@@ -1022,7 +1022,7 @@ def test_end2end_ventoux_unique():
                 == 612
             )
             assert (
-                -65
+                -66
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
@@ -3067,7 +3067,7 @@ def test_prepare_ventoux_bias():
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -125
+            assert out_disp_compute["minimum_disparity"] > -126
             assert out_disp_compute["minimum_disparity"] < -83
             assert out_disp_compute["maximum_disparity"] > -47
             assert out_disp_compute["maximum_disparity"] < -11
@@ -3586,7 +3586,7 @@ def test_end2end_ventoux_with_color():
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -65
+            assert out_disp_compute["minimum_disparity"] > -66
             assert out_disp_compute["minimum_disparity"] < -17
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 46
@@ -3941,7 +3941,7 @@ def test_end2end_ventoux_with_classif():
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -65
+            assert out_disp_compute["minimum_disparity"] > -66
             assert out_disp_compute["minimum_disparity"] < -17
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 46

@@ -17,7 +17,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# pylint: disable=too-many-lines
+
 """
 Sparse matching Sift module:
 contains sift sparse matching method
@@ -26,13 +27,15 @@ contains sift sparse matching method
 # Standard imports
 from __future__ import absolute_import
 
+import collections
 import logging
 
 # Third party imports
 import numpy as np
 import pandas
+import rasterio
 import xarray as xr
-from scipy.ndimage import zoom
+from scipy.ndimage import generic_filter, zoom
 from vlsift.sift.sift import sift
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
@@ -464,7 +467,7 @@ def compute_disp_min_disp_max(
     return dmin, dmax
 
 
-def downsample(tab, resolution):
+def downsample(tab, resolution, dim_max):
     """
     Downsample the image dataset
 
@@ -472,6 +475,8 @@ def downsample(tab, resolution):
     :type tab: cars dataset
     :param resolution: the resolution of the resampling
     :type resolution: float
+    :param dim_max: the maximum dimensions
+    :type dim_max: list
 
     :return: the downsampled image
     :rtype: cars dataset
@@ -520,6 +525,7 @@ def downsample(tab, resolution):
         (tab.im.shape[1] / upsampled_raster.shape[1]),
     )
     upsampled_dataset.attrs["transform"] = transform
+    geo_transform = rasterio.Affine(*transform)
 
     # roi_with_margins
     # Since we are working with bands and not tiles,
@@ -548,7 +554,25 @@ def downsample(tab, resolution):
 
     upsampled_dataset.attrs["roi"] = roi.astype(int)
 
-    return upsampled_dataset, upscaled_factor
+    window = {}
+    window["row_min"] = int(roi[1])
+    window["row_max"] = int(roi[3])
+    window["col_min"] = int(roi[0])
+    window["col_max"] = int(roi[2])
+    upsampled_dataset.attrs["window"] = window
+
+    profile = collections.OrderedDict(
+        {
+            "driver": "GTiff",
+            "height": dim_max[0] * resolution,
+            "width": dim_max[1] * resolution,
+            "count": 1,
+            "dtype": "float32",
+            "transform": geo_transform,
+        }
+    )
+
+    return upsampled_dataset, upscaled_factor, window, profile
 
 
 def clustering_matches(
@@ -637,6 +661,8 @@ def pandora_matches(
     left_image_object,
     right_image_object,
     corr_conf,
+    dim_max,
+    conf_filtering,
     disp_upper_bound,
     disp_lower_bound,
     resolution,
@@ -650,6 +676,10 @@ def pandora_matches(
     :type right_image_object: cars dataset
     :param corr_conf: the pandora configuration
     :type corr_conf: dict
+    :param dim_max: the maximum dimensions
+    :type dim_max: list
+    :param conf_filtering: True to filter the disp map
+    :type conf_filtering: dict
     :param resolution: the resolution of the resampling
     :type resolution: int
 
@@ -659,11 +689,11 @@ def pandora_matches(
     """
 
     # Downsample the epipolar images
-    epipolar_image_left_low_res, new_resolution = downsample(
-        left_image_object, 1 / resolution
+    epipolar_image_left_low_res, new_resolution, window, profile = downsample(
+        left_image_object, 1 / resolution, dim_max
     )
-    epipolar_image_right_low_res, _ = downsample(
-        right_image_object, 1 / resolution
+    epipolar_image_right_low_res, _, _, _ = downsample(
+        right_image_object, 1 / resolution, dim_max
     )
 
     # Calculate the disparity grid
@@ -729,10 +759,27 @@ def pandora_matches(
         disp_max_grid=disp_max_grid,
     )
 
-    # get values
+    # Filtering by using the pandora mask
     mask = epipolar_disparity_map["disp_msk"].values
     disp_map = epipolar_disparity_map["disp"].values
     disp_map[mask == 0] = np.nan
+
+    # Filtering by using the confidence
+    requested_confidence = [
+        "confidence_from_risk_max.risk",
+        "confidence_from_interval_bounds_sup.intervals",
+    ]
+
+    if (
+        all(key in epipolar_disparity_map for key in requested_confidence)
+        and conf_filtering["activated"] is True
+    ):
+        confidence_filtering(
+            epipolar_disparity_map,
+            disp_map,
+            requested_confidence,
+            conf_filtering,
+        )
 
     # Construct the matches using the disparity map
     rows = np.arange(
@@ -764,7 +811,7 @@ def pandora_matches(
     order = np.argsort(matches_true_res[:, 0])
     matches_true_res = matches_true_res[order, :]
 
-    return matches_true_res, epipolar_disparity_map
+    return matches_true_res, epipolar_disparity_map, window, profile
 
 
 def transform_triangulated_matches_to_dataframe(triangulated_matches):
@@ -791,3 +838,60 @@ def transform_triangulated_matches_to_dataframe(triangulated_matches):
     triangulated_matches_df.attrs = attrs
 
     return triangulated_matches_df
+
+
+def nan_ratio_func(window):
+    """ "
+    Calculate the number of nan in the window
+
+    :param window: the window in the image
+    """
+
+    total_pixels = window.size
+    nan_count = np.isnan(window).sum()
+    return nan_count / total_pixels
+
+
+def confidence_filtering(
+    dataset,
+    disp_map,
+    requested_confidence,
+    conf_filtering,
+):
+    """
+    Filter the disparity map by using the confidence
+
+    :param dataset: the epipolar disparity map dataset
+    :type dataset: cars dataset
+    :param disp_map: the disparity map
+    :type disp_map: numpy darray
+    :param requested_confidence: the confidence to use
+    :type requested_confidence: list
+    :param conf_filtering: the confidence_filtering parameters
+    :type conf_filtering: dict
+    """
+    data_risk = dataset[requested_confidence[0]].values
+    data_bounds_sup = dataset[requested_confidence[1]].values
+
+    nan_ratio = generic_filter(
+        disp_map, nan_ratio_func, size=conf_filtering["win_nanratio"]
+    )
+    var_map = generic_filter(
+        data_risk, np.nanmean, size=conf_filtering["win_mean_risk_max"]
+    )
+
+    mask = (
+        (data_bounds_sup > conf_filtering["upper_bound"])
+        | (data_bounds_sup <= conf_filtering["lower_bound"])
+    ) | (
+        (var_map > conf_filtering["risk_max"])
+        & (nan_ratio > conf_filtering["nan_threshold"])
+    )
+    disp_map[mask] = np.nan
+
+    var_mean_risk = xr.DataArray(var_map, dims=dataset.dims.keys())
+    var_nan_ratio = xr.DataArray(nan_ratio, dims=dataset.dims.keys())
+
+    # We add the new variables to the dataset
+    dataset["confidence_from_mean_risk_max"] = var_mean_risk
+    dataset["confidence_from_nanratio"] = var_nan_ratio
