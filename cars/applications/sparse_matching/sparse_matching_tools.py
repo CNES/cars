@@ -47,6 +47,7 @@ from cars.applications.dense_matching import dense_matching_tools as dm_tools
 from cars.applications.point_cloud_outlier_removal import outlier_removal_tools
 from cars.core import constants as cst
 from cars.data_structures import cars_dataset
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 def euclidean_matrix_distance(descr1: np.array, descr2: np.array):
@@ -575,6 +576,7 @@ def downsample(tab, resolution, dim_max):
     return upsampled_dataset, upscaled_factor, window, profile
 
 
+@cars_profile(name="Clustering matches")
 def clustering_matches(
     triangulated_matches,
     connection_val=3.0,
@@ -623,6 +625,7 @@ def clustering_matches(
     return filtered_pandora_matches_dataframe
 
 
+@cars_profile(name="filter_point_cloud_matches")
 def filter_point_cloud_matches(
     pd_cloud,
     matches_filter_knn=25,

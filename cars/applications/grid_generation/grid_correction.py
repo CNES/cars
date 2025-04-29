@@ -45,6 +45,7 @@ from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
+@cars_profile(name="Correct grid from 1d")
 def correct_grid_from_1d(
     grid, grid_correction_coef, save_grid=False, pair_folder=None
 ):
@@ -78,6 +79,7 @@ def correct_grid_from_1d(
     return corrected_grid_right
 
 
+@cars_profile(name="Correct grid")
 def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
     """
     Correct grid

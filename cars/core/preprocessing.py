@@ -42,6 +42,7 @@ from cars.applications.grid_generation import grids
 # CARS imports
 from cars.core import inputs, projection, tiling
 from cars.core.utils import safe_makedirs
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 PREPROCESSING_TAG = "pair_preprocessing"
@@ -352,6 +353,7 @@ def compute_terrain_bbox(  # noqa: 751
     return (terrain_bounding_box, epipolar_average_tile_width), inter_poly
 
 
+@cars_profile(name="Compute roi poly")
 def compute_roi_poly(input_roi_poly, input_roi_epsg, epsg):
     """
     Compute roi polygon from input roi
@@ -378,6 +380,7 @@ def compute_roi_poly(input_roi_poly, input_roi_epsg, epsg):
     return roi_poly
 
 
+@cars_profile(name="Compute epsg")
 def compute_epsg(
     sensor_image_left,
     sensor_image_right,
@@ -658,6 +661,7 @@ def convert_optimal_tile_size_with_epsg(
     return optimal_terrain_tile_width
 
 
+@cars_profile(name="Compute epipolar roi")
 def compute_epipolar_roi(
     terrain_roi_poly,
     terrain_roi_epsg,
