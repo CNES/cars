@@ -1884,6 +1884,11 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                         "method": "simple_gaussian",
                         "save_intermediate_data": True,
                     },
+                    "dsm_filling.1": {
+                        "method": "exogenous_filling",
+                        "activated": True,
+                    },
+                    "dsm_filling.2": {"method": "bulldozer", "activated": True},
                     "auxiliary_filling": {"activated": True},
                 },
             }

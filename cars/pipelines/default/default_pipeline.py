@@ -53,9 +53,13 @@ from cars.applications.sparse_matching import (
 from cars.applications.sparse_matching.sparse_matching_tools import (
     transform_triangulated_matches_to_dataframe,
 )
-from cars.core import preprocessing, roi_tools
+from cars.core import preprocessing, projection, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
-from cars.core.inputs import get_descriptions_bands, rasterio_get_epsg
+from cars.core.inputs import (
+    get_descriptions_bands,
+    rasterio_get_epsg,
+    read_vector,
+)
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -2508,14 +2512,73 @@ class DefaultPipeline(PipelineTemplate):
                 else None
             )
 
+        if not hasattr(self, "list_intersection_poly"):
+            if (
+                self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
+                    sens_cst.DEM_PATH
+                ]
+                is not None
+                and self.sensors_in_inputs
+            ):
+                self.list_sensor_pairs = sensor_inputs.generate_inputs(
+                    self.used_conf[INPUTS],
+                    self.geom_plugin_without_dem_and_geoid,
+                )
+
+                self.list_intersection_poly = []
+                for _, (
+                    pair_key,
+                    sensor_image_left,
+                    sensor_image_right,
+                ) in enumerate(self.list_sensor_pairs):
+                    pair_folder = os.path.join(
+                        self.dump_dir, "terrain_bbox", pair_key
+                    )
+                    safe_makedirs(pair_folder)
+                    geojson1 = os.path.join(
+                        pair_folder, "left_envelope.geojson"
+                    )
+                    geojson2 = os.path.join(
+                        pair_folder, "right_envelope.geojson"
+                    )
+                    out_envelopes_intersection = os.path.join(
+                        pair_folder, "envelopes_intersection.geojson"
+                    )
+
+                    inter_poly, _ = projection.ground_intersection_envelopes(
+                        sensor_image_left[sens_cst.INPUT_IMG],
+                        sensor_image_right[sens_cst.INPUT_IMG],
+                        sensor_image_left[sens_cst.INPUT_GEO_MODEL],
+                        sensor_image_right[sens_cst.INPUT_GEO_MODEL],
+                        self.geom_plugin_with_dem_and_geoid,
+                        geojson1,
+                        geojson2,
+                        out_envelopes_intersection,
+                        envelope_file_driver="GeoJSON",
+                        intersect_file_driver="GeoJSON",
+                    )
+
+                    # Retrieve bounding box of the grd inters of the envelopes
+                    inter_poly, inter_epsg = read_vector(
+                        out_envelopes_intersection
+                    )
+
+                    # Project polygon if epsg is different
+                    if self.epsg != inter_epsg:
+                        inter_poly = projection.polygon_projection(
+                            inter_poly, inter_epsg, self.epsg
+                        )
+
+                self.list_intersection_poly.append(inter_poly)
+            else:
+                self.list_intersection_poly = None
+
         _ = self.dsm_filling_1_application.run(
             dsm_file=dsm_file_name,
             classif_file=classif_file_name,
             filling_file=filling_file_name,
             dump_dir=dsm_filling_1_dump_dir,
-            roi_polys=(
-                self.list_intersection_poly if self.compute_depth_map else None
-            ),
+            roi_polys=self.list_intersection_poly,
             roi_epsg=self.epsg,
             output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
             geom_plugin=self.geom_plugin_with_dem_and_geoid,
@@ -2532,9 +2595,7 @@ class DefaultPipeline(PipelineTemplate):
             classif_file=classif_file_name,
             filling_file=filling_file_name,
             dump_dir=dsm_filling_2_dump_dir,
-            roi_polys=(
-                self.list_intersection_poly if self.compute_depth_map else None
-            ),
+            roi_polys=self.list_intersection_poly,
             roi_epsg=self.epsg,
             orchestrator=self.cars_orchestrator,
         )
@@ -2567,9 +2628,7 @@ class DefaultPipeline(PipelineTemplate):
             filling_file=filling_file_name,
             dtm_file=dtm_file_name,
             dump_dir=dsm_filling_3_dump_dir,
-            roi_polys=(
-                self.list_intersection_poly if self.compute_depth_map else None
-            ),
+            roi_polys=self.list_intersection_poly,
             roi_epsg=self.epsg,
         )
 
@@ -2661,15 +2720,14 @@ class DefaultPipeline(PipelineTemplate):
         Loads all the data and creates all the variables used
         later when processing a depth map, as if it was just computed.
         """
+        # get epsg
+        self.epsg = self.used_conf[OUTPUT][out_cst.EPSG]
 
         output_parameters.intialize_product_index(
             self.cars_orchestrator,
             self.used_conf[OUTPUT]["product_level"],
             self.used_conf[INPUTS][depth_cst.DEPTH_MAPS].keys(),
         )
-
-        # get epsg
-        self.epsg = self.used_conf[OUTPUT][out_cst.EPSG]
 
         # compute epsg
         epsg_cloud = pc_tif_tools.compute_epsg_from_point_cloud(
