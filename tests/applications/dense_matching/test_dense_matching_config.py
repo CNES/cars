@@ -122,6 +122,23 @@ def test_denoise_disparity_map():
 
 
 @pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "cross_value",
+    [
+        True,
+        "fast",
+        "accurate",
+    ],
+)
+def test_cross_validation_value(cross_value):
+    """
+    Test configuration check for dense matching application
+    """
+    conf = {"use_cross_validation": cross_value}
+    _ = CensusMccnnSgm(conf)
+
+
+@pytest.mark.unit_tests
 def test_check_full_conf_pandora_conf_as_file():
     """
     Test configuration check for dense matching application
