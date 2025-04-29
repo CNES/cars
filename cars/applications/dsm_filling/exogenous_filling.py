@@ -34,6 +34,7 @@ from rasterio.warp import reproject
 from shapely import Polygon
 
 from cars.core import inputs, projection
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 from .dsm_filling import DsmFilling
 
@@ -104,6 +105,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         return overloaded_conf
 
+    @cars_profile(name="Exogeneous filling")
     def run(  # noqa C901
         self,
         dsm_file,

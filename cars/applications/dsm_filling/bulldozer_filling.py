@@ -35,6 +35,7 @@ from json_checker import Checker, Or
 from shapely import Polygon
 
 from cars.core import inputs, projection
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 from .dsm_filling import DsmFilling
 
@@ -89,6 +90,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         return overloaded_conf
 
+    @cars_profile(name="Bulldozer filling")
     def run(  # noqa C901
         self,
         dsm_file,
