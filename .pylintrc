@@ -45,6 +45,7 @@ confidence=
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
 disable=logging-format-interpolation,
+        logging-fstring-interpolation,
 	arguments-differ,
 	too-many-locals,
 	too-many-arguments,

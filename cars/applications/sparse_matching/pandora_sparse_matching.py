@@ -100,6 +100,9 @@ class PandoraSparseMatching(
             "matches_filter_dev_factor"
         ]
         self.confidence_filtering = self.used_config["confidence_filtering"]
+        self.disparity_bounds_estimation = self.used_config[
+            "disparity_bounds_estimation"
+        ]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -137,6 +140,11 @@ class PandoraSparseMatching(
         # confidence filtering parameters
         overloaded_conf["confidence_filtering"] = conf.get(
             "confidence_filtering", {}
+        )
+
+        # confidence filtering parameters
+        overloaded_conf["disparity_bounds_estimation"] = conf.get(
+            "disparity_bounds_estimation", {}
         )
 
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
@@ -211,6 +219,7 @@ class PandoraSparseMatching(
             "matches_filter_dev_factor": Or(int, float),
             "save_intermediate_data": bool,
             "confidence_filtering": dict,
+            "disparity_bounds_estimation": dict,
         }
 
         # Check conf
@@ -218,6 +227,7 @@ class PandoraSparseMatching(
         checker.validate(overloaded_conf)
 
         self.check_conf_confidence_filtering(overloaded_conf)
+        self.check_conf_disparity_bounds_estimation(overloaded_conf)
 
         # Check consistency between bounds for elevation delta
         elevation_delta_lower_bound = overloaded_conf[
@@ -279,6 +289,43 @@ class PandoraSparseMatching(
         )
         checker_confidence_filtering_schema.validate(
             overloaded_conf["confidence_filtering"]
+        )
+
+    def check_conf_disparity_bounds_estimation(self, overloaded_conf):
+        """
+        Check the disparity bounds estimation conf
+        """
+        overloaded_conf["disparity_bounds_estimation"]["activated"] = (
+            overloaded_conf["disparity_bounds_estimation"].get(
+                "activated", True
+            )
+        )
+        overloaded_conf["disparity_bounds_estimation"]["percentile"] = (
+            overloaded_conf["disparity_bounds_estimation"].get("percentile", 1)
+        )
+        overloaded_conf["disparity_bounds_estimation"]["lower_margin"] = (
+            overloaded_conf["disparity_bounds_estimation"].get(
+                "lower_margin", 500
+            )
+        )
+        overloaded_conf["disparity_bounds_estimation"]["upper_margin"] = (
+            overloaded_conf["disparity_bounds_estimation"].get(
+                "upper_margin", 1000
+            )
+        )
+
+        disparity_bounds_estimation_schema = {
+            "activated": bool,
+            "percentile": Or(int, float),
+            "upper_margin": int,
+            "lower_margin": int,
+        }
+
+        checker_disparity_bounds_estimation_schema = Checker(
+            disparity_bounds_estimation_schema
+        )
+        checker_disparity_bounds_estimation_schema.validate(
+            overloaded_conf["disparity_bounds_estimation"]
         )
 
     def get_save_matches(self):
@@ -415,6 +462,8 @@ class PandoraSparseMatching(
         pair_folder=None,
         pair_key="PAIR_0",
         disp_to_alt_ratio=None,
+        disp_min=None,
+        disp_max=None,
     ):
         """
         Run PandoraSparseMatching application.
@@ -561,12 +610,14 @@ class PandoraSparseMatching(
                 disp_upper_bound = (
                     -self.elevation_delta_lower_bound / disp_to_alt_ratio
                 )
+            disp_upper_bound = min(disp_upper_bound, disp_max)
             if self.elevation_delta_upper_bound is None:
                 disp_lower_bound = -np.inf
             else:
                 disp_lower_bound = (
                     -self.elevation_delta_upper_bound / disp_to_alt_ratio
                 )
+            disp_lower_bound = max(disp_lower_bound, disp_min)
 
             # Get the max dim to register the disparity map correctly
             row_max = pandora_epipolar_matches.tiling_grid[-1, -1][1]
