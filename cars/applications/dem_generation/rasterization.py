@@ -139,7 +139,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             "median_filter_size", 5
         )
         overloaded_conf["fillnodata_max_search_distance"] = conf.get(
-            "fillnodata_max_search_distance", 100
+            "fillnodata_max_search_distance", 50
         )
         overloaded_conf["min_dem"] = conf.get("min_dem", -500)
         overloaded_conf["max_dem"] = conf.get("max_dem", 1000)
@@ -303,10 +303,18 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         nodata = rasterization_application.dsm_no_data
         mask = dem_data == nodata
 
+        # fill nodata
+        max_search_distance = (
+            self.fillnodata_max_search_distance
+            + self.morphological_filters_size
+        )
+        # a margin is added for following morphological operations
+        # pixels further than self.fillnodata_max_search_distance
+        # will later be turned into nodata by eroded_mask
         dem_data = rio.fill.fillnodata(
             dem_data,
             mask=~mask,
-            max_search_distance=self.fillnodata_max_search_distance,
+            max_search_distance=max_search_distance,
         )
 
         not_filled_pixels = dem_data == nodata
@@ -355,11 +363,9 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             ),
         )
 
-        mask_erosion_filter_size = self.fillnodata_max_search_distance // 2
-        footprint = [
-            (np.ones((mask_erosion_filter_size, 1)), 1),
-            (np.ones((1, mask_erosion_filter_size)), 1),
-        ]
+        footprint = skimage.morphology.disk(
+            self.fillnodata_max_search_distance, decomposition="sequence"
+        )
         eroded_mask = skimage.morphology.binary_erosion(
             mask, footprint=footprint
         )

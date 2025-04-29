@@ -22,7 +22,9 @@
 this module contains tools for the dem generation
 """
 
+import contextlib
 import logging
+import os
 
 # Third party imports
 import xdem
@@ -46,41 +48,50 @@ def fit_initial_elevation_on_dem_median(
     :return: coregistration transformation applied
     :rtype: dict
     """
+    # suppress all outputs of xdem
+    with open(os.devnull, "w", encoding="utf8") as devnull:
+        with (
+            contextlib.redirect_stdout(devnull),
+            contextlib.redirect_stderr(devnull),
+        ):
 
-    # load DEMs
-    dem_to_fit = xdem.DEM(dem_to_fit_path)
-    dem_ref = xdem.DEM(dem_ref_path)  # 0s are nodata in dem_ref
+            # load DEMs
+            dem_to_fit = xdem.DEM(dem_to_fit_path)
+            dem_ref = xdem.DEM(dem_ref_path)  # 0s are nodata in dem_ref
 
-    # get the crs needed to reproject the data
-    crs_out = dem_ref.crs
-    crs_metric = dem_ref.get_metric_crs()
+            # get the crs needed to reproject the data
+            crs_out = dem_ref.crs
+            crs_metric = dem_ref.get_metric_crs()
 
-    # Crop dem_to_fit with dem_ref to reduce
-    # computation costs. This is fine since dem_ref has big margins
-    # and we want to fix small shifts.
-    bbox = dem_ref.bounds
-    dem_to_fit = dem_to_fit.crop(bbox).reproject(crs=crs_metric)
-    # Reproject dem_ref to dem_to_fit resolution to reduce computation costs
-    dem_ref = dem_ref.reproject(dem_to_fit)
+            # Crop dem_to_fit with dem_ref to reduce
+            # computation costs. This is fine since dem_ref has big margins
+            # and we want to fix small shifts.
+            bbox = dem_ref.bounds
+            dem_to_fit = dem_to_fit.crop(bbox).reproject(crs=crs_metric)
+            # Reproject dem_ref to dem_to_fit resolution to reduce
+            # computation costs
+            dem_ref = dem_ref.reproject(dem_to_fit)
 
-    coreg_pipeline = xdem.coreg.NuthKaab()
+            coreg_pipeline = xdem.coreg.NuthKaab()
 
-    try:
-        # fit dem_to_fit onto dem_ref, crop it, then reproject it
-        # set a random state to always get the same results
-        fit_dem = (
-            coreg_pipeline.fit_and_apply(dem_ref, dem_to_fit, random_state=0)
-            .crop(dem_ref)
-            .reproject(crs=crs_out)
-        )
-        # save the results
-        fit_dem.save(dem_out_path)
-        coreg_offsets = coreg_pipeline.meta["outputs"]["affine"]
-    except (ValueError, AssertionError):
-        logging.warning(
-            "xDEM coregistration failed. This can happen when sensor images "
-            "are too small. No shift will be applied on DEM"
-        )
-        coreg_offsets = None
+            try:
+                # fit dem_to_fit onto dem_ref, crop it, then reproject it
+                # set a random state to always get the same results
+                fit_dem = (
+                    coreg_pipeline.fit_and_apply(
+                        dem_ref, dem_to_fit, random_state=0
+                    )
+                    .crop(dem_ref)
+                    .reproject(crs=crs_out)
+                )
+                # save the results
+                fit_dem.save(dem_out_path)
+                coreg_offsets = coreg_pipeline.meta["outputs"]["affine"]
+            except (ValueError, AssertionError):
+                logging.warning(
+                    "xDEM coregistration failed. This can happen when sensor "
+                    "images are too small. No shift will be applied on DEM"
+                )
+                coreg_offsets = None
 
     return coreg_offsets

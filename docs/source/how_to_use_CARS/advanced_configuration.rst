@@ -316,7 +316,7 @@ The structure follows this organization:
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | margin                          | Margin to use on the border of dem, in meter                             | int, float | should be > 0   | 300           | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-                | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata                             | int        | should be > 0   | 100           | No       |
+                | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata                             | int        | should be > 0   | 50            | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | morphological_filters_size      | Size (in pixels) of erosion and dilation filters used to generate DEM    | int        | should be > 0   | 30            | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
