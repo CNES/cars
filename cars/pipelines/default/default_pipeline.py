@@ -1198,6 +1198,9 @@ class DefaultPipeline(PipelineTemplate):
                     pair_key
                 ]["grid_left"]
 
+                if self.quit_on_app("sparse_matching.sift"):
+                    continue
+
                 # Run epipolar resampling
                 (
                     self.pairs[pair_key]["new_epipolar_image_left"],
@@ -1311,9 +1314,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pairs[pair_key]["filtered_triangulated_matches"]
                 )
 
-                if self.quit_on_app("sparse_matching.sift") or self.quit_on_app(
-                    "sparse_matching.pandora"
-                ):
+                if self.quit_on_app("sparse_matching.pandora"):
                     continue  # keep iterating over pairs, but don't go further
 
         # Clean grids at the end of processing if required. Note that this will

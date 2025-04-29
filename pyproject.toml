@@ -65,7 +65,9 @@ dependencies = [
     "vlsift==0.1.*",
     "shareloc==0.2.7",
     "bulldozer-dtm==1.1.*",
-    "xdem==0.1.*"
+    "xdem==0.1.*",
+    "geopandas",
+    "rpcfit"
 ]
 
 [project.urls]
@@ -156,6 +158,7 @@ cars-starter = "cars.starter:cli"
 cars-extractroi = "cars.extractroi:main"
 cars-dashboard = "cars.orchestrator.tiles_profiler:main"
 cars-devibrate = "cars.devibrate:cli"
+cars-bundleadjustment = "cars.bundleadjustment:cli"
 
 [tool.cibuildwheel]
 skip = ["pp*", "*-win32"]
