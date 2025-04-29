@@ -34,7 +34,7 @@ import time
 import numpy as np
 
 # Third party imports
-from json_checker import And, Checker
+from json_checker import And, Checker, Or
 from pyproj import CRS
 
 # CARS imports
@@ -151,9 +151,9 @@ class Statistical(
             "save_by_pair": bool,
             "activated": bool,
             "k": And(int, lambda x: x > 0),
-            "filtering_constant": And(float, lambda x: x >= 0),
-            "mean_factor": And(float, lambda x: x >= 0),
-            "std_dev_factor": And(float, lambda x: x >= 0),
+            "filtering_constant": And(Or(float, int), lambda x: x >= 0),
+            "mean_factor": And(Or(float, int), lambda x: x >= 0),
+            "std_dev_factor": And(Or(float, int), lambda x: x >= 0),
             "use_median": bool,
             "half_epipolar_size": int,
             application_constants.SAVE_INTERMEDIATE_DATA: bool,

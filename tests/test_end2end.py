@@ -1148,6 +1148,9 @@ def test_end2end_ventoux_unique():
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "use_median": False,
             },
             "point_cloud_rasterization": {
@@ -1624,6 +1627,9 @@ def test_end2end_ventoux_unique():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "use_median": False,
             },
@@ -1731,6 +1737,9 @@ def test_end2end_ventoux_unique():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "use_median": False,
             },
@@ -2073,6 +2082,9 @@ def test_end2end_ventoux_unique_split():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "save_intermediate_data": True,
                 "use_median": False,
@@ -3644,6 +3656,9 @@ def test_end2end_ventoux_with_color():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "save_intermediate_data": True,
                 "use_median": False,
@@ -3997,6 +4012,9 @@ def test_end2end_ventoux_with_classif():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "save_intermediate_data": True,
                 "use_median": False,
@@ -4357,6 +4375,9 @@ def test_compute_dsm_with_snap_to_img1():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "use_median": False,
             },
@@ -4477,6 +4498,9 @@ def test_end2end_quality_stats():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "use_median": False,
             },
@@ -4771,6 +4795,9 @@ def test_end2end_ventoux_egm96_geoid():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "use_median": False,
             },
@@ -4899,6 +4926,9 @@ def test_end2end_ventoux_egm96_geoid():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "use_median": False,
             },
@@ -4995,6 +5025,9 @@ def test_end2end_ventoux_egm96_geoid():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "use_median": False,
             },
@@ -5127,6 +5160,8 @@ def test_end2end_paca_with_mask():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0.0,
+                "mean_factor": 1.0,
                 "activated": True,
                 "use_median": False,
                 "std_dev_factor": 1.0,
@@ -5445,6 +5480,9 @@ def test_end2end_disparity_filling():
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "filtering_constant": 0.0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "use_median": False,
             },
             "point_cloud_rasterization": {
@@ -5580,6 +5618,9 @@ def test_end2end_disparity_filling_with_zeros():
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
+                "filtering_constant": 0,
+                "mean_factor": 1.0,
+                "std_dev_factor": 5.0,
                 "activated": True,
                 "use_median": False,
             },
