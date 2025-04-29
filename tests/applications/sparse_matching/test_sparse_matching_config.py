@@ -50,8 +50,10 @@ def test_check_full_conf():
         "sift_edge_threshold": 5.0,
         "sift_magnification": 2.0,
         "sift_back_matching": True,
-        "matches_filter_knn": 25,
-        "matches_filter_dev_factor": 3.0,
+        "match_filter_knn": 25,
+        "match_filter_constant": 0,
+        "match_filter_mean_factor": 1,
+        "match_filter_dev_factor": 3.0,
         "save_intermediate_data": False,
     }
     _ = Sift(conf)

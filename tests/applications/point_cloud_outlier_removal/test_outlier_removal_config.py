@@ -68,6 +68,8 @@ def test_check_full_conf_statistical():
         "save_by_pair": False,
         "activated": False,
         "k": 50,
+        "filtering_constant": 0.0,
+        "mean_factor": 1.0,
         "std_dev_factor": 5.0,
         "use_median": False,
         "half_epipolar_size": 5,
