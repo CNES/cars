@@ -34,6 +34,7 @@ from json_checker import Checker, Or
 from shapely import Polygon
 
 from cars.core import inputs, projection
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 from .dsm_filling import DsmFilling
 
@@ -99,6 +100,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         return overloaded_conf
 
+    @cars_profile(name="Border interpolation filling")
     def run(  # noqa C901
         self,
         dsm_file,
