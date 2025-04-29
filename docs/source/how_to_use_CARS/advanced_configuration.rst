@@ -133,9 +133,13 @@ The structure follows this organization:
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | sift_back_matching                   | Also check that right vs. left gives same match                                                | boolean     |                        | true          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | matches_filter_knn                   | Number of neighbors used to measure isolation of matches and detect isolated matches           | int         | should be > 0          | 25            | No       |
+                | match_filter_knn                     | Number of neighbors used to measure isolation of matches and detect isolated matches           | int         | should be > 0          | 25            | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | matches_filter_dev_factor            | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be > 0          | 3.0           | No       |
+                | match_filter_constant                | Constant added to the threshold used for computing statistical outliers                        | int, float  | should be >= 0         | 0             | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | match_filter_mean_factor             | Factor of mean of isolation of matches to compute threshold of outliers                        | int, float  | should be >= 0         | 1.3           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | match_filter_dev_factor              | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be >= 0         | 3.0           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
@@ -769,7 +773,11 @@ The structure follows this organization:
                 +--------------------+-------------+---------+-----------------+---------------+----------+
                 | k                  |             | int     | should be > 0   | 50            | No       |
                 +--------------------+-------------+---------+-----------------+---------------+----------+
-                | std_dev_factor     |             | float   | should be > 0   | 5.0           | No       |
+                | filtering_constant |             | float   | should be >= 0  | 0             | No       |
+                +--------------------+-------------+---------+-----------------+---------------+----------+
+                | mean_factor        |             | float   | should be >= 0  | 1.3           | No       |
+                +--------------------+-------------+---------+-----------------+---------------+----------+
+                | std_dev_factor     |             | float   | should be >= 0  | 3.0           | No       |
                 +--------------------+-------------+---------+-----------------+---------------+----------+
                 | use_median         |             | bool    |                 | True          | No       |
                 +--------------------+-------------+---------+-----------------+---------------+----------+
