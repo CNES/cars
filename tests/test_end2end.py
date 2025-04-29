@@ -2676,7 +2676,8 @@ def test_end2end_use_epipolar_a_priori():
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
-                "use_global_disp_range": True
+                "denoise_disparity_map": True,
+                "use_global_disp_range": True,
             },
             "dem_generation": {
                 # save the dems in the global pipeline
@@ -2732,36 +2733,36 @@ def test_end2end_use_epipolar_a_priori():
             ref_output_dir = "ref_output"
 
             # Uncomment the 2 following instructions to update reference data
-            # copy2(
-            #  os.path.join(out_dir, "dump_dir", "dem_generation",
-            #                   "dem_median.tif"),
-            #  absolute_data_path(
-            #      os.path.join(
-            #          ref_output_dir,
-            #          "dem_median_end2end_ventoux_no_srtm.tif"
-            #      )
-            #  ),
-            # )
-            # copy2(
-            #  os.path.join(out_dir, "dump_dir", "dem_generation",
-            #                                             "dem_min.tif"),
-            #  absolute_data_path(
-            #      os.path.join(
-            #          ref_output_dir,
-            #          "dem_min_end2end_ventoux_no_srtm.tif"
-            #      )
-            #  ),
-            # )
-            # copy2(
-            #  os.path.join(out_dir, "dump_dir", "dem_generation",
-            #                                           "dem_max.tif"),
-            #  absolute_data_path(
-            #      os.path.join(
-            #          ref_output_dir,
-            #          "dem_max_end2end_ventoux_no_srtm.tif"
-            #      )
-            #  ),
-            # )
+            copy2(
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+                ),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir, "dem_median_end2end_ventoux_no_srtm.tif"
+                    )
+                ),
+            )
+            copy2(
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_min.tif"
+                ),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir, "dem_min_end2end_ventoux_no_srtm.tif"
+                    )
+                ),
+            )
+            copy2(
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_max.tif"
+                ),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir, "dem_max_end2end_ventoux_no_srtm.tif"
+                    )
+                ),
+            )
 
             assert_same_images(
                 os.path.join(
@@ -2931,32 +2932,33 @@ def test_end2end_use_epipolar_a_priori():
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
-        # copy2(
-        #     os.path.join(out_dir, "dsm", "dsm.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "dsm_end2end" + "_ventoux_no_srtm.tif"
-        #         )
-        #     ),
-        # )
-        # copy2(
-        #     os.path.join(out_dir, "dsm", "color.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "color_end2end" + "_ventoux_no_srtm.tif"
-        #         )
-        #     ),
-        # )
-        # copy2(
-        #     os.path.join(out_dir,  "dsm",
-        #               "confidence_from_ambiguity_cars_1.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "confidence_from_ambiguity_end2end_ventoux_no_srtm.tif",
-        #         )
-        #     ),
-        # )
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "dsm_end2end" + "_ventoux_no_srtm.tif"
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "color.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "color_end2end" + "_ventoux_no_srtm.tif"
+                )
+            ),
+        )
+        copy2(
+            os.path.join(
+                out_dir, "dsm", "confidence_from_ambiguity_cars_1.tif"
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "confidence_from_ambiguity_end2end_ventoux_no_srtm.tif",
+                )
+            ),
+        )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -3034,7 +3036,8 @@ def test_prepare_ventoux_bias():
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
-                "use_global_disp_range": True
+                "use_global_disp_range": True,
+                "denoise_disparity_map": True,
             },
             "dem_generation": {
                 # save the dems in the global pipeline
