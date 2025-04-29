@@ -25,6 +25,7 @@ this module contains the dense_matching application class.
 import collections
 
 # Standard imports
+import copy
 import logging
 import math
 import os
@@ -277,8 +278,15 @@ class CensusMccnnSgm(
         pandora_machine = PandoraMachine()
         corr_config_pipeline = {"pipeline": dict(self.corr_config["pipeline"])}
 
+        saved_schema = copy.deepcopy(
+            pandora.matching_cost.matching_cost.AbstractMatchingCost.schema
+        )
         _ = check_pipeline_section(
             corr_config_pipeline, fake_dataset, fake_dataset, pandora_machine
+        )
+        # quick fix to remove when the problem is solved in pandora
+        pandora.matching_cost.matching_cost.AbstractMatchingCost.schema = (
+            saved_schema
         )
         self.margins = pandora_machine.margins.global_margins
 
