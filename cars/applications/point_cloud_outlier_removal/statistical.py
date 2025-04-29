@@ -80,6 +80,8 @@ class Statistical(
         # statistical outliers
         self.activated = self.used_config["activated"]
         self.k = self.used_config["k"]
+        self.filtering_constant = self.used_config["filtering_constant"]
+        self.mean_factor = self.used_config["mean_factor"]
         self.std_dev_factor = self.used_config["std_dev_factor"]
         self.use_median = self.used_config["use_median"]
         self.half_epipolar_size = self.used_config["half_epipolar_size"]
@@ -125,8 +127,17 @@ class Statistical(
         # parameters are unused
         # k: number of neighbors
         overloaded_conf["k"] = conf.get("k", 50)
-        # stdev_factor: factor to apply in the distance threshold computation
-        overloaded_conf["std_dev_factor"] = conf.get("std_dev_factor", 5.0)
+        # filtering_constant: constant to apply in the distance threshold
+        # computation
+        overloaded_conf["filtering_constant"] = conf.get(
+            "filtering_constant", 0.0
+        )
+        # mean_factor: factor to apply to the mean in the distance threshold
+        # computation
+        overloaded_conf["mean_factor"] = conf.get("mean_factor", 1.3)
+        # mean_factor: factor to apply to the standard deviation in the
+        # distance threshold
+        overloaded_conf["std_dev_factor"] = conf.get("std_dev_factor", 3.0)
 
         # half_epipolar_size:
         # Half size of the epipolar window used for neighobr search (depth map
@@ -135,19 +146,21 @@ class Statistical(
             "half_epipolar_size", 5
         )
 
-        point_cloud_fusion_schema = {
+        point_cloud_outlier_removal_schema = {
             "method": str,
             "save_by_pair": bool,
             "activated": bool,
             "k": And(int, lambda x: x > 0),
-            "std_dev_factor": And(float, lambda x: x > 0),
+            "filtering_constant": And(float, lambda x: x >= 0),
+            "mean_factor": And(float, lambda x: x >= 0),
+            "std_dev_factor": And(float, lambda x: x >= 0),
             "use_median": bool,
             "half_epipolar_size": int,
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
         # Check conf
-        checker = Checker(point_cloud_fusion_schema)
+        checker = Checker(point_cloud_outlier_removal_schema)
         checker.validate(overloaded_conf)
 
         return overloaded_conf
@@ -317,6 +330,8 @@ class Statistical(
                         )(
                             merged_point_cloud[row, col],
                             self.k,
+                            self.filtering_constant,
+                            self.mean_factor,
                             self.std_dev_factor,
                             self.use_median,
                             save_by_pair=(self.save_by_pair),
@@ -393,6 +408,8 @@ class Statistical(
                         )(
                             merged_point_cloud[row, col],
                             self.k,
+                            self.filtering_constant,
+                            self.mean_factor,
                             self.std_dev_factor,
                             self.use_median,
                             self.half_epipolar_size,
@@ -422,6 +439,8 @@ class Statistical(
 def statistical_removal_wrapper(
     cloud,
     statistical_k,
+    filtering_constant,
+    mean_factor,
     std_dev_factor,
     use_median,
     save_by_pair: bool = False,
@@ -436,6 +455,10 @@ def statistical_removal_wrapper(
     :type cloud: pandas DataFrame
     :param statistical_k: k
     :type statistical_k: int
+    :param filtering_constant: constant applied to the threshold
+    :type filtering_constant: float
+    :param mean_factor: mean factor
+    :type mean_factor: float
     :param std_dev_factor: std factor
     :type std_dev_factor: float
     :param use_median: use median and quartile instead of mean and std
@@ -484,7 +507,12 @@ def statistical_removal_wrapper(
     # Filter point cloud
     tic = time.process_time()
     (new_cloud, _) = outlier_removal_tools.statistical_outlier_filtering(
-        new_cloud, statistical_k, std_dev_factor, use_median
+        new_cloud,
+        statistical_k,
+        filtering_constant,
+        mean_factor,
+        std_dev_factor,
+        use_median,
     )
     toc = time.process_time()
     logging.debug(
@@ -526,6 +554,8 @@ def statistical_removal_wrapper(
 def epipolar_statistical_removal_wrapper(
     epipolar_ds,
     statistical_k,
+    filtering_constant,
+    mean_factor,
     std_dev_factor,
     use_median,
     half_epipolar_size,
@@ -544,6 +574,10 @@ def epipolar_statistical_removal_wrapper(
     :type epipolar_ds: xr.Dataset
     :param statistical_k: k
     :type statistical_k: int
+    :param filtering_constant: constant applied to the threshold
+    :type filtering_constant: float
+    :param mean_factor: mean factor
+    :type mean_factor: float
     :param std_dev_factor: std factor
     :type std_dev_factor: float
     :param use_median: use median and quartile instead of mean and std
@@ -569,6 +603,8 @@ def epipolar_statistical_removal_wrapper(
         filtered_cloud,
         epsg,
         k=statistical_k,
+        filtering_constant=filtering_constant,
+        mean_factor=mean_factor,
         dev_factor=std_dev_factor,
         use_median=use_median,
         half_window_size=half_epipolar_size,

@@ -629,20 +629,22 @@ def clustering_matches(
 @cars_profile(name="filter_point_cloud_matches")
 def filter_point_cloud_matches(
     pd_cloud,
-    matches_filter_knn=25,
-    matches_filter_dev_factor=3,
+    match_filter_knn=25,
+    match_filter_constant=0,
+    match_filter_mean_factor=1,
+    match_filter_dev_factor=3,
 ):
     """
     Filter triangulated  matches
 
     :param pd_cloud: triangulated_matches
     :type pd_cloud: pandas Dataframe
-    :param matches_filter_knn: number of neighboors used to measure
+    :param match_filter_knn: number of neighboors used to measure
                                isolation of matches
-    :type matches_filter_knn: int
-    :param matches_filter_dev_factor: factor of deviation in the
+    :type match_filter_knn: int
+    :param match_filter_dev_factor: factor of deviation in the
                                       formula to compute threshold of outliers
-    :type matches_filter_dev_factor: float
+    :type match_filter_dev_factor: float
 
     :return: disp min and disp max
     :rtype: float, float
@@ -651,8 +653,10 @@ def filter_point_cloud_matches(
     # Statistical filtering
     filter_cloud, _ = outlier_removal_tools.statistical_outlier_filtering(
         pd_cloud,
-        k=matches_filter_knn,
-        dev_factor=matches_filter_dev_factor,
+        k=match_filter_knn,
+        filtering_constant=match_filter_constant,
+        mean_factor=match_filter_mean_factor,
+        dev_factor=match_filter_dev_factor,
     )
 
     # filter nans

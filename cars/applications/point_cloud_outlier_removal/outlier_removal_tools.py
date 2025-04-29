@@ -191,6 +191,8 @@ def detect_small_components(
 def statistical_outlier_filtering(
     cloud: pandas.DataFrame,
     k: int,
+    filtering_constant: float,
+    mean_factor: float,
     dev_factor: float,
     use_median: bool = False,
     filtered_elt_pos: bool = False,
@@ -202,6 +204,9 @@ def statistical_outlier_filtering(
     :param cloud: combined cloud
         as returned by the create_combined_cloud function
     :param k: number of neighbors
+    :param filtering_constant: constant added to the distance threshold
+    :param mean_factor: multiplication factor of mean used
+        to compute the distance threshold
     :param dev_factor: multiplication factor of deviation used
         to compute the distance threshold
     :param use_median: choice of statistical measure used to filter
@@ -216,6 +221,8 @@ def statistical_outlier_filtering(
         cloud.loc[:, cst.X].values,
         cloud.loc[:, cst.Y].values,
         cloud.loc[:, cst.Z].values,
+        filtering_constant=filtering_constant,
+        mean_factor=mean_factor,
         dev_factor=dev_factor,
         k=k,
         use_median=use_median,
@@ -341,6 +348,8 @@ def epipolar_statistical_filtering(
     epipolar_ds,
     epsg,
     k=15,
+    filtering_constant=0.0,
+    mean_factor=1.0,
     dev_factor=1.0,
     half_window_size=5,
     use_median=False,
@@ -376,6 +385,8 @@ def epipolar_statistical_filtering(
             epipolar_ds[cst.Z],
             k,
             half_window_size,
+            filtering_constant,
+            mean_factor,
             dev_factor,
             use_median,
         )
