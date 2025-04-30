@@ -86,7 +86,9 @@ def test_validation_parameter(cross_value, expected_value):
     """
 
     pandora_loader = PandoraLoader(
-        conf=None, method_name="census_sgm", use_cross_validation=cross_value
+        conf=None,
+        method_name="census_sgm_default",
+        use_cross_validation=cross_value,
     )
     corr_config = pandora_loader.get_conf()
     assert (
