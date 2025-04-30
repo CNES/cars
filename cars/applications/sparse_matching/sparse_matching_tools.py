@@ -837,8 +837,11 @@ def transform_triangulated_matches_to_dataframe(triangulated_matches):
 
                 list_matches.append(epipolar_matches)
 
-    triangulated_matches_df = pandas.concat(list_matches, ignore_index=True)
-    triangulated_matches_df.attrs = attrs
+    if list_matches:
+        triangulated_matches_df = pandas.concat(list_matches, ignore_index=True)
+        triangulated_matches_df.attrs = attrs
+    else:
+        raise RuntimeError("No match have been found in sparse matching")
 
     return triangulated_matches_df
 
