@@ -987,7 +987,7 @@ The structure follows this organization:
               - Type
               - Default value
               - Required
-            * - save_intermediate data
+            * - save_intermediate_data
               - Save intermediate data for all applications
               - bool
               - False
