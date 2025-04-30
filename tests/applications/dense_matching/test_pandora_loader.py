@@ -62,7 +62,7 @@ def test_denoise_disparity_map_parameter():
     """
 
     pandora_loader = PandoraLoader(
-        conf=None, method_name="census_sgm", denoise_disparity_map=True
+        conf=None, method_name="census_sgm_default", denoise_disparity_map=True
     )
     corr_config = pandora_loader.get_conf()
     assert (
