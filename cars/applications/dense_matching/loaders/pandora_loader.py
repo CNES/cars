@@ -233,6 +233,20 @@ class PandoraLoader:
 
             conf["pipeline"] = pipeline_dict
 
+        if "filter" in conf["pipeline"]:
+            filter_conf = conf["pipeline"]["filter"]
+            if filter_conf["filter_method"] == "disparity_denoiser":
+                if "band" in filter_conf:
+                    band = filter_conf["band"]
+                    if band is not None:
+                        logging.warning(
+                            "As multiband support is not "
+                            "yet implemented in CARS, "
+                            "the filter will be applied to "
+                            "the panchromatic band."
+                        )
+                        conf["pipeline"]["filter"]["band"] = None
+
         # Check conf
         self.pandora_config = conf
 

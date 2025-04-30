@@ -2043,7 +2043,10 @@ def test_end2end_ventoux_unique_split():
                             "invalid_disparity": "NaN",
                         },
                         "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "filter": {
+                            "filter_method": "disparity_denoiser",
+                            "filter_size": 3,
+                        },
                         "validation": {
                             "validation_method": "cross_checking_accurate",
                             "cross_checking_threshold": 1.0,
