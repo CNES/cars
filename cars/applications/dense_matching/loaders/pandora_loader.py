@@ -22,6 +22,7 @@
 CARS pandora loader file
 """
 
+import copy
 import json
 import logging
 import os
@@ -275,8 +276,15 @@ class PandoraLoader:
         metadata_right = get_metadata(img_right, classif=classif_right)
 
         user_cfg_pipeline = get_config_pipeline(user_cfg)
+        saved_schema = copy.deepcopy(
+            pandora.matching_cost.matching_cost.AbstractMatchingCost.schema
+        )
         cfg_pipeline = check_pipeline_section(
             user_cfg_pipeline, metadata_left, metadata_right, pandora_machine
+        )
+        # quick fix to remove when the problem is solved in pandora
+        pandora.matching_cost.matching_cost.AbstractMatchingCost.schema = (
+            saved_schema
         )
         # check a part of input section
         user_cfg_input = get_config_input_custom_cars(user_cfg)
