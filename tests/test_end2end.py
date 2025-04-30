@@ -538,7 +538,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "nb_pts_threshold": 100,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -822,7 +822,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -987,7 +987,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -1573,7 +1573,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -1714,7 +1714,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -2033,7 +2033,7 @@ def test_end2end_ventoux_unique_split():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -2717,7 +2717,7 @@ def test_end2end_use_epipolar_a_priori():
                 "connection_val": 3.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -3082,7 +3082,7 @@ def test_prepare_ventoux_bias():
                 "elevation_delta_upper_bound": 120.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -3173,7 +3173,7 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "elevation_delta_upper_bound": 700.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -3600,7 +3600,7 @@ def test_end2end_ventoux_with_color():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -3971,7 +3971,7 @@ def test_end2end_ventoux_with_classif():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -4241,7 +4241,7 @@ def test_compute_dsm_with_roi_ventoux():
                 "elevation_delta_upper_bound": 1000,  # 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4397,7 +4397,7 @@ def test_compute_dsm_with_snap_to_img1():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -4527,7 +4527,7 @@ def test_end2end_quality_stats():
                 "nb_pts_threshold": 100,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -4826,7 +4826,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -4960,7 +4960,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -5062,7 +5062,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -5653,7 +5653,7 @@ def test_end2end_disparity_filling_with_zeros():
                 "save_intermediate_data": True,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 1,
+                "match_filter_dev_factor": 3,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
