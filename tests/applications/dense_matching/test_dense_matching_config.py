@@ -112,6 +112,16 @@ def test_check_each_pandora_conf_as_dict(method_name):
 
 
 @pytest.mark.unit_tests
+def test_denoise_disparity_map():
+    """ "
+    Test denoise disparity map
+    """
+
+    conf = {"denoise_disparity_map": True}
+    _ = CensusMccnnSgm(conf)
+
+
+@pytest.mark.unit_tests
 def test_check_full_conf_pandora_conf_as_file():
     """
     Test configuration check for dense matching application

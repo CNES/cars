@@ -56,6 +56,22 @@ def test_configure_pandora_default():
 
 
 @pytest.mark.unit_tests
+def test_denoise_disparity_map_parameter():
+    """
+    Test denoise_disparity_map parameter
+    """
+
+    pandora_loader = PandoraLoader(
+        conf=None, method_name="census_sgm_default", denoise_disparity_map=True
+    )
+    corr_config = pandora_loader.get_conf()
+    assert (
+        corr_config["pipeline"]["filter"]["filter_method"]
+        == "disparity_denoiser"
+    )
+
+
+@pytest.mark.unit_tests
 def test_configure_pandora_config():
     """
     Test configure pandora correlator

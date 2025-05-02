@@ -481,6 +481,12 @@ The structure follows this organization:
                       -
                       - false
                       - No
+                    * - denoise_disparity_map
+                      - Add disparity denoiser filter
+                      - bool
+                      -
+                      - false
+                      - No
 
                 See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
 
