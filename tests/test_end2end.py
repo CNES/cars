@@ -3042,7 +3042,8 @@ def test_prepare_ventoux_bias():
             },
             "dem_generation": {
                 # save the dems in the global pipeline
-                "save_intermediate_data": True
+                "save_intermediate_data": True,
+                "coregistration": False,
             },
         }
 
