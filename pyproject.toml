@@ -65,7 +65,8 @@ dependencies = [
     "vlsift==0.1.*",
     "shareloc==0.2.7",
     "bulldozer-dtm==1.1.*",
-    "xdem==0.1.*"
+    "xdem==0.1.*",
+    "geopandas"
 ]
 
 [project.urls]
@@ -125,6 +126,10 @@ pandora_mccnn = [
     "pandora_plugin_mccnn==1.3.4"
 ]
 
+bundleadjustment = [
+    "rpcfit"
+]
+
 [tool.black]
 # https://github.com/psf/black
 line-length = 80
@@ -156,6 +161,7 @@ cars-starter = "cars.starter:cli"
 cars-extractroi = "cars.extractroi:main"
 cars-dashboard = "cars.orchestrator.tiles_profiler:main"
 cars-devibrate = "cars.devibrate:cli"
+cars-bundleadjustment = "cars.bundleadjustment:cli"
 
 [tool.cibuildwheel]
 skip = ["pp*", "*-win32"]
