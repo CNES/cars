@@ -6,6 +6,7 @@ cars_bundle_adjustment
 import argparse
 import copy
 import json
+import logging
 import os
 import textwrap
 import warnings
@@ -14,8 +15,18 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import rasterio as rio
+
+try:
+    from rpcfit import rpc_fit
+except ModuleNotFoundError:
+    logging.warning(
+        "Module rpcfit is not installed. "
+        "RPC models will not be adjusted. "
+        "Run `pip install cars[bundleadjustment]` to install "
+        "missing module."
+    )
+
 from affine import Affine
-from rpcfit import rpc_fit
 from scipy import interpolate, stats
 from scipy.spatial import cKDTree
 from shareloc.geofunctions.triangulation import n_view_triangulation
@@ -314,7 +325,10 @@ def refine_rpc(geomodels, old_coordinates, new_coordinates):
     """
     refined_rpcs = {}
     for key in geomodels.keys():
-        cols, rows = old_coordinates[key]["col"], old_coordinates[key]["row"]
+        cols, rows = (
+            old_coordinates[key]["col"],
+            old_coordinates[key]["row"],
+        )
         new_cols, new_rows = (
             new_coordinates[key]["col"],
             new_coordinates[key]["row"],
@@ -521,7 +535,16 @@ def new_rpcs_from_matches(
             writer.write(rows - old_coords[key]["row"], 2)
 
     if interp_mode is False:
-        refined_rpcs = refine_rpc(geomodels, old_coords, new_coords)
+        try:
+            refined_rpcs = refine_rpc(geomodels, old_coords, new_coords)
+        except NameError:
+            logging.warning(
+                "Module rpcfit is not installed. "
+                "RPC models will not be adjusted. "
+                "Run `pip install cars[bundleadjustment]` to install "
+                "missing module."
+            )
+            refined_rpcs = None
         return refined_rpcs
 
     return None
@@ -603,26 +626,27 @@ def cars_bundle_adjustment(conf, no_run_sparse):
         with open(raw_cfg_file, "w", encoding="utf8") as json_writer:
             json.dump(raw_config, json_writer, indent=2)
 
-        # create configuration file + launch cars dense matching
-        refined = os.path.join(out_dir, "refined")
-        refined_config = copy.deepcopy(conf_as_dict)
-        sensors_keys = conf_as_dict["inputs"]["sensors"].keys()
-        for key in sensors_keys:
-            refined_config["inputs"]["sensors"][key]["geomodel"] = os.path.join(
-                out_dir, key + ".geom"
-            )
-        if separate:
-            refined_config["inputs"]["pairing"] = [pairing]
-            refined_config["output"]["directory"] = "_".join(
-                [refined] + pairing
-            )
-        else:
-            refined_config["inputs"]["pairing"] = pairing
-            refined_config["output"]["directory"] = refined
+        if refined_rpcs is not None:
+            # create configuration file + launch cars dense matching
+            refined = os.path.join(out_dir, "refined")
+            refined_config = copy.deepcopy(conf_as_dict)
+            sensors_keys = conf_as_dict["inputs"]["sensors"].keys()
+            for key in sensors_keys:
+                refined_config["inputs"]["sensors"][key]["geomodel"] = (
+                    os.path.join(out_dir, key + ".geom")
+                )
+            if separate:
+                refined_config["inputs"]["pairing"] = [pairing]
+                refined_config["output"]["directory"] = "_".join(
+                    [refined] + pairing
+                )
+            else:
+                refined_config["inputs"]["pairing"] = pairing
+                refined_config["output"]["directory"] = refined
 
-        refined_cfg_file = refined_config["output"]["directory"] + ".json"
-        with open(refined_cfg_file, "w", encoding="utf8") as json_writer:
-            json.dump(refined_config, json_writer, indent=2)
+            refined_cfg_file = refined_config["output"]["directory"] + ".json"
+            with open(refined_cfg_file, "w", encoding="utf8") as json_writer:
+                json.dump(refined_config, json_writer, indent=2)
 
 
 def cli():
