@@ -23,10 +23,10 @@ this module contains the dense_matching application class.
 """
 # pylint: disable=too-many-lines
 import collections
-import itertools
 
 # Standard imports
 import copy
+import itertools
 import logging
 import math
 import os

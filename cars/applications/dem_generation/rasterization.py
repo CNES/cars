@@ -339,7 +339,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             )
         dem_data -= input_geoid_data
 
-        # apply height margin
+        # apply morphological filters and height margin
         footprint = skimage.morphology.disk(
             self.morphological_filters_size // 2, decomposition="sequence"
         )
@@ -374,11 +374,13 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         dem_median[eroded_mask] = nodata
         dem_max[eroded_mask] = nodata
 
+        # Rectify pixels where DEM min < DEM - min_depth
         dem_min = np.where(
             dem_median - dem_min < self.min_dem,
             dem_median + self.min_dem,
             dem_min,
         )
+        # Rectify pixels where DEM max > DEM + max_height
         dem_max = np.where(
             dem_max - dem_median > self.max_dem,
             dem_median + self.max_dem,
@@ -490,12 +492,17 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         edit_transform(dem_max_path, transform=saved_transform)
 
         # Check DEM min and max
+        with rio.open(dem_min_path, "r") as in_dem:
+            dem_min = in_dem.read()
+            dem_min_metadata = in_dem.meta
+            nodata = in_dem.nodata
+        with rio.open(dem_max_path, "r") as in_dem:
+            dem_max = in_dem.read()
+            dem_max_metadata = in_dem.meta
+        dem_data[dem_data == nodata] = np.nan
+        dem_min[dem_min == nodata] = np.nan
+        dem_max[dem_max == nodata] = np.nan
         if self.compute_stats:
-            with rio.open(dem_min_path, "r") as in_dem:
-                dem_min = in_dem.read()
-                nodata = in_dem.nodata
-            dem_data[dem_data == nodata] = np.nan
-            dem_min[dem_min == nodata] = np.nan
             diff = dem_data - dem_min
             logging.info(
                 "Statistics of difference between subsampled "
@@ -503,9 +510,6 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             )
             compute_stats(diff)
 
-            with rio.open(dem_max_path, "r") as in_dem:
-                dem_max = in_dem.read()
-            dem_max[dem_max == nodata] = np.nan
             diff = dem_max - dem_data
             logging.info(
                 "Statistics of difference between DEM max "
@@ -519,6 +523,24 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
                 "and DEM min (in meters)"
             )
             compute_stats(diff)
+
+        # Rectify pixels where DEM min > DEM - margin
+        dem_min = np.where(
+            dem_min > dem_data - self.min_height_margin,
+            dem_data - self.min_height_margin,
+            dem_min,
+        )
+        # Rectify pixels where DEM max < DEM + margin
+        dem_max = np.where(
+            dem_max < dem_data + self.max_height_margin,
+            dem_data + self.max_height_margin,
+            dem_max,
+        )
+
+        with rio.open(dem_min_path, "w", **dem_min_metadata) as out_dem:
+            out_dem.write(dem_min)
+        with rio.open(dem_max_path, "w", **dem_max_metadata) as out_dem:
+            out_dem.write(dem_max)
 
         # after saving, fit initial elevation if required
         if initial_elevation is not None and self.coregistration:
