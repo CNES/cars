@@ -90,7 +90,7 @@ def fit_initial_elevation_on_dem_median(
                 # save the results
                 fit_dem.save(dem_out_path)
                 coreg_offsets = coreg_pipeline.meta["outputs"]["affine"]
-            except (ValueError, AssertionError):
+            except (ValueError, AssertionError, TypeError):
                 logging.warning(
                     "xDEM coregistration failed. This can happen when sensor "
                     "images are too small. No shift will be applied on DEM"
