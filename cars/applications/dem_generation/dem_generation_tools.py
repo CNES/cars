@@ -28,6 +28,7 @@ import os
 
 # Third party imports
 import xdem
+from rasterio.coords import BoundingBox
 
 
 def fit_initial_elevation_on_dem_median(
@@ -57,20 +58,22 @@ def fit_initial_elevation_on_dem_median(
 
             # load DEMs
             dem_to_fit = xdem.DEM(dem_to_fit_path)
-            dem_ref = xdem.DEM(dem_ref_path)  # 0s are nodata in dem_ref
+            dem_ref = xdem.DEM(dem_ref_path)
 
             # get the crs needed to reproject the data
             crs_out = dem_ref.crs
             crs_metric = dem_ref.get_metric_crs()
 
             # Crop dem_to_fit with dem_ref to reduce
-            # computation costs. This is fine since dem_ref has big margins
-            # and we want to fix small shifts.
+            # computation costs.
             bbox = dem_ref.bounds
+            bbox = add_margin(bbox)
             dem_to_fit = dem_to_fit.crop(bbox).reproject(crs=crs_metric)
             # Reproject dem_ref to dem_to_fit resolution to reduce
             # computation costs
             dem_ref = dem_ref.reproject(dem_to_fit)
+            bbox = dem_ref.bounds
+            bbox = add_margin(bbox)
 
             coreg_pipeline = xdem.coreg.NuthKaab()
 
@@ -81,7 +84,7 @@ def fit_initial_elevation_on_dem_median(
                     coreg_pipeline.fit_and_apply(
                         dem_ref, dem_to_fit, random_state=0
                     )
-                    .crop(dem_ref)
+                    .crop(bbox)
                     .reproject(crs=crs_out)
                 )
                 # save the results
@@ -95,3 +98,30 @@ def fit_initial_elevation_on_dem_median(
                 coreg_offsets = None
 
     return coreg_offsets
+
+
+def add_margin(bbox, ratio=1):
+    """
+    Add margin to a bounding box
+    :param bbox: input bounding box
+    :type bbox: rasterio.coords.BoundingBox
+    :param ratio: factor of bbox size to add to each side of bbox
+    :type ratio: float
+
+    :return: bounding box with margins
+    :rtype: rasterio.coords.BoundingBox
+    """
+    try:
+        assert bbox.left < bbox.right
+        assert bbox.bottom < bbox.top
+        width = bbox.right - bbox.left
+        height = bbox.top - bbox.bottom
+        new_left = bbox.left - ratio * width
+        new_right = bbox.right + ratio * width
+        new_bottom = bbox.bottom - ratio * height
+        new_top = bbox.top + ratio * height
+        new_bbox = BoundingBox(new_left, new_bottom, new_right, new_top)
+    except AssertionError:
+        logging.warning("Bounding box {} cannot be read".format(bbox))
+        new_bbox = bbox
+    return new_bbox
