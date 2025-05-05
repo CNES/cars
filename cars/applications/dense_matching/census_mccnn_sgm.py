@@ -249,6 +249,10 @@ class CensusMccnnSgm(
         # check loader
         loader_conf = conf.get("loader_conf", None)
         loader = conf.get("loader", "pandora")
+
+        if overloaded_conf["use_cross_validation"] is True:
+            overloaded_conf["use_cross_validation"] = "fast"
+
         # TODO modify, use loader directly
         pandora_loader = PandoraLoader(
             conf=loader_conf,
