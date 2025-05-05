@@ -1233,6 +1233,37 @@ class DefaultPipeline(PipelineTemplate):
                 if self.quit_on_app("resampling"):
                     continue
 
+                # Shrink disparity intervals according to SIFT disparities
+                disp_to_alt_ratio = self.pairs[pair_key][
+                    "grid_left"
+                ].attributes["disp_to_alt_ratio"]
+                disp_bounds_params = (
+                    self.sparse_mtch_pandora_app.disparity_bounds_estimation
+                )
+                if disp_bounds_params["activated"]:
+                    matches = self.pairs[pair_key]["matches_array"]
+                    sift_disp = matches[:, 2] - matches[:, 0]
+                    disp_min = np.percentile(
+                        sift_disp, disp_bounds_params["percentile"]
+                    )
+                    disp_max = np.percentile(
+                        sift_disp, 100 - disp_bounds_params["percentile"]
+                    )
+                    logging.info(
+                        "Gloabal disparity interval without margin : "
+                        f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
+                    )
+                    disp_min -= (
+                        disp_bounds_params["upper_margin"] / disp_to_alt_ratio
+                    )
+                    disp_max += (
+                        disp_bounds_params["lower_margin"] / disp_to_alt_ratio
+                    )
+                    logging.info(
+                        "Gloabal disparity interval with margin : "
+                        f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
+                    )
+
                 pandora_sparse_matching_pair_folder = os.path.join(
                     self.dump_dir, "sparse_matching.pandora", pair_key
                 )
@@ -1246,9 +1277,9 @@ class DefaultPipeline(PipelineTemplate):
                     orchestrator=self.cars_orchestrator,
                     pair_folder=pandora_sparse_matching_pair_folder,
                     pair_key=pair_key,
-                    disp_to_alt_ratio=self.pairs[pair_key][
-                        "grid_left"
-                    ].attributes["disp_to_alt_ratio"],
+                    disp_to_alt_ratio=disp_to_alt_ratio,
+                    disp_min=disp_min,
+                    disp_max=disp_max,
                 )
 
                 matches = self.pairs[pair_key]["pandora_epipolar_matches_left"]
