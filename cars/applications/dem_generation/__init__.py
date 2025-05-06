@@ -25,4 +25,4 @@ CARS dem generation init file
 
 from cars.applications.dem_generation.dem_generation import DemGeneration
 
-from . import dichotomic_generation
+from . import dichotomic_generation, rasterization

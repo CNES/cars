@@ -26,6 +26,7 @@ import collections
 
 # Standard imports
 import copy
+import itertools
 import logging
 import math
 import os
@@ -823,12 +824,14 @@ class CensusMccnnSgm(
             col_indexes = range(min_col, max_col)
             transformer = rasterio.transform.AffineTransformer(transform)
 
+            indexes = np.array(
+                list(itertools.product(row_indexes, col_indexes))
+            )
+            row = indexes[:, 0]
+            col = indexes[:, 1]
             terrain_positions = []
-            for row in row_indexes:
-                for col in col_indexes:
-                    x_geo, y_geo = transformer.xy(row, col)
-                    terrain_positions.append((x_geo, y_geo))
-            terrain_positions = np.array(terrain_positions)
+            x_mean, y_mean = transformer.xy(row, col)
+            terrain_positions = np.transpose(np.array([x_mean, y_mean]))
 
             # dem mean in terrain_epsg
             x_mean = terrain_positions[:, 0]

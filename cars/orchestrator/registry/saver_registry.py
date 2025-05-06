@@ -361,7 +361,6 @@ class SingleCarsDatasetSaver:
                     if not os.path.exists(self.folder_name):
                         os.makedirs(self.folder_name)
                     self.already_seen = True
-
                 self.cars_ds.run_save(
                     future_result,
                     os.path.join(self.folder_name, repr(self.count)),

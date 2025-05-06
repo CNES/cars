@@ -25,7 +25,6 @@ this module contains the dichotomic dem generation application class.
 
 # Standard imports
 import collections
-import contextlib
 import logging
 import os
 
@@ -34,7 +33,6 @@ import numpy as np
 import pandas
 import rasterio
 import xarray as xr
-import xdem
 from json_checker import And, Checker, Or
 
 import cars.orchestrator.orchestrator as ocht
@@ -43,6 +41,9 @@ from cars.applications.dem_generation import (
     dem_generation_constants as dem_gen_cst,
 )
 from cars.applications.dem_generation.dem_generation import DemGeneration
+from cars.applications.dem_generation.dem_generation_tools import (
+    fit_initial_elevation_on_dem_median,
+)
 from cars.applications.triangulation import triangulation_tools
 
 # CARS imports
@@ -171,9 +172,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         triangulated_matches_list,
         output_dir,
         geoid_path,
-        cars_orchestrator,
         dem_roi_to_use=None,
         initial_elevation=None,
+        cars_orchestrator=None,
     ):
         """
         Run dichotomic dem generation using matches
@@ -204,10 +205,6 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         epsg = 4326
 
         for pair_pc in triangulated_matches_list:
-            if epsg is None:
-                # epsg must be a metric system
-                epsg = pair_pc.attrs["epsg"]
-
             # convert to degrees for geoid offset
             if pair_pc.attrs["epsg"] != epsg:
                 projection.point_cloud_conversion_dataset(pair_pc, epsg)
@@ -474,84 +471,19 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             cars_orchestrator.update_out_info(coreg_info)
 
             if (
-                abs(coreg_offsets["shift_x"]) > self.coregistration_max_shift
+                coreg_offsets is None
+                or abs(coreg_offsets["shift_x"]) > self.coregistration_max_shift
                 or abs(coreg_offsets["shift_y"]) > self.coregistration_max_shift
             ):
                 logging.warning(
-                    "The initial elevation will be used as-is, as "
-                    "the coregistration offsets were found to be too "
-                    "big to be believable."
+                    "The initial elevation will be used as-is because "
+                    "coregistration failed or gave inconsistent results"
                 )
                 return dem, None
 
             return dem, initial_elevation_out_path
 
         return dem, None
-
-
-def fit_initial_elevation_on_dem_median(
-    dem_to_fit_path: str, dem_ref_path: str, dem_out_path: str
-):
-    """
-    Coregistrates the two DEMs given then saves the result.
-    The initial elevation will be cropped to reduce computation costs.
-    Returns the transformation applied.
-
-    :param dem_to_fit_path: Path to the dem to be fitted
-    :type dem_to_fit_path: str
-    :param dem_ref_path: Path to the dem to fit onto
-    :type dem_ref_path: str
-    :param dem_out_path: Path to save the resulting dem into
-    :type dem_out_path: str
-
-    :return: coregistration transformation applied
-    :rtype: dict
-    """
-    # suppress all outputs of xdem
-    with open(os.devnull, "w", encoding="utf8") as devnull:
-        with (
-            contextlib.redirect_stdout(devnull),
-            contextlib.redirect_stderr(devnull),
-        ):
-
-            # load DEMs
-            dem_to_fit = xdem.DEM(dem_to_fit_path)
-            dem_ref = xdem.DEM(
-                dem_ref_path, nodata=0
-            )  # 0s are nodata in dem_ref
-
-            # get the crs needed to reproject the data
-            crs_out = dem_ref.crs
-            crs_metric = dem_ref.get_metric_crs()
-
-            # Crop dem_to_fit with a reprojected version of dem_ref to reduce
-            # computation costs. This is fine since dem_ref has big margins
-            # and we want to fix small shifts.
-            dem_to_fit = dem_to_fit.crop(
-                dem_ref.reproject(dem_to_fit)
-            ).reproject(
-                # reproject dem_to_fit in the metric crs
-                crs=crs_metric
-            )
-            # reproject dem_ref in the metric crs as well
-            dem_ref = dem_ref.reproject(crs=crs_metric)
-
-            coreg_pipeline = xdem.coreg.NuthKaab()
-
-            # fit dem_to_fit onto dem_ref, crop it, then reproject it
-            # set a random state to always get the same results
-            fit_dem = (
-                coreg_pipeline.fit_and_apply(
-                    dem_ref, dem_to_fit, random_state=0
-                )
-                .crop(dem_ref)
-                .reproject(crs=crs_out)
-            )
-
-            # save the results
-            fit_dem.save(dem_out_path)
-
-    return coreg_pipeline.meta["outputs"]["affine"]
 
 
 def generate_grid(

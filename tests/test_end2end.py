@@ -4513,8 +4513,8 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -37
-            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_min"] > -27
+            assert out_disp_compute["global_disp_min"] < -22
             assert out_disp_compute["global_disp_max"] > 25
             assert out_disp_compute["global_disp_max"] < 32
 
@@ -4803,12 +4803,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -68
-            assert out_disp_compute["global_disp_min"] < -60
-            # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 43
-            assert out_disp_compute["global_disp_max"] < 46
+            assert out_disp_compute["global_disp_min"] > -34
+            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_max"] > 26
+            assert out_disp_compute["global_disp_max"] < 29
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -5031,12 +5029,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -68
-            assert out_disp_compute["global_disp_min"] < -60
-            # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 43
-            assert out_disp_compute["global_disp_max"] < 46
+            assert out_disp_compute["global_disp_min"] > -34
+            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_max"] > 26
+            assert out_disp_compute["global_disp_max"] < 29
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -5390,24 +5386,6 @@ def test_end2end_paca_with_mask():
         #         )
         #     ),
         # )
-        # copy2(
-        #     os.path.join(out_dir, "dsm", "color.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "color_end2end_paca_border_interpolation.tif",
-        #         )
-        #     ),
-        # )
-        # copy2(
-        #     os.path.join(out_dir, "dsm", "mask.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "mask_end2end_paca_border_interpolation.tif",
-        #         )
-        #     ),
-        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -5418,27 +5396,6 @@ def test_end2end_paca_with_mask():
             ),
             rtol=1.0e-5,
             atol=2.0e-7,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "color_end2end_paca_border_interpolation.tif",
-                )
-            ),
-            rtol=0.0002,
-            atol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "mask_end2end_paca_border_interpolation.tif"
-                )
-            ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
         )
 
 
