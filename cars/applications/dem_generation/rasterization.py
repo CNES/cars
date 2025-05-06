@@ -216,10 +216,6 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         epsg = 4326
 
         for pair_pc in triangulated_matches_list:
-            if epsg is None:
-                # epsg must be a metric system
-                epsg = pair_pc.attrs["epsg"]
-
             # convert to degrees for geoid offset
             if pair_pc.attrs["epsg"] != epsg:
                 projection.point_cloud_conversion_dataset(pair_pc, epsg)
