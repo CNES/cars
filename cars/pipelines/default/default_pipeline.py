@@ -1286,6 +1286,23 @@ class DefaultPipeline(PipelineTemplate):
 
                 matches = self.pairs[pair_key]["pandora_epipolar_matches_left"]
 
+                if self.epsg is None:
+                    # compute epsg
+                    # Epsg uses global disparity min and max
+                    self.epsg = preprocessing.compute_epsg(
+                        self.pairs[pair_key]["sensor_image_left"],
+                        self.pairs[pair_key]["sensor_image_right"],
+                        self.pairs[pair_key]["corrected_grid_left"],
+                        self.pairs[pair_key]["corrected_grid_right"],
+                        self.geom_plugin_with_dem_and_geoid,
+                        disp_min=0,
+                        disp_max=0,
+                    )
+                    # Compute roi polygon, in input EPSG
+                    self.roi_poly = preprocessing.compute_roi_poly(
+                        self.input_roi_poly, self.input_roi_epsg, self.epsg
+                    )
+
                 # Triangulate matches
                 triangulated_matches_dataset = (
                     self.triangulation_application.run(
@@ -1296,6 +1313,7 @@ class DefaultPipeline(PipelineTemplate):
                         matches,
                         self.geom_plugin_without_dem_and_geoid,
                         self.pairs[pair_key]["new_epipolar_image_left"],
+                        self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
                 )
