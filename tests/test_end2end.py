@@ -2683,12 +2683,13 @@ def test_end2end_use_epipolar_a_priori():
             "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "nb_pts_threshold": 100,
+                "nb_pts_threshold": 150,
                 "connection_val": 3.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
                 "denoise_disparity_map": True,
+                "use_cross_validation": False,
                 "use_global_disp_range": True,
             },
             "dem_generation": {
@@ -4463,6 +4464,7 @@ def test_end2end_quality_stats():
             "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
+                "nb_pts_threshold": 100,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -5382,15 +5384,15 @@ def test_end2end_paca_with_mask():
 
         dense_dsm_pipeline_border_interpolation.run()
 
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_end2end_paca_border_interpolation.tif",
-                )
-            ),
-        )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "dsm_end2end_paca_border_interpolation.tif",
+        #         )
+        #     ),
+        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
