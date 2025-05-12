@@ -276,14 +276,14 @@ The structure follows this organization:
                 Generates dem from sparse matches, and fits the initial elevation onto the median dem.
 
                 Up to 4 dems are generated, with different methods:
-                
+
                 * median
                 * min
                 * max
                 * initial_elevation_fit (only if ``coregistration`` is set to ``true``)
 
                 The DEMs are generated in the application dump directory.
-                You can find the shift values applied to the initial elevation in ``metadata.json``.  
+                You can find the shift values applied to the initial elevation in ``metadata.json``.
 
                 **Configuration**
 
@@ -525,9 +525,9 @@ The structure follows this organization:
                       - No
                     * - use_cross_validation
                       - Add cross validation step
-                      - bool
-                      -
-                      - false
+                      - bool, str
+                      - true, false, "fast", "accurate"
+                      - true
                       - No
                     * - denoise_disparity_map
                       - Add disparity denoiser filter
@@ -555,6 +555,7 @@ The structure follows this organization:
                     * Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
                     * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
                     * To save the confidence, the save_intermediate_data parameter should be activated.
+                    * The cross-validation step supports two modes: fast and accurate. Setting the configuration to true or "fast" will use the fast method, while setting it to "accurate" will enable the accurate method.
 
                 .. list-table::
                     :widths: 19 19

@@ -72,6 +72,32 @@ def test_denoise_disparity_map_parameter():
 
 
 @pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "cross_value,expected_value",
+    [
+        (True, "cross_checking_fast"),
+        ("fast", "cross_checking_fast"),
+        ("accurate", "cross_checking_accurate"),
+    ],
+)
+def test_validation_parameter(cross_value, expected_value):
+    """
+    Test the use_cross_validation parameter
+    """
+
+    pandora_loader = PandoraLoader(
+        conf=None,
+        method_name="census_sgm_default",
+        use_cross_validation=cross_value,
+    )
+    corr_config = pandora_loader.get_conf()
+    assert (
+        corr_config["pipeline"]["validation"]["validation_method"]
+        == expected_value
+    )
+
+
+@pytest.mark.unit_tests
 def test_configure_pandora_config():
     """
     Test configure pandora correlator

@@ -204,7 +204,7 @@ class CensusMccnnSgm(
             "perf_ambiguity_threshold", 0.6
         )
         overloaded_conf["use_cross_validation"] = conf.get(
-            "use_cross_validation", False
+            "use_cross_validation", True
         )
         # Margins computation parameters
         overloaded_conf["use_global_disp_range"] = conf.get(
@@ -249,6 +249,10 @@ class CensusMccnnSgm(
         # check loader
         loader_conf = conf.get("loader_conf", None)
         loader = conf.get("loader", "pandora")
+
+        if overloaded_conf["use_cross_validation"] is True:
+            overloaded_conf["use_cross_validation"] = "fast"
+
         # TODO modify, use loader directly
         pandora_loader = PandoraLoader(
             conf=loader_conf,
@@ -318,7 +322,7 @@ class CensusMccnnSgm(
             "perf_eta_max_risk": float,
             "perf_eta_step": float,
             "perf_ambiguity_threshold": float,
-            "use_cross_validation": bool,
+            "use_cross_validation": Or(bool, str),
             "denoise_disparity_map": bool,
             "use_global_disp_range": bool,
             "local_disp_grid_step": int,

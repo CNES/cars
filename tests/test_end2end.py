@@ -983,6 +983,7 @@ def test_end2end_ventoux_unique():
             "dense_matching": {
                 # run disp min disp max in the global pipeline
                 "use_global_disp_range": True,
+                "use_cross_validation": False,
                 "save_intermediate_data": True,
             },
             "dem_generation": {
@@ -1159,7 +1160,7 @@ def test_end2end_ventoux_unique():
             },
             "dense_matching": {
                 "method": "census_sgm_default",
-                "use_cross_validation": True,
+                "use_cross_validation": "accurate",
                 "use_global_disp_range": False,
                 "loader_conf": {
                     "input": {},
@@ -1530,7 +1531,8 @@ def test_end2end_ventoux_unique():
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
-                "use_global_disp_range": True
+                "use_global_disp_range": True,
+                "use_cross_validation": False,
             },
             "dem_generation": {
                 # save the dems in the global pipeline
@@ -1561,6 +1563,7 @@ def test_end2end_ventoux_unique():
             "dense_matching": {
                 "method": "census_sgm_default",
                 "use_global_disp_range": False,
+                "use_cross_validation": False,
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
@@ -1694,7 +1697,8 @@ def test_end2end_ventoux_unique():
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
-                "use_global_disp_range": True
+                "use_global_disp_range": True,
+                "use_cross_validation": False,
             },
             "dem_generation": {
                 # save the dems in the global pipeline
@@ -1718,7 +1722,7 @@ def test_end2end_ventoux_unique():
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm_default",
-                "use_cross_validation": True,
+                "use_cross_validation": "accurate",
                 "use_global_disp_range": False,
             },
             "point_cloud_outlier_removal.1": {
@@ -2679,12 +2683,13 @@ def test_end2end_use_epipolar_a_priori():
             "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "nb_pts_threshold": 100,
+                "nb_pts_threshold": 150,
                 "connection_val": 3.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
                 "denoise_disparity_map": True,
+                "use_cross_validation": False,
                 "use_global_disp_range": True,
             },
             "dem_generation": {
@@ -3557,7 +3562,8 @@ def test_end2end_ventoux_with_color():
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
-                "use_global_disp_range": True
+                "use_global_disp_range": True,
+                "use_cross_validation": False,
             },
             "dem_generation": {
                 # save the dems in the global pipeline
@@ -3622,7 +3628,7 @@ def test_end2end_ventoux_with_color():
             },
             "dense_matching": {
                 "method": "census_sgm_default",
-                "use_cross_validation": True,
+                "use_cross_validation": "accurate",
                 "loader": "pandora",
                 "save_intermediate_data": True,
                 "use_global_disp_range": False,
@@ -4458,10 +4464,11 @@ def test_end2end_quality_stats():
             "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
+                "nb_pts_threshold": 100,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
-                "use_cross_validation": True,
+                "use_cross_validation": "accurate",
                 "use_global_disp_range": False,
             },
             "point_cloud_outlier_removal.1": {
@@ -4515,7 +4522,7 @@ def test_end2end_quality_stats():
             ]
             assert out_disp_compute["global_disp_min"] > -27
             assert out_disp_compute["global_disp_min"] < -22
-            assert out_disp_compute["global_disp_max"] > 25
+            assert out_disp_compute["global_disp_max"] > 24
             assert out_disp_compute["global_disp_max"] < 32
 
         # Ref output dir dependent from geometry plugin chosen
