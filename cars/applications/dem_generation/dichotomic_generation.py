@@ -320,7 +320,6 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
                 list_z_grid[idx], mask=valid, max_search_distance=msd
             )
             list_z_grid[idx] += geoid_offset[cst.Z].values
-            list_z_grid[idx] = np.nan_to_num(list_z_grid[idx])
 
         dem_median = list_z_grid[0]
         dem_min = list_z_grid[1]
@@ -333,11 +332,6 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # apply height margin
         dem_min -= self.min_height_margin
         dem_max += self.max_height_margin
-
-        # Convert to int
-        dem_median = dem_median.astype(int)
-        dem_min = np.floor(dem_min).astype(int)
-        dem_max = np.ceil(dem_max).astype(int)
 
         dem_min = np.where(
             dem_median - dem_min < self.min_dem,
@@ -365,7 +359,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             dem_median_path,
             dem_gen_cst.DEM_MEDIAN,
             dem,
-            dtype=np.int32,
+            dtype=np.float32,
             nodata=-32768,
             cars_ds_name="dem_median",
         )
@@ -376,7 +370,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             dem_min_path,
             dem_gen_cst.DEM_MIN,
             dem,
-            dtype=np.int32,
+            dtype=np.float32,
             nodata=-32768,
             cars_ds_name="dem_min",
         )
@@ -387,7 +381,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             dem_max_path,
             dem_gen_cst.DEM_MAX,
             dem,
-            dtype=np.int32,
+            dtype=np.float32,
             nodata=-32768,
             cars_ds_name="dem_max",
         )
