@@ -29,6 +29,7 @@ from __future__ import absolute_import
 
 import collections
 import logging
+import warnings
 
 # Third party imports
 import numpy as np
@@ -879,12 +880,14 @@ def confidence_filtering(
     data_risk = dataset[requested_confidence[0]].values
     data_bounds_sup = dataset[requested_confidence[1]].values
 
-    nan_ratio = generic_filter(
-        disp_map, nan_ratio_func, size=conf_filtering["win_nanratio"]
-    )
-    var_map = generic_filter(
-        data_risk, np.nanmean, size=conf_filtering["win_mean_risk_max"]
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        nan_ratio = generic_filter(
+            disp_map, nan_ratio_func, size=conf_filtering["win_nanratio"]
+        )
+        var_map = generic_filter(
+            data_risk, np.nanmean, size=conf_filtering["win_mean_risk_max"]
+        )
 
     mask = (
         (data_bounds_sup > conf_filtering["upper_bound"])
@@ -895,8 +898,8 @@ def confidence_filtering(
     )
     disp_map[mask] = np.nan
 
-    var_mean_risk = xr.DataArray(var_map, dims=dataset.dims.keys())
-    var_nan_ratio = xr.DataArray(nan_ratio, dims=dataset.dims.keys())
+    var_mean_risk = xr.DataArray(var_map, dims=dataset.sizes.keys())
+    var_nan_ratio = xr.DataArray(nan_ratio, dims=dataset.sizes.keys())
 
     # We add the new variables to the dataset
     dataset["confidence_from_mean_risk_max"] = var_mean_risk

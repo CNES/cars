@@ -265,7 +265,7 @@ class PandoraSparseMatching(
             "confidence_filtering"
         ].get("risk_max", 60)
         overloaded_conf["confidence_filtering"]["nan_threshold"] = (
-            overloaded_conf["confidence_filtering"].get("nan_threshold", 0.01)
+            overloaded_conf["confidence_filtering"].get("nan_threshold", 0.1)
         )
         overloaded_conf["confidence_filtering"]["win_nanratio"] = (
             overloaded_conf["confidence_filtering"].get("win_nanratio", 20)
