@@ -296,8 +296,8 @@ def compute_terrain_bbox(  # noqa: 751
 
     # Compute bounds from epipolar image corners and dispmin/dispmax
     terrain_bounds = np.stack((terrain_dispmin, terrain_dispmax), axis=0)
-    terrain_min = np.amin(terrain_bounds, axis=(0, 1))
-    terrain_max = np.amax(terrain_bounds, axis=(0, 1))
+    terrain_min = np.nanmin(terrain_bounds, axis=(0, 1))
+    terrain_max = np.nanmax(terrain_bounds, axis=(0, 1))
 
     terrain_area = (terrain_max[0] - terrain_min[0]) * (
         terrain_max[1] - terrain_min[1]
