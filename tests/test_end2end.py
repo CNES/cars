@@ -4468,7 +4468,7 @@ def test_end2end_quality_stats():
             },
             "dense_matching": {
                 "method": "census_sgm_default",
-                "use_cross_validation": True,
+                "use_cross_validation": "accurate",
                 "use_global_disp_range": False,
             },
             "point_cloud_outlier_removal.1": {
