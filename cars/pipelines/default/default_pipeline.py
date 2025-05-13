@@ -688,6 +688,11 @@ class DefaultPipeline(PipelineTemplate):
             )
 
             # Points cloud small component outlier removal
+            if "point_cloud_outlier_removal.1" in used_conf:
+                if "method" not in used_conf["point_cloud_outlier_removal.1"]:
+                    used_conf["point_cloud_outlier_removal.1"][
+                        "method"
+                    ] = "small_components"
             self.pc_outlier_removal_1_app = Application(
                 "point_cloud_outlier_removal",
                 cfg=used_conf.get(
