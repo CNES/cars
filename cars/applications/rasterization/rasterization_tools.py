@@ -983,7 +983,7 @@ def classify_performance_map(
     performance_map_classified_infos = {}
 
     performance_map_classified = msk_no_data * np.ones(
-        performance_map_raw.shape, dtype=np.int8
+        performance_map_raw.shape, dtype=np.uint8
     )
 
     index_start, index_end = 0, 1
