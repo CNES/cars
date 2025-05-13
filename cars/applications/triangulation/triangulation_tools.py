@@ -40,6 +40,7 @@ from shareloc.proj_utils import transform_physical_point_to_index
 
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
+from cars.core import projection
 
 
 def triangulate(
@@ -191,6 +192,80 @@ def triangulate_matches(
     point_cloud = pandas.DataFrame(point_cloud_array, columns=point_cloud_index)
     point_cloud.attrs[cst.EPSG] = int(cst.EPSG_WSG84)
     return point_cloud
+
+
+def triangulate_sparse_matches(
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    interpolated_grid_left,
+    interpolated_grid_right,
+    matches,
+    geometry_plugin,
+    epsg,
+):
+    """
+    Triangulate matches in a metric system
+
+    :param sensor_image_right: sensor image right
+    :type sensor_image_right: CarsDataset
+    :param sensor_image_left: sensor image left
+    :type sensor_image_left: CarsDataset
+    :param grid_left: grid left
+    :type grid_left: CarsDataset CarsDataset
+    :param grid_right: corrected grid right
+    :type grid_right: CarsDataset
+    :param interpolated_grid_left: rectification grid left
+    :type interpolated_grid_left: shareloc.rectificationGrid
+    :param interpolated_grid_right: rectification grid right
+    :type interpolated_grid_right: shareloc.rectificationGrid
+    :param matches: matches
+    :type matches: np.ndarray
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: AbstractGeometry
+    :param srtm_dir: srtm directory
+    :type srtm_dir: str
+    :param default_alt: default altitude
+    :type default_alt: float
+    :param pair_folder: folder used for current pair
+    :type pair_folder: str
+    :param epsg: ground epsg
+    :type epsg: int
+
+    :return: disp min and disp max
+    :rtype: float, float
+    """
+
+    point_cloud = triangulate_matches(
+        geometry_plugin,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        interpolated_grid_left,
+        interpolated_grid_right,
+        np.ascontiguousarray(matches),
+    )
+
+    # Project point cloud to UTM
+    projection.point_cloud_conversion_dataset(point_cloud, epsg)
+
+    # Convert point cloud to pandas format to allow statistical filtering
+    labels = [cst.X, cst.Y, cst.Z, cst.DISPARITY, cst.POINT_CLOUD_CORR_MSK]
+    cloud_array = []
+    cloud_array.append(point_cloud[cst.X].values)
+    cloud_array.append(point_cloud[cst.Y].values)
+    cloud_array.append(point_cloud[cst.Z].values)
+    cloud_array.append(point_cloud[cst.DISPARITY].values)
+    cloud_array.append(point_cloud[cst.POINT_CLOUD_CORR_MSK].values)
+    pd_cloud = pandas.DataFrame(
+        np.transpose(np.array(cloud_array)), columns=labels
+    )
+
+    pd_cloud.attrs["epsg"] = epsg
+
+    return pd_cloud
 
 
 def compute_point_cloud(

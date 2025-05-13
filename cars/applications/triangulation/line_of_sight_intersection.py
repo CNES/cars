@@ -42,7 +42,6 @@ from cars.applications.grid_generation import grids
 from cars.applications.point_cloud_fusion import point_cloud_tools
 from cars.applications.triangulation import (
     triangulation_constants,
-    triangulation_sparse_tools,
     triangulation_tools,
 )
 from cars.applications.triangulation.triangulation import Triangulation
@@ -637,6 +636,11 @@ class LineOfSightIntersection(
             interpolated_grid_right
         )
 
+        sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
+        sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+        geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
+        geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
+
         if epipolar_disparity_map.dataset_type != "points":
             if source_pc_names is None:
                 source_pc_names = ["PAIR_0"]
@@ -678,11 +682,6 @@ class LineOfSightIntersection(
                 }
             }
             self.orchestrator.update_out_info(updating_dict)
-
-            sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
-            sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
-            geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
-            geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
 
             if self.snap_to_img1:
                 grid_right = uncorrected_grid_right
@@ -906,11 +905,6 @@ class LineOfSightIntersection(
                 cars_ds_name="triangulated_matches",
             )
 
-            broadcasted_grid_left = self.orchestrator.cluster.scatter(grid_left)
-            broadcasted_grid_right = self.orchestrator.cluster.scatter(
-                grid_right
-            )
-
             # Get saving infos in order to save tiles when they are computed
             [saving_info_matches] = self.orchestrator.get_saving_infos(
                 [epipolar_point_cloud]
@@ -931,14 +925,15 @@ class LineOfSightIntersection(
                             triangulation_wrapper_matches, nout=1
                         )(
                             epipolar_disparity_map[row, col],
-                            sensor_image_left,
-                            sensor_image_right,
-                            broadcasted_grid_left,
-                            broadcasted_grid_right,
+                            sensor1,
+                            sensor2,
+                            geomodel1,
+                            geomodel2,
                             broadcasted_interpolated_grid_left,
                             broadcasted_interpolated_grid_right,
                             geometry_plugin,
                             full_saving_info_matches,
+                            epsg,
                         )
 
         return epipolar_point_cloud
@@ -1211,12 +1206,13 @@ def triangulation_wrapper_matches(
     matches,
     sensor1,
     sensor2,
+    geomodel1,
+    geomodel2,
     grid1,
     grid2,
-    interpolated_grid1,
-    interpolated_grid2,
     geometry_plugin,
     full_saving_info_matches,
+    epsg,
 ):
     """
     :param matches: matches
@@ -1225,16 +1221,14 @@ def triangulation_wrapper_matches(
     :type sensor1: str
     :param sensor2: path to right sensor image
     :type sensor2: str
-    :param grid1: dataset of the reference image grid file
-    :type grid1: CarsDataset
-    :param grid2: dataset of the secondary image grid file
-    :type grid2: CarsDataset
     :param interpolated_grid1: rectification grid left
     :type interpolated_grid1: shareloc.rectificationGrid
     :param interpolated_grid2: rectification grid right
     :type interpolated_grid2: shareloc.rectificationGrid
     :param geometry_plugin: geometry plugin to use
     :type geometry_plugin: AbstractGeometry
+    :param epsg: ground epsg
+    :type epsg: int
     """
 
     # Ignore this tile if there are not match
@@ -1244,8 +1238,8 @@ def triangulation_wrapper_matches(
     epipolar_matches = matches.to_numpy()
 
     sensor_matches = geometry_plugin.matches_to_sensor_coords(
-        interpolated_grid1,
-        interpolated_grid2,
+        grid1,
+        grid2,
         epipolar_matches,
         cst.MATCHES_MODE,
     )
@@ -1259,17 +1253,16 @@ def triangulation_wrapper_matches(
     )
 
     # Triangulate matches
-    triangulated_matches = (
-        triangulation_sparse_tools.triangulate_sparse_matches(
-            sensor1,
-            sensor2,
-            grid1,
-            grid2,
-            interpolated_grid1,
-            interpolated_grid2,
-            matches,
-            geometry_plugin,
-        )
+    triangulated_matches = triangulation_tools.triangulate_sparse_matches(
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid1,
+        grid2,
+        matches,
+        geometry_plugin,
+        epsg,
     )
 
     cars_dataset.fill_dataframe(
