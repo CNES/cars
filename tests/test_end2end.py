@@ -2713,7 +2713,7 @@ def test_end2end_use_epipolar_a_priori():
             "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "nb_pts_threshold": 100,
+                "nb_pts_threshold": 150,
                 "connection_val": 3.0,
                 "match_filter_constant": 0,
                 "match_filter_mean_factor": 1,
