@@ -3175,6 +3175,7 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "match_filter_mean_factor": 1,
                 "match_filter_dev_factor": 3,
             },
+            "dem_generation": {"method": "dichotomic"},
             "dense_matching": {
                 "method": "census_sgm_default",
                 "use_cross_validation": True,
