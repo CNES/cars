@@ -32,6 +32,7 @@ from __future__ import print_function
 
 import copy
 import logging
+import math
 import os
 
 import numpy as np
@@ -58,6 +59,7 @@ from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import (
     get_descriptions_bands,
     rasterio_get_epsg,
+    rasterio_get_size,
     read_vector,
 )
 from cars.core.utils import safe_makedirs
@@ -782,7 +784,9 @@ class DefaultPipeline(PipelineTemplate):
 
         return used_conf
 
-    def check_applications_with_inputs(self, inputs_conf, application_conf):
+    def check_applications_with_inputs(  # noqa: C901 : too complex
+        self, inputs_conf, application_conf
+    ):
         """
         Check for each application the input and output configuration
         consistency
@@ -844,6 +848,38 @@ class DefaultPipeline(PipelineTemplate):
             self.sparse_mtch_pandora_app.confidence_filtering["activated"] = (
                 False
             )
+
+        if (
+            application_conf["dem_generation"]["method"]
+            == "bulldozer_on_raster"
+        ):
+            if not initial_elevation:
+                logging.warning(
+                    "No initial elevation is given and DEM generation "
+                    "method is 'bulldozer_on_raster'. "
+                    "It means reference DEM may be high resolution. "
+                    "CARS run will work normally but disparity grid "
+                    "generation may take time and require a lot of memory. "
+                    "This issue will be fixed in the next version. "
+                    "If you run CARS on a personal computer, it is "
+                    "recommended to change the method to 'dichotomic' in "
+                    "'applications.dem_generation' configuration"
+                )
+            else:
+                first_image_path = next(iter(inputs_conf["sensors"].values()))[
+                    "image"
+                ]
+                first_image_size = rasterio_get_size(first_image_path)
+                first_image_nb_pixels = math.prod(first_image_size)
+                dem_gen_used_mem = first_image_nb_pixels / 1e8
+                if dem_gen_used_mem > 8:
+                    logging.warning(
+                        "DEM generation method is 'bulldozer_on_raster'. "
+                        f"This method can use up to {dem_gen_used_mem} Gb "
+                        "of memory. If you think that it is too much for "
+                        "your computer, you can re-lauch the run using "
+                        "'dichotomic' method for DEM generation"
+                    )
 
         # check classification application parameter compare
         # to each sensors inputs classification list
