@@ -47,7 +47,7 @@ from scipy.signal import butter, filtfilt, lfilter, lfilter_zi
 from shareloc.dtm_reader import interpolate_geoid_height
 from shareloc.geofunctions import triangulation
 
-from cars.applications.rasterization import rasterization_tools as rasterization
+from cars.applications.rasterization import rasterization_algo as rasterization
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.geometry.shareloc_geometry import SharelocGeometry
 
