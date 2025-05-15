@@ -344,6 +344,8 @@ The structure follows this organization:
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | median_filter_size              | Size (in pixels) of median filter used to generate median DEM            | int        | should be > 0   | 5             | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | dem_median_output_resolution    | Resolution of output downsampled median DEM                              | int        | should be > 0   | 30            | No       |
+                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | bulldozer_max_object_size       | Bulldozer parameter "max_object_size"                                    | int        | should be > 0   | 16            | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | compute_stats                   | Compute statistics of difference between DEM min/max and original DSM    | boolean    |                 | true          | No       |

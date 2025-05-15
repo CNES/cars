@@ -91,6 +91,9 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             "morphological_filters_size"
         ]
         self.median_filter_size = self.used_config["median_filter_size"]
+        self.dem_median_output_resolution = self.used_config[
+            "dem_median_output_resolution"
+        ]
         self.fillnodata_max_search_distance = self.used_config[
             "fillnodata_max_search_distance"
         ]
@@ -138,6 +141,9 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         overloaded_conf["median_filter_size"] = conf.get(
             "median_filter_size", 5
         )
+        overloaded_conf["dem_median_output_resolution"] = conf.get(
+            "dem_median_output_resolution", 30
+        )
         overloaded_conf["fillnodata_max_search_distance"] = conf.get(
             "fillnodata_max_search_distance", 50
         )
@@ -163,6 +169,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             "margin": And(Or(float, int), lambda x: x > 0),
             "morphological_filters_size": And(int, lambda x: x > 0),
             "median_filter_size": And(int, lambda x: x > 0),
+            "dem_median_output_resolution": And(int, lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
             "min_dem": And(Or(int, float), lambda x: x < 0),
             "max_dem": And(Or(int, float), lambda x: x > 0),
@@ -457,6 +464,17 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             )
             shutil.copy2(dem_max_path, intermediate_dem_max_path)
 
+            intermediate_dem_median_path = os.path.join(
+                output_dir, "dem_median_before_downsampling.tif"
+            )
+            shutil.copy2(dem_median_path, intermediate_dem_median_path)
+
+        # Downsample median dem
+        downsample_dem(
+            dem_median_path,
+            scale=self.dem_median_output_resolution / resolution_in_meters,
+        )
+
         # Launch Bulldozer on dem min
         saved_transform = edit_transform(
             dem_min_path, resolution=resolution_in_meters
@@ -612,6 +630,48 @@ def reverse_dem(input_dem):
     with rio.open(input_dem, "w", **metadata) as out_dem:
         out_dem.write(-data)
         out_dem.nodata = -nodata
+
+
+def downsample_dem(input_dem, scale):
+    """
+    Downsample median DEM with median resampling
+
+    :param input_dem: path of DEM to downsample (only one band)
+    :type input_dem: str
+    """
+    with rio.open(input_dem) as in_dem:
+        data = in_dem.read(1)
+        metadata = in_dem.meta
+        src_transform = in_dem.transform
+        width = in_dem.width
+        height = in_dem.height
+        crs = in_dem.crs
+        nodata = in_dem.nodata
+
+    dst_transform = (
+        src_transform
+        * Affine.translation(-width / scale, -height / scale)
+        * Affine.scale(scale)
+    )
+    dst_height = int(height // scale)
+    dst_width = int(width // scale)
+    metadata["transform"] = dst_transform
+    metadata["height"] = dst_height
+    metadata["width"] = dst_width
+    output = np.zeros((dst_height, dst_width))
+    reproject(
+        data,
+        output,
+        src_transform=src_transform,
+        src_crs=crs,
+        dst_transform=dst_transform,
+        dst_crs=crs,
+        dst_nodata=nodata,
+        resampling=Resampling.med,
+    )
+
+    with rio.open(input_dem, "w", **metadata) as dst:
+        dst.write(output, 1)
 
 
 def launch_bulldozer(
