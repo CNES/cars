@@ -28,6 +28,7 @@ import copy
 import logging
 import os
 import subprocess
+import sys
 
 # Third-party imports
 import matplotlib.pyplot as plt
@@ -70,7 +71,7 @@ set_dask_config()
 
 # fmt: off
 # isort: off
-# pylint: disable=C0413
+# pylint: disable=C0413, E0401
 from cars.applications.grid_generation import (  # noqa: E402
     grid_correction,
 )
@@ -226,6 +227,19 @@ def pandora_cmap():
     return cmap_shift
 
 
+def configure_matplotib_notebook():
+    """
+    Configure matplotlib
+    """
+    if "ipykernel" in sys.modules:
+        try:
+            from IPython import get_ipython  # pylint: disable=C0415
+
+            get_ipython().run_line_magic("matplotlib", "inline")
+        except Exception:
+            pass
+
+
 def show_data(data, figsize=(11, 11), mode=None):
     """
     Show data with matplotlib
@@ -233,7 +247,7 @@ def show_data(data, figsize=(11, 11), mode=None):
 
     available mode : "dsm", "image",
     """
-
+    configure_matplotib_notebook()
     # squeeze data
     data = copy.deepcopy(data)
     data = np.squeeze(data)
