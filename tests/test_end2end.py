@@ -2768,11 +2768,11 @@ def test_end2end_use_epipolar_a_priori():
                 < -23
             )
             assert (
-                23
+                22
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
-                < 31
+                < 24
             )
 
             # Ref output dir dependent from geometry plugin chosen
@@ -4589,8 +4589,8 @@ def test_end2end_quality_stats():
             ]
             assert out_disp_compute["global_disp_min"] > -27
             assert out_disp_compute["global_disp_min"] < -22
-            assert out_disp_compute["global_disp_max"] > 24
-            assert out_disp_compute["global_disp_max"] < 32
+            assert out_disp_compute["global_disp_max"] > 22
+            assert out_disp_compute["global_disp_max"] < 24
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
