@@ -23,8 +23,8 @@ CARS core cloud outlier removing module init file
 """
 # flake8: noqa: F401
 
-from cars.applications.point_cloud_outlier_removal.pc_out_removal import (
+from cars.applications.point_cloud_outlier_removal.abstract_pc_out_removal_app import (  # pylint: disable=C0301
     PointCloudOutlierRemoval,
 )
 
-from . import small_components, statistical
+from . import small_components_app, statistical_app

@@ -1,0 +1,350 @@
+#!/usr/bin/env python
+# coding: utf8
+#
+# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+#
+# This file is part of CARS
+# (see https://github.com/CNES/cars).
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# pylint: disable=too-many-lines
+
+"""
+Sparse matching Sift module:
+contains sift sparse matching method
+"""
+
+# Standard imports
+from __future__ import absolute_import
+
+import logging
+import warnings
+
+# Third party imports
+import numpy as np
+import pandas
+import xarray as xr
+from scipy.ndimage import generic_filter
+
+# CARS imports
+import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
+from cars.applications import application_constants
+from cars.applications.point_cloud_outlier_removal import outlier_removal_algo
+from cars.orchestrator.cluster.log_wrapper import cars_profile
+
+
+def euclidean_matrix_distance(descr1: np.array, descr2: np.array):
+    """Compute a matrix containing cross euclidean distance
+    :param descr1: first keypoints descriptor
+    :type descr1: numpy.ndarray
+    :param descr2: second keypoints descriptor
+    :type descr2: numpy.ndarray
+    :return euclidean matrix distance
+    :rtype: float
+    """
+    sq_descr1 = np.sum(descr1**2, axis=1)[:, np.newaxis]
+    sq_descr2 = np.sum(descr2**2, axis=1)
+    dot_descr12 = np.dot(descr1, descr2.T)
+    return np.sqrt(sq_descr1 + sq_descr2 - 2 * dot_descr12)
+
+
+def remove_epipolar_outliers(matches, percent=0.1):
+    # TODO used only in test functions to test compute_disparity_range
+    # Refactor with sparse_matching
+    """
+    This function will filter the match vector
+    according to a quantile of epipolar error
+    used for testing compute_disparity_range sparse method
+
+    :param matches: the [4,N] matches array
+    :type matches: numpy array
+    :param percent: the quantile to remove at each extrema
+    :type percent: float
+    :return: the filtered match array
+    :rtype: numpy array
+    """
+    epipolar_error_min = np.percentile(matches[:, 1] - matches[:, 3], percent)
+    epipolar_error_max = np.percentile(
+        matches[:, 1] - matches[:, 3], 100 - percent
+    )
+    logging.info(
+        "Epipolar error range after outlier rejection: [{},{}]".format(
+            epipolar_error_min, epipolar_error_max
+        )
+    )
+    out = matches[(matches[:, 1] - matches[:, 3]) < epipolar_error_max]
+    out = out[(out[:, 1] - out[:, 3]) > epipolar_error_min]
+
+    return out
+
+
+def compute_disparity_range(matches, percent=0.1):
+    # TODO: Refactor with dense_matching to have only one API ?
+    """
+    This function will compute the disparity range
+    from matches by filtering percent outliers
+
+    :param matches: the [4,N] matches array
+    :type matches: numpy array
+    :param percent: the quantile to remove at each extrema (in %)
+    :type percent: float
+    :return: the disparity range
+    :rtype: float, float
+    """
+    disparity = matches[:, 2] - matches[:, 0]
+
+    mindisp = np.percentile(disparity, percent)
+    maxdisp = np.percentile(disparity, 100 - percent)
+
+    return mindisp, maxdisp
+
+
+def compute_disp_min_disp_max(
+    pd_cloud,
+    orchestrator,
+    disp_margin=0.1,
+    pair_key=None,
+    disp_to_alt_ratio=None,
+):
+    """
+    Compute disp min and disp max from triangulated and filtered matches
+
+    :param pd_cloud: triangulated_matches
+    :type pd_cloud: pandas Dataframe
+    :param orchestrator: orchestrator used
+    :type orchestrator: Orchestrator
+    :param disp_margin: disparity margin
+    :type disp_margin: float
+    :param disp_to_alt_ratio: used for logging info
+    :type disp_to_alt_ratio: float
+
+    :return: disp min and disp max
+    :rtype: float, float
+    """
+
+    # Obtain dmin dmax
+    filt_disparity = np.array(pd_cloud.iloc[:, 3])
+    dmax = np.nanmax(filt_disparity)
+    dmin = np.nanmin(filt_disparity)
+
+    margin = abs(dmax - dmin) * disp_margin
+    dmin -= margin
+    dmax += margin
+
+    logging.info(
+        "Disparity range with margin: [{:.3f} pix., {:.3f} pix.] "
+        "(margin = {:.3f} pix.)".format(dmin, dmax, margin)
+    )
+
+    if disp_to_alt_ratio is not None:
+        logging.info(
+            "Equivalent range in meters: [{:.3f} m, {:.3f} m] "
+            "(margin = {:.3f} m)".format(
+                dmin * disp_to_alt_ratio,
+                dmax * disp_to_alt_ratio,
+                margin * disp_to_alt_ratio,
+            )
+        )
+
+    # update orchestrator_out_json
+    updating_infos = {
+        application_constants.APPLICATION_TAG: {
+            sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
+                pair_key: {
+                    sm_cst.DISPARITY_MARGIN_PARAM_TAG: disp_margin,
+                    sm_cst.MINIMUM_DISPARITY_TAG: dmin,
+                    sm_cst.MAXIMUM_DISPARITY_TAG: dmax,
+                }
+            }
+        }
+    }
+    orchestrator.update_out_info(updating_infos)
+
+    return dmin, dmax
+
+
+@cars_profile(name="Clustering matches")
+def clustering_matches(
+    triangulated_matches,
+    connection_val=3.0,
+    nb_pts_threshold=80,
+    clusters_distance_threshold: float = None,
+    filtered_elt_pos: bool = False,
+):
+    """
+    Filter triangulated  matches
+
+    :param pd_cloud: triangulated_matches
+    :type pd_cloud: pandas Dataframe
+    :param connection_val: distance to use
+        to consider that two points are connected
+    :param nb_pts_threshold: number of points to use
+        to identify small clusters to filter
+    :param clusters_distance_threshold: distance to use
+        to consider if two points clusters are far from each other or not
+        (set to None to deactivate this level of filtering)
+    :param filtered_elt_pos: if filtered_elt_pos is set to True,
+        the removed points positions in their original
+        epipolar images are returned, otherwise it is set to None
+
+    :return: filtered_matches
+    :rtype: pandas Dataframe
+
+    """
+
+    filtered_pandora_matches, _ = (
+        outlier_removal_algo.small_component_filtering(
+            triangulated_matches,
+            connection_val=connection_val,
+            nb_pts_threshold=nb_pts_threshold,
+            clusters_distance_threshold=clusters_distance_threshold,
+            filtered_elt_pos=filtered_elt_pos,
+        )
+    )
+
+    filtered_pandora_matches_dataframe = pandas.DataFrame(
+        filtered_pandora_matches
+    )
+    filtered_pandora_matches_dataframe.attrs["epsg"] = (
+        triangulated_matches.attrs["epsg"]
+    )
+
+    return filtered_pandora_matches_dataframe
+
+
+@cars_profile(name="filter_point_cloud_matches")
+def filter_point_cloud_matches(
+    pd_cloud,
+    match_filter_knn=25,
+    match_filter_constant=0,
+    match_filter_mean_factor=1,
+    match_filter_dev_factor=3,
+):
+    """
+    Filter triangulated  matches
+
+    :param pd_cloud: triangulated_matches
+    :type pd_cloud: pandas Dataframe
+    :param match_filter_knn: number of neighboors used to measure
+                               isolation of matches
+    :type match_filter_knn: int
+    :param match_filter_dev_factor: factor of deviation in the
+                                      formula to compute threshold of outliers
+    :type match_filter_dev_factor: float
+
+    :return: disp min and disp max
+    :rtype: float, float
+    """
+
+    # Statistical filtering
+    filter_cloud, _ = outlier_removal_algo.statistical_outlier_filtering(
+        pd_cloud,
+        k=match_filter_knn,
+        filtering_constant=match_filter_constant,
+        mean_factor=match_filter_mean_factor,
+        dev_factor=match_filter_dev_factor,
+    )
+
+    # filter nans
+    filter_cloud.dropna(axis=0, inplace=True)
+
+    return filter_cloud
+
+
+
+def transform_triangulated_matches_to_dataframe(triangulated_matches):
+    """
+
+    :param triangulated_matches: triangulated matches
+    :type: cars_dataset
+    """
+    # Concatenated matches
+    list_matches = []
+    attrs = None
+    for row in range(triangulated_matches.shape[0]):
+        for col in range(triangulated_matches.shape[1]):
+            # CarsDataset containing Pandas DataFrame, not Delayed anymore
+            if triangulated_matches[row, col] is not None:
+                epipolar_matches = triangulated_matches[row, col]
+
+                if attrs is None:
+                    attrs = epipolar_matches.attrs
+
+                list_matches.append(epipolar_matches)
+
+    if list_matches:
+        triangulated_matches_df = pandas.concat(list_matches, ignore_index=True)
+        triangulated_matches_df.attrs = attrs
+    else:
+        raise RuntimeError("No match have been found in sparse matching")
+
+    return triangulated_matches_df
+
+
+def nan_ratio_func(window):
+    """ "
+    Calculate the number of nan in the window
+
+    :param window: the window in the image
+    """
+
+    total_pixels = window.size
+    nan_count = np.isnan(window).sum()
+    return nan_count / total_pixels
+
+
+def confidence_filtering(
+    dataset,
+    disp_map,
+    requested_confidence,
+    conf_filtering,
+):
+    """
+    Filter the disparity map by using the confidence
+
+    :param dataset: the epipolar disparity map dataset
+    :type dataset: cars dataset
+    :param disp_map: the disparity map
+    :type disp_map: numpy darray
+    :param requested_confidence: the confidence to use
+    :type requested_confidence: list
+    :param conf_filtering: the confidence_filtering parameters
+    :type conf_filtering: dict
+    """
+    data_risk = dataset[requested_confidence[0]].values
+    data_bounds_sup = dataset[requested_confidence[1]].values
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        nan_ratio = generic_filter(
+            disp_map, nan_ratio_func, size=conf_filtering["win_nanratio"]
+        )
+        var_map = generic_filter(
+            data_risk, np.nanmean, size=conf_filtering["win_mean_risk_max"]
+        )
+
+    mask = (
+        (data_bounds_sup > conf_filtering["upper_bound"])
+        | (data_bounds_sup <= conf_filtering["lower_bound"])
+    ) | (
+        (var_map > conf_filtering["risk_max"])
+        & (nan_ratio > conf_filtering["nan_threshold"])
+    )
+    disp_map[mask] = np.nan
+
+    var_mean_risk = xr.DataArray(var_map, dims=dataset.sizes.keys())
+    var_nan_ratio = xr.DataArray(nan_ratio, dims=dataset.sizes.keys())
+
+    # We add the new variables to the dataset
+    dataset["confidence_from_mean_risk_max"] = var_mean_risk
+    dataset["confidence_from_nanratio"] = var_nan_ratio

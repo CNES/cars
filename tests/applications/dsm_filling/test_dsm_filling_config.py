@@ -19,19 +19,19 @@
 # limitations under the License.
 #
 """
-Test module for config of cars/applications/dsm_filling/bulldozer_filling.py
+Test module for config of cars/applications/dsm_filling/bulldozer_filling_app.py
 """
 
 # Third party imports
 import pytest
 
-from cars.applications.dsm_filling.border_interpolation import (
+from cars.applications.dsm_filling.border_interpolation_app import (
     BorderInterpolation,
 )
-from cars.applications.dsm_filling.bulldozer_filling import BulldozerFilling
+from cars.applications.dsm_filling.bulldozer_filling_app import BulldozerFilling
 
 # CARS imports
-from cars.applications.dsm_filling.exogenous_filling import ExogenousFilling
+from cars.applications.dsm_filling.exogenous_filling_app import ExogenousFilling
 
 
 @pytest.mark.unit_tests

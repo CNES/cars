@@ -23,6 +23,8 @@ CARS dem generation init file
 """
 # flake8: noqa: F401
 
-from cars.applications.dem_generation.dem_generation import DemGeneration
+from cars.applications.dem_generation.abstract_dem_generation_app import (
+    DemGeneration,
+)
 
-from . import dichotomic_generation, rasterization
+from . import dichotomic_generation_app, rasterization_app

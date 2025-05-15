@@ -20,7 +20,7 @@
 #
 """
 Test module for config of
-cars/applications/grid_generation/epipolar_grid_generation.py
+cars/applications/grid_generation/epipolar_grid_generation_app.py
 """
 
 import json_checker
@@ -29,7 +29,7 @@ import json_checker
 import pytest
 
 # CARS imports
-from cars.applications.grid_generation.epipolar_grid_generation import (
+from cars.applications.grid_generation.epipolar_grid_generation_app import (
     EpipolarGridGeneration,
 )
 

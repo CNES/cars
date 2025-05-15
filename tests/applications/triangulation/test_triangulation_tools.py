@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/steps/triangulation_tools.py
+Test module for cars/steps/triangulation_algo.py
 Important : Uses conftest.py for shared pytest fixtures
 """
 
@@ -29,7 +29,10 @@ import pandas
 import pytest
 import xarray as xr
 
-from cars.applications.triangulation import triangulation_tools
+from cars.applications.triangulation import (
+    triangulation_algo,
+    triangulation_wrappers,
+)
 
 # CARS imports
 from cars.core import constants as cst
@@ -72,7 +75,7 @@ def test_triangulation_ventoux_shareloc(
         "right_epipolar_grid"
     ]
 
-    point_cloud_dict = triangulation_tools.triangulate(
+    point_cloud_dict = triangulation_algo.triangulate(
         get_geometry_plugin(),
         sensor1,
         sensor2,
@@ -121,7 +124,7 @@ def test_triangulate_matches_shareloc(
         "right_epipolar_grid"
     ]
 
-    llh = triangulation_tools.triangulate_matches(
+    llh = triangulation_algo.triangulate_matches(
         get_geometry_plugin(),
         sensor1,
         sensor2,
@@ -171,7 +174,7 @@ def test_geoid_offset_from_xarray(geoid_path):
             cst.Z: ((cst.ROW, cst.COL), np.zeros_like(geoid_ref.z)),
         }
     )
-    computed_geoid = triangulation_tools.geoid_offset(points, geoid_path)
+    computed_geoid = triangulation_wrappers.geoid_offset(points, geoid_path)
 
     # Note: the two versions of the egm96 geoid file are slightly different,
     # the tolerance used should be sufficient here.
@@ -198,7 +201,9 @@ def test_geoid_offset_from_pandas():
     }
     points = pandas.DataFrame(data=data)
 
-    computed_geoid = triangulation_tools.geoid_offset(points, get_geoid_path())
+    computed_geoid = triangulation_wrappers.geoid_offset(
+        points, get_geoid_path()
+    )
 
     # Test outside border where it is nan
     assert np.allclose(
@@ -240,7 +245,7 @@ def test_triangulation_intervals_shareloc(
         "right_epipolar_grid"
     ]
 
-    point_cloud_dict = triangulation_tools.triangulate(
+    point_cloud_dict = triangulation_algo.triangulate(
         get_geometry_plugin(),
         sensor1,
         sensor2,
@@ -251,7 +256,7 @@ def test_triangulation_intervals_shareloc(
         disp1_ref,
     )
 
-    point_cloud_dict_inf = triangulation_tools.triangulate(
+    point_cloud_dict_inf = triangulation_algo.triangulate(
         get_geometry_plugin(),
         sensor1,
         sensor2,
@@ -263,7 +268,7 @@ def test_triangulation_intervals_shareloc(
         disp_key="confidence_from_interval_bounds_inf.cars_3",
     )
 
-    point_cloud_dict_sup = triangulation_tools.triangulate(
+    point_cloud_dict_sup = triangulation_algo.triangulate(
         get_geometry_plugin(),
         sensor1,
         sensor2,

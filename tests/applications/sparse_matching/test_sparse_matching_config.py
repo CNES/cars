@@ -19,14 +19,14 @@
 # limitations under the License.
 #
 """
-Test module for config of cars/applications/sparse_matching/sift.py
+Test module for config of cars/applications/sparse_matching/sift_app.py
 """
 
 # Third party imports
 import pytest
 
 # CARS imports
-from cars.applications.sparse_matching.sift import Sift
+from cars.applications.sparse_matching.sift_app import Sift
 
 
 @pytest.mark.unit_tests

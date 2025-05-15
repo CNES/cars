@@ -19,14 +19,14 @@
 # limitations under the License.
 #
 """
-Test module for config of cars/applications/rasterization/simple_gaussian.py
+Test module for config of cars/applications/rasterization/simple_gaussian_app.py
 """
 
 # Third party imports
 import pytest
 
 # CARS imports
-from cars.applications.rasterization.simple_gaussian import SimpleGaussian
+from cars.applications.rasterization.simple_gaussian_app import SimpleGaussian
 
 
 @pytest.mark.unit_tests

@@ -20,7 +20,7 @@
 #
 """
 Test module for config of
-cars/applications/point_cloud_outliers_removing/statistical.py
+cars/applications/point_cloud_outliers_removing/statistical_app.py
 """
 
 import json_checker
@@ -28,12 +28,12 @@ import json_checker
 # Third party imports
 import pytest
 
-from cars.applications.point_cloud_outlier_removal.small_components import (
+from cars.applications.point_cloud_outlier_removal.small_components_app import (
     SmallComponents,
 )
 
 # CARS imports
-from cars.applications.point_cloud_outlier_removal.statistical import (
+from cars.applications.point_cloud_outlier_removal.statistical_app import (
     Statistical,
 )
 

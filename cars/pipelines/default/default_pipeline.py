@@ -46,12 +46,15 @@ from cars.applications.application import Application
 from cars.applications.dem_generation import (
     dem_generation_constants as dem_gen_cst,
 )
-from cars.applications.grid_generation import grid_correction
-from cars.applications.point_cloud_fusion import pc_tif_tools
-from cars.applications.sparse_matching import (
-    sparse_matching_tools as sparse_mtch_tools,
+from cars.applications.grid_generation import grid_correction_app
+from cars.applications.point_cloud_fusion import (
+    point_cloud_algo,
+    point_cloud_wrappers,
 )
-from cars.applications.sparse_matching.sparse_matching_tools import (
+from cars.applications.sparse_matching import (
+    sparse_matching_wrappers as sparse_mtch_tools,
+)
+from cars.applications.sparse_matching.sparse_matching_wrappers import (
     transform_triangulated_matches_to_dataframe,
 )
 from cars.core import preprocessing, projection, roi_tools
@@ -1195,7 +1198,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pairs[pair_key]["corrected_matches_cars_ds"],
                     _,
                     _,
-                ) = grid_correction.estimate_right_grid_correction(
+                ) = grid_correction_app.estimate_right_grid_correction(
                     self.pairs[pair_key]["matches_array"],
                     self.pairs[pair_key]["grid_right"],
                     initial_cars_ds=self.pairs[pair_key][
@@ -1211,7 +1214,7 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 # Correct grid right
                 self.pairs[pair_key]["corrected_grid_right"] = (
-                    grid_correction.correct_grid(
+                    grid_correction_app.correct_grid(
                         self.pairs[pair_key]["grid_right"],
                         self.pairs[pair_key]["grid_correction_coef"],
                         save_corrected_grid,
@@ -1589,7 +1592,7 @@ class DefaultPipeline(PipelineTemplate):
                         self.pairs[pair_key]["corrected_matches_cars_ds"],
                         _,
                         _,
-                    ) = grid_correction.estimate_right_grid_correction(
+                    ) = grid_correction_app.estimate_right_grid_correction(
                         new_grid_matches_array,
                         self.pairs[pair_key]["new_grid_right"],
                         save_matches=save_matches,
@@ -1606,7 +1609,7 @@ class DefaultPipeline(PipelineTemplate):
                     # Correct grid right
 
                     self.pairs[pair_key]["corrected_grid_right"] = (
-                        grid_correction.correct_grid(
+                        grid_correction_app.correct_grid(
                             self.pairs[pair_key]["new_grid_right"],
                             self.pairs[pair_key]["grid_correction_coef"],
                             save_corrected_grid,
@@ -1648,7 +1651,7 @@ class DefaultPipeline(PipelineTemplate):
                 else:
                     # Correct grid right with provided epipolar a priori
                     self.pairs[pair_key]["corrected_grid_right"] = (
-                        grid_correction.correct_grid_from_1d(
+                        grid_correction_app.correct_grid_from_1d(
                             self.pairs[pair_key]["grid_right"],
                             self.pairs[pair_key]["grid_correction_coef"],
                             save_corrected_grid,
@@ -2822,7 +2825,7 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         # compute epsg
-        epsg_cloud = pc_tif_tools.compute_epsg_from_point_cloud(
+        epsg_cloud = point_cloud_wrappers.compute_epsg_from_point_cloud(
             self.used_conf[INPUTS][depth_cst.DEPTH_MAPS]
         )
         if self.epsg is None:
@@ -2837,14 +2840,14 @@ class DefaultPipeline(PipelineTemplate):
 
         if not self.merging:
             # compute bounds
-            self.terrain_bounds = pc_tif_tools.get_bounds(
+            self.terrain_bounds = point_cloud_wrappers.get_bounds(
                 self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                 self.epsg,
                 roi_poly=self.roi_poly,
             )
 
             self.list_epipolar_point_clouds = (
-                pc_tif_tools.generate_point_clouds(
+                point_cloud_algo.generate_point_clouds(
                     self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                     self.cars_orchestrator,
                     tile_size=1000,
@@ -2855,7 +2858,7 @@ class DefaultPipeline(PipelineTemplate):
             (
                 self.terrain_bounds,
                 self.list_epipolar_point_clouds,
-            ) = pc_tif_tools.transform_input_pc(
+            ) = point_cloud_algo.transform_input_pc(
                 self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                 self.epsg,
                 roi_poly=self.roi_poly,
@@ -2865,14 +2868,14 @@ class DefaultPipeline(PipelineTemplate):
 
             # Compute number of superposing point cloud for density
             max_number_superposing_point_clouds = (
-                pc_tif_tools.compute_max_nb_point_clouds(
+                point_cloud_wrappers.compute_max_nb_point_clouds(
                     self.list_epipolar_point_clouds
                 )
             )
 
             # Compute average distance between two points
             average_distance_point_cloud = (
-                pc_tif_tools.compute_average_distance(
+                point_cloud_wrappers.compute_average_distance(
                     self.list_epipolar_point_clouds
                 )
             )

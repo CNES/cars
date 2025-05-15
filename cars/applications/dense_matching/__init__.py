@@ -23,6 +23,8 @@ CARS core dense matching module init file
 """
 # flake8: noqa: F401
 
-from cars.applications.dense_matching.dense_matching import DenseMatching
+from cars.applications.dense_matching.abstract_dense_matching_app import (
+    DenseMatching,
+)
 
-from . import census_mccnn_sgm
+from . import census_mccnn_sgm_app

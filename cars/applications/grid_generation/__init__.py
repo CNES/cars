@@ -23,6 +23,8 @@ CARS grid_generation module init file
 """
 # flake8: noqa: F401
 
-from cars.applications.grid_generation.grid_generation import GridGeneration
+from cars.applications.grid_generation.abstract_grid_generation_app import (
+    GridGeneration,
+)
 
-from . import epipolar_grid_generation
+from . import epipolar_grid_generation_app

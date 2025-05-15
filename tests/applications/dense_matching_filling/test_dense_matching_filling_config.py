@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for config of cars/applications/dense_match_filling/plane.py
+Test module for config of cars/applications/dense_match_filling/plane_app.py
 """
 
 import json_checker
@@ -28,8 +28,8 @@ import json_checker
 import pytest
 
 # CARS imports
-from cars.applications.dense_match_filling.plane import PlaneFill
-from cars.applications.dense_match_filling.zero_padding import ZerosPadding
+from cars.applications.dense_match_filling.plane_app import PlaneFill
+from cars.applications.dense_match_filling.zero_padding_app import ZerosPadding
 
 
 @pytest.mark.unit_tests

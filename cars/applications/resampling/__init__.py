@@ -23,6 +23,6 @@ CARS core resampling module init file
 """
 # flake8: noqa: F401
 
-from cars.applications.resampling.resampling import Resampling
+from cars.applications.resampling.abstract_resampling_app import Resampling
 
-from . import bicubic_resampling
+from . import bicubic_resampling_app

@@ -20,14 +20,14 @@
 #
 """
 Test module for config of
-cars/applications/triangulation/line_of_sight_intersection.py
+cars/applications/triangulation/line_of_sight_intersection_app.py
 """
 
 # Third party imports
 import pytest
 
 # CARS imports
-from cars.applications.triangulation.line_of_sight_intersection import (
+from cars.applications.triangulation.line_of_sight_intersection_app import (
     LineOfSightIntersection,
 )
 
