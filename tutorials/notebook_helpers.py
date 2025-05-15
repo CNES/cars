@@ -73,7 +73,7 @@ set_dask_config()
 # isort: off
 # pylint: disable=C0413, E0401
 from cars.applications.grid_generation import (  # noqa: E402
-    grid_correction,
+    grid_correction_app,
 )
 from cars.data_structures import (  # noqa: E402
     corresponding_tiles_tools,
@@ -426,6 +426,6 @@ def apply_grid_correction(grid, grid_coefficients, save_folder):
         raise RuntimeError("No grid correction provided")
 
     # Correct grid right with provided epipolar a priori
-    return grid_correction.correct_grid_from_1d(
+    return grid_correction_app.correct_grid_from_1d(
         grid, list(grid_coefficients), False, save_folder
     )
