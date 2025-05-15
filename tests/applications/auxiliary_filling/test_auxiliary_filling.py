@@ -105,12 +105,10 @@ def test_auxiliary_filling_paca(
 
     input_json = absolute_data_path("input/phr_paca/input.json")
 
-    dsm_input = absolute_data_path("ref_output/dsm_end2end_paca_bulldozer.tif")
-    color_input = absolute_data_path(
-        "ref_output/color_end2end_paca_bulldozer.tif"
-    )
+    dsm_input = absolute_data_path("input/dsm_input_auxiliary_filling.tif")
+    color_input = absolute_data_path("input/color_input_auxiliary_filling.tif")
     classification_input = absolute_data_path(
-        "ref_output/classification_end2end_paca_bulldozer.tif"
+        "input/classification_input_auxiliary_filling.tif"
     )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:

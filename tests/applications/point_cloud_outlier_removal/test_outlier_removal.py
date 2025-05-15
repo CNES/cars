@@ -22,8 +22,6 @@
 Cars tests/point_cloud_outlier_removal  file
 """
 
-import datetime
-
 import laspy
 
 # Third party imports
@@ -111,6 +109,8 @@ def test_detect_statistical_outliers():
         ref_cloud[:, 1],
         ref_cloud[:, 2],
         k=4,
+        filtering_constant=0.0,
+        mean_factor=1.0,
         dev_factor=0.0,
         use_median=False,
     )
@@ -121,6 +121,8 @@ def test_detect_statistical_outliers():
         ref_cloud[:, 1],
         ref_cloud[:, 2],
         k=4,
+        filtering_constant=0.0,
+        mean_factor=1.0,
         dev_factor=1.0,
         use_median=False,
     )
@@ -141,6 +143,8 @@ def test_detect_statistical_outliers():
         ref_cloud[:, 1],
         ref_cloud[:, 2],
         k=4,
+        filtering_constant=0.0,
+        mean_factor=1.0,
         dev_factor=1.0,
         use_median=True,
     )
@@ -151,6 +155,8 @@ def test_detect_statistical_outliers():
         ref_cloud[:, 1],
         ref_cloud[:, 2],
         k=4,
+        filtering_constant=0.0,
+        mean_factor=1.0,
         dev_factor=7.0,
         use_median=True,
     )
@@ -161,6 +167,8 @@ def test_detect_statistical_outliers():
         ref_cloud[:, 1],
         ref_cloud[:, 2],
         k=4,
+        filtering_constant=0.0,
+        mean_factor=1.0,
         dev_factor=15.0,
         use_median=True,
     )
@@ -180,6 +188,8 @@ def test_outlier_removal_point_cloud_statistical(use_median):
     equivalent using scipy ckdtrees
     """
     k = 50
+    filtering_constant = 0
+    mean_factor = 1
     dev_factor = 1
 
     with laspy.open(
@@ -188,26 +198,24 @@ def test_outlier_removal_point_cloud_statistical(use_median):
         las = creader.read()
         points = np.vstack((las.x, las.y, las.z))
 
-    start_time = datetime.datetime.now()
     result_cpp = outlier_filter.pc_statistical_outlier_filtering(
-        las.x, las.y, las.z, dev_factor, k, use_median
+        las.x,
+        las.y,
+        las.z,
+        filtering_constant,
+        mean_factor,
+        dev_factor,
+        k,
+        use_median,
     )
-    end_time = datetime.datetime.now()
-    cpp_duration = end_time - start_time
-
-    print(f"Statistical filtering total duration (cpp): {cpp_duration}")
 
     # Perform the same filtering Scipy and compare the results
     transposed_points = np.transpose(points)
 
-    scipy_start = datetime.datetime.now()
     detected_points = outlier_removal_tools.detect_statistical_outliers(
         transposed_points, k, dev_factor, use_median
     )
 
-    scipy_end = datetime.datetime.now()
-    scipy_duration = scipy_end - scipy_start
-    print(f"Statistical filtering total duration (Python): {scipy_duration}")
     is_same_result = detected_points == result_cpp
     assert is_same_result
 
@@ -233,7 +241,6 @@ def test_outlier_removal_point_cloud_small_components(
         las = creader.read()
         points = np.vstack((las.x, las.y, las.z))
 
-    start_time = datetime.datetime.now()
     result_cpp = outlier_filter.pc_small_component_outlier_filtering(
         las.x,
         las.y,
@@ -242,15 +249,8 @@ def test_outlier_removal_point_cloud_small_components(
         nb_pts_threshold,
         clusters_distance_threshold,
     )
-    end_time = datetime.datetime.now()
-    cpp_duration = end_time - start_time
-
-    print(f"Small Component filtering total duration (cpp): {cpp_duration}")
-    print(f"result_cpp: {result_cpp}")
 
     transposed_points = np.transpose(points)
-
-    scipy_start = datetime.datetime.now()
 
     cluster_to_remove = outlier_removal_tools.detect_small_components(
         transposed_points,
@@ -259,19 +259,12 @@ def test_outlier_removal_point_cloud_small_components(
         clusters_distance_threshold,
     )
 
-    scipy_end = datetime.datetime.now()
-    scipy_duration = scipy_end - scipy_start
-    print(
-        f"Small Component filtering total duration (Python): {scipy_duration}"
-    )
-
     cluster_to_remove.sort()
     result_cpp.sort()
 
     is_same_result = cluster_to_remove == result_cpp
 
     assert is_same_result
-    print(f"Scipy and cars filter results are the same ? {is_same_result}")
 
 
 @pytest.mark.unit_tests
@@ -283,6 +276,8 @@ def test_outlier_removal_epipolar_statistical(use_median):
     """
     k = 15
     half_window_size = 15
+    filtering_constant = 0
+    mean_factor = 1
     dev_factor = 1
 
     with (
@@ -312,16 +307,17 @@ def test_outlier_removal_epipolar_statistical(use_median):
     y_utm_flat = np.copy(y_utm).reshape(input_shape[0] * input_shape[1])
     z_flat = np.copy(z_values).reshape(input_shape[0] * input_shape[1])
 
-    start_time = datetime.datetime.now()
-
     outlier_array = outlier_filter.epipolar_statistical_outlier_filtering(
-        x_utm, y_utm, z_values, k, half_window_size, dev_factor, use_median
+        x_utm,
+        y_utm,
+        z_values,
+        k,
+        half_window_size,
+        filtering_constant,
+        mean_factor,
+        dev_factor,
+        use_median,
     )
-
-    end_time = datetime.datetime.now()
-    epipolar_processing_duration = end_time - start_time
-
-    print(f"Epipolar filtering duration: {epipolar_processing_duration}")
 
     # filter NaNs
     nan_pos = np.isnan(x_utm_flat)
@@ -329,24 +325,21 @@ def test_outlier_removal_epipolar_statistical(use_median):
     y_utm_flat = y_utm_flat[~nan_pos]
     z_flat = z_flat[~nan_pos]
 
-    start_time = datetime.datetime.now()
-
     result_kdtree = np.array(
         outlier_filter.pc_statistical_outlier_filtering(
-            x_utm_flat, y_utm_flat, z_flat, dev_factor, k, use_median
+            x_utm_flat,
+            y_utm_flat,
+            z_flat,
+            filtering_constant,
+            mean_factor,
+            dev_factor,
+            k,
+            use_median,
         )
     )
 
-    end_time = datetime.datetime.now()
-    kdtree_processing_duration = end_time - start_time
-    print(f"KDTree filtering duration: {kdtree_processing_duration}")
-
-    print(outlier_array.shape)
-
     outlier_array = outlier_array.reshape(input_shape[0] * input_shape[1])
-    print(outlier_array.shape)
     outlier_array = np.argwhere(outlier_array[~nan_pos]).flatten()
-    print(outlier_array.shape)
 
     # Find common outliers between the two methods
     # common_outliers = np.intersect1d(result_kdtree, outlier_array)
@@ -405,8 +398,6 @@ def test_outlier_removal_epipolar_small_components(
     y_utm_flat = np.copy(y_utm).reshape(input_shape[0] * input_shape[1])
     z_flat = np.copy(z_values).reshape(input_shape[0] * input_shape[1])
 
-    start_time = datetime.datetime.now()
-
     outlier_array = outlier_filter.epipolar_small_component_outlier_filtering(
         x_utm,
         y_utm,
@@ -417,11 +408,6 @@ def test_outlier_removal_epipolar_small_components(
         clusters_distance_threshold,
     )
 
-    end_time = datetime.datetime.now()
-    epipolar_processing_duration = end_time - start_time
-
-    print(f"Epipolar filtering duration: {epipolar_processing_duration}")
-
     # Test with KDTree
 
     # filter NaNs
@@ -429,8 +415,6 @@ def test_outlier_removal_epipolar_small_components(
     x_utm_flat = x_utm_flat[~nan_pos]
     y_utm_flat = y_utm_flat[~nan_pos]
     z_flat = z_flat[~nan_pos]
-
-    start_time = datetime.datetime.now()
 
     result_kdtree = np.array(
         outlier_filter.pc_small_component_outlier_filtering(
@@ -443,15 +427,8 @@ def test_outlier_removal_epipolar_small_components(
         )
     )
 
-    end_time = datetime.datetime.now()
-    kdtree_processing_duration = end_time - start_time
-
-    print(f"KDTree filtering duration: {kdtree_processing_duration}")
-
     outlier_array = outlier_array.reshape(input_shape[0] * input_shape[1])
-    print(outlier_array.shape)
     outlier_array = np.argwhere(outlier_array[~nan_pos]).flatten()
-    print(outlier_array.shape)
     # Find common outliers between the two methods
     # common_outliers = np.intersect1d(result_kdtree, outlier_array)
     # print(common_outliers)

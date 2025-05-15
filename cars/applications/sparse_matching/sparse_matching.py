@@ -142,23 +142,44 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_matches_filter_knn(self):
+    def get_match_filter_constant(self):
         """
-        Get matches_filter_knn :
-        number of neighboors used to measure isolation of matches
+        Get get_match_filter_constant :
+        constant in the formula to compute threshold of outliers
 
-        :return: matches_filter_knn
+        :return: match_filter_constant
 
         """
 
     @abstractmethod
-    def get_matches_filter_dev_factor(self):
+    def get_match_filter_mean_factor(self):
         """
-        Get matches_filter_dev_factor :
+        Get match_filter_mean_factor :
+        factor of mean in the formula
+        to compute threshold of outliers
+
+        :return: match_filter_mean_factor
+
+        """
+
+    @abstractmethod
+    def get_match_filter_knn(self):
+        """
+        Get match_filter_knn :
+        number of neighboors used to measure isolation of matches
+
+        :return: match_filter_knn
+
+        """
+
+    @abstractmethod
+    def get_match_filter_dev_factor(self):
+        """
+        Get match_filter_dev_factor :
         factor of deviation in the formula
         to compute threshold of outliers
 
-        :return: matches_filter_dev_factor
+        :return: match_filter_dev_factor
 
         """
 

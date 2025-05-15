@@ -97,9 +97,13 @@ class Sift(SparseMatching, short_name=["sift"]):
         self.sift_magnification = self.used_config["sift_magnification"]
         self.sift_window_size = self.used_config["sift_window_size"]
         self.sift_back_matching = self.used_config["sift_back_matching"]
-        self.matches_filter_knn = self.used_config["matches_filter_knn"]
-        self.matches_filter_dev_factor = self.used_config[
-            "matches_filter_dev_factor"
+        self.match_filter_knn = self.used_config["match_filter_knn"]
+        self.match_filter_constant = self.used_config["match_filter_constant"]
+        self.match_filter_mean_factor = self.used_config[
+            "match_filter_mean_factor"
+        ]
+        self.match_filter_dev_factor = self.used_config[
+            "match_filter_dev_factor"
         ]
         self.decimation_factor = self.used_config["decimation_factor"]
 
@@ -173,11 +177,18 @@ class Sift(SparseMatching, short_name=["sift"]):
             "sift_back_matching", True
         )
 
-        overloaded_conf["matches_filter_knn"] = conf.get(
-            "matches_filter_knn", 25
+        overloaded_conf["match_filter_knn"] = conf.get("match_filter_knn", 25)
+
+        overloaded_conf["match_filter_constant"] = conf.get(
+            "match_filter_constant", 0.0
         )
-        overloaded_conf["matches_filter_dev_factor"] = conf.get(
-            "matches_filter_dev_factor", 3.0
+
+        overloaded_conf["match_filter_mean_factor"] = conf.get(
+            "match_filter_mean_factor", 1.3
+        )
+
+        overloaded_conf["match_filter_dev_factor"] = conf.get(
+            "match_filter_dev_factor", 3.0
         )
 
         # Saving files
@@ -204,8 +215,10 @@ class Sift(SparseMatching, short_name=["sift"]):
             "sift_window_size": And(int, lambda x: x > 0),
             "decimation_factor": And(int, lambda x: x > 0),
             "sift_back_matching": bool,
-            "matches_filter_knn": int,
-            "matches_filter_dev_factor": Or(int, float),
+            "match_filter_knn": int,
+            "match_filter_constant": Or(int, float),
+            "match_filter_mean_factor": Or(int, float),
+            "match_filter_dev_factor": Or(int, float),
             "save_intermediate_data": bool,
         }
 
@@ -291,26 +304,47 @@ class Sift(SparseMatching, short_name=["sift"]):
 
         return self.epipolar_error_maximum_bias
 
-    def get_matches_filter_knn(self):
+    def get_match_filter_knn(self):
         """
-        Get matches_filter_knn :
+        Get match_filter_knn :
         number of neighboors used to measure isolation of matches
 
-        :return: matches_filter_knn
+        :return: match_filter_knn
 
         """
-        return self.matches_filter_knn
+        return self.match_filter_knn
 
-    def get_matches_filter_dev_factor(self):
+    def get_match_filter_constant(self):
         """
-        Get matches_filter_dev_factor :
+        Get get_match_filter_constant :
+        constant in the formula to compute threshold of outliers
+
+        :return: match_filter_constant
+
+        """
+        return self.match_filter_constant
+
+    def get_match_filter_mean_factor(self):
+        """
+        Get match_filter_mean_factor :
+        factor of mean in the formula
+        to compute threshold of outliers
+
+        :return: match_filter_mean_factor
+
+        """
+        return self.match_filter_mean_factor
+
+    def get_match_filter_dev_factor(self):
+        """
+        Get match_filter_dev_factor :
         factor of deviation in the formula
         to compute threshold of outliers
 
-        :return: matches_filter_dev_factor
+        :return: match_filter_dev_factor
 
         """
-        return self.matches_filter_dev_factor
+        return self.match_filter_dev_factor
 
     def get_decimation_factor(self):
         """

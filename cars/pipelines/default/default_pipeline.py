@@ -1347,17 +1347,25 @@ class DefaultPipeline(PipelineTemplate):
                     filtered_elt_pos=filtered_elt_pos,
                 )
 
-                matches_filter_knn = (
-                    self.sparse_mtch_pandora_app.get_matches_filter_knn()
+                match_filter_knn = (
+                    self.sparse_mtch_pandora_app.get_match_filter_knn()
                 )
-                matches_filter_dev_factor = (
-                    self.sparse_mtch_pandora_app.get_matches_filter_dev_factor()
+                match_filter_constant = (
+                    self.sparse_mtch_pandora_app.get_match_filter_constant()
+                )
+                match_filter_mean_factor = (
+                    self.sparse_mtch_pandora_app.get_match_filter_mean_factor()
+                )
+                match_filter_dev_factor = (
+                    self.sparse_mtch_pandora_app.get_match_filter_dev_factor()
                 )
                 self.pairs[pair_key]["filtered_triangulated_matches"] = (
                     sparse_mtch_tools.filter_point_cloud_matches(
                         filtered_matches,
-                        matches_filter_knn=matches_filter_knn,
-                        matches_filter_dev_factor=matches_filter_dev_factor,
+                        match_filter_knn=match_filter_knn,
+                        match_filter_constant=match_filter_constant,
+                        match_filter_mean_factor=match_filter_mean_factor,
+                        match_filter_dev_factor=match_filter_dev_factor,
                     )
                 )
 
