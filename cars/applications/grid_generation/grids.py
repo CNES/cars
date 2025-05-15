@@ -42,7 +42,7 @@ from cars.applications.triangulation.triangulation_tools import (
     triangulate_matches,
 )
 from cars.core import constants as cst
-from cars.core import projection, tiling
+from cars.core import inputs, projection, tiling
 
 
 def get_new_path(path):
@@ -191,25 +191,48 @@ def compute_epipolar_grid_min_max(
     else:
         disp_max_tiling = math.ceil(disp_max_tiling)
 
+    if isinstance(grid2, str):
+        image_bounds = inputs.rasterio_get_bounds(grid2)
+        min_px_right = image_bounds[0]
+        max_px_right = image_bounds[2]
+    else:
+        image_bounds = inputs.rasterio_get_bounds(grid2.attributes["path"])
+        min_px_right = image_bounds[0]
+        max_px_right = image_bounds[2]
+
     # Generate disp_min and disp_max matches
+    right_cols_min = grid[:, :, 0].flatten() + disp_min_tiling
     matches_min = np.stack(
         (
             grid[:, :, 0].flatten(),
             grid[:, :, 1].flatten(),
-            grid[:, :, 0].flatten() + disp_min_tiling,
+            np.clip(right_cols_min, min_px_right, max_px_right),
             grid[:, :, 1].flatten(),
         ),
         axis=1,
     )
+
+    right_cols_max = grid[:, :, 0].flatten() + disp_max_tiling
     matches_max = np.stack(
         (
             grid[:, :, 0].flatten(),
             grid[:, :, 1].flatten(),
-            grid[:, :, 0].flatten() + disp_max_tiling,
+            np.clip(right_cols_max, min_px_right, max_px_right),
             grid[:, :, 1].flatten(),
         ),
         axis=1,
     )
+
+    # If the matches had to be clipped, log it
+    clipped_matches_min = np.argwhere(right_cols_min != matches_min[:, 2])
+    clipped_matches_max = np.argwhere(right_cols_max != matches_max[:, 2])
+
+    nb_elems_clipped = len(clipped_matches_min) + len(clipped_matches_max)
+    if nb_elems_clipped > 0:
+        logging.info(
+            f"{nb_elems_clipped} points were clipped to the right "
+            "image's bounds."
+        )
 
     # Generate corresponding point clouds
     pc_min = triangulate_matches(
