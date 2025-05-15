@@ -853,33 +853,20 @@ class DefaultPipeline(PipelineTemplate):
             application_conf["dem_generation"]["method"]
             == "bulldozer_on_raster"
         ):
-            if not initial_elevation:
+            first_image_path = next(iter(inputs_conf["sensors"].values()))[
+                "image"
+            ]
+            first_image_size = rasterio_get_size(first_image_path)
+            first_image_nb_pixels = math.prod(first_image_size)
+            dem_gen_used_mem = first_image_nb_pixels / 1e8
+            if dem_gen_used_mem > 8:
                 logging.warning(
-                    "No initial elevation is given and DEM generation "
-                    "method is 'bulldozer_on_raster'. "
-                    "It means reference DEM may be high resolution. "
-                    "CARS run will work normally but disparity grid "
-                    "generation may take time and require a lot of memory. "
-                    "This issue will be fixed in the next version. "
-                    "If you run CARS on a personal computer, it is "
-                    "recommended to change the method to 'dichotomic' in "
-                    "'applications.dem_generation' configuration"
+                    "DEM generation method is 'bulldozer_on_raster'. "
+                    f"This method can use up to {dem_gen_used_mem} Gb "
+                    "of memory. If you think that it is too much for "
+                    "your computer, you can re-lauch the run using "
+                    "'dichotomic' method for DEM generation"
                 )
-            else:
-                first_image_path = next(iter(inputs_conf["sensors"].values()))[
-                    "image"
-                ]
-                first_image_size = rasterio_get_size(first_image_path)
-                first_image_nb_pixels = math.prod(first_image_size)
-                dem_gen_used_mem = first_image_nb_pixels / 1e8
-                if dem_gen_used_mem > 8:
-                    logging.warning(
-                        "DEM generation method is 'bulldozer_on_raster'. "
-                        f"This method can use up to {dem_gen_used_mem} Gb "
-                        "of memory. If you think that it is too much for "
-                        "your computer, you can re-lauch the run using "
-                        "'dichotomic' method for DEM generation"
-                    )
 
         # check classification application parameter compare
         # to each sensors inputs classification list
