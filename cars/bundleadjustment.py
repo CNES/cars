@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-cars_bundle_adjustment
+cars-bundleadjustment
 """
 
 import argparse
@@ -417,7 +417,7 @@ def new_rpcs_from_matches(
     interp_mode=False,
 ):
     """
-    Main function of cars-bundle-adjustement for new RPCs estimation:
+    Main function of cars-bundleadjustement for new RPCs estimation:
     - Retrieve matches from pairs and concatenate
     - Estimate residues by inverse location
     - Compute new RPCs
@@ -552,7 +552,7 @@ def new_rpcs_from_matches(
 
 def cars_bundle_adjustment(conf, no_run_sparse):
     """
-    cars bundle-adjustemnt main:
+    cars-bundleadjustement main:
     - Launch CARS to compute homologous points (run sparse matching)
     - Compute new RPCs
     """
@@ -655,7 +655,7 @@ def cli():
     """
 
     parser = argparse.ArgumentParser(
-        "cars-bundle-adjustment",
+        "cars-bundleadjustment",
         description="Refine multiple stereo pairs",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent(
