@@ -272,3 +272,23 @@ def region_margins_from_window(
     ]
 
     return region, margin
+
+
+def reduce_overlap(current_overlaps, new_margin):
+    """
+    Reduce overlap with margin
+
+    :param current_overlaps: overlap array
+    :type current_overlaps: np.ndarray
+    :param new_margin: margin to use
+    :type new_margin: int
+
+    :return: new overlap array
+    """
+
+    new_overlap = np.full(current_overlaps.shape, new_margin)
+
+    # The new overlap cannot be more than current
+    new_overlap = np.clip(new_overlap, 0, current_overlaps)
+
+    return new_overlap

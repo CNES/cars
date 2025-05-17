@@ -769,8 +769,7 @@ class LineOfSightIntersection(
                 epipolar_disparity_map.dataset_type,
                 name="triangulation_" + pair_key,
             )
-            epipolar_point_cloud.create_empty_copy(epipolar_image)
-            epipolar_point_cloud.overlaps *= 0  # Margins removed
+            epipolar_point_cloud.create_empty_copy(epipolar_disparity_map)
 
             # Update attributes to get epipolar info
             epipolar_point_cloud.attributes.update(pc_attributes)
@@ -894,7 +893,7 @@ class LineOfSightIntersection(
             epipolar_point_cloud = cars_dataset.CarsDataset(
                 "points", name="pandora_sparse_matching_" + pair_key
             )
-            epipolar_point_cloud.create_empty_copy(epipolar_image)
+            epipolar_point_cloud.create_empty_copy(epipolar_disparity_map)
 
             # Update attributes to get epipolar info
             epipolar_point_cloud.attributes.update(epipolar_image.attributes)
@@ -909,7 +908,6 @@ class LineOfSightIntersection(
             [saving_info_matches] = self.orchestrator.get_saving_infos(
                 [epipolar_point_cloud]
             )
-
             for col in range(epipolar_disparity_map.shape[1]):
                 for row in range(epipolar_disparity_map.shape[0]):
                     if epipolar_disparity_map[row, col] is not None:

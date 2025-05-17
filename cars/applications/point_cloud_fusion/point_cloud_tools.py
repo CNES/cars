@@ -34,6 +34,8 @@ import numpy as np
 import pandas
 import xarray as xr
 
+from cars.applications.dense_matching import dense_matching_tools
+
 # CARS imports
 from cars.core import constants as cst
 from cars.core import projection
@@ -452,6 +454,18 @@ def create_combined_dense_cloud(  # noqa: C901
     for cloud_global_id, (cloud_list_id, point_cloud) in zip(  # noqa: B905
         cloud_id, enumerate(cloud_list)
     ):
+        # crop point cloud
+        ref_roi, _, _ = dense_matching_tools.compute_cropped_roi(
+            point_cloud.attrs[cst.EPI_MARGINS],
+            0,
+            point_cloud.attrs[cst.ROI],
+            point_cloud.sizes[cst.ROW],
+            point_cloud.sizes[cst.COL],
+        )
+        point_cloud = point_cloud.isel(
+            row=slice(ref_roi[1], ref_roi[3]), col=slice(ref_roi[0], ref_roi[2])
+        )
+
         full_x = point_cloud[cst.X].values
         full_y = point_cloud[cst.Y].values
         full_z = point_cloud[cst.Z].values

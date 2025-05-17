@@ -259,6 +259,8 @@ def test_simple_rasterization_dataset_1():
     cloud = xr.open_dataset(
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
+    cloud.attrs[cst.ROI_WITH_MARGINS] = cloud.attrs[cst.ROI]
+    cloud.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
@@ -339,6 +341,8 @@ def test_simple_rasterization_dataset_1_intervals():
     )
     cloud[cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS] = cloud[cst.Z] - 0.5
     cloud[cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS] = cloud[cst.Z] + 1
+    cloud.attrs[cst.ROI_WITH_MARGINS] = cloud.attrs[cst.ROI]
+    cloud.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
 
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
@@ -416,6 +420,8 @@ def test_simple_rasterization_dataset_2():
     cloud = xr.open_dataset(
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
+    cloud.attrs[cst.ROI_WITH_MARGINS] = cloud.attrs[cst.ROI]
+    cloud.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
@@ -494,6 +500,8 @@ def test_simple_rasterization_dataset_():
     cloud = xr.open_dataset(
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
+    cloud.attrs[cst.ROI_WITH_MARGINS] = cloud.attrs[cst.ROI]
+    cloud.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
@@ -570,6 +578,8 @@ def test_simple_rasterization_multiple_datasets():
     cloud = xr.open_dataset(
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
+    cloud.attrs[cst.ROI_WITH_MARGINS] = cloud.attrs[cst.ROI]
+    cloud.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
@@ -655,6 +665,8 @@ def test_simple_rasterization_multiple_datasets_with_source_map():
     cloud = xr.open_dataset(
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
+    cloud.attrs[cst.ROI_WITH_MARGINS] = cloud.attrs[cst.ROI]
+    cloud.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )

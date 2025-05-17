@@ -1909,6 +1909,10 @@ class DefaultPipeline(PipelineTemplate):
                 pair_key=pair_key,
                 disp_range_grid=disp_range_grid,
                 compute_disparity_masks=False,
+                margins_to_keep=(
+                    self.pc_outlier_removal_1_app.get_epipolar_margin()
+                    + self.pc_outlier_removal_2_app.get_epipolar_margin()
+                ),
             )
 
             if self.quit_on_app("dense_matching"):

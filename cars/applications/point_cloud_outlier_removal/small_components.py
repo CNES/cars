@@ -222,6 +222,21 @@ class SmallComponents(
 
         return self.used_method
 
+    def get_epipolar_margin(self):
+        """
+        Get epipolar margin to use
+
+        :return: margin
+        :rtype: int
+        """
+
+        margin = 0
+
+        if self.activated:
+            margin = self.half_epipolar_size
+
+        return margin
+
     def get_on_ground_margin(self, resolution=0.5):
         """
         Get margins to use during point clouds fusion
@@ -400,7 +415,7 @@ class SmallComponents(
                             )
                         )
                         window = merged_point_cloud.tiling_grid[row, col]
-                        overlap = merged_point_cloud.overlaps[row, col]
+                        overlap = filtered_point_cloud.overlaps[row, col]
                         # Delayed call to cloud filtering
                         (
                             filtered_point_cloud[row, col],

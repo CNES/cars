@@ -53,6 +53,8 @@ def test_triangulation_ventoux_shareloc(
     disp1_ref = xr.open_dataset(
         absolute_data_path("input/intermediate_results/disp1_ref.nc")
     )
+    disp1_ref.attrs[cst.ROI_WITH_MARGINS] = disp1_ref.attrs[cst.ROI]
+    disp1_ref.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
     sensor1 = images_and_grids_conf["input"]["img1"]
     sensor2 = images_and_grids_conf["input"]["img2"]
     geomodel1 = {
@@ -223,6 +225,9 @@ def test_triangulation_intervals_shareloc(
     disp1_ref["confidence_from_interval_bounds_sup.cars_3"] = (
         disp1_ref["disp"] + 1
     )
+
+    disp1_ref.attrs[cst.ROI_WITH_MARGINS] = disp1_ref.attrs[cst.ROI]
+    disp1_ref.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
 
     sensor1 = images_and_grids_conf["input"]["img1"]
     sensor2 = images_and_grids_conf["input"]["img2"]

@@ -64,7 +64,7 @@ from cars.core import constants_disparity as cst_disp
 from cars.core import inputs, projection
 from cars.core.projection import point_cloud_conversion
 from cars.core.utils import safe_makedirs
-from cars.data_structures import cars_dataset
+from cars.data_structures import cars_dataset, format_transformation
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
@@ -1153,6 +1153,7 @@ class CensusMccnnSgm(
         pair_key="PAIR_0",
         disp_range_grid=None,
         compute_disparity_masks=False,
+        margins_to_keep=0,
     ):
         """
         Run Matching application.
@@ -1195,6 +1196,8 @@ class CensusMccnnSgm(
         :type pair_key: str
         :param disp_range_grid: minimum and maximum disparity grid
         :type disp_range_grid: CarsDataset
+        :param margins_to_keep: margin to keep after dense matching
+        :type margins_to_keep: int
 
         :return: disparity map: \
             The CarsDataset contains:
@@ -1231,7 +1234,12 @@ class CensusMccnnSgm(
                 "arrays", name="dense_matching_" + pair_key
             )
             epipolar_disparity_map.create_empty_copy(epipolar_images_left)
-            epipolar_disparity_map.overlaps *= 0
+            # Modify overlaps
+            epipolar_disparity_map.overlaps = (
+                format_transformation.reduce_overlap(
+                    epipolar_disparity_map.overlaps, margins_to_keep
+                )
+            )
 
             # Update attributes to get epipolar info
             epipolar_disparity_map.attributes.update(
@@ -1400,6 +1408,10 @@ class CensusMccnnSgm(
                             saving_info=full_saving_info,
                             compute_disparity_masks=compute_disparity_masks,
                             crop_with_range=crop_with_range,
+                            left_overlaps=cars_dataset.overlap_array_to_dict(
+                                epipolar_disparity_map.overlaps[row, col]
+                            ),
+                            margins_to_keep=margins_to_keep,
                         )
 
         else:
@@ -1418,6 +1430,8 @@ def compute_disparity_wrapper(
     saving_info=None,
     compute_disparity_masks=False,
     crop_with_range=None,
+    left_overlaps=None,
+    margins_to_keep=0,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1455,6 +1469,12 @@ def compute_disparity_wrapper(
     :type disp_to_alt_ratio: float
     :param crop_with_range: range length to crop disparity range with
     :type crop_with_range: float
+    :param left_overlaps: left overlap
+    :type: left_overlaps: dict
+    :param margins_to_keep: margin to keep after dense matching
+    :type margins_to_keep: int
+
+
     :return: Left to right disparity dataset
         Returned dataset is composed of :
 
@@ -1515,6 +1535,7 @@ def compute_disparity_wrapper(
         disp_max_grid=disp_max_grid,
         compute_disparity_masks=compute_disparity_masks,
         cropped_range=mask_crop,
+        margins_to_keep=margins_to_keep,
     )
 
     # Fill with attributes
@@ -1524,7 +1545,7 @@ def compute_disparity_wrapper(
         window=cars_dataset.get_window_dataset(left_image_object),
         profile=cars_dataset.get_profile_rasterio(left_image_object),
         attributes={cst.CROPPED_DISPARITY_RANGE: is_cropped},
-        overlaps=None,  # overlaps are removed
+        overlaps=left_overlaps,
     )
 
     return disp_dataset

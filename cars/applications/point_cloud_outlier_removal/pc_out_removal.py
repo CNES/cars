@@ -116,6 +116,15 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def get_epipolar_margin(self):
+        """
+        Get epipolar margin to use
+
+        :return: margin
+        :rtype: int
+        """
+
+    @abstractmethod
     def get_method(self):
         """
         Get margins to use during point clouds fusion
@@ -149,7 +158,7 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
 
     def __register_epipolar_dataset__(
         self,
-        merged_point_cloud,
+        epipolar_point_cloud,
         depth_map_dir=None,
         dump_dir=None,
         app_name="",
@@ -161,8 +170,8 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         parameter is no None. Alternatively it will be saved to dump_dir if
         save_intermediate_data is set and depth_map_dir is None.
 
-        :param merged_point_cloud:  Merged point cloud
-        :type merged_point_cloud: CarsDataset
+        :param epipolar_point_cloud:  Merged point cloud
+        :type epipolar_point_cloud: CarsDataset
         :param depth_map_dir: output depth map directory. If None output will be
             written in dump_dir if intermediate data is requested
         :type depth_map_dir: str
@@ -181,14 +190,13 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
 
         # Create epipolar point cloud CarsDataset
         filtered_point_cloud = cars_dataset.CarsDataset(
-            merged_point_cloud.dataset_type, name=app_name
+            epipolar_point_cloud.dataset_type, name=app_name
         )
 
-        filtered_point_cloud.create_empty_copy(merged_point_cloud)
-        filtered_point_cloud.overlaps *= 0  # Margins removed (for now)
+        filtered_point_cloud.create_empty_copy(epipolar_point_cloud)
 
         # Update attributes to get epipolar info
-        filtered_point_cloud.attributes.update(merged_point_cloud.attributes)
+        filtered_point_cloud.attributes.update(epipolar_point_cloud.attributes)
 
         if depth_map_dir or self.used_config.get(
             application_constants.SAVE_INTERMEDIATE_DATA
