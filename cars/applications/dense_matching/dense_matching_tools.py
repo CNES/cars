@@ -331,6 +331,9 @@ def create_disp_dataset(  # noqa: C901
     ref_dataset = ref_dataset.isel(
         row=slice(ref_roi[1], ref_roi[3]), col=slice(ref_roi[0], ref_roi[2])
     )
+    secondary_dataset = secondary_dataset.isel(
+        row=slice(ref_roi[1], ref_roi[3]), col=slice(ref_roi[0], ref_roi[2])
+    )
     # Crop disparity min max grids
     if disp_min_grid is not None:
         disp_min_grid = disp_min_grid[
