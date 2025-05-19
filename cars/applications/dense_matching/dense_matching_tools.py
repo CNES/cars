@@ -25,7 +25,7 @@ This module is responsible for the dense matching algorithms:
 
 # Standard imports
 import logging
-from typing import Dict, List
+from typing import Dict
 
 import numpy as np
 import pandora
@@ -232,6 +232,61 @@ def add_classification(
         )
 
 
+def compute_cropped_roi(
+    current_margins, margins_to_keep, tile_roi, nb_rows, nb_cols
+):
+    """
+    Compute cropped roi, with associated margins and
+
+    :param current_margins: current dataset margins
+    :type current_margins: list[int]
+    :param margins_to_keep: margin to keep
+    :type margins_to_keep: int
+    :param nb_rows: number of current rows
+    :type margins_to_keep: int
+    :param tile_roi: roi without margin of tile
+    :type tile_roi: list
+    :param nb_cols: number of current cols
+    :type nb_cols: int
+
+    :return: (borders to use as roi, new dataset roi with margin,
+        margin associated to roi)
+    :rtype: tuple(list, list, list)
+    """
+
+    def cast_int_list(current_list):
+        """
+        Apply int cast to list
+        """
+        new_list = []
+        for obj in current_list:
+            new_list.append(int(obj))
+        return new_list
+
+    new_margin_neg = list(
+        np.clip(np.array(current_margins[0:2]), -margins_to_keep, 0)
+    )
+    new_margin_pos = list(
+        np.clip(np.array(current_margins[2:4]), 0, margins_to_keep)
+    )
+    new_margin = list(np.array(new_margin_neg + new_margin_pos).astype(int))
+
+    new_roi = list(np.array(tile_roi) + np.array(new_margin))
+
+    ref_roi = [
+        int(-current_margins[0] + new_margin[0]),
+        int(-current_margins[1] + new_margin[1]),
+        int(nb_cols - current_margins[2] + new_margin[2]),
+        int(nb_rows - current_margins[3] + new_margin[3]),
+    ]
+
+    return (
+        cast_int_list(ref_roi),
+        cast_int_list(new_roi),
+        cast_int_list(new_margin),
+    )
+
+
 def create_disp_dataset(  # noqa: C901
     disp: xr.Dataset,
     ref_dataset: xr.Dataset,
@@ -240,6 +295,7 @@ def create_disp_dataset(  # noqa: C901
     disp_min_grid=None,
     disp_max_grid=None,
     cropped_range=None,
+    margins_to_keep=0,
 ) -> xr.Dataset:
     """
     Create the disparity dataset.
@@ -253,17 +309,44 @@ def create_disp_dataset(  # noqa: C901
     :param disp_max_grid: disparity max grid
     :param cropped_range: true if disparity range was cropped
     :type cropped_range: numpy array
+    :param margins_to_keep: margin to keep after dense matching
+    :type margins_to_keep: int
 
     :return: disparity dataset as used in cars
     """
 
     # Crop disparity to ROI
-    ref_roi = [
-        int(-ref_dataset.attrs[cst.EPI_MARGINS][0]),
-        int(-ref_dataset.attrs[cst.EPI_MARGINS][1]),
-        int(ref_dataset.sizes[cst.COL] - ref_dataset.attrs[cst.EPI_MARGINS][2]),
-        int(ref_dataset.sizes[cst.ROW] - ref_dataset.attrs[cst.EPI_MARGINS][3]),
-    ]
+    ref_roi, new_roi, new_margin = compute_cropped_roi(
+        ref_dataset.attrs[cst.EPI_MARGINS],
+        margins_to_keep,
+        ref_dataset.attrs[cst.ROI],
+        ref_dataset.sizes[cst.ROW],
+        ref_dataset.sizes[cst.COL],
+    )
+
+    # Crop datasets
+    disp = disp.isel(
+        row=slice(ref_roi[1], ref_roi[3]), col=slice(ref_roi[0], ref_roi[2])
+    )
+    ref_dataset = ref_dataset.isel(
+        row=slice(ref_roi[1], ref_roi[3]), col=slice(ref_roi[0], ref_roi[2])
+    )
+    secondary_dataset = secondary_dataset.isel(
+        row=slice(ref_roi[1], ref_roi[3]), col=slice(ref_roi[0], ref_roi[2])
+    )
+    # Crop disparity min max grids
+    if disp_min_grid is not None:
+        disp_min_grid = disp_min_grid[
+            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
+        ]
+    if disp_max_grid is not None:
+        disp_max_grid = disp_max_grid[
+            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
+        ]
+    if cropped_range is not None:
+        cropped_range = cropped_range[
+            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
+        ]
 
     # Retrieve disparity values
     disp_map = disp.disparity_map.values
@@ -346,54 +429,12 @@ def create_disp_dataset(  # noqa: C901
         right_band_classif,
     )
 
-    # Crop disparity map
-    disp_map = disp_map[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
-
-    # Crop left panchromatic image
-    epi_image = epi_image[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
-
-    # Crop original mask
-    if epi_msk is not None:
-        epi_msk = epi_msk[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
-
-    # Crop color
-    if color is not None:
-        color = color[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
-
-    # Crop masks
-    for key in pandora_masks.copy():
-        pandora_masks[key] = pandora_masks[key][
-            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-        ]
-
-    # Crop classif
-    if classif is not None:
-        classif = classif[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
-
-    # Crop disparity min max grids
-    if disp_min_grid is not None:
-        disp_min_grid = disp_min_grid[
-            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-        ]
-    if disp_max_grid is not None:
-        disp_max_grid = disp_max_grid[
-            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-        ]
-    if cropped_range is not None:
-        cropped_range = cropped_range[
-            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-        ]
-
     # Fill disparity array with 0 value for invalid points
     disp_map[pandora_masks[cst_disp.VALID] == 0] = 0
 
     # Build output dataset
-    row = np.array(
-        range(ref_dataset.attrs[cst.ROI][1], ref_dataset.attrs[cst.ROI][3])
-    )
-    col = np.array(
-        range(ref_dataset.attrs[cst.ROI][0], ref_dataset.attrs[cst.ROI][2])
-    )
+    row = np.array(range(new_roi[1], new_roi[3]))
+    col = np.array(range(new_roi[0], new_roi[2]))
 
     disp_ds = xr.Dataset(
         {
@@ -425,7 +466,7 @@ def create_disp_dataset(  # noqa: C901
 
     # add confidence
     if "confidence_measure" in disp:
-        add_confidence(disp_ds, disp, ref_roi)
+        add_confidence(disp_ds, disp)
 
     # add classif
     add_classification(disp_ds, classif=classif, band_classif=band_classif)
@@ -444,6 +485,8 @@ def create_disp_dataset(  # noqa: C901
             disp_ds[key] = xr.DataArray(np.copy(val), dims=[cst.ROW, cst.COL])
 
     disp_ds.attrs[cst.ROI] = ref_dataset.attrs[cst.ROI]
+    disp_ds.attrs[cst.ROI_WITH_MARGINS] = new_roi
+    disp_ds.attrs[cst.EPI_MARGINS] = new_margin
 
     disp_ds.attrs[cst.EPI_FULL_SIZE] = ref_dataset.attrs[cst.EPI_FULL_SIZE]
 
@@ -582,7 +625,6 @@ def merge_classif_left_right(
 def add_confidence(
     output_dataset: xr.Dataset,
     disp: xr.Dataset,
-    ref_roi: List[int],
 ):
     """
     Add confidences to dataset
@@ -599,8 +641,8 @@ def add_confidence(
         output_dataset[key] = xr.DataArray(
             np.copy(
                 disp.confidence_measure.data[
-                    ref_roi[1] : ref_roi[3],
-                    ref_roi[0] : ref_roi[2],
+                    :,
+                    :,
                     confidence_idx,
                 ]
             ),
@@ -688,6 +730,7 @@ def compute_disparity(
     disp_max_grid=None,
     compute_disparity_masks=False,
     cropped_range=None,
+    margins_to_keep=0,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will compute disparity.
@@ -708,6 +751,9 @@ def compute_disparity(
     :type compute_disparity_masks: Boolean
     :param cropped_range: true if disparity range was cropped
     :type cropped_range: numpy array
+    :param margins_to_keep: margin to keep after dense matching
+    :type margins_to_keep: int
+
     :return: Disparity dataset
     """
 
@@ -792,6 +838,7 @@ def compute_disparity(
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
         cropped_range=cropped_range,
+        margins_to_keep=margins_to_keep,
     )
 
     return disp_dataset

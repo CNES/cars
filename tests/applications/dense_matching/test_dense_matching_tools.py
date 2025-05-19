@@ -503,3 +503,77 @@ def test_merge_classif_left_right():
     np.testing.assert_allclose(merged_clasif, ref_array)
     assert merged_clasif.shape[0] == 3
     assert band_list == ["cloud", "building", "forest"]
+
+
+@pytest.mark.unit_tests
+def test_compute_cropped_roi():
+    """
+    Test compute_cropped_roi
+    """
+
+    # Test 1
+
+    # current_margins == ref_dataset.attrs[cst.EPI_MARGINS]
+    current_margins = [-12, -10, 5, 19]
+    margins_to_keep = 0
+    # current_roi == ref_dataset.attrs[cst.ROI]
+    current_roi = [500, 400, 800, 1000]
+    nb_rows = 600 + 10 + 19
+    nb_cols = 300 + 12 + 5
+
+    ref_roi, new_roi, new_margin = dense_matching_tools.compute_cropped_roi(
+        current_margins,
+        margins_to_keep,
+        current_roi,
+        nb_rows,
+        nb_cols,
+    )
+
+    assert ref_roi == [12, 10, nb_cols - 5, nb_rows - 19]
+    assert new_roi == [500, 400, 800, 1000]
+    assert new_margin == [0, 0, 0, 0]
+
+    # Test 2
+
+    # current_margins == ref_dataset.attrs[cst.EPI_MARGINS]
+    current_margins = [-12, -10, 5, 19]
+    margins_to_keep = 10
+    # current_roi == ref_dataset.attrs[cst.ROI]
+    current_roi = [500, 400, 800, 1000]
+    nb_rows = 600 + 10 + 19
+    nb_cols = 300 + 12 + 5
+
+    ref_roi, new_roi, new_margin = dense_matching_tools.compute_cropped_roi(
+        current_margins,
+        margins_to_keep,
+        current_roi,
+        nb_rows,
+        nb_cols,
+    )
+    # 5 > 10 -> margin used = 5
+    assert ref_roi == [12 - 10, 10 - 10, nb_cols, nb_rows - 19 + 10]
+    assert new_roi == [500 - 10, 400 - 10, 800 + 5, 1000 + 10]
+    assert new_margin == [-10, -10, 5, 10]
+
+    # Test 3
+
+    # current_margins == ref_dataset.attrs[cst.EPI_MARGINS]
+    current_margins = [-12, -10, 5, 19]
+    margins_to_keep = 20
+    # current_roi == ref_dataset.attrs[cst.ROI]
+    current_roi = [500, 400, 800, 1000]
+    nb_rows = 600 + 10 + 19
+    nb_cols = 300 + 12 + 5
+
+    ref_roi, new_roi, new_margin = dense_matching_tools.compute_cropped_roi(
+        current_margins,
+        margins_to_keep,
+        current_roi,
+        nb_rows,
+        nb_cols,
+    )
+    # 5 < 20 -> margin used = 5
+    # 12 < 20 -> margin used = 12
+    assert ref_roi == [0, 0, nb_cols, nb_rows]
+    assert new_roi == [500 - 12, 400 - 10, 800 + 5, 1000 + 19]
+    assert new_margin == [-12, -10, 5, 19]

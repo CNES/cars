@@ -98,6 +98,8 @@ def test_create_combined_dense_cloud():
             },
         )
         cloud0.attrs[cst.EPSG] = epsg
+        cloud0.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
+        cloud0.attrs[cst.ROI] = [0, 0, col, row]
 
         return cloud0
 
@@ -119,6 +121,8 @@ def test_create_combined_dense_cloud():
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
     )
     cloud1.attrs[cst.EPSG] = epsg
+    cloud1.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
+    cloud1.attrs[cst.ROI] = [0, 0, col, row]
 
     row = 5
     col = 5
@@ -138,6 +142,8 @@ def test_create_combined_dense_cloud():
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
     )
     cloud2.attrs[cst.EPSG] = epsg
+    cloud2.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
+    cloud2.attrs[cst.ROI] = [0, 0, col, row]
 
     cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
     cloud_id = list(range(3))
@@ -421,6 +427,8 @@ def test_create_combined_dense_cloud():
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
     )
     cloud1.attrs[cst.EPSG] = epsg
+    cloud1.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
+    cloud1.attrs[cst.ROI] = [0, 0, col, row]
 
     row = 5
     col = 5
@@ -450,6 +458,8 @@ def test_create_combined_dense_cloud():
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
     )
     cloud2.attrs[cst.EPSG] = epsg
+    cloud2.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
+    cloud2.attrs[cst.ROI] = [0, 0, col, row]
 
     cloud_list = [
         get_cloud0_ds(with_msk=False, with_conf_intervals=True),

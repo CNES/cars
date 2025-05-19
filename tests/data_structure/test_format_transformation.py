@@ -148,3 +148,31 @@ def test_get_corresponding_indexes():
 
     assert pc_row == 1
     assert pc_col == 0
+
+
+@pytest.mark.unit_tests
+def test_reduce_overlap():
+    """
+    Test reduce_overlap
+    """
+
+    # Test
+
+    new_margin = 12
+
+    current_overlap = np.ones((3, 3, 4))
+    current_overlap[0, 0, :] = [0, 5, 0, 8]
+    current_overlap[0, 1, :] = [0, 10, 3, 16]
+    current_overlap[1, 1, :] = [15, 5, 15, 5]
+
+    new_overlap = format_transformation.reduce_overlap(
+        current_overlap, new_margin
+    )
+
+    np.testing.assert_array_equal(new_overlap[0, 0, :], np.array([0, 5, 0, 8]))
+    np.testing.assert_array_equal(
+        new_overlap[0, 1, :], np.array([0, 10, 3, 12])
+    )
+    np.testing.assert_array_equal(
+        new_overlap[1, 1, :], np.array([12, 5, 12, 5])
+    )

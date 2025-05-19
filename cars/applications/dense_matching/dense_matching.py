@@ -195,6 +195,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         disp_range_grid=None,
         compute_disparity_masks=False,
         disp_to_alt_ratio=None,
+        margins_to_keep=0,
     ):
         """
         Run Matching application.
@@ -239,6 +240,8 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type disp_range_grid: CarsDataset
         :param disp_to_alt_ratio: disp to alti ratio used for performance map
         :type disp_to_alt_ratio: float
+        :param margins_to_keep: margin to keep after dense matching
+        :type margins_to_keep: int
 
         :return: disparity map: \
             The CarsDataset contains:

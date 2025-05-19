@@ -108,7 +108,7 @@ def triangulate(
         grid1,
         grid2,
         disp_ref,
-        roi_key=cst.ROI,
+        roi_key=cst.ROI_WITH_MARGINS,
     )
 
     return point_clouds
@@ -366,10 +366,8 @@ def compute_point_cloud(
         )
 
     point_cloud.attrs[cst.ROI] = data.attrs[cst.ROI]
-    if roi_key == cst.ROI_WITH_MARGINS:
-        point_cloud.attrs[cst.ROI_WITH_MARGINS] = data.attrs[
-            cst.ROI_WITH_MARGINS
-        ]
+    point_cloud.attrs[cst.ROI_WITH_MARGINS] = data.attrs[cst.ROI_WITH_MARGINS]
+    point_cloud.attrs[cst.EPI_MARGINS] = data.attrs[cst.EPI_MARGINS]
     point_cloud.attrs[cst.EPI_FULL_SIZE] = data.attrs[cst.EPI_FULL_SIZE]
     point_cloud.attrs[cst.EPSG] = int(4326)
 
