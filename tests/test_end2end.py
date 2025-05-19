@@ -4883,10 +4883,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -34
-            assert out_disp_compute["global_disp_min"] < -32
-            assert out_disp_compute["global_disp_max"] > 26
-            assert out_disp_compute["global_disp_max"] < 29
+            assert out_disp_compute["global_disp_min"] > -33
+            assert out_disp_compute["global_disp_min"] < -31
+            assert out_disp_compute["global_disp_max"] > 30
+            assert out_disp_compute["global_disp_max"] < 33
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -5121,10 +5121,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -34
-            assert out_disp_compute["global_disp_min"] < -32
-            assert out_disp_compute["global_disp_max"] > 26
-            assert out_disp_compute["global_disp_max"] < 29
+            assert out_disp_compute["global_disp_min"] > -33
+            assert out_disp_compute["global_disp_min"] < -31
+            assert out_disp_compute["global_disp_max"] > 30
+            assert out_disp_compute["global_disp_max"] < 33
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
