@@ -261,7 +261,6 @@ def filter_point_cloud_matches(
     return filter_cloud
 
 
-
 def transform_triangulated_matches_to_dataframe(triangulated_matches):
     """
 
