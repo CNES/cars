@@ -21,14 +21,11 @@
 """
 this module contains the dichotomic dem generation application class.
 """
-
 import logging
-
-# Standard imports
 import os
 import shutil
 
-# Third party imports
+# Third-party imports
 import numpy as np
 import pandas
 import rasterio as rio
@@ -52,10 +49,10 @@ from cars.applications.dem_generation.dem_generation_algo import (
 )
 from cars.applications.dem_generation.dem_generation_wrappers import (
     compute_stats,
+    downsample_dem,
     edit_transform,
     fit_initial_elevation_on_dem_median,
     reverse_dem,
-    downsample_dem,
 )
 
 # CARS imports
@@ -593,6 +590,3 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             return dem, initial_elevation_out_path
 
         return dem, None
-
-
-

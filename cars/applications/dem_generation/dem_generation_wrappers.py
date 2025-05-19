@@ -21,19 +21,17 @@
 """
 this module contains tools for the dem generation
 """
-
 import contextlib
 import logging
 import os
 
 import numpy as np
 import rasterio as rio
-
-# Third party imports
 import xdem
+
+# Third-party imports
 from affine import Affine
 from rasterio.coords import BoundingBox
-
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
 
@@ -279,8 +277,3 @@ def downsample_dem(input_dem, scale):
 
     with rio.open(input_dem, "w", **metadata) as dst:
         dst.write(output, 1)
-
-
-
-
-
