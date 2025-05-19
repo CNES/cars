@@ -648,13 +648,9 @@ def downsample_dem(input_dem, scale):
         crs = in_dem.crs
         nodata = in_dem.nodata
 
-    dst_transform = (
-        src_transform
-        * Affine.translation(-width / scale, -height / scale)
-        * Affine.scale(scale)
-    )
-    dst_height = int(height // scale)
-    dst_width = int(width // scale)
+    dst_transform = src_transform * Affine.scale(scale)
+    dst_height = int(height // scale) + 1
+    dst_width = int(width // scale) + 1
     metadata["transform"] = dst_transform
     metadata["height"] = dst_height
     metadata["width"] = dst_width
