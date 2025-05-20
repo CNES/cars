@@ -60,6 +60,10 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.SAVE_INTERMEDIATE_DATA, False
     )
 
+    overloaded_conf[adv_cst.RESOLUTION_A_PRIORI] = conf.get(
+        adv_cst.RESOLUTION_A_PRIORI, None
+    )
+
     overloaded_conf[adv_cst.DEBUG_WITH_ROI] = conf.get(
         adv_cst.DEBUG_WITH_ROI, False
     )
@@ -164,6 +168,7 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     schema = {
         adv_cst.DEBUG_WITH_ROI: bool,
         adv_cst.MERGING: bool,
+        adv_cst.RESOLUTION_A_PRIORI: And(int, lambda x: x > 0),
         adv_cst.SAVE_INTERMEDIATE_DATA: bool,
         adv_cst.GROUND_TRUTH_DSM: Or(dict, str),
         adv_cst.PHASING: Or(dict, None),
