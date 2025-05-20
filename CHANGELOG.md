@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.12.0-rc1  Improving Dem generations (May 2025)
+
+### Added
+
+- Corregistrate exogenous and endogenous DEMS, and reajust exogenous DEM [#1041].
+- New Dem Generation method based on rasterisation in DTM generation [#1036].
+- Use Pandora Cross Validation, fast version [#1057].
+- Add parameter to choose fast or accurate cross validation [#1072].
+- Re-enter with DSMs or depth maps, giving sensors envelops informations. [#919].
+- Optimization of EPSG computation in a priori computation [#1079].
+- Filter matches with Pandora Confidence in a priori computation [#1066].
+- Add disparity denoising in Pandora option [#1071].
+- weights.tif can now be dumped through activation in "auxilliary" [#1042].
+- New Pandora configuration usable [#926].
+- Add cars-bundle-adjustment script [#984].
+
+### Changed
+
+- Robustify EPSG use in dem generation [#988].
+- Optimisation of DSMs merging [#1019].
+- Update Bulldozer version to 1.1.0 [#961].
+- Tiling effect in point cloud filtering [#1096].
+- Add new filtering parameters in statistical filtering [#1062].
+- DSM filling optimisation [#1063].
+- Optimize explored disparity range of a priori computation [#1073].
+- DEM type to float  in dem generation [#1018].
+- Numpy version need no longer <2 [#1003]
+
+### Fixed
+
+- Bug on inexistant tmp file [#1024].
+- Bug when epipolar filling used with crossed validation [#1049]
+- Notebook data viewers [#1094].
+- Small components filtering activated by default [#1090].
+- Robustify Pandora Sparse Matching. 
+
 ## 0.11.0  Improving Disparity ranges (March 2025)
 
 ### Added
