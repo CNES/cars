@@ -115,7 +115,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         overloaded_conf["interpolator_mask"] = conf.get(
             "interpolator_mask", "nearest"
         )
-        overloaded_conf["step"] = conf.get("step", int(500 / 8))
+        overloaded_conf["step"] = conf.get("step", 500)
 
         # Saving bools
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -307,6 +307,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
+
+        self.step = int(self.step / resolution)
 
         # Create zeros margins if not provided
         if margins_fun is None:
