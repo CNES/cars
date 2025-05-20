@@ -46,6 +46,7 @@ from cars.applications.application import Application
 from cars.applications.dem_generation import (
     dem_generation_constants as dem_gen_cst,
 )
+from cars.applications.grid_generation.transform_grid import transform_grid
 from cars.applications.grid_generation import grid_correction_app
 from cars.applications.point_cloud_fusion import (
     pc_fusion_algo,
@@ -1118,6 +1119,10 @@ class DefaultPipeline(PipelineTemplate):
             ] is False or (len(self.pairs[pair_key]["holes_classif"]) > 0):
                 # Run resampling only if needed:
                 # no a priori or needs to detect holes
+                resolution = 2
+                self.pairs[pair_key]["grid_left"] = transform_grid(
+                    self.pairs[pair_key]["grid_left"], resolution, pair_key
+                )
 
                 # Get required bands of first resampling
                 required_bands = self.sparse_mtch_sift_app.get_required_bands()
@@ -1142,6 +1147,7 @@ class DefaultPipeline(PipelineTemplate):
                     tile_height=None,
                     add_classif=add_classif,
                     required_bands=required_bands,
+                    resolution=resolution,
                 )
 
                 if self.quit_on_app("resampling"):

@@ -53,6 +53,7 @@ def epipolar_rectify_images(
     interpolator_classif="nearest",
     interpolator_mask="nearest",
     step=None,
+    resolution=1,
     mask1=None,
     mask2=None,
     left_classifs=None,
@@ -113,6 +114,7 @@ def epipolar_rectify_images(
         grid1,
         [epipolar_size_x, epipolar_size_y],
         step=step,
+        resolution=resolution,
         region=left_region,
         nodata=nodata1,
         mask=mask1,
@@ -140,6 +142,7 @@ def epipolar_rectify_images(
         grid2,
         [epipolar_size_x, epipolar_size_y],
         step=step,
+        resolution=resolution,
         region=right_region,
         nodata=nodata2,
         mask=mask2,
@@ -169,6 +172,7 @@ def epipolar_rectify_images(
                 left_classifs,
                 grid1,
                 [epipolar_size_x, epipolar_size_y],
+                resolution=resolution,
                 region=left_region,
                 band_coords=cst.BAND_CLASSIF,
                 interpolator_img=interpolator_classif,
@@ -180,6 +184,7 @@ def epipolar_rectify_images(
                 right_classifs,
                 grid2,
                 [epipolar_size_x, epipolar_size_y],
+                resolution=resolution,
                 region=right_region,
                 band_coords=cst.BAND_CLASSIF,
                 interpolator_img=interpolator_classif,
@@ -200,6 +205,7 @@ def resample_image(
     grid,
     largest_size,
     step=None,
+    resolution=1,
     region=None,
     nodata=None,
     mask=None,
@@ -292,8 +298,9 @@ def resample_image(
                 grid_origin_x = grid_reader.transform[2]
                 grid_origin_y = grid_reader.transform[5]
                 assert grid_origin_x == grid_origin_y
-                grid_margin = -grid_origin_x / oversampling - 0.5
-                assert grid_margin == int(grid_margin)
+                grid_margin = int(
+                    -grid_origin_x / (oversampling * resolution) - 0.5
+                )
                 grid_margin = int(grid_margin)
 
                 # Convert resampled region to grid region with oversampling

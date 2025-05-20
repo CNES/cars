@@ -115,7 +115,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         overloaded_conf["interpolator_mask"] = conf.get(
             "interpolator_mask", "nearest"
         )
-        overloaded_conf["step"] = conf.get("step", 500)
+        overloaded_conf["step"] = conf.get("step", int(500 / 8))
 
         # Saving bools
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -225,6 +225,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         epipolar_roi=None,
         required_bands=None,
         texture_bands=None,
+        resolution=1,
     ):
         """
         Run resampling application.
@@ -597,6 +598,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         self.interpolator_classif,
                         self.interpolator_mask,
                         self.step,
+                        resolution,
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],
                         add_classif=add_classif,
@@ -632,6 +634,7 @@ def generate_epipolar_images_wrapper(
     interpolator_classif,
     interpolator_mask,
     step=None,
+    resolution=1,
     used_disp_min=None,
     used_disp_max=None,
     add_classif=True,
@@ -676,7 +679,6 @@ def generate_epipolar_images_wrapper(
         used_disp_min=used_disp_min,
         used_disp_max=used_disp_max,
     )
-
     # Rectify images
     (
         left_dataset,
@@ -696,6 +698,7 @@ def generate_epipolar_images_wrapper(
         interpolator_classif,
         interpolator_mask,
         step=step,
+        resolution=resolution,
         mask1=mask1,
         mask2=mask2,
         left_classifs=left_classifs,
