@@ -1119,9 +1119,11 @@ class DefaultPipeline(PipelineTemplate):
             ] is False or (len(self.pairs[pair_key]["holes_classif"]) > 0):
                 # Run resampling only if needed:
                 # no a priori or needs to detect holes
-                resolution = 2
+                resolution = 8
                 self.pairs[pair_key]["grid_left"] = transform_grid(
-                    self.pairs[pair_key]["grid_left"], resolution, pair_key
+                    self.pairs[pair_key]["grid_left"],
+                    self.pairs[pair_key]["grid_right"],
+                    resolution,
                 )
 
                 # Get required bands of first resampling

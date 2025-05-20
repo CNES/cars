@@ -30,6 +30,7 @@ import math
 import numpy as np
 import rasterio as rio
 import resample as cresample
+from numpy.fft import fft2, fftshift, ifft2, ifftshift
 from rasterio.windows import Window, bounds
 
 from cars.conf import mask_cst as msk_cst
@@ -298,9 +299,8 @@ def resample_image(
                 grid_origin_x = grid_reader.transform[2]
                 grid_origin_y = grid_reader.transform[5]
                 assert grid_origin_x == grid_origin_y
-                grid_margin = int(
-                    -grid_origin_x / (oversampling * resolution) - 0.5
-                )
+                grid_margin = int(-grid_origin_x / oversampling - 0.5)
+
                 grid_margin = int(grid_margin)
 
                 # Convert resampled region to grid region with oversampling
@@ -376,6 +376,18 @@ def resample_image(
                     img_as_array = img_reader.read(
                         bands["band_id"], window=img_window
                     )
+
+                    f = fftshift(fft2(img_as_array))
+
+                    _, rows, cols = img_as_array.shape
+                    crow, ccol = rows // 2, cols // 2
+                    radius = min(rows, cols) // (2 * resolution)
+
+                    Y, X = np.ogrid[:rows, :cols]
+                    mask_blur = (X - ccol) ** 2 + (Y - crow) ** 2 <= radius**2
+                    f_filtered = f * mask_blur
+
+                    img_as_array = np.real(ifft2(ifftshift(f_filtered)))
 
                     # shift grid regarding the img extraction
                     grid_as_array[0, ...] -= x_offset
