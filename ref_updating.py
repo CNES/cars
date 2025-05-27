@@ -1,0 +1,111 @@
+#!/usr/bin/env python
+# coding: utf8
+#
+# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+#
+# This file is part of CARS
+# (see https://github.com/CNES/cars).
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+""" "
+Change the refs
+"""
+
+import os
+from shutil import copy2  # noqa: F401 # pylint: disable=unused-import
+
+import numpy as np
+import rasterio
+
+from tests.helpers import absolute_data_path, assert_same_images
+
+DIRECTORY_REF = "ref_output"
+DIRECTORY_INTERMEDIATE = "intermediate_data"
+
+for file_intermediate in os.listdir(absolute_data_path(DIRECTORY_INTERMEDIATE)):
+    intermediate_file_path = absolute_data_path(
+        os.path.join(DIRECTORY_INTERMEDIATE, file_intermediate)
+    )
+    for file_ref in os.listdir(absolute_data_path(DIRECTORY_REF)):
+        ref_file_path = absolute_data_path(
+            os.path.join(DIRECTORY_REF, file_ref)
+        )
+
+        if file_intermediate == file_ref:
+            SAME_IMAGE = False
+            try:
+                assert_same_images(
+                    file_intermediate,
+                    file_ref,
+                    atol=0.0001,
+                    rtol=1e-6,
+                )
+                SAME_IMAGE = True
+            except Exception:
+                SAME_IMAGE = False
+
+            if not SAME_IMAGE:
+                with (
+                    rasterio.open(intermediate_file_path) as src1,
+                    rasterio.open(ref_file_path) as src2,
+                ):
+                    data_intermediate = src1.read(1)
+                    data_ref = src2.read(1)
+
+                    print("####", file_intermediate, "####\n")
+
+                    if data_intermediate.shape != data_ref.shape:
+                        print(
+                            "the new and the old ",
+                            file_intermediate,
+                            " have different shape, "
+                            "you should check it on qgis !!!",
+                        )
+                    if src1.transform != src2.transform:
+                        print(
+                            "the new and the old ",
+                            file_intermediate,
+                            " have different transform, "
+                            "you should check it on qgis !!!",
+                        )
+                    if src1.crs != src2.crs:
+                        print(
+                            "the new and the old ",
+                            file_intermediate,
+                            " have different crs, "
+                            "you should check it on qgis !!!",
+                        )
+
+                    diff = data_intermediate - data_ref
+
+                    n_diff = np.sum(diff != 0)
+
+                    print("# STATS #\n")
+                    print("Min:", np.min(diff))
+                    print("Max:", np.max(diff))
+                    print("Mean:", np.mean(diff))
+                    print("Standard deviation:", np.std(diff))
+                    print(f"modified Pixels number: {n_diff}")
+                    print(
+                        "Percentage of modified pixels  :",
+                        100 * np.sum(diff != 0) / diff.size,
+                        "%",
+                    )
+                    rmse = np.sqrt(np.mean((diff) ** 2))
+                    print("RMSE", rmse, "\n")
+
+                    print("# Path #\n")
+                    print("Path :", intermediate_file_path, "\n")
+
+                copy2(intermediate_file_path, ref_file_path)
