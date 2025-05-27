@@ -46,8 +46,8 @@ for file_intermediate in os.listdir(absolute_data_path(DIRECTORY_INTERMEDIATE)):
             SAME_IMAGE = False
             try:
                 assert_same_images(
-                    file_intermediate,
-                    file_ref,
+                    intermediate_file_path,
+                    ref_file_path,
                     atol=0.0001,
                     rtol=1e-6,
                 )
@@ -86,6 +86,18 @@ for file_intermediate in os.listdir(absolute_data_path(DIRECTORY_INTERMEDIATE)):
                             " have different crs, "
                             "you should check it on qgis !!!",
                         )
+                    if src1.nodata != src2.nodata:
+                        print(
+                            "the new and the old ",
+                            file_intermediate,
+                            " have different no data, "
+                            "you should check it on qgis !!!",
+                        )
+
+                    data_intermediate[data_intermediate == src1.nodata] = 0
+                    data_intermediate[np.isnan(data_intermediate)] = 0
+                    data_ref[data_ref == src2.nodata] = 0
+                    data_ref[np.isnan(data_ref)] = 0
 
                     diff = data_intermediate - data_ref
 
