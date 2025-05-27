@@ -524,7 +524,7 @@ def test_compute_cropped_roi():
     nb_rows = 600 + 10 + 19
     nb_cols = 300 + 12 + 5
 
-    ref_roi, new_roi, new_margin = dense_matching_tools.compute_cropped_roi(
+    ref_roi, new_roi, new_margin = dense_matching_wrappers.compute_cropped_roi(
         current_margins,
         margins_to_keep,
         current_roi,
@@ -546,7 +546,7 @@ def test_compute_cropped_roi():
     nb_rows = 600 + 10 + 19
     nb_cols = 300 + 12 + 5
 
-    ref_roi, new_roi, new_margin = dense_matching_tools.compute_cropped_roi(
+    ref_roi, new_roi, new_margin = dense_matching_wrappers.compute_cropped_roi(
         current_margins,
         margins_to_keep,
         current_roi,
@@ -568,7 +568,7 @@ def test_compute_cropped_roi():
     nb_rows = 600 + 10 + 19
     nb_cols = 300 + 12 + 5
 
-    ref_roi, new_roi, new_margin = dense_matching_tools.compute_cropped_roi(
+    ref_roi, new_roi, new_margin = dense_matching_wrappers.compute_cropped_roi(
         current_margins,
         margins_to_keep,
         current_roi,
