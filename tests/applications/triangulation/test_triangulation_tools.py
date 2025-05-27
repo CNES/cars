@@ -95,7 +95,7 @@ def test_triangulation_ventoux_shareloc(
 
     ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/triangulation" "/triangulation1_ref.nc"
+            "ref_output_application/triangulation/triangulation1_ref.nc"
         )
     )
     assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.0e-3)

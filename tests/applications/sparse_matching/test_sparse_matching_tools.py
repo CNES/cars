@@ -86,9 +86,7 @@ def test_dataset_matching():
     # "/matches.npy"), matches)
 
     matches_ref = np.load(
-        absolute_data_path(
-            "ref_output_application/sparse_matching" "/matches.npy"
-        )
+        absolute_data_path("ref_output_application/sparse_matching/matches.npy")
     )
     np.testing.assert_allclose(matches, matches_ref)
 

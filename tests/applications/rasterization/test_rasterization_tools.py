@@ -332,7 +332,7 @@ def test_simple_rasterization_dataset_1():
 
     raster_ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/rasterization" "/rasterization_res_ref_1.nc"
+            "ref_output_application/rasterization/rasterization_res_ref_1.nc"
         )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
@@ -501,7 +501,7 @@ def test_simple_rasterization_dataset_2():
 
     raster_ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/rasterization" "/rasterization_res_ref_2.nc"
+            "ref_output_application/rasterization/rasterization_res_ref_2.nc"
         )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
@@ -584,7 +584,7 @@ def test_simple_rasterization_dataset_():
 
     raster_ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/rasterization" "/rasterization_res_ref_1.nc"
+            "ref_output_application/rasterization/rasterization_res_ref_1.nc"
         )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)

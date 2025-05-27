@@ -144,12 +144,14 @@ def test_compute_disparity_1():
     )
 
     # Uncomment to update baseline
-    # output.to_netcdf(absolute_data_path("ref_output_application/dense_matching"
-    # "/disp1_ref_pandora.nc"))
+    # output.to_netcdf(absolute_data_path(
+    # "ref_output_application/dense_matching"
+    # "/disp1_ref_pandora.nc")
+    # )
 
     ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/dense_matching" "/disp1_ref_pandora.nc"
+            "ref_output_application/dense_matching/disp1_ref_pandora.nc"
         )
     )
     assert_same_datasets(output, ref, atol=5.0e-6)
@@ -193,12 +195,14 @@ def test_compute_disparity_3():
     )
 
     # Uncomment to update baseline
-    # output.to_netcdf(absolute_data_path("ref_output_application/dense_matching"
-    # "/disp3_ref_pandora.nc"))
+    # output.to_netcdf(absolute_data_path(
+    # "ref_output_application/dense_matching"
+    # "/disp3_ref_pandora.nc")
+    # )
 
     ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/dense_matching" "/disp3_ref_pandora.nc"
+            "ref_output_application/dense_matching/disp3_ref_pandora.nc"
         )
     )
     assert_same_datasets(output, ref, atol=5.0e-6)

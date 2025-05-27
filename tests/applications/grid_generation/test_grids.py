@@ -234,7 +234,7 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
 
     left_grid_ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/grid_generation" "/left_grid_default_alt.nc"
+            "ref_output_application/grid_generation/left_grid_default_alt.nc"
         )
     )
     assert np.allclose(left_grid_ref["x"].values, left_grid[:, :, 0])
@@ -306,7 +306,8 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
 
     # Uncomment to update baseline
     # generate_grid_xr_dataset(right_grid).to_netcdf(
-    # absolute_data_path("ref_output_application/grid_generation/right_grid.nc"))
+    # absolute_data_path("ref_output_application/"
+    # "grid_generation/right_grid.nc"))
 
     right_grid_ref = xr.open_dataset(
         absolute_data_path(

@@ -226,7 +226,7 @@ def test_epipolar_rectify_images_1(
 
     left_ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/resampling" "/data1_ref_left.nc"
+            "ref_output_application/resampling/data1_ref_left.nc"
         )
     )
     assert_same_datasets(left, left_ref)
@@ -237,7 +237,7 @@ def test_epipolar_rectify_images_1(
 
     right_ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/resampling" "/data1_ref_right.nc"
+            "ref_output_application/resampling/data1_ref_right.nc"
         )
     )
     assert_same_datasets(right, right_ref)
@@ -248,9 +248,7 @@ def test_epipolar_rectify_images_1(
     #     pickle.dump(clr, file)
 
     with open(
-        absolute_data_path(
-            "ref_output_application/resampling" "/data1_ref_color"
-        ),
+        absolute_data_path("ref_output_application/resampling/data1_ref_color"),
         "rb",
     ) as file2:
         # load pickle data
@@ -343,14 +341,14 @@ def test_epipolar_rectify_images_3(
 
     left_ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/resampling" "/data1_ref_left.nc"
+            "ref_output_application/resampling/data1_ref_left.nc"
         )
     )
     assert_same_datasets(left, left_ref)
 
     right_ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output_application/resampling" "/data1_ref_right.nc"
+            "ref_output_application/resampling/data1_ref_right.nc"
         )
     )
     assert_same_datasets(right, right_ref)
