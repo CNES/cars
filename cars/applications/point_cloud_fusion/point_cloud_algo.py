@@ -37,14 +37,13 @@ import rasterio as rio
 import xarray as xr
 
 import cars.orchestrator.orchestrator as ocht
+from cars.applications.dense_matching import dense_matching_wrappers
 from cars.applications.point_cloud_fusion import point_cloud_wrappers as pc_wrap
 
 # CARS imports
 from cars.core import constants as cst
 from cars.core import inputs, preprocessing, projection, tiling
 from cars.data_structures import cars_dataset, cars_dict
-from cars.applications.dense_matching import dense_matching_wrappers
-
 
 
 def create_combined_cloud(  # noqa: C901
