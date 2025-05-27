@@ -144,9 +144,14 @@ def test_compute_disparity_1():
     )
 
     # Uncomment to update baseline
-    # output.to_netcdf(absolute_data_path("ref_output/disp1_ref_pandora.nc"))
+    # output.to_netcdf(absolute_data_path("ref_output_application/dense_matching"
+    # "/disp1_ref_pandora.nc"))
 
-    ref = xr.open_dataset(absolute_data_path("ref_output/disp1_ref_pandora.nc"))
+    ref = xr.open_dataset(
+        absolute_data_path(
+            "ref_output_application/dense_matching" "/disp1_ref_pandora.nc"
+        )
+    )
     assert_same_datasets(output, ref, atol=5.0e-6)
 
 
@@ -188,9 +193,14 @@ def test_compute_disparity_3():
     )
 
     # Uncomment to update baseline
-    # output.to_netcdf(absolute_data_path("ref_output/disp3_ref_pandora.nc"))
+    # output.to_netcdf(absolute_data_path("ref_output_application/dense_matching"
+    # "/disp3_ref_pandora.nc"))
 
-    ref = xr.open_dataset(absolute_data_path("ref_output/disp3_ref_pandora.nc"))
+    ref = xr.open_dataset(
+        absolute_data_path(
+            "ref_output_application/dense_matching" "/disp3_ref_pandora.nc"
+        )
+    )
     assert_same_datasets(output, ref, atol=5.0e-6)
 
 
@@ -230,10 +240,14 @@ def test_compute_disparity_with_all_confidences():
 
     # Uncomment to update baseline
     # output.to_netcdf(
-    #     absolute_data_path("ref_output/disp_with_confidences_ref_pandora.nc")
+    #     absolute_data_path("ref_output_application/dense_matching"
+    #     "/disp_with_confidences_ref_pandora.nc")
     # )
     ref = xr.open_dataset(
-        absolute_data_path("ref_output/disp_with_confidences_ref_pandora.nc")
+        absolute_data_path(
+            "ref_output_application/dense_matching"
+            "/disp_with_confidences_ref_pandora.nc"
+        )
     )
     assert_same_datasets(output, ref, atol=5.0e-6)
 
@@ -277,11 +291,15 @@ def test_compute_disparity_1_msk_ref():
 
     # Uncomment to update baseline
     # output.to_netcdf(
-    #     absolute_data_path("ref_output/disp1_ref_pandora_mask_ref.nc")
+    #     absolute_data_path("ref_output_application/dense_matching"
+    #     "/disp1_ref_pandora_mask_ref.nc")
     # )
 
     ref = xr.open_dataset(
-        absolute_data_path("ref_output/disp1_ref_pandora_mask_ref.nc")
+        absolute_data_path(
+            "ref_output_application/dense_matching"
+            "/disp1_ref_pandora_mask_ref.nc"
+        )
     )
     assert_same_datasets(output, ref, atol=5.0e-6)
 
@@ -325,11 +343,15 @@ def test_compute_disparity_1_msk_sec():
 
     # Uncomment to update baseline
     # output.to_netcdf(
-    #     absolute_data_path("ref_output/disp1_ref_pandora_mask_sec.nc")
+    #     absolute_data_path("ref_output_application/dense_matching"
+    #     "/disp1_ref_pandora_mask_sec.nc")
     # )
 
     ref = xr.open_dataset(
-        absolute_data_path("ref_output/disp1_ref_pandora_mask_sec.nc")
+        absolute_data_path(
+            "ref_output_application/dense_matching"
+            "/disp1_ref_pandora_mask_sec.nc"
+        )
     )
     assert_same_datasets(output, ref, atol=5.0e-6)
 
@@ -389,13 +411,17 @@ def test_estimate_right_classif_on_left():
     # Uncomment to update baseline
     # np.save(
     #     absolute_data_path(
-    #         "ref_output/dense_matching_classif_right1.npy"
+    #         "ref_output_application/dense_matching"
+    #         "/dense_matching_classif_right1.npy"
     #     ),
     #     left_from_right_classif
     # )
 
     ref_array = np.load(
-        absolute_data_path("ref_output/dense_matching_classif_right1.npy")
+        absolute_data_path(
+            "ref_output_application/dense_matching"
+            "/dense_matching_classif_right1.npy"
+        )
     )
 
     # assert
@@ -415,13 +441,17 @@ def test_estimate_right_classif_on_left():
     # Uncomment to update baseline
     # np.save(
     #     absolute_data_path(
-    #         "ref_output/dense_matching_classif_right2.npy"
+    #         "ref_output_application/dense_matching"
+    #         "/dense_matching_classif_right2.npy"
     #     ),
     #     left_from_right_classif
     # )
 
     ref_array = np.load(
-        absolute_data_path("ref_output/dense_matching_classif_right2.npy")
+        absolute_data_path(
+            "ref_output_application/dense_matching"
+            "/dense_matching_classif_right2.npy"
+        )
     )
 
     # assert
@@ -469,13 +499,17 @@ def test_merge_classif_left_right():
     # Uncomment to update baseline
     # np.save(
     #     absolute_data_path(
-    #         "ref_output/dense_matching_merged_classif1.npy"
+    #         "ref_output_application/dense_matching"
+    #         "/dense_matching_merged_classif1.npy"
     #     ),
     #     merged_clasif
     # )
 
     ref_array = np.load(
-        absolute_data_path("ref_output/dense_matching_merged_classif1.npy")
+        absolute_data_path(
+            "ref_output_application/dense_matching"
+            "/dense_matching_merged_classif1.npy"
+        )
     )
 
     # assert
@@ -493,13 +527,17 @@ def test_merge_classif_left_right():
     # Uncomment to update baseline
     # np.save(
     #     absolute_data_path(
-    #         "ref_output/dense_matching_merged_classif2.npy"
+    #         "ref_output_application/dense_matching/"
+    #         "dense_matching_merged_classif2.npy"
     #     ),
     #     merged_clasif
     # )
 
     ref_array = np.load(
-        absolute_data_path("ref_output/dense_matching_merged_classif2.npy")
+        absolute_data_path(
+            "ref_output_application/dense_matching"
+            "/dense_matching_merged_classif2.npy"
+        )
     )
 
     # assert

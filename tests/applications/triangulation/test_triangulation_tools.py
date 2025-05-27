@@ -90,10 +90,13 @@ def test_triangulation_ventoux_shareloc(
 
     # Uncomment to update baseline
     # point_cloud_dict[cst.STEREO_REF].to_netcdf(
-    # absolute_data_path("ref_output/triangulation1_ref.nc"))
+    # absolute_data_path("ref_output_application/triangulation"
+    # "/triangulation1_ref.nc"))
 
     ref = xr.open_dataset(
-        absolute_data_path("ref_output/triangulation1_ref.nc")
+        absolute_data_path(
+            "ref_output_application/triangulation" "/triangulation1_ref.nc"
+        )
     )
     assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.0e-3)
 
@@ -162,7 +165,7 @@ def test_geoid_offset_from_xarray(geoid_path):
     Returns test result of reference and computed geoid comparison
     """
     # ref file contains 32x32 points issued from proj 6.2
-    ref_file = absolute_data_path("ref_output/egm96_15_ref_hgt.nc")
+    ref_file = absolute_data_path("input/egm96_15_ref_hgt.nc")
 
     geoid_ref = xr.open_dataset(ref_file)
 
@@ -189,7 +192,7 @@ def test_geoid_offset_from_pandas():
     Returns test result of reference and computed geoid comparison
     """
     # ref file contains 32x32 points issued from proj 6.2
-    ref_file = absolute_data_path("ref_output/egm96_15_ref_hgt.nc")
+    ref_file = absolute_data_path("input/egm96_15_ref_hgt.nc")
 
     geoid_ref = xr.open_dataset(ref_file)
 
@@ -291,8 +294,12 @@ def test_triangulation_intervals_shareloc(
 
     # Uncomment to update baseline
     # point_cloud_dict[cst.STEREO_REF].to_netcdf(absolute_data_path(
-    # "ref_output/triangulation1_ref_intervals.nc"))
+    # "ref_output_application/triangulation"
+    # "/triangulation1_ref_intervals.nc"))
     ref = xr.open_dataset(
-        absolute_data_path("ref_output/triangulation1_ref_intervals.nc")
+        absolute_data_path(
+            "ref_output_application/triangulation"
+            "/triangulation1_ref_intervals.nc"
+        )
     )
     assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.0e-3)

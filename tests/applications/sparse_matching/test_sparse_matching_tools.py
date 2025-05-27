@@ -82,9 +82,14 @@ def test_dataset_matching():
     matches = sparse_matching_algo.dataset_matching(left, right)
 
     # Uncomment to update baseline
-    # np.save(absolute_data_path("ref_output/matches.npy"), matches)
+    # np.save(absolute_data_path("ref_output_application/sparse_matching"
+    # "/matches.npy"), matches)
 
-    matches_ref = np.load(absolute_data_path("ref_output/matches.npy"))
+    matches_ref = np.load(
+        absolute_data_path(
+            "ref_output_application/sparse_matching" "/matches.npy"
+        )
+    )
     np.testing.assert_allclose(matches, matches_ref)
 
     # Case with no matches
