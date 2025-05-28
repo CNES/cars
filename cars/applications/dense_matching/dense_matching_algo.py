@@ -95,6 +95,7 @@ def compute_disparity_grid(disp_range_grid, left_image_object):
 
     return disp_min_grid, disp_max_grid
 
+
 def compute_disparity(
     left_dataset,
     right_dataset,
@@ -169,8 +170,8 @@ def compute_disparity(
         coords={"band_disp": ["min", "max"]},
     )
 
-    (disp_min_right_grid, disp_max_right_grid) = dm_wrap.estimate_right_grid_disp(
-        disp_min_grid, disp_max_grid
+    (disp_min_right_grid, disp_max_right_grid) = (
+        dm_wrap.estimate_right_grid_disp(disp_min_grid, disp_max_grid)
     )
     # estimation might create max < min
     disp_min_right_grid, disp_max_right_grid = dm_wrap.to_safe_disp_grid(
@@ -215,7 +216,6 @@ def compute_disparity(
     )
 
     return disp_dataset
-
 
 
 class LinearInterpNearestExtrap:  # pylint: disable=too-few-public-methods

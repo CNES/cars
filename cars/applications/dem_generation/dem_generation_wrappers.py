@@ -199,7 +199,6 @@ def compute_stats(diff):
     )
 
 
-
 def edit_transform(input_dem, resolution=None, transform=None):
     """
     Change transform of an image

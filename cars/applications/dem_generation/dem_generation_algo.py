@@ -107,6 +107,7 @@ def launch_bulldozer(
 
     return output_dem
 
+
 def multi_res_rec(
     pd_pc,
     list_fun,
