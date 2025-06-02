@@ -66,7 +66,7 @@ dependencies = [
     "shareloc==0.2.7",
     "bulldozer-dtm==1.1.*",
     "xdem==0.1.*",
-    "geopandas"
+    "geopandas==1.0.1" # Temporary fix while geoutils is not compatible with v1.1.0
 ]
 
 [project.urls]
