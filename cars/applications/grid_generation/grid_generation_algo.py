@@ -168,10 +168,10 @@ def compute_epipolar_grid_min_max(
     :type geomodel1: dict
     :param geomodel2: path and attributes for right geomodel
     :type geomodel2: dict
-    :param grid1: dataset of the reference image grid file
-    :type grid1: CarsDataset
-    :param grid2: dataset of the secondary image grid file
-    :type grid2: CarsDataset
+    :param grid1: dict of the reference image grid file
+    :type grid1: dict
+    :param grid2: dict of the secondary image grid file
+    :type grid2: dict
     :param epsg: EPSG code of the terrain projection
     :type epsg: Int
     :param disp_min_tiling: Minimum disparity tiling
@@ -191,14 +191,9 @@ def compute_epipolar_grid_min_max(
     else:
         disp_max_tiling = math.ceil(disp_max_tiling)
 
-    if isinstance(grid2, str):
-        image_bounds = inputs.rasterio_get_bounds(grid2)
-        min_px_right = image_bounds[0]
-        max_px_right = image_bounds[2]
-    else:
-        image_bounds = inputs.rasterio_get_bounds(grid2.attributes["path"])
-        min_px_right = image_bounds[0]
-        max_px_right = image_bounds[2]
+    image_bounds = inputs.rasterio_get_bounds(grid2["path"])
+    min_px_right = image_bounds[0]
+    max_px_right = image_bounds[2]
 
     # Generate disp_min and disp_max matches
     right_cols_min = grid[:, :, 0].flatten() + disp_min_tiling

@@ -358,13 +358,14 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     def sensor_position_from_grid(
         self,
-        grid: Union[str, cars_dataset.CarsDataset, RectificationGrid],
+        grid: Union[dict, RectificationGrid],
         positions: np.ndarray,
     ) -> np.ndarray:
         """
         Interpolate the positions given as inputs using the grid
 
-        :param grid: path to epipolar grid, or numpy array
+        :param grid: rectification grid dict, or RectificationGrid object
+        :type grid: Union[dict, RectificationGrid]
         :param positions: epipolar positions to interpolate given as a numpy
                array of size [number of points, 2]. The last index indicates
                the 'x' coordinate (last index set to 0) or the 'y' coordinate
@@ -376,75 +377,53 @@ class AbstractGeometry(metaclass=ABCMeta):
                  the 'y' coordinate (last index set to 1).
         """
 
-        if isinstance(grid, str):
-            # open epipolar grid
-            ds_grid = rio.open(grid)
-
-            # retrieve grid step
-            transform = ds_grid.transform
-            step_col = transform[0]
-            step_row = transform[4]
-
-            # center-pixel positions
-            [ori_col, ori_row] = transform * (0.5, 0.5)
-
-            last_col = ori_col + step_col * ds_grid.width
-            last_row = ori_row + step_row * ds_grid.height
-
-            # transform dep to positions
-            row_dep = ds_grid.read(2)
-            col_dep = ds_grid.read(1)
-
-        elif isinstance(grid, cars_dataset.CarsDataset):
-            # Get data
-            grid_data = grid[0, 0]
-            row_dep = grid_data[:, :, 1]
-            col_dep = grid_data[:, :, 0]
-
-            # Get step
-            step_col = grid.attributes["grid_spacing"][1]
-            step_row = grid.attributes["grid_spacing"][0]
-            ori_col = grid.attributes["grid_origin"][1]
-            ori_row = grid.attributes["grid_origin"][0]
-            last_row = ori_row + step_row * grid_data.shape[0]
-            last_col = ori_col + step_col * grid_data.shape[1]
-
-        elif not isinstance(grid, RectificationGrid):
-            raise RuntimeError(
-                "Grid type {} not a path or CarsDataset "
-                "or RectificationGrid".format(type(grid))
-            )
-
         if isinstance(grid, RectificationGrid):
-            sensor_positions = grid.interpolate(positions)
+            return grid.interpolate(positions)
 
-        else:
-            cols = np.arange(ori_col, last_col, step_col)
-            rows = np.arange(ori_row, last_row, step_row)
-
-            # create regular grid points positions
-            sensor_row_positions = row_dep
-            sensor_col_positions = col_dep
-
-            # interpolate sensor positions
-            interpolator = interpolate.RegularGridInterpolator(
-                (cols, rows),
-                np.stack(
-                    (
-                        sensor_row_positions.transpose(),
-                        sensor_col_positions.transpose(),
-                    ),
-                    axis=2,
-                ),
-                method=self.interpolator,
-                bounds_error=False,
-                fill_value=None,
+        if not isinstance(grid, dict):
+            raise RuntimeError(
+                f"Grid type {type(grid)} not a dict or RectificationGrid"
             )
 
-            sensor_positions = interpolator(positions)
+        # Get data
+        grid_data = rio.open(grid["path"])
+        row_dep = grid_data.read(2)
+        col_dep = grid_data.read(1)
 
-            # swap
-            sensor_positions[:, [0, 1]] = sensor_positions[:, [1, 0]]
+        # Get step
+        step_col = grid["grid_spacing"][1]
+        step_row = grid["grid_spacing"][0]
+        ori_col = grid["grid_origin"][1]
+        ori_row = grid["grid_origin"][0]
+        last_col = ori_col + step_col * row_dep.shape[1]
+        last_row = ori_row + step_row * row_dep.shape[0]
+
+        cols = np.arange(ori_col, last_col, step_col)
+        rows = np.arange(ori_row, last_row, step_row)
+
+        # create regular grid points positions
+        sensor_row_positions = row_dep
+        sensor_col_positions = col_dep
+
+        # interpolate sensor positions
+        interpolator = interpolate.RegularGridInterpolator(
+            (cols, rows),
+            np.stack(
+                (
+                    sensor_row_positions.transpose(),
+                    sensor_col_positions.transpose(),
+                ),
+                axis=2,
+            ),
+            method=self.interpolator,
+            bounds_error=False,
+            fill_value=None,
+        )
+
+        sensor_positions = interpolator(positions)
+
+        # swap
+        sensor_positions[:, [0, 1]] = sensor_positions[:, [1, 0]]
 
         return sensor_positions
 
@@ -460,8 +439,8 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
         # Generate interpolations grid to compute reverse
 
-        epi_size_x = grid.attributes["epipolar_size_x"]
-        epi_size_y = grid.attributes["epipolar_size_y"]
+        epi_size_x = grid["epipolar_size_x"]
+        epi_size_y = grid["epipolar_size_y"]
 
         epi_grid_row, epi_grid_col = np.mgrid[
             0:epi_size_x:step, 0:epi_size_y:step

@@ -237,8 +237,12 @@ def test_tiles_pairing(
     sensor2 = configuration["input"]["img2"]
     geomodel1 = {"path": configuration["input"]["model1"]}
     geomodel2 = {"path": configuration["input"]["model2"]}
-    grid_left = configuration["preprocessing"]["output"]["left_epipolar_grid"]
-    grid_right = configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    grid_left = {
+        "path": configuration["preprocessing"]["output"]["left_epipolar_grid"]
+    }
+    grid_right = {
+        "path": configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    }
 
     # compute epipolar grid min max
     epipolar_grid_min, epipolar_grid_max = (

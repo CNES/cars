@@ -515,24 +515,18 @@ class LineOfSightIntersection(
             Dict Must contain keys : "image", "color", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_right: CarsDataset
-        :param grid_left: left epipolar grid. Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape \
-                array in xarray Dataset
-            - Attributes containing: "grid_spacing", "grid_origin",\
+        :param grid_left: left epipolar grid. Grid dict contains :
+            - "grid_spacing", "grid_origin",\
                 "epipolar_size_x", epipolar_size_y", "epipolar_origin_x",\
                 "epipolar_origin_y","epipolar_spacing_x",\
-                "epipolar_spacing", "disp_to_alt_ratio",\
-        :type grid_left: CarsDataset
-        :param grid_right: right epipolar grid. Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape
-                array in xarray Dataset
-            - Attributes containing: "grid_spacing", "grid_origin",
-                "epipolar_size_x", epipolar_size_y", "epipolar_origin_x",
-                "epipolar_origin_y","epipolar_spacing_x",
-                "epipolar_spacing", "disp_to_alt_ratio",
-        :type grid_right: CarsDataset
+                "epipolar_spacing", "disp_to_alt_ratio", "path"
+        :type grid_left: dict
+        :param grid_right: right epipolar grid. Grid dict contains :
+            - "grid_spacing", "grid_origin",\
+                "epipolar_size_x", epipolar_size_y", "epipolar_origin_x",\
+                "epipolar_origin_y","epipolar_spacing_x",\
+                "epipolar_spacing", "disp_to_alt_ratio", "path"
+        :type grid_right: dict
         :param epipolar_disparity_map: tiled left disparity map or \
             sparse matches:
 
@@ -629,11 +623,11 @@ class LineOfSightIntersection(
 
         # Interpolate grid
         interpolated_grid_left = RectificationGrid(
-            grid_left.attributes["path"],
+            grid_left["path"],
             interpolator=geometry_plugin.interpolator,
         )
         interpolated_grid_right = RectificationGrid(
-            grid_right.attributes["path"],
+            grid_right["path"],
             interpolator=geometry_plugin.interpolator,
         )
 

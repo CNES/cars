@@ -68,13 +68,16 @@ def test_triangulation_ventoux_shareloc(
         "path": images_and_grids_conf["input"]["model2"],
         "model_type": images_and_grids_conf["input"]["model_type2"],
     }
-    grid_left = images_and_grids_conf["preprocessing"]["output"][
-        "left_epipolar_grid"
-    ]
-    grid_right = images_and_grids_conf["preprocessing"]["output"][
-        "right_epipolar_grid"
-    ]
-
+    grid_left = {
+        "path": images_and_grids_conf["preprocessing"]["output"][
+            "left_epipolar_grid"
+        ]
+    }
+    grid_right = {
+        "path": images_and_grids_conf["preprocessing"]["output"][
+            "right_epipolar_grid"
+        ]
+    }
     point_cloud_dict = triangulation_algo.triangulate(
         get_geometry_plugin(),
         sensor1,
@@ -120,12 +123,16 @@ def test_triangulate_matches_shareloc(
         "path": images_and_grids_conf["input"]["model2"],
         "model_type": images_and_grids_conf["input"]["model_type2"],
     }
-    grid_left = images_and_grids_conf["preprocessing"]["output"][
-        "left_epipolar_grid"
-    ]
-    grid_right = images_and_grids_conf["preprocessing"]["output"][
-        "right_epipolar_grid"
-    ]
+    grid_left = {
+        "path": images_and_grids_conf["preprocessing"]["output"][
+            "left_epipolar_grid"
+        ]
+    }
+    grid_right = {
+        "path": images_and_grids_conf["preprocessing"]["output"][
+            "right_epipolar_grid"
+        ]
+    }
 
     llh = triangulation_algo.triangulate_matches(
         get_geometry_plugin(),
@@ -241,12 +248,16 @@ def test_triangulation_intervals_shareloc(
     sensor2 = images_and_grids_conf["input"]["img2"]
     geomodel1 = {"path": images_and_grids_conf["input"]["model1"]}
     geomodel2 = {"path": images_and_grids_conf["input"]["model2"]}
-    grid_left = images_and_grids_conf["preprocessing"]["output"][
-        "left_epipolar_grid"
-    ]
-    grid_right = images_and_grids_conf["preprocessing"]["output"][
-        "right_epipolar_grid"
-    ]
+    grid_left = {
+        "path": images_and_grids_conf["preprocessing"]["output"][
+            "left_epipolar_grid"
+        ]
+    }
+    grid_right = {
+        "path": images_and_grids_conf["preprocessing"]["output"][
+            "right_epipolar_grid"
+        ]
+    }
 
     point_cloud_dict = triangulation_algo.triangulate(
         get_geometry_plugin(),

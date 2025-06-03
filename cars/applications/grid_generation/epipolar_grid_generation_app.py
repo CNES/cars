@@ -133,8 +133,9 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         """
         Run EpipolarGridGeneration application
 
-        Create left and right grid CarsDataset filled with xarray.Dataset ,
+        Create left and right grid files,
         corresponding to left and right epipolar grids.
+        The returned dicts contain all the attributes of the grid & their path
 
         :param image_left: left image. Dict Must contain keys : \
          "image", "color", "geomodel","no_data", "mask". Paths must be absolutes
@@ -150,16 +151,13 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         :param pair_key: pair configuration id
         :type pair_key: str
 
-        :return: left grid, right grid. Each grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape\
-                array in xarray Dataset
+        :return: left grid, right grid. Each grid dict contains :
             - Attributes containing: "grid_spacing", "grid_origin", \
                 "epipolar_size_x", epipolar_size_y", "epipolar_origin_x", \
                 "epipolar_origin_y","epipolar_spacing_x", \
-                "epipolar_spacing", "disp_to_alt_ratio",
+                "epipolar_spacing", "disp_to_alt_ratio", "path"
 
-        :rtype: Tuple(CarsDataset, CarsDataset)
+        :rtype: Tuple(dict, dict)
         """
 
         # Default orchestrator
@@ -344,4 +342,4 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             "Disparity to altitude factor: {} m/pixel".format(disp_to_alt_ratio)
         )
 
-        return grid_left, grid_right
+        return grid_left.attributes, grid_right.attributes

@@ -154,7 +154,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         Pre run some computations : tiling grid
 
         :param grid_left: left grid
-        :type grid_left: CarsDataset
+        :type grid_left: dict
         :param optimum_tile_size: optimum tile size
         :type optimum_tile_size: int
 
@@ -167,12 +167,12 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         largest_epipolar_region = [
             0,
             0,
-            grid_left.attributes["epipolar_size_x"],
-            grid_left.attributes["epipolar_size_y"],
+            grid_left["epipolar_size_x"],
+            grid_left["epipolar_size_y"],
         ]
 
-        origin = grid_left.attributes["grid_origin"]
-        spacing = grid_left.attributes["grid_spacing"]
+        origin = grid_left["grid_origin"]
+        spacing = grid_left["grid_spacing"]
 
         logging.info(
             "Size of epipolar image: {}".format(largest_epipolar_region)
@@ -181,7 +181,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         logging.debug("Spacing of epipolar grid: {}".format(spacing))
 
         if tile_width is None:
-            tile_width = grid_left.attributes["epipolar_size_x"]
+            tile_width = grid_left["epipolar_size_x"]
         if tile_height is None:
             tile_height = self.strip_height
 
@@ -195,8 +195,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         epipolar_regions_grid = tiling.generate_tiling_grid(
             0,
             0,
-            grid_left.attributes["epipolar_size_y"],
-            grid_left.attributes["epipolar_size_x"],
+            grid_left["epipolar_size_y"],
+            grid_left["epipolar_size_x"],
             tile_height,
             tile_width,
         )
@@ -246,24 +246,18 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_right: CarsDataset
         :param grid_left: left epipolar grid
-            Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape
-                array in xarray Dataset
-            - Attributes containing: "grid_spacing", "grid_origin", \
+            Grid dict contains :
+            - "grid_spacing", "grid_origin", \
                 "epipolar_size_x", "epipolar_size_y", "epipolar_origin_x",\
                  "epipolar_origin_y", epipolar_spacing_x",\
-                 "epipolar_spacing", "disp_to_alt_ratio",\
-        :type grid_left: CarsDataset
-        :param grid_right: right epipolar grid. Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape \
-                array in xarray Dataset
-            - Attributes containing: "grid_spacing", "grid_origin",\
+                 "epipolar_spacing", "disp_to_alt_ratio", "path"
+        :type grid_left: dict
+        :param grid_right: right epipolar grid. Grid dict contains :
+            - "grid_spacing", "grid_origin",\
                 "epipolar_size_x", "epipolar_size_y", "epipolar_origin_x",\
                  "epipolar_origin_y", epipolar_spacing_x",\
-                 "epipolar_spacing", "disp_to_alt_ratio",
-        :type grid_right: CarsDataset
+                 "epipolar_spacing", "disp_to_alt_ratio", "path"
+        :type grid_right: dict
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: directory to save files to
@@ -505,8 +499,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         self.orchestrator.update_out_info(updating_dict)
 
         # retrieves some data
-        epipolar_size_x = grid_left.attributes["epipolar_size_x"]
-        epipolar_size_y = grid_left.attributes["epipolar_size_y"]
+        epipolar_size_x = grid_left["epipolar_size_x"]
+        epipolar_size_y = grid_left["epipolar_size_y"]
         img1 = sensor_image_left[sens_cst.INPUT_IMG]
         img2 = sensor_image_right[sens_cst.INPUT_IMG]
         color1 = sensor_image_left.get(sens_cst.INPUT_COLOR, None)

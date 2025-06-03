@@ -38,7 +38,6 @@ from cars.conf import mask_cst as msk_cst
 from cars.core import constants as cst
 from cars.core import datasets, inputs, tiling
 from cars.core.geometry import abstract_geometry
-from cars.data_structures import cars_dataset
 
 
 def epipolar_rectify_images(
@@ -243,8 +242,8 @@ def resample_image(
 
     :param img: Path to the image to resample
     :type img: string
-    :param grid: Path to the rectification grid
-    :type grid: string
+    :param grid: rectification grid dict
+    :type grid: dict
     :param largest_size: Size of full output image
     :type largest_size: list of two int
     :param step: horizontal step of resampling (useful for strip resampling)
@@ -279,10 +278,6 @@ def resample_image(
     # Convert largest_size to int if needed
     largest_size = [int(x) for x in largest_size]
 
-    # Get path if grid is of type CarsDataset TODO remove
-    if isinstance(grid, cars_dataset.CarsDataset):
-        grid = grid.attributes["path"]
-
     # Localize blocks of the tile to resample
     if step is None:
         step = region[2] - region[0]
@@ -301,7 +296,7 @@ def resample_image(
     else:
         msk = None
 
-    with rio.open(grid) as grid_reader, rio.open(img) as img_reader:
+    with rio.open(grid["path"]) as grid_reader, rio.open(img) as img_reader:
         for xmin, xmax in zip(xmin_of_blocks, xmax_of_blocks):  # noqa: B905
             block_region = [xmin, ymin, xmax, ymax]
             # Build rectification pipelines for images

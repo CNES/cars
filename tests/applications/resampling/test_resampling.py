@@ -63,7 +63,9 @@ def test_resample_image():
 
     img = absolute_data_path("input/phr_ventoux/left_image.tif")
     nodata = 0
-    grid = absolute_data_path("input/stereo_input/left_epipolar_grid.tif")
+    grid = {
+        "path": absolute_data_path("input/stereo_input/left_epipolar_grid.tif")
+    }
     epipolar_size_x = 612
     epipolar_size_y = 612
 
@@ -106,7 +108,9 @@ def test_resample_image_tiles():
         "input/phr_ventoux/left_image_modified_transform.tif"
     )
     nodata = 0
-    grid = absolute_data_path("input/stereo_input/left_epipolar_grid.tif")
+    grid = {
+        "path": absolute_data_path("input/stereo_input/left_epipolar_grid.tif")
+    }
     epipolar_size_x = 612
     epipolar_size_y = 612
 
@@ -182,8 +186,12 @@ def test_epipolar_rectify_images_1(
     img1 = configuration["input"][in_params.IMG1_TAG]
     img2 = configuration["input"][in_params.IMG2_TAG]
     color1 = configuration["input"].get(in_params.COLOR1_TAG, None)
-    grid1 = configuration["preprocessing"]["output"]["left_epipolar_grid"]
-    grid2 = configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    grid1 = {
+        "path": configuration["preprocessing"]["output"]["left_epipolar_grid"]
+    }
+    grid2 = {
+        "path": configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    }
     nodata1 = configuration["input"].get(in_params.NODATA1_TAG, None)
     nodata2 = configuration["input"].get(in_params.NODATA2_TAG, None)
     mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
@@ -302,8 +310,12 @@ def test_epipolar_rectify_images_3(
     img1 = configuration["input"][in_params.IMG1_TAG]
     img2 = configuration["input"][in_params.IMG2_TAG]
     color1 = configuration["input"].get(in_params.COLOR1_TAG, None)
-    grid1 = configuration["preprocessing"]["output"]["left_epipolar_grid"]
-    grid2 = configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    grid1 = {
+        "path": configuration["preprocessing"]["output"]["left_epipolar_grid"]
+    }
+    grid2 = {
+        "path": configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    }
     nodata1 = configuration["input"].get(in_params.NODATA1_TAG, None)
     nodata2 = configuration["input"].get(in_params.NODATA2_TAG, None)
     mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
@@ -429,38 +441,38 @@ def test_check_tiles_in_sensor():
                 pair_key="one_two",
             )
 
-        opt_epipolar_tile_size = 10
+            opt_epipolar_tile_size = 10
 
-        # generate epipolar image tiling grid
-        epi_tilling_grid = tiling.generate_tiling_grid(
-            0,
-            0,
-            grid_left.attributes["epipolar_size_y"],
-            grid_left.attributes["epipolar_size_x"],
-            opt_epipolar_tile_size,
-            opt_epipolar_tile_size,
-        )
+            # generate epipolar image tiling grid
+            epi_tilling_grid = tiling.generate_tiling_grid(
+                0,
+                0,
+                grid_left["epipolar_size_y"],
+                grid_left["epipolar_size_x"],
+                opt_epipolar_tile_size,
+                opt_epipolar_tile_size,
+            )
 
-        geom_plugin = AbstractGeometry(  # pylint: disable=E0110
-            "SharelocGeometry"
-        )
+            geom_plugin = AbstractGeometry(  # pylint: disable=E0110
+                "SharelocGeometry"
+            )
 
-        # Check if tiles are in sensors
-        (
-            in_sensor_left_array,
-            in_sensor_right_array,
-        ) = resampling_wrappers.check_tiles_in_sensor(
-            sensor_image_left,
-            sensor_image_right,
-            epi_tilling_grid,
-            grid_left,
-            grid_right,
-            geom_plugin,
-        )
+            # Check if tiles are in sensors
+            (
+                in_sensor_left_array,
+                in_sensor_right_array,
+            ) = resampling_wrappers.check_tiles_in_sensor(
+                sensor_image_left,
+                sensor_image_right,
+                epi_tilling_grid,
+                grid_left,
+                grid_right,
+                geom_plugin,
+            )
 
-        # Assert number of tiles used
+            # Assert number of tiles used
 
-        # 3059 tiles used on 3844
-        assert np.sum(in_sensor_left_array) == 3059
-        # 1426 tiles used on 3844
-        assert np.sum(in_sensor_right_array) == 1426
+            # 3059 tiles used on 3844
+            assert np.sum(in_sensor_left_array) == 3059
+            # 1426 tiles used on 3844
+            assert np.sum(in_sensor_right_array) == 1426

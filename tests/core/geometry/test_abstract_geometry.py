@@ -213,7 +213,11 @@ def test_sensor_position_from_grid(
     """
     Test sensor_position_from_grid
     """
-    grid = absolute_data_path("input/abstract_geometry_input/grid.tif")
+    grid = {
+        "grid_spacing": [30, 30],
+        "grid_origin": [0, 0],
+        "path": absolute_data_path("input/abstract_geometry_input/grid.tif"),
+    }
 
     coords = AbstractGeometry(  # pylint: disable=abstract-class-instantiated
         {"plugin_name": "SharelocGeometry", "interpolator": "linear"}
@@ -233,8 +237,16 @@ def test_disp_to_sensor_coords(
     """
     Test matching_data_to_sensor_coords with the cst.DISP_MODE
     """
-    grid1 = absolute_data_path("input/abstract_geometry_input/grid.tif")
-    grid2 = absolute_data_path("input/abstract_geometry_input/grid.tif")
+    grid1 = {
+        "grid_spacing": [30, 30],
+        "grid_origin": [0, 0],
+        "path": absolute_data_path("input/abstract_geometry_input/grid.tif"),
+    }
+    grid2 = {
+        "grid_spacing": [30, 30],
+        "grid_origin": [0, 0],
+        "path": absolute_data_path("input/abstract_geometry_input/grid.tif"),
+    }
 
     nb_row = 3
     nb_col = 4
@@ -334,8 +346,16 @@ def test_matches_to_sensor_coords(
     """
     Test matching_data_to_sensor_coords with the cst.MATCHES_MODE
     """
-    grid1 = absolute_data_path("input/abstract_geometry_input/grid.tif")
-    grid2 = absolute_data_path("input/abstract_geometry_input/grid.tif")
+    grid1 = {
+        "grid_spacing": [30, 30],
+        "grid_origin": [0, 0],
+        "path": absolute_data_path("input/abstract_geometry_input/grid.tif"),
+    }
+    grid2 = {
+        "grid_spacing": [30, 30],
+        "grid_origin": [0, 0],
+        "path": absolute_data_path("input/abstract_geometry_input/grid.tif"),
+    }
 
     matches = np.hstack([epipolar_coords["left"], epipolar_coords["right"]])
 

@@ -1153,9 +1153,7 @@ class DefaultPipeline(PipelineTemplate):
                 ) = self.sparse_mtch_sift_app.run(
                     self.pairs[pair_key]["epipolar_image_left"],
                     self.pairs[pair_key]["epipolar_image_right"],
-                    self.pairs[pair_key]["grid_left"].attributes[
-                        "disp_to_alt_ratio"
-                    ],
+                    self.pairs[pair_key]["grid_left"]["disp_to_alt_ratio"],
                     orchestrator=self.cars_orchestrator,
                     pair_folder=os.path.join(
                         self.dump_dir, "sparse_matching.sift", pair_key
@@ -1217,13 +1215,13 @@ class DefaultPipeline(PipelineTemplate):
                     grid_correction_app.correct_grid(
                         self.pairs[pair_key]["grid_right"],
                         self.pairs[pair_key]["grid_correction_coef"],
-                        save_corrected_grid,
                         os.path.join(
                             self.dump_dir,
                             "grid_correction",
                             "initial",
                             pair_key,
                         ),
+                        save_corrected_grid,
                     )
                 )
 
@@ -1267,9 +1265,9 @@ class DefaultPipeline(PipelineTemplate):
                     continue
 
                 # Shrink disparity intervals according to SIFT disparities
-                disp_to_alt_ratio = self.pairs[pair_key][
-                    "grid_left"
-                ].attributes["disp_to_alt_ratio"]
+                disp_to_alt_ratio = self.pairs[pair_key]["grid_left"][
+                    "disp_to_alt_ratio"
+                ]
                 disp_bounds_params = (
                     self.sparse_mtch_pandora_app.disparity_bounds_estimation
                 )
@@ -1612,13 +1610,13 @@ class DefaultPipeline(PipelineTemplate):
                         grid_correction_app.correct_grid(
                             self.pairs[pair_key]["new_grid_right"],
                             self.pairs[pair_key]["grid_correction_coef"],
-                            save_corrected_grid,
                             os.path.join(
                                 self.dump_dir,
                                 "grid_correction",
                                 "new",
                                 pair_key,
                             ),
+                            save_corrected_grid,
                         )
                     )
 
@@ -1885,7 +1883,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pairs[pair_key]["corrected_grid_right"],
                     new_geomplugin_dsm,
                     self.geom_plugin_with_dem_and_geoid,
-                    self.pairs[pair_key]["corrected_grid_left"].attributes[
+                    self.pairs[pair_key]["corrected_grid_left"][
                         "disp_to_alt_ratio"
                     ],
                     self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
