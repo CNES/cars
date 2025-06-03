@@ -32,7 +32,10 @@ from json_checker import And, Checker
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.grid_generation import grid_constants, grids_algo
+from cars.applications.grid_generation import (
+    grid_constants,
+    grid_generation_algo,
+)
 from cars.applications.grid_generation.abstract_grid_generation_app import (
     GridGeneration,
 )
@@ -233,7 +236,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             grid_spacing,
             epipolar_size,
             disp_to_alt_ratio,
-        ) = grids_algo.generate_epipolar_grids(
+        ) = grid_generation_algo.generate_epipolar_grids(
             sensor1,
             sensor2,
             geomodel1,
@@ -295,10 +298,10 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             left_grid_path = os.path.join(tmp_folder, "left_epi_grid.tif")
             right_grid_path = os.path.join(tmp_folder, "right_epi_grid.tif")
 
-        grids_algo.write_grid(
+        grid_generation_algo.write_grid(
             grid_left[0, 0], left_grid_path, grid_origin, grid_spacing
         )
-        grids_algo.write_grid(
+        grid_generation_algo.write_grid(
             grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
         )
 

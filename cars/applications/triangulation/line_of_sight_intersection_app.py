@@ -38,7 +38,7 @@ from shareloc.geofunctions.rectification_grid import RectificationGrid
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.grid_generation import grids_algo
+from cars.applications.grid_generation import grid_generation_algo
 from cars.applications.point_cloud_fusion import (
     point_cloud_algo,
     point_cloud_wrappers,
@@ -719,7 +719,7 @@ class LineOfSightIntersection(
             (
                 epipolar_grid_min,
                 epipolar_grid_max,
-            ) = grids_algo.compute_epipolar_grid_min_max(
+            ) = grid_generation_algo.compute_epipolar_grid_min_max(
                 geometry_plugin,
                 tiling.transform_four_layers_to_two_layers_grid(
                     epipolar_image.tiling_grid

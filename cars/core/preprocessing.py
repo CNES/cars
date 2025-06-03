@@ -37,7 +37,7 @@ from pyproj import CRS
 from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
-from cars.applications.grid_generation import grids_algo
+from cars.applications.grid_generation import grid_generation_algo as grids_algo
 
 # CARS imports
 from cars.core import inputs, projection, tiling

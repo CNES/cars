@@ -37,7 +37,10 @@ from scipy.spatial import Delaunay  # pylint: disable=E0611
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.grid_generation import grid_constants, grids_algo
+from cars.applications.grid_generation import (
+    grid_constants,
+    grid_generation_algo,
+)
 from cars.core.utils import safe_makedirs
 
 # CARS imports
@@ -159,7 +162,7 @@ def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
                 pair_folder, "tmp", "corrected_right_epi_grid.tif"
             )
 
-        grids_algo.write_grid(
+        grid_generation_algo.write_grid(
             corrected_grid_right[0, 0], save_folder, grid_origin, grid_spacing
         )
 

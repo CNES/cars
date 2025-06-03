@@ -37,7 +37,10 @@ import xarray as xr
 
 from cars import __version__
 from cars.applications.application import Application
-from cars.applications.grid_generation import grid_correction_app, grids_algo
+from cars.applications.grid_generation import (
+    grid_correction_app,
+    grid_generation_algo,
+)
 from cars.applications.sparse_matching import sparse_matching_wrappers
 
 # CARS imports
@@ -204,7 +207,7 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
         _,
         epi_size,
         baseline,
-    ) = grids_algo.generate_epipolar_grids(
+    ) = grid_generation_algo.generate_epipolar_grids(
         sensor1,
         sensor2,
         geomodel1,
@@ -264,7 +267,7 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
         _,
         epi_size,
         baseline,
-    ) = grids_algo.generate_epipolar_grids(
+    ) = grid_generation_algo.generate_epipolar_grids(
         sensor1,
         sensor2,
         geomodel1,
@@ -475,7 +478,7 @@ def test_terrain_region_to_epipolar(
     grid_left = configuration["preprocessing"]["output"]["left_epipolar_grid"]
     grid_right = configuration["preprocessing"]["output"]["right_epipolar_grid"]
 
-    epipolar_region = grids_algo.terrain_region_to_epipolar(
+    epipolar_region = grid_generation_algo.terrain_region_to_epipolar(
         terrain_region,
         sensor1,
         sensor2,
