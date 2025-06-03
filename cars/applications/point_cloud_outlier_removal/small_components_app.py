@@ -40,11 +40,11 @@ from pyproj import CRS
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.point_cloud_fusion import (
-    point_cloud_algo,
-    point_cloud_wrappers,
+    pc_fusion_algo,
+    pc_fusion_wrappers,
 )
 from cars.applications.point_cloud_outlier_removal import (
-    abstract_pc_out_removal_app as pc_removal,
+    abstract_outlier_removal_app as pc_removal,
 )
 from cars.applications.point_cloud_outlier_removal import outlier_removal_algo
 from cars.applications.triangulation.triangulation_wrappers import (
@@ -631,9 +631,7 @@ def epipolar_small_component_removal_wrapper(
     if point_cloud_csv_file_name or point_cloud_laz_file_name:
         # Convert epipolar array into point cloud
         flatten_filtered_cloud, cloud_epsg = (
-            point_cloud_algo.create_combined_cloud(
-                [filtered_cloud], ["0"], epsg
-            )
+            pc_fusion_algo.create_combined_cloud([filtered_cloud], ["0"], epsg)
         )
         # Convert to UTM
         if epsg is not None and cloud_epsg != epsg:
@@ -643,7 +641,7 @@ def epipolar_small_component_removal_wrapper(
             cloud_epsg = epsg
 
         # Fill attributes for LAZ saving
-        color_type = point_cloud_wrappers.get_color_type([filtered_cloud])
+        color_type = pc_fusion_wrappers.get_color_type([filtered_cloud])
 
         attributes = {
             "epsg": cloud_epsg,

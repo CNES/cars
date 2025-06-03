@@ -19,7 +19,8 @@
 # limitations under the License.
 #
 """
-grid_constants contains all the constants used in grid_generation module
+grid_generation_constants contains all the constants
+used in grid_generation module
 """
 
 

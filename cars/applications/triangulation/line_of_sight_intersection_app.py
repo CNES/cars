@@ -40,8 +40,8 @@ import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.grid_generation import grid_generation_algo
 from cars.applications.point_cloud_fusion import (
-    point_cloud_algo,
-    point_cloud_wrappers,
+    pc_fusion_algo,
+    pc_fusion_wrappers,
 )
 from cars.applications.triangulation import (
     triangulation_algo,
@@ -1166,7 +1166,7 @@ def triangulation_wrapper(
     flatten_pc_dataset = None
     if point_cloud_csv_file_name or point_cloud_laz_file_name:
         # Convert epipolar array into point cloud
-        flatten_pc_dataset, cloud_epsg = point_cloud_algo.create_combined_cloud(
+        flatten_pc_dataset, cloud_epsg = pc_fusion_algo.create_combined_cloud(
             [pc_dataset], [0], epsg
         )
         # Convert to UTM
@@ -1177,7 +1177,7 @@ def triangulation_wrapper(
             cloud_epsg = epsg
 
         # Fill attributes for LAZ saving
-        color_type = point_cloud_wrappers.get_color_type([pc_dataset])
+        color_type = pc_fusion_wrappers.get_color_type([pc_dataset])
         attributes = {
             "epsg": cloud_epsg,
             "color_type": color_type,

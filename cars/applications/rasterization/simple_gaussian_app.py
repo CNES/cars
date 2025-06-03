@@ -42,7 +42,7 @@ from json_checker import Checker, Or
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.point_cloud_fusion import point_cloud_algo
+from cars.applications.point_cloud_fusion import pc_fusion_algo
 
 # CARS imports
 from cars.applications.rasterization import rasterization_algo
@@ -1017,7 +1017,7 @@ def rasterization_wrapper(  # noqa: C901
     # If the point cloud is not in the right epsg referential, it is converted
     if isinstance(cloud, xarray.Dataset):
         # Transform Dataset to Dataframe
-        cloud, cloud_epsg = point_cloud_algo.create_combined_cloud(
+        cloud, cloud_epsg = pc_fusion_algo.create_combined_cloud(
             [cloud], [attributes["cloud_id"]], epsg
         )
     elif cloud is None:

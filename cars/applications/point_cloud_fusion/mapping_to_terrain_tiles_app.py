@@ -37,8 +37,8 @@ import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.point_cloud_fusion import (
     cloud_fusion_constants,
-    point_cloud_algo,
-    point_cloud_wrappers,
+    pc_fusion_algo,
+    pc_fusion_wrappers,
 )
 from cars.applications.point_cloud_fusion.abstract_pc_fusion_app import (
     PointCloudFusion,
@@ -307,7 +307,7 @@ class MappingToTerrainTiles(
             color_type = None
             if pc_dataset_type == "dict":
                 corresponding_tiles_cars_ds = (
-                    point_cloud_algo.get_corresponding_tiles_tif(
+                    pc_fusion_algo.get_corresponding_tiles_tif(
                         terrain_tiling_grid,
                         list_epipolar_point_clouds,
                         margins=margins,
@@ -584,7 +584,7 @@ def compute_point_cloud_wrapper(
 
     # combine clouds
     if not isinstance(clouds[0], dict):
-        pc_pandas, cloud_epsg = point_cloud_algo.create_combined_cloud(
+        pc_pandas, cloud_epsg = pc_fusion_algo.create_combined_cloud(
             clouds,
             clouds_ids,
             epsg,
@@ -596,14 +596,14 @@ def compute_point_cloud_wrapper(
             with_coords=True,
         )
         # get color type list
-        color_type = point_cloud_wrappers.get_color_type(clouds)
+        color_type = pc_fusion_wrappers.get_color_type(clouds)
     else:
         # combined pc from tif files
         (
             pc_pandas,
             cloud_epsg,
             color_type,
-        ) = point_cloud_algo.create_combined_cloud_from_tif(
+        ) = pc_fusion_algo.create_combined_cloud_from_tif(
             clouds,
             clouds_ids,
             epsg,

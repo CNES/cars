@@ -33,7 +33,7 @@ from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 from cars.applications.point_cloud_outlier_removal import (
-    point_removal_constants as pr_cst,
+    outlier_removal_constants as pr_cst,
 )
 from cars.core import constants as cst
 from cars.core.utils import safe_makedirs

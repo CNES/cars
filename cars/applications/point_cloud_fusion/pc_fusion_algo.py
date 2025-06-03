@@ -38,7 +38,7 @@ import xarray as xr
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications.dense_matching import dense_matching_wrappers
-from cars.applications.point_cloud_fusion import point_cloud_wrappers as pc_wrap
+from cars.applications.point_cloud_fusion import pc_fusion_wrappers as pc_wrap
 
 # CARS imports
 from cars.core import constants as cst

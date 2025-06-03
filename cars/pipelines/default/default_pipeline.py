@@ -48,8 +48,8 @@ from cars.applications.dem_generation import (
 )
 from cars.applications.grid_generation import grid_correction_app
 from cars.applications.point_cloud_fusion import (
-    point_cloud_algo,
-    point_cloud_wrappers,
+    pc_fusion_algo,
+    pc_fusion_wrappers,
 )
 from cars.applications.sparse_matching import (
     sparse_matching_wrappers as sparse_mtch_tools,
@@ -2825,7 +2825,7 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         # compute epsg
-        epsg_cloud = point_cloud_wrappers.compute_epsg_from_point_cloud(
+        epsg_cloud = pc_fusion_wrappers.compute_epsg_from_point_cloud(
             self.used_conf[INPUTS][depth_cst.DEPTH_MAPS]
         )
         if self.epsg is None:
@@ -2840,14 +2840,14 @@ class DefaultPipeline(PipelineTemplate):
 
         if not self.merging:
             # compute bounds
-            self.terrain_bounds = point_cloud_wrappers.get_bounds(
+            self.terrain_bounds = pc_fusion_wrappers.get_bounds(
                 self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                 self.epsg,
                 roi_poly=self.roi_poly,
             )
 
             self.list_epipolar_point_clouds = (
-                point_cloud_algo.generate_point_clouds(
+                pc_fusion_algo.generate_point_clouds(
                     self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                     self.cars_orchestrator,
                     tile_size=1000,
@@ -2858,7 +2858,7 @@ class DefaultPipeline(PipelineTemplate):
             (
                 self.terrain_bounds,
                 self.list_epipolar_point_clouds,
-            ) = point_cloud_algo.transform_input_pc(
+            ) = pc_fusion_algo.transform_input_pc(
                 self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                 self.epsg,
                 roi_poly=self.roi_poly,
@@ -2868,14 +2868,14 @@ class DefaultPipeline(PipelineTemplate):
 
             # Compute number of superposing point cloud for density
             max_number_superposing_point_clouds = (
-                point_cloud_wrappers.compute_max_nb_point_clouds(
+                pc_fusion_wrappers.compute_max_nb_point_clouds(
                     self.list_epipolar_point_clouds
                 )
             )
 
             # Compute average distance between two points
             average_distance_point_cloud = (
-                point_cloud_wrappers.compute_average_distance(
+                pc_fusion_wrappers.compute_average_distance(
                     self.list_epipolar_point_clouds
                 )
             )

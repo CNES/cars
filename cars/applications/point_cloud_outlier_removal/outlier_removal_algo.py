@@ -31,9 +31,7 @@ import outlier_filter  # pylint:disable=E0401
 import pandas
 from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 
-from cars.applications.point_cloud_fusion.point_cloud_wrappers import (
-    filter_cloud,
-)
+from cars.applications.point_cloud_fusion.pc_fusion_wrappers import filter_cloud
 
 # CARS imports
 from cars.core import constants as cst

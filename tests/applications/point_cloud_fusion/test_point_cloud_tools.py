@@ -20,7 +20,7 @@
 #
 # pylint: disable=too-many-lines
 """
-Test module for cars/steps/point_cloud_algo.py
+Test module for cars/steps/pc_fusion_algo.py
 """
 
 # Standard imports
@@ -33,8 +33,8 @@ import pytest
 import xarray as xr
 
 from cars.applications.point_cloud_fusion import (
-    point_cloud_algo,
-    point_cloud_wrappers,
+    pc_fusion_algo,
+    pc_fusion_wrappers,
 )
 
 # CARS imports
@@ -159,7 +159,7 @@ def test_create_combined_dense_cloud():
     used_margin = (on_ground_margin + radius + 1) * resolution
 
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list,
         cloud_id,
         epsg,
@@ -213,7 +213,7 @@ def test_create_combined_dense_cloud():
     used_margin = (on_ground_margin + radius + 1) * resolution
 
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list,
         cloud_id,
         epsg,
@@ -285,7 +285,7 @@ def test_create_combined_dense_cloud():
     used_margin = (on_ground_margin + radius + 1) * resolution
 
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list_with_color,
         cloud_id,
         epsg,
@@ -323,7 +323,7 @@ def test_create_combined_dense_cloud():
 
     # test with coords and colors
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list_with_color,
         cloud_id,
         epsg,
@@ -382,7 +382,7 @@ def test_create_combined_dense_cloud():
     used_margin = (on_ground_margin + radius + 1) * resolution
 
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list,
         cloud_id,
         epsg,
@@ -479,7 +479,7 @@ def test_create_combined_dense_cloud():
     used_margin = (on_ground_margin + radius + 1) * resolution
 
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list,
         cloud_id,
         epsg,
@@ -558,7 +558,7 @@ def test_create_combined_dense_cloud():
     used_margin = (on_ground_margin + radius + 1) * resolution
 
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list_with_color,
         cloud_id,
         epsg,
@@ -653,7 +653,7 @@ def test_create_combined_sparse_cloud():
     used_margin = (on_ground_margin + radius + 1) * resolution
 
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list,
         cloud_id,
         epsg,
@@ -683,7 +683,7 @@ def test_create_combined_sparse_cloud():
 
     # # test with coords
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list,
         cloud_id,
         epsg,
@@ -719,7 +719,7 @@ def test_create_combined_sparse_cloud():
 
     # test with msk
     cloud_list = [get_cloud0_ds(with_msk=True), cloud1, cloud2]
-    cloud, epsg = point_cloud_algo.create_combined_cloud(
+    cloud, epsg = pc_fusion_algo.create_combined_cloud(
         cloud_list,
         cloud_id,
         epsg,
@@ -768,7 +768,7 @@ def test_filter_cloud():
     )
 
     elt_to_remove = [0, 5]
-    __, removed_elt_pos = point_cloud_wrappers.filter_cloud(
+    __, removed_elt_pos = pc_fusion_wrappers.filter_cloud(
         cloud, elt_to_remove, filtered_elt_pos=True
     )
 
@@ -788,7 +788,7 @@ def test_filter_cloud():
     assert ref_removed_elt_pos.equals(removed_elt_pos)
 
     # test cases where removed_elt_pos should be None
-    __, removed_elt_pos = point_cloud_wrappers.filter_cloud(
+    __, removed_elt_pos = pc_fusion_wrappers.filter_cloud(
         cloud, elt_to_remove, filtered_elt_pos=False
     )
 
@@ -798,7 +798,7 @@ def test_filter_cloud():
     cloud_arr = cloud_arr.reshape((10, 3))
 
     cloud = pandas.DataFrame(cloud_arr, columns=["x", "y", "z"])
-    __, removed_elt_pos = point_cloud_wrappers.filter_cloud(
+    __, removed_elt_pos = pc_fusion_wrappers.filter_cloud(
         cloud, elt_to_remove, filtered_elt_pos=True
     )
 
@@ -823,7 +823,7 @@ def test_add_cloud_filtering_msk():
         pos_arr, columns=["coord_epi_geom_i", "coord_epi_geom_j", "id_im_epi"]
     )
 
-    point_cloud_wrappers.add_cloud_filtering_msk(
+    pc_fusion_wrappers.add_cloud_filtering_msk(
         [ds0, ds1], elt_remove, "mask", 255
     )
 
@@ -848,7 +848,7 @@ def test_add_cloud_filtering_msk():
         columns=["coord_epi_geom_i", "coord_epi_geom_j", "id_im_epi"],
     )
     with pytest.raises(Exception) as index_error:
-        point_cloud_wrappers.add_cloud_filtering_msk(
+        pc_fusion_wrappers.add_cloud_filtering_msk(
             [ds0, ds1], elt_remove, "mask", 255
         )
     assert (
@@ -863,7 +863,7 @@ def test_add_cloud_filtering_msk():
         columns=["coord_epi_geom_i", "coord_epi_geom_j", "id_im_epi"],
     )
     with pytest.raises(Exception) as index_error:
-        point_cloud_wrappers.add_cloud_filtering_msk(
+        pc_fusion_wrappers.add_cloud_filtering_msk(
             [ds0, ds1], elt_remove, "mask", 255
         )
     assert (
@@ -878,7 +878,7 @@ def test_add_cloud_filtering_msk():
         columns=["coord_epi_geom_i", "coord_epi_geom_j", "id_im_epi"],
     )
     with pytest.raises(Exception) as index_error:
-        point_cloud_wrappers.add_cloud_filtering_msk(
+        pc_fusion_wrappers.add_cloud_filtering_msk(
             [ds0, ds1], elt_remove, "mask", 255
         )
     assert (
