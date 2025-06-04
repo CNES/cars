@@ -583,14 +583,14 @@ def test_transform_grid_func():
                     resolution,
                 )
 
-                for key, value in grid_left.attributes.items():
-                    if isinstance(value, (int, float, np.floating)):
+                for key, attributes in grid_left.attributes.items():
+                    if isinstance(attributes, (int, float, np.floating)):
                         attr = grid_left_before.attributes[key]
-                        assert value == np.floor(attr / resolution)
-                    elif isinstance(value, list):
-                        for i, _ in enumerate(value):
+                        assert attributes == np.floor(attr / resolution)
+                    elif isinstance(attributes, list):
+                        for i, val in enumerate(attributes):
                             attr = grid_left_before.attributes[key][i]
                             res = np.floor(attr / resolution)
-                            assert value[i] == res
+                            assert val == res
 
                 assert grid_left[0, 0].all() == grid_left_before[0, 0].all()
