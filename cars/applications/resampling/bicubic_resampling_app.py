@@ -276,6 +276,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :type required_bands: dict
         :param texture_bands: name of bands used for output texture
         :type texture_bands: list
+        :param resolution: resolution for downsampling
+        :type resolution: int
 
         :return: left epipolar image, right epipolar image. \
             Each CarsDataset contains:

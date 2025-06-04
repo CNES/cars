@@ -588,7 +588,7 @@ def test_transform_grid_func():
                         attr = grid_left_before.attributes[key]
                         assert value == np.floor(attr / resolution)
                     elif isinstance(value, list):
-                        for i in range(len(value)):
+                        for i, _ in enumerate(value):
                             attr = grid_left_before.attributes[key][i]
                             res = np.floor(attr / resolution)
                             assert value[i] == res
