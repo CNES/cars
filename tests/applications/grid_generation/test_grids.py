@@ -28,6 +28,7 @@ from __future__ import absolute_import
 import os
 import pickle
 import tempfile
+from shutil import copy2  # noqa: F401 # pylint: disable=unused-import
 
 # Third party imports
 import numpy as np
@@ -381,35 +382,33 @@ def test_grid_generation(save_reference, input_file, ref_file):
                         ref_file,
                     )
                 )
+                ref_dicts = os.path.join(ref_data_path, "grids_attrs.pickle")
+                ref_grid_left = os.path.join(ref_data_path, "grid_left.tif")
+                ref_grid_right = os.path.join(ref_data_path, "grid_right.tif")
 
                 # serialize reference data if needed
                 if save_reference:
-                    serialize_grid_ref_data(
-                        grid_left, grid_right, ref_data_path
-                    )
+                    serialize_grid_ref_data(grid_left, grid_right, ref_dicts)
+                    copy2(grid_left["path"], ref_grid_left)
+                    copy2(grid_right["path"], ref_grid_right)
+
                 # load reference output data
-                with open(ref_data_path, "rb") as file:
+                with open(ref_dicts, "rb") as file:
                     ref_data = pickle.load(file)
-                    ref_grid_left = ref_data["grid_left"]
-                    ref_grid_right = ref_data["grid_right"]
 
-                    ref_grid_left_data = rio.open(ref_grid_left["path"]).read()
-                    ref_grid_left_attrs = ref_grid_left
+                    ref_grid_left_attrs = ref_data["grid_left"]
+                    ref_grid_right_attrs = ref_data["grid_right"]
                     del ref_grid_left_attrs["path"]
-
-                    ref_grid_right_data = rio.open(
-                        ref_grid_right["path"]
-                    ).read()
-                    ref_grid_right_attrs = ref_grid_right
                     del ref_grid_right_attrs["path"]
 
-                    grid_left_data = rio.open(grid_left["path"]).read()
-                    grid_left_attrs = grid_left
-                    del grid_left_attrs["path"]
+                    ref_grid_left_data = rio.open(ref_grid_left).read()
+                    ref_grid_right_data = rio.open(ref_grid_right).read()
 
+                    grid_left_data = rio.open(grid_left["path"]).read()
                     grid_right_data = rio.open(grid_right["path"]).read()
-                    grid_right_attrs = grid_right
-                    del grid_right_attrs["path"]
+
+                    del grid_left["path"]
+                    del grid_right["path"]
 
                     np.testing.assert_allclose(
                         ref_grid_left_data,
@@ -425,8 +424,8 @@ def test_grid_generation(save_reference, input_file, ref_file):
                     )
 
                     # == between two dicts does a deep check
-                    assert ref_grid_left_attrs == grid_left_attrs
-                    assert ref_grid_right_attrs == grid_right_attrs
+                    assert ref_grid_left_attrs == grid_left
+                    assert ref_grid_right_attrs == grid_right
 
 
 def adapt_path_for_test_dir(data, input_path, input_relative_path):
@@ -452,7 +451,7 @@ def adapt_path_for_test_dir(data, input_path, input_relative_path):
                 )
 
 
-def serialize_grid_ref_data(grid_left, grid_right, ref_data_path):
+def serialize_grid_ref_data(grid_left, grid_right, ref_dicts):
     """
     Serialize reference data if needed with pickle
     """
@@ -460,7 +459,7 @@ def serialize_grid_ref_data(grid_left, grid_right, ref_data_path):
     cast_swigobj_grid(grid_left)
     cast_swigobj_grid(grid_right)
     data_dict = {"grid_left": grid_left, "grid_right": grid_right}
-    with open(ref_data_path, "wb") as file:
+    with open(ref_dicts, "wb") as file:
         pickle.dump(data_dict, file)
 
 
