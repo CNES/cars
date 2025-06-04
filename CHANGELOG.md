@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.12.0-rc1  Improving Dem generations (May 2025)
+## 0.12.0  Improving Dem generations (June 2025)
 
 ### Added
 
@@ -27,6 +27,7 @@
 - Optimize explored disparity range of a priori computation [#1073].
 - DEM type to float  in dem generation [#1018].
 - Numpy version need no longer <2 [#1003]
+- Shareloc version update, to robustify direct localisation [#1089].
 
 ### Fixed
 
