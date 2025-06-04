@@ -28,25 +28,23 @@ import numpy as np
 from cars.applications.grid_generation import grids
 
 
-def transform_grid(grid_left, grid_right, resolution):
-    grid_left.attributes["epipolar_size_x"] = np.floor(
-        grid_left.attributes["epipolar_size_x"] / resolution
-    )
-    grid_left.attributes["epipolar_size_y"] = np.floor(
-        grid_left.attributes["epipolar_size_y"] / resolution
-    )
-    grid_left.attributes["grid_spacing"][0] = np.floor(
-        grid_left.attributes["grid_spacing"][0] / resolution
-    )
-    grid_left.attributes["grid_spacing"][1] = np.floor(
-        grid_left.attributes["grid_spacing"][1] / resolution
-    )
-    grid_left.attributes["grid_origin"][0] = np.floor(
-        grid_left.attributes["grid_origin"][0] / resolution
-    )
-    grid_left.attributes["grid_origin"][1] = np.floor(
-        grid_left.attributes["grid_origin"][1] / resolution
-    )
+def transform_grid_func(grid_left, grid_right, resolution):
+    """
+    Transform the grid for low res resampling
+
+    :param grid_left: the left grid
+    :type grid_left: cars_dataset
+    :param grid_right: the right grid
+    :type grid_right: cars_dataset
+    :param resolution: the resolution for the resampling
+    :type resolution: int
+    """
+    for key, value in grid_left.attributes.items():
+        if isinstance(value, (int, float, np.floating)):
+            grid_left.attributes[key] = np.floor(value / resolution)
+        elif isinstance(value, list):
+            for i, _ in enumerate(value):
+                value[i] = np.floor(value[i] / resolution)
 
     grids.write_grid(
         grid_left[0, 0],
@@ -55,7 +53,7 @@ def transform_grid(grid_left, grid_right, resolution):
         grid_left.attributes["grid_spacing"],
     )
     grids.write_grid(
-        grid_left[0, 0],
+        grid_right[0, 0],
         grid_right.attributes["path"],
         grid_left.attributes["grid_origin"],
         grid_left.attributes["grid_spacing"],

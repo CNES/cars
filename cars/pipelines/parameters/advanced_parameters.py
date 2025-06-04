@@ -61,7 +61,7 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     )
 
     overloaded_conf[adv_cst.RESOLUTION_A_PRIORI] = conf.get(
-        adv_cst.RESOLUTION_A_PRIORI, None
+        adv_cst.RESOLUTION_A_PRIORI, 1
     )
 
     overloaded_conf[adv_cst.DEBUG_WITH_ROI] = conf.get(

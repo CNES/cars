@@ -1119,18 +1119,6 @@ class DefaultPipeline(PipelineTemplate):
             ] is False or (len(self.pairs[pair_key]["holes_classif"]) > 0):
                 # Run resampling only if needed:
                 # no a priori or needs to detect holes
-                if (
-                    self.used_conf[ADVANCED][adv_cst.RESOLUTION_A_PRIORI]
-                    is not None
-                ):
-                    resolution = self.used_conf[ADVANCED][
-                        adv_cst.RESOLUTION_A_PRIORI
-                    ]
-                    self.pairs[pair_key]["grid_left"] = transform_grid(
-                        self.pairs[pair_key]["grid_left"],
-                        self.pairs[pair_key]["grid_right"],
-                        resolution,
-                    )
 
                 # Get required bands of first resampling
                 required_bands = self.sparse_mtch_sift_app.get_required_bands()
@@ -1155,7 +1143,6 @@ class DefaultPipeline(PipelineTemplate):
                     tile_height=None,
                     add_classif=add_classif,
                     required_bands=required_bands,
-                    resolution=resolution,
                 )
 
                 if self.quit_on_app("resampling"):

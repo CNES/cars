@@ -26,6 +26,7 @@ Test module for cars/steps/epi_rectif/test_grids.py
 from __future__ import absolute_import
 
 import json
+import copy
 import os
 import pickle
 import tempfile
@@ -39,6 +40,7 @@ import xarray as xr
 
 from cars import __version__
 from cars.applications.application import Application
+from cars.applications.grid_generation.transform_grid import transform_grid_func
 from cars.applications.grid_generation import (
     grid_correction_app,
     grid_generation_algo,
@@ -515,3 +517,80 @@ def test_terrain_region_to_epipolar(
     epipolar_region_ref = [0, 600, 300, 612]
 
     assert epipolar_region == epipolar_region_ref
+
+
+def test_transform_grid_func():
+    """
+    Test the transform grid function
+    """
+    input_file = "grid_generation_gizeh_ROI_color.pickle"
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {}
+        conf["out_dir"] = directory
+        input_relative_path = os.path.join("input", "test_application")
+        input_path = absolute_data_path(input_relative_path)
+        # Triangulation
+        epipolar_grid_generation_application = Application(
+            "grid_generation", cfg=conf.get("grid_generation", {})
+        )
+        orchestrator_conf = {
+            "mode": "sequential",
+            "max_ram_per_worker": 40,
+            "profiling": {"mode": "cars_profiling"},
+        }
+
+        with orchestrator.Orchestrator(
+            orchestrator_conf=orchestrator_conf
+        ) as cars_orchestrator:
+            # initialize out_json
+            cars_orchestrator.update_out_info({"version": __version__})
+            # load dictionary of cardatasets
+            with open(
+                absolute_data_path(
+                    os.path.join(input_relative_path, input_file)
+                ),
+                "rb",
+            ) as file:
+                # load pickle data
+                data = pickle.load(file)
+                adapt_path_for_test_dir(data, input_path, input_relative_path)
+                # Run grid generation
+                geometry_plugin = get_geometry_plugin(
+                    dem=os.path.join(
+                        input_path, "srtm_dir", "N29E031_KHEOPS.tif"
+                    ),
+                    default_alt=0,
+                )
+                (
+                    grid_left,
+                    grid_right,
+                ) = epipolar_grid_generation_application.run(
+                    data["sensor_image_left"],
+                    data["sensor_image_right"],
+                    geometry_plugin,
+                    orchestrator=cars_orchestrator,
+                    pair_folder=os.path.join(directory, "pair_0"),
+                )
+
+                resolution = 4
+
+                grid_left_before = copy.deepcopy(grid_left)
+
+                grid_left = transform_grid_func(
+                    grid_left,
+                    grid_right,
+                    resolution,
+                )
+
+                for key, value in grid_left.attributes.items():
+                    if isinstance(value, (int, float, np.floating)):
+                        attr = grid_left_before.attributes[key]
+                        assert value == np.floor(attr / resolution)
+                    elif isinstance(value, list):
+                        for i in range(len(value)):
+                            attr = grid_left_before.attributes[key][i]
+                            res = np.floor(attr / resolution)
+                            assert value[i] == res
+
+                assert grid_left[0, 0].all() == grid_left_before[0, 0].all()

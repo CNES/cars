@@ -377,17 +377,18 @@ def resample_image(
                         bands["band_id"], window=img_window
                     )
 
-                    f = fftshift(fft2(img_as_array))
+                    if resolution != 1:
+                        f = fftshift(fft2(img_as_array))
 
-                    _, rows, cols = img_as_array.shape
-                    crow, ccol = rows // 2, cols // 2
-                    radius = min(rows, cols) // (2 * resolution)
+                        _, rows, cols = img_as_array.shape
+                        crow, ccol = rows // 2, cols // 2
+                        radius = min(rows, cols) // (2 * resolution)
 
-                    Y, X = np.ogrid[:rows, :cols]
-                    mask_blur = (X - ccol) ** 2 + (Y - crow) ** 2 <= radius**2
-                    f_filtered = f * mask_blur
+                        Y, X = np.ogrid[:rows, :cols]
+                        mask_blur = (X - ccol) ** 2 + (Y - crow) ** 2 <= radius**2
+                        f_filtered = f * mask_blur
 
-                    img_as_array = np.real(ifft2(ifftshift(f_filtered)))
+                        img_as_array = np.real(ifft2(ifftshift(f_filtered)))
 
                     # shift grid regarding the img extraction
                     grid_as_array[0, ...] -= x_offset
