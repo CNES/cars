@@ -23,8 +23,8 @@ CARS core cloud fusion module init file
 """
 # flake8: noqa: F401
 
-from cars.applications.point_cloud_fusion.point_cloud_fusion import (
+from cars.applications.point_cloud_fusion.abstract_pc_fusion_app import (
     PointCloudFusion,
 )
 
-from . import mapping_to_terrain_tiles
+from . import mapping_to_terrain_tiles_app

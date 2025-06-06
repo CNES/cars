@@ -20,15 +20,15 @@
 #
 """
 Test module for
-cars/applications/auxiliary_filling/auxiliary_filling_from_sensors.py
+cars/applications/auxiliary_filling/auxiliary_filling_from_sensors_app.py
 """
 
 # Third party imports
 import pytest
 
 # CARS imports
-from cars.applications.auxiliary_filling.auxiliary_filling_from_sensors import (
-    AuxiliaryFillingFromSensors,
+from cars.applications.auxiliary_filling import (
+    auxiliary_filling_from_sensors_app as auxiliary_app,
 )
 
 
@@ -44,4 +44,4 @@ def test_check_full_conf():
         "use_mask": True,
         "color_interpolator": "linear",
     }
-    _ = AuxiliaryFillingFromSensors(conf)
+    _ = auxiliary_app.AuxiliaryFillingFromSensors(conf)

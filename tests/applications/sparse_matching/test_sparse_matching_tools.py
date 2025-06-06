@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/steps/matching/sparse_matching_tools.py
+Test module for cars/steps/matching/sparse_matching_algo.py
 """
 
 # Standard imports
@@ -30,8 +30,11 @@ import numpy as np
 import pytest
 
 # CARS imports
-from cars.applications.resampling import resampling_tools
-from cars.applications.sparse_matching import sparse_matching_tools
+from cars.applications.resampling import resampling_algo
+from cars.applications.sparse_matching import (
+    sparse_matching_algo,
+    sparse_matching_wrappers,
+)
 
 # CARS Tests imports
 from tests.helpers import absolute_data_path
@@ -59,7 +62,7 @@ def test_dataset_matching():
     epipolar_size_x = 596
     epipolar_size_y = 596
 
-    left = resampling_tools.resample_image(
+    left = resampling_algo.resample_image(
         img1,
         grid1,
         [epipolar_size_x, epipolar_size_y],
@@ -67,7 +70,7 @@ def test_dataset_matching():
         nodata=nodata1,
         mask=mask1,
     )
-    right = resampling_tools.resample_image(
+    right = resampling_algo.resample_image(
         img2,
         grid2,
         [epipolar_size_x, epipolar_size_y],
@@ -76,7 +79,7 @@ def test_dataset_matching():
         mask=mask2,
     )
 
-    matches = sparse_matching_tools.dataset_matching(left, right)
+    matches = sparse_matching_algo.dataset_matching(left, right)
 
     # Uncomment to update baseline
     # np.save(absolute_data_path("ref_output/matches.npy"), matches)
@@ -87,7 +90,7 @@ def test_dataset_matching():
     # Case with no matches
     region = [0, 0, 2, 2]
 
-    left = resampling_tools.resample_image(
+    left = resampling_algo.resample_image(
         img1,
         grid1,
         [epipolar_size_x, epipolar_size_y],
@@ -95,7 +98,7 @@ def test_dataset_matching():
         nodata=nodata1,
         mask=mask1,
     )
-    right = resampling_tools.resample_image(
+    right = resampling_algo.resample_image(
         img1,
         grid1,
         [epipolar_size_x, epipolar_size_y],
@@ -104,7 +107,7 @@ def test_dataset_matching():
         mask=mask1,
     )
 
-    matches = sparse_matching_tools.dataset_matching(left, right)
+    matches = sparse_matching_algo.dataset_matching(left, right)
 
     assert matches.shape == (0, 4)
 
@@ -120,7 +123,9 @@ def test_remove_epipolar_outliers():
 
     matches = np.load(matches_file)
 
-    matches_filtered = sparse_matching_tools.remove_epipolar_outliers(matches)
+    matches_filtered = sparse_matching_wrappers.remove_epipolar_outliers(
+        matches
+    )
 
     nb_filtered_points = matches.shape[0] - matches_filtered.shape[0]
     assert nb_filtered_points == 2

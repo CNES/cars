@@ -34,8 +34,11 @@ import pandas
 import pytest
 import xarray as xr
 
-from cars.applications.point_cloud_fusion import mapping_to_terrain_tiles
-from cars.applications.rasterization import rasterization_tools
+from cars.applications.point_cloud_fusion import mapping_to_terrain_tiles_app
+from cars.applications.rasterization import (
+    rasterization_algo,
+    rasterization_wrappers,
+)
 
 # CARS imports
 from cars.core import constants as cst
@@ -64,7 +67,7 @@ def test_simple_rasterization_synthetic_case():
 
     pd_cloud = pandas.DataFrame(cloud, columns=[cst.X, cst.Y, cst.Z])
     pd_cloud.attrs = {"attributes": {"number_of_pc": 1}}
-    raster = rasterization_tools.rasterize(
+    raster = rasterization_algo.rasterize(
         pd_cloud, 1, None, 0, 12, 3, 2, 0.3, 0
     )
 
@@ -92,8 +95,8 @@ def test_simple_rasterization_synthetic_case():
         ystart,
         xsize,
         ysize,
-    ) = rasterization_tools.compute_xy_starts_and_sizes(1, pd_cloud)
-    raster = rasterization_tools.rasterize(
+    ) = rasterization_wrappers.compute_xy_starts_and_sizes(1, pd_cloud)
+    raster = rasterization_algo.rasterize(
         pd_cloud, 1, None, xstart, ystart, xsize, ysize, 0.3, 0
     )
     np.testing.assert_equal(
@@ -102,7 +105,7 @@ def test_simple_rasterization_synthetic_case():
     )
 
     # Test with fixed grid, radius =  1 and sigma = inf
-    raster = rasterization_tools.rasterize(
+    raster = rasterization_algo.rasterize(
         pd_cloud, 1, None, 0, 12, 3, 2, np.inf, 1
     )
     np.testing.assert_equal(
@@ -120,7 +123,7 @@ def test_simple_rasterization_synthetic_case():
     )
 
     # Test with float radius = 1.6 and sigma = inf
-    raster = rasterization_tools.rasterize(
+    raster = rasterization_algo.rasterize(
         pd_cloud, 1, None, 0, 12, 3, 2, np.inf, 1.6
     )
     # radius 1.6 add to equation the 1.6 + 0.5 = 2.1 distance points, so
@@ -168,21 +171,21 @@ def test_phased_dsm():
 
     for index, value in enumerate(bounds_one):
         if index in (0, 2):
-            bounds_one[index] = rasterization_tools.phased_dsm(
+            bounds_one[index] = rasterization_wrappers.phased_dsm(
                 value, x_phase, resolution
             )
         else:
-            bounds_one[index] = rasterization_tools.phased_dsm(
+            bounds_one[index] = rasterization_wrappers.phased_dsm(
                 value, y_phase, resolution
             )
 
     for index, value in enumerate(bounds_two):
         if index in (0, 2):
-            bounds_two[index] = rasterization_tools.phased_dsm(
+            bounds_two[index] = rasterization_wrappers.phased_dsm(
                 value, x_phase, resolution
             )
         else:
-            bounds_two[index] = rasterization_tools.phased_dsm(
+            bounds_two[index] = rasterization_wrappers.phased_dsm(
                 value, y_phase, resolution
             )
 
@@ -221,9 +224,9 @@ def test_simple_rasterization_single():
         ystart,
         xsize,
         ysize,
-    ) = rasterization_tools.compute_xy_starts_and_sizes(resolution, cloud_df)
+    ) = rasterization_wrappers.compute_xy_starts_and_sizes(resolution, cloud_df)
 
-    raster = rasterization_tools.rasterize(
+    raster = rasterization_algo.rasterize(
         cloud_df,
         resolution,
         32630,
@@ -289,7 +292,7 @@ def test_simple_rasterization_dataset_1():
 
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
-    cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
+    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
         [(cloud, cloud_id)],
         epsg,
         xmin=xmin,
@@ -305,7 +308,7 @@ def test_simple_rasterization_dataset_1():
 
     # TODO test from here -> dump cloud as test data input
 
-    raster = rasterization_tools.simple_rasterization_dataset_wrapper(
+    raster = rasterization_algo.simple_rasterization_dataset_wrapper(
         cloud,
         resolution,
         epsg,
@@ -372,7 +375,7 @@ def test_simple_rasterization_dataset_1_intervals():
 
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
-    cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
+    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
         [(cloud, cloud_id)],
         epsg,
         xmin=xmin,
@@ -388,7 +391,7 @@ def test_simple_rasterization_dataset_1_intervals():
 
     # TODO test from here -> dump cloud as test data input
 
-    raster = rasterization_tools.simple_rasterization_dataset_wrapper(
+    raster = rasterization_algo.simple_rasterization_dataset_wrapper(
         cloud,
         resolution,
         epsg,
@@ -451,7 +454,7 @@ def test_simple_rasterization_dataset_2():
     # Former computation of merged margin
     used_margin = (on_ground_margin + radius + 1) * resolution
 
-    cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
+    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
         [(cloud, cloud_id)],
         epsg,
         xmin=xmin,
@@ -467,7 +470,7 @@ def test_simple_rasterization_dataset_2():
 
     # TODO test from here -> dump cloud as test data input
 
-    raster = rasterization_tools.simple_rasterization_dataset_wrapper(
+    raster = rasterization_algo.simple_rasterization_dataset_wrapper(
         cloud,
         resolution,
         epsg,
@@ -531,7 +534,7 @@ def test_simple_rasterization_dataset_():
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
 
-    cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
+    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
         [(cloud, cloud_id)],
         epsg,
         xmin=xmin,
@@ -547,7 +550,7 @@ def test_simple_rasterization_dataset_():
 
     # TODO test from here -> dump cloud as test data input
 
-    raster = rasterization_tools.simple_rasterization_dataset_wrapper(
+    raster = rasterization_algo.simple_rasterization_dataset_wrapper(
         cloud,
         resolution,
         epsg,
@@ -619,7 +622,7 @@ def test_simple_rasterization_multiple_datasets():
     # Former computation of merged margin
     used_margin = (on_ground_margin + radius + 1) * resolution
 
-    cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
+    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
         [(utm1, utm1_id), (utm2, utm2_id)],
         epsg,
         xmin=xmin,
@@ -634,7 +637,7 @@ def test_simple_rasterization_multiple_datasets():
     )
 
     # TODO test from here -> dump cloud as test data input
-    raster = rasterization_tools.simple_rasterization_dataset_wrapper(
+    raster = rasterization_algo.simple_rasterization_dataset_wrapper(
         cloud,
         resolution,
         epsg,
@@ -707,7 +710,7 @@ def test_simple_rasterization_multiple_datasets_with_source_map():
     # Former computation of merged margin
     used_margin = (on_ground_margin + radius + 1) * resolution
 
-    cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
+    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
         [(utm1, utm1_id), (utm2, utm2_id)],
         epsg,
         xmin=xmin,
@@ -722,7 +725,7 @@ def test_simple_rasterization_multiple_datasets_with_source_map():
     )
 
     # TODO test from here -> dump cloud as test data input
-    raster = rasterization_tools.simple_rasterization_dataset_wrapper(
+    raster = rasterization_algo.simple_rasterization_dataset_wrapper(
         cloud,
         resolution,
         epsg,
@@ -831,7 +834,7 @@ def test_mask_interp_case1(
         __,
         __,
         __,
-    ) = rasterization_tools.compute_vector_raster_and_stats(
+    ) = rasterization_algo.compute_vector_raster_and_stats(
         cloud_pd, -0.5, row - 0.5, col, row, resolution, sigma, radius
     )
 

@@ -23,8 +23,8 @@ CARS core rasterization module init file
 """
 # flake8: noqa: F401
 
-from cars.applications.rasterization.point_cloud_rasterization import (
+from cars.applications.rasterization.abstract_pc_rasterization_app import (
     PointCloudRasterization,
 )
 
-from . import simple_gaussian
+from . import simple_gaussian_app

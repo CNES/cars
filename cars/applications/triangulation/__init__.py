@@ -25,6 +25,8 @@
 CARS core triangulation module init file
 """
 
-from cars.applications.triangulation.triangulation import Triangulation
+from cars.applications.triangulation.abstract_triangulation_app import (
+    Triangulation,
+)
 
-from . import line_of_sight_intersection
+from . import line_of_sight_intersection_app

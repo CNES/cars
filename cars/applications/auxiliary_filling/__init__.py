@@ -23,7 +23,7 @@ CARS auxiliary filling module init file
 """
 # flake8: noqa: F401
 
-import cars.applications.auxiliary_filling.auxiliary_filling
-from cars.applications.auxiliary_filling.auxiliary_filling_from_sensors import (
+import cars.applications.auxiliary_filling.abstract_auxiliary_filling_app
+from cars.applications.auxiliary_filling.auxiliary_filling_from_sensors_app import (  # pylint: disable=C0301
     AuxiliaryFilling,
 )

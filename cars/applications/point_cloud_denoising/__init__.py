@@ -23,7 +23,7 @@ CARS holes detection module init file
 """
 # flake8: noqa: F401
 
-import cars.applications.point_cloud_denoising.point_cloud_denoising
-from cars.applications.point_cloud_denoising.point_cloud_denoising import (
+import cars.applications.point_cloud_denoising.abstract_pc_denoising_app
+from cars.applications.point_cloud_denoising.abstract_pc_denoising_app import (
     PCDenoising,
 )

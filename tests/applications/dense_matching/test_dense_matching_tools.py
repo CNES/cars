@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/steps/matching/dense_matching_tools.py
+Test module for cars/steps/matching/dense_matching_algo.py
 Important : Uses conftest.py for shared pytest fixtures
 """
 
@@ -28,7 +28,10 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from cars.applications.dense_matching import dense_matching_tools
+from cars.applications.dense_matching import (
+    dense_matching_algo,
+    dense_matching_wrappers,
+)
 
 # CARS imports
 from cars.core import constants as cst
@@ -53,19 +56,19 @@ def test_optimal_tile_size():
     disp = 61
     mem = 313
 
-    res = dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
+    res = dense_matching_wrappers.optimal_tile_size_pandora_plugin_libsgm(
         0, disp, min_tile_size=0, max_tile_size=1000, max_ram_per_worker=mem
     )
 
     assert res == 350
 
-    res = dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
+    res = dense_matching_wrappers.optimal_tile_size_pandora_plugin_libsgm(
         0, disp, min_tile_size=0, max_tile_size=300, max_ram_per_worker=mem
     )
 
     assert res == 300
 
-    res = dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
+    res = dense_matching_wrappers.optimal_tile_size_pandora_plugin_libsgm(
         0, disp, min_tile_size=500, max_tile_size=1000, max_ram_per_worker=mem
     )
 
@@ -73,7 +76,7 @@ def test_optimal_tile_size():
 
     # Test case where default tile size is returned
     assert (
-        dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
+        dense_matching_wrappers.optimal_tile_size_pandora_plugin_libsgm(
             -1000,
             1000,
             min_tile_size=0,
@@ -93,13 +96,13 @@ def test_get_max_disp_from_opt_tile_size():
 
     max_ram_per_worker = 313
 
-    max_range = dense_matching_tools.get_max_disp_from_opt_tile_size(
+    max_range = dense_matching_wrappers.get_max_disp_from_opt_tile_size(
         300, max_ram_per_worker, margin=20, used_disparity_range=0
     )
 
     assert max_range == 76
 
-    max_range = dense_matching_tools.get_max_disp_from_opt_tile_size(
+    max_range = dense_matching_wrappers.get_max_disp_from_opt_tile_size(
         300, max_ram_per_worker, margin=20, used_disparity_range=100
     )
 
@@ -125,7 +128,7 @@ def test_compute_disparity_1():
     disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
 
-    output = dense_matching_tools.compute_disparity(
+    output = dense_matching_algo.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
@@ -166,7 +169,7 @@ def test_compute_disparity_3():
     disp_min_grid = -43 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 41 * np.ones(left_input["im"].values.shape)
 
-    output = dense_matching_tools.compute_disparity(
+    output = dense_matching_algo.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
@@ -210,7 +213,7 @@ def test_compute_disparity_with_all_confidences():
     disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
 
-    output = dense_matching_tools.compute_disparity(
+    output = dense_matching_algo.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
@@ -256,7 +259,7 @@ def test_compute_disparity_1_msk_ref():
     disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
 
-    output = dense_matching_tools.compute_disparity(
+    output = dense_matching_algo.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
@@ -304,7 +307,7 @@ def test_compute_disparity_1_msk_sec():
     disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
 
-    output = dense_matching_tools.compute_disparity(
+    output = dense_matching_algo.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
@@ -345,7 +348,7 @@ def test_estimate_right_grid_disp():
     (
         disp_min_right_grid,
         disp_max_right_grid,
-    ) = dense_matching_tools.estimate_right_grid_disp(
+    ) = dense_matching_wrappers.estimate_right_grid_disp(
         left_grid_min, left_grid_max
     )
 
@@ -378,7 +381,7 @@ def test_estimate_right_classif_on_left():
     # Test1: one band
 
     left_from_right_classif = (
-        dense_matching_tools.estimate_right_classif_on_left(
+        dense_matching_wrappers.estimate_right_classif_on_left(
             np.expand_dims(right_classif, axis=0), disp_map, None, -10, 10
         )
     )
@@ -400,7 +403,7 @@ def test_estimate_right_classif_on_left():
 
     # Test 2: 2 bands
     left_from_right_classif = (
-        dense_matching_tools.estimate_right_classif_on_left(
+        dense_matching_wrappers.estimate_right_classif_on_left(
             np.stack([right_classif, right_classif], axis=0),
             disp_map,
             None,
@@ -445,7 +448,7 @@ def test_merge_classif_left_right():
 
     left_classif = np.stack([left_classif, left_classif], axis=0)
     left_from_right_classif = (
-        dense_matching_tools.estimate_right_classif_on_left(
+        dense_matching_wrappers.estimate_right_classif_on_left(
             np.stack([right_classif, right_classif], axis=0),
             disp_map,
             None,
@@ -456,7 +459,7 @@ def test_merge_classif_left_right():
 
     # Test 1: same keys
 
-    merged_clasif, band_list = dense_matching_tools.merge_classif_left_right(
+    merged_clasif, band_list = dense_matching_wrappers.merge_classif_left_right(
         left_classif,
         ["cloud", "building"],
         left_from_right_classif,
@@ -480,7 +483,7 @@ def test_merge_classif_left_right():
     assert band_list == ["cloud", "building"]
 
     # Test 2: different keys
-    merged_clasif, band_list = dense_matching_tools.merge_classif_left_right(
+    merged_clasif, band_list = dense_matching_wrappers.merge_classif_left_right(
         left_classif,
         ["cloud", "building"],
         left_from_right_classif,
@@ -521,7 +524,7 @@ def test_compute_cropped_roi():
     nb_rows = 600 + 10 + 19
     nb_cols = 300 + 12 + 5
 
-    ref_roi, new_roi, new_margin = dense_matching_tools.compute_cropped_roi(
+    ref_roi, new_roi, new_margin = dense_matching_wrappers.compute_cropped_roi(
         current_margins,
         margins_to_keep,
         current_roi,
@@ -543,7 +546,7 @@ def test_compute_cropped_roi():
     nb_rows = 600 + 10 + 19
     nb_cols = 300 + 12 + 5
 
-    ref_roi, new_roi, new_margin = dense_matching_tools.compute_cropped_roi(
+    ref_roi, new_roi, new_margin = dense_matching_wrappers.compute_cropped_roi(
         current_margins,
         margins_to_keep,
         current_roi,
@@ -565,7 +568,7 @@ def test_compute_cropped_roi():
     nb_rows = 600 + 10 + 19
     nb_cols = 300 + 12 + 5
 
-    ref_roi, new_roi, new_margin = dense_matching_tools.compute_cropped_roi(
+    ref_roi, new_roi, new_margin = dense_matching_wrappers.compute_cropped_roi(
         current_margins,
         margins_to_keep,
         current_roi,

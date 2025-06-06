@@ -19,7 +19,8 @@
 # limitations under the License.
 #
 """
-Test module for config of cars/applications/dense_matching/census_mccnn_sgm.py
+Test module for config of
+cars/applications/dense_matching/census_mccnn_sgm_app.py
 """
 
 import os
@@ -28,7 +29,7 @@ import os
 import pytest
 
 # CARS imports
-from cars.applications.dense_matching.census_mccnn_sgm import CensusMccnnSgm
+from cars.applications.dense_matching.census_mccnn_sgm_app import CensusMccnnSgm
 from cars.applications.dense_matching.loaders import (
     __file__ as dense_matching_loaders_init_file,
 )

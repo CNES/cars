@@ -36,7 +36,7 @@ import pytest
 from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
 from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 
-from cars.applications.grid_generation import grids
+from cars.applications.grid_generation import grid_generation_algo
 
 # CARS imports
 from cars.core import tiling
@@ -241,18 +241,22 @@ def test_tiles_pairing(
     grid_right = configuration["preprocessing"]["output"]["right_epipolar_grid"]
 
     # compute epipolar grid min max
-    epipolar_grid_min, epipolar_grid_max = grids.compute_epipolar_grid_min_max(
-        get_geometry_plugin(),
-        tiling.transform_four_layers_to_two_layers_grid(epipolar_tiling_grid),
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        grid_left,
-        grid_right,
-        epsg,
-        disp_min,
-        disp_max,
+    epipolar_grid_min, epipolar_grid_max = (
+        grid_generation_algo.compute_epipolar_grid_min_max(
+            get_geometry_plugin(),
+            tiling.transform_four_layers_to_two_layers_grid(
+                epipolar_tiling_grid
+            ),
+            sensor1,
+            sensor2,
+            geomodel1,
+            geomodel2,
+            grid_left,
+            grid_right,
+            epsg,
+            disp_min,
+            disp_max,
+        )
     )
 
     # compute points min/max epipolar corresponding to terrain grid

@@ -20,7 +20,7 @@
 #
 """
 Test module for config of
-cars/applications/auxiliary_filling/auxiliary_filling_from_sensors.py
+cars/applications/auxiliary_filling/auxiliary_filling_from_sensors_app.py
 """
 
 import os
@@ -31,8 +31,8 @@ import tempfile
 import pytest
 
 # CARS imports
-from cars.applications.auxiliary_filling.auxiliary_filling_from_sensors import (
-    AuxiliaryFillingFromSensors,
+from cars.applications.auxiliary_filling import (
+    auxiliary_filling_from_sensors_app as auxiliary_app,
 )
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 
@@ -124,7 +124,9 @@ def test_auxiliary_filling_paca(
         shutil.copyfile(color_input, local_image_color)
         shutil.copyfile(classification_input, local_classification_input)
 
-        auxiliary_filling_application = AuxiliaryFillingFromSensors(conf)
+        auxiliary_filling_application = (
+            auxiliary_app.AuxiliaryFillingFromSensors(conf)
+        )
 
         auxiliary_filling_application.run(
             dsm_file=dsm_input,

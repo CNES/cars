@@ -32,15 +32,17 @@ from pandora.img_tools import get_metadata
 from pandora.margins import Margins
 
 # CARS imports
-import cars.applications.dense_matching.dense_matching_tools as dense_match
-from cars.applications.dense_matching.census_mccnn_sgm import (
+from cars.applications.dense_matching import (
+    dense_matching_wrappers as dense_match_wrappers,
+)
+from cars.applications.dense_matching.census_mccnn_sgm_app import (
     CensusMccnnSgm,
     compute_disparity_wrapper,
 )
-from cars.applications.resampling.bicubic_resampling import (
+from cars.applications.resampling.bicubic_resampling_app import (
     generate_epipolar_images_wrapper,
 )
-from cars.applications.triangulation.line_of_sight_intersection import (
+from cars.applications.triangulation.line_of_sight_intersection_app import (
     triangulation_wrapper,
 )
 from cars.conf import input_parameters as in_params
@@ -115,7 +117,7 @@ def test_epipolar_pipeline(
     # cumulative margins between sgm (40) and matching_cost (ws/2)
     margins = Margins(42, 42, 42, 42)
 
-    initial_margins = dense_match.get_margins(
+    initial_margins = dense_match_wrappers.get_margins(
         margins, global_disp_min, global_disp_max
     )
     pandora_margins = initial_margins["left_margin"].values

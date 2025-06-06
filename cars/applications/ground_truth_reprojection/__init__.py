@@ -24,7 +24,7 @@ CARS core epipolar matches ground truth generation module init file
 # flake8: noqa: F401, E501
 
 from cars.applications.ground_truth_reprojection import (
-    ground_truth_reprojection,
+    abstract_ground_truth_reprojection_app,
 )
 
-from . import direct_localization
+from . import direct_localization_app

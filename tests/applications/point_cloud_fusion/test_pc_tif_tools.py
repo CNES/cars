@@ -30,7 +30,10 @@ import pytest
 import rasterio as rio
 from shapely.geometry import mapping
 
-from cars.applications.point_cloud_fusion import pc_tif_tools
+from cars.applications.point_cloud_fusion import (
+    pc_fusion_algo,
+    pc_fusion_wrappers,
+)
 from cars.core import constants as cst
 from cars.core import tiling
 from cars.orchestrator import orchestrator
@@ -70,7 +73,7 @@ def test_create_polygon_from_list_points():
     """
 
     list_points = [(1, 0), (1, 1), (0, 1), (0, 0), (1, 0)]
-    poly = pc_tif_tools.create_polygon_from_list_points(list_points)
+    poly = pc_fusion_wrappers.create_polygon_from_list_points(list_points)
 
     assert len(mapping(poly)["coordinates"][0]) == 6
 
@@ -85,7 +88,7 @@ def test_compute_epsg_from_point_cloud():
 
     list_epi_pc = {"pc_0": data_tif}
 
-    epsg = pc_tif_tools.compute_epsg_from_point_cloud(list_epi_pc)
+    epsg = pc_fusion_wrappers.compute_epsg_from_point_cloud(list_epi_pc)
 
     assert epsg == 32636
 
@@ -103,7 +106,7 @@ def test_generate_point_clouds():
     with orchestrator.Orchestrator(
         orchestrator_conf={"mode": "sequential"}
     ) as cars_orchestrator:
-        pc_tif_tools.generate_point_clouds(
+        pc_fusion_algo.generate_point_clouds(
             list_epi_pc, cars_orchestrator, tile_size=1000
         )
 
@@ -116,7 +119,7 @@ def test_get_min_max_band():
 
     data_tif = generate_test_inputs()
 
-    x_y_min_max = pc_tif_tools.get_min_max_band(
+    x_y_min_max = pc_fusion_wrappers.get_min_max_band(
         data_tif[cst.X],
         data_tif[cst.Y],
         data_tif[cst.Z],
@@ -154,7 +157,7 @@ def test_transform_input_pc_and_metrics():
         (
             terrain_bbox,
             list_epipolar_point_clouds_by_tiles,
-        ) = pc_tif_tools.transform_input_pc(
+        ) = pc_fusion_algo.transform_input_pc(
             list_epi_pc,
             32636,
             epipolar_tile_size=200,
@@ -174,14 +177,14 @@ def test_transform_input_pc_and_metrics():
 
     # tes compute_max_nb_point_clouds
 
-    nb_max_nb_pc = pc_tif_tools.compute_max_nb_point_clouds(
+    nb_max_nb_pc = pc_fusion_wrappers.compute_max_nb_point_clouds(
         list_epipolar_point_clouds_by_tiles
     )
 
     assert nb_max_nb_pc == 2
 
     # test compute_average_distance
-    average_dist = pc_tif_tools.compute_average_distance(
+    average_dist = pc_fusion_wrappers.compute_average_distance(
         list_epipolar_point_clouds_by_tiles
     )
 
@@ -206,7 +209,7 @@ def test_transform_input_pc_and_correspondance():
         (
             terrain_bbox,
             list_epipolar_point_clouds_by_tiles,
-        ) = pc_tif_tools.transform_input_pc(
+        ) = pc_fusion_algo.transform_input_pc(
             list_epi_pc,
             32636,
             epipolar_tile_size=200,
@@ -233,7 +236,7 @@ def test_transform_input_pc_and_correspondance():
     with orchestrator.Orchestrator(
         orchestrator_conf={"mode": "sequential"}
     ) as cars_orchestrator:
-        corresponding_tiles = pc_tif_tools.get_corresponding_tiles_tif(
+        corresponding_tiles = pc_fusion_algo.get_corresponding_tiles_tif(
             terrain_tiling_grid,
             list_epipolar_point_clouds_by_tiles,
             margins=0,

@@ -37,8 +37,11 @@ import xarray as xr
 
 from cars import __version__
 from cars.applications.application import Application
-from cars.applications.grid_generation import grid_correction, grids
-from cars.applications.sparse_matching import sparse_matching_tools
+from cars.applications.grid_generation import (
+    grid_correction_app,
+    grid_generation_algo,
+)
+from cars.applications.sparse_matching import sparse_matching_wrappers
 
 # CARS imports
 from cars.conf import input_parameters
@@ -95,7 +98,9 @@ def test_correct_right_grid():
     matches = np.load(matches_file)
     matches = np.array(matches)
 
-    matches_filtered = sparse_matching_tools.remove_epipolar_outliers(matches)
+    matches_filtered = sparse_matching_wrappers.remove_epipolar_outliers(
+        matches
+    )
 
     with rio.open(grid_file) as rio_grid:
         grid = rio_grid.read()
@@ -117,12 +122,12 @@ def test_correct_right_grid():
             _,
             in_stats,
             out_stats,
-        ) = grid_correction.estimate_right_grid_correction(
+        ) = grid_correction_app.estimate_right_grid_correction(
             matches_filtered, grid_right
         )
 
         # Correct grid right
-        corrected_grid_cars_ds = grid_correction.correct_grid(
+        corrected_grid_cars_ds = grid_correction_app.correct_grid(
             grid_right, grid_correction_coef
         )
         corrected_grid = corrected_grid_cars_ds[0, 0]
@@ -202,7 +207,7 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
         _,
         epi_size,
         baseline,
-    ) = grids.generate_epipolar_grids(
+    ) = grid_generation_algo.generate_epipolar_grids(
         sensor1,
         sensor2,
         geomodel1,
@@ -262,7 +267,7 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
         _,
         epi_size,
         baseline,
-    ) = grids.generate_epipolar_grids(
+    ) = grid_generation_algo.generate_epipolar_grids(
         sensor1,
         sensor2,
         geomodel1,
@@ -473,7 +478,7 @@ def test_terrain_region_to_epipolar(
     grid_left = configuration["preprocessing"]["output"]["left_epipolar_grid"]
     grid_right = configuration["preprocessing"]["output"]["right_epipolar_grid"]
 
-    epipolar_region = grids.terrain_region_to_epipolar(
+    epipolar_region = grid_generation_algo.terrain_region_to_epipolar(
         terrain_region,
         sensor1,
         sensor2,

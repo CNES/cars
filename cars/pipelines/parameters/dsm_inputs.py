@@ -36,7 +36,7 @@ from rasterio.windows import from_bounds
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 import cars.pipelines.parameters.dsm_inputs_constants as dsm_cst
-from cars.applications.rasterization.rasterization_tools import (
+from cars.applications.rasterization.rasterization_wrappers import (
     update_data,
     update_weights,
 )

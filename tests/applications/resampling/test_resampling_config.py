@@ -19,14 +19,16 @@
 # limitations under the License.
 #
 """
-Test module for config of cars/applications/resampling/bicubic_resampling.py
+Test module for config of cars/applications/resampling/bicubic_resampling_app.py
 """
 
 # Third party imports
 import pytest
 
 # CARS imports
-from cars.applications.resampling.bicubic_resampling import BicubicResampling
+from cars.applications.resampling.bicubic_resampling_app import (
+    BicubicResampling,
+)
 
 
 @pytest.mark.unit_tests

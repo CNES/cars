@@ -35,7 +35,7 @@ import xarray as xr
 from cars.applications.application import Application
 
 # CARS imports
-from cars.applications.resampling import bicubic_resampling, resampling_tools
+from cars.applications.resampling import resampling_algo, resampling_wrappers
 from cars.conf import input_parameters as in_params
 from cars.core import constants as cst
 from cars.core import tiling
@@ -67,7 +67,7 @@ def test_resample_image():
     epipolar_size_x = 612
     epipolar_size_y = 612
 
-    test_dataset = resampling_tools.resample_image(
+    test_dataset = resampling_algo.resample_image(
         img,
         grid,
         [epipolar_size_x, epipolar_size_y],
@@ -110,14 +110,14 @@ def test_resample_image_tiles():
     epipolar_size_x = 612
     epipolar_size_y = 612
 
-    full_dataset = resampling_tools.resample_image(
+    full_dataset = resampling_algo.resample_image(
         img,
         grid,
         [epipolar_size_x, epipolar_size_y],
         nodata=nodata,
     )
 
-    tiled_dataset = resampling_tools.resample_image(
+    tiled_dataset = resampling_algo.resample_image(
         img,
         grid,
         [epipolar_size_x, epipolar_size_y],
@@ -197,7 +197,7 @@ def test_epipolar_rectify_images_1(
         clr,
         classif1,
         classif2,
-    ) = resampling_tools.epipolar_rectify_images(
+    ) = resampling_algo.epipolar_rectify_images(
         img1,
         img2,
         grid1,
@@ -309,7 +309,7 @@ def test_epipolar_rectify_images_3(
         clr,
         class1,
         class2,
-    ) = resampling_tools.epipolar_rectify_images(
+    ) = resampling_algo.epipolar_rectify_images(
         img1,
         img2,
         grid1,
@@ -435,7 +435,7 @@ def test_check_tiles_in_sensor():
         (
             in_sensor_left_array,
             in_sensor_right_array,
-        ) = bicubic_resampling.check_tiles_in_sensor(
+        ) = resampling_wrappers.check_tiles_in_sensor(
             sensor_image_left,
             sensor_image_right,
             epi_tilling_grid,

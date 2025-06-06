@@ -32,7 +32,7 @@ import pytest
 import rasterio
 
 # CARS imports
-from cars.applications.point_cloud_outlier_removal import outlier_removal_tools
+from cars.applications.point_cloud_outlier_removal import outlier_removal_algo
 
 # CARS Tests imports
 from tests.helpers import absolute_data_path
@@ -212,7 +212,7 @@ def test_outlier_removal_point_cloud_statistical(use_median):
     # Perform the same filtering Scipy and compare the results
     transposed_points = np.transpose(points)
 
-    detected_points = outlier_removal_tools.detect_statistical_outliers(
+    detected_points = outlier_removal_algo.detect_statistical_outliers(
         transposed_points, k, dev_factor, use_median
     )
 
@@ -252,7 +252,7 @@ def test_outlier_removal_point_cloud_small_components(
 
     transposed_points = np.transpose(points)
 
-    cluster_to_remove = outlier_removal_tools.detect_small_components(
+    cluster_to_remove = outlier_removal_algo.detect_small_components(
         transposed_points,
         connection_val,
         nb_pts_threshold,

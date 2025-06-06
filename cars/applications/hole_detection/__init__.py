@@ -23,6 +23,8 @@ CARS holes detection module init file
 """
 # flake8: noqa: F401
 
-from cars.applications.hole_detection.hole_detection import HoleDetection
+from cars.applications.hole_detection.abstract_hole_detection_app import (
+    HoleDetection,
+)
 
-from . import cloud_to_bbox
+from . import cloud_to_bbox_app

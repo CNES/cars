@@ -332,7 +332,7 @@ def check_ground_truth_dsm_data(conf):
             else:
                 conf[adv_cst.INPUT_GEOID] = None
 
-        path_dict = conf[adv_cst.INPUT_AUX_PATH]
+        path_dict = conf.get(adv_cst.INPUT_AUX_PATH, None)
         if path_dict is not None:
             for key in path_dict.keys():
                 if not isinstance(path_dict[key], str):
@@ -340,7 +340,7 @@ def check_ground_truth_dsm_data(conf):
                 if not os.path.exists(path_dict[key]):
                     raise RuntimeError("Path doesn't exist")
 
-        path_interp = conf[adv_cst.INPUT_AUX_INTERP]
+        path_interp = conf.get(adv_cst.INPUT_AUX_INTERP, None)
         if path_interp is not None:
             for key in path_interp.keys():
                 if not isinstance(path_interp[key], str):

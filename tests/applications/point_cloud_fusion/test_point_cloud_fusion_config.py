@@ -20,12 +20,12 @@
 #
 """
 Test module for config of
-cars/applications/point_cloud_fusion/point_cloud_fusion.py
+cars/applications/point_cloud_fusion/abstract_pc_fusion_app.py
 """
 
 import pytest
 
-from cars.applications.point_cloud_fusion.mapping_to_terrain_tiles import (
+from cars.applications.point_cloud_fusion.mapping_to_terrain_tiles_app import (
     MappingToTerrainTiles,
 )
 

@@ -37,7 +37,7 @@ from pyproj import CRS
 from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
-from cars.applications.grid_generation import grids
+from cars.applications.grid_generation import grid_generation_algo as grids_algo
 
 # CARS imports
 from cars.core import inputs, projection, tiling
@@ -280,7 +280,7 @@ def compute_terrain_bbox(  # noqa: 751
     )
 
     # Compute terrain min and max again, this time using estimated epsg code
-    terrain_dispmin, terrain_dispmax = grids.compute_epipolar_grid_min_max(
+    terrain_dispmin, terrain_dispmax = grids_algo.compute_epipolar_grid_min_max(
         geometry_plugin,
         corners,
         sensor1,
@@ -471,7 +471,7 @@ def compute_epsg(
     (
         terrain_dispmin,
         _,
-    ) = grids.compute_epipolar_grid_min_max(
+    ) = grids_algo.compute_epipolar_grid_min_max(
         geometry_plugin,
         corners,
         sensor1,
@@ -700,7 +700,7 @@ def compute_epipolar_roi(
     geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
     geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
 
-    epipolar_roi = grids.terrain_region_to_epipolar(
+    epipolar_roi = grids_algo.terrain_region_to_epipolar(
         roi_bbox,
         sensor1,
         sensor2,
