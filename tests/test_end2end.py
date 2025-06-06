@@ -891,7 +891,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        # Uncomment the 2 following instructions to update reference data
+
         copy2(
             os.path.join(
                 out_dir, "dump_dir", "dem_generation", "dem_median.tif"
@@ -1059,7 +1059,7 @@ def test_end2end_ventoux_unique():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        # Uncomment the 2 following instructions to update reference data
+
         copy2(
             os.path.join(
                 out_dir, "dump_dir", "dem_generation", "dem_median.tif"
@@ -1288,7 +1288,6 @@ def test_end2end_ventoux_unique():
             # check used_conf reentry
             _ = default.DefaultPipeline(used_conf)
 
-        # Uncomment the 2 following instructions to update reference data
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -1969,7 +1968,6 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             intermediate_output_dir = "intermediate_data"
             ref_output_dir = "ref_output"
 
-            # Uncomment the following instructions to update reference data
             copy2(
                 os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
@@ -2269,7 +2267,7 @@ def test_end2end_ventoux_unique_split():
                 )
                 is True
             )
-            # Uncomment the following instructions to update reference data
+
             copy2(
                 os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
@@ -2518,7 +2516,6 @@ def test_end2end_ventoux_unique_split():
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
 
-            # Uncomment the following instructions to update reference data
             copy2(
                 os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
@@ -2853,7 +2850,6 @@ def test_end2end_use_epipolar_a_priori():
             intermediate_output_dir = "intermediate_data"
             ref_output_dir = "ref_output"
 
-            # Uncomment the 2 following instructions to update reference data
             copy2(
                 os.path.join(
                     out_dir, "dump_dir", "dem_generation", "dem_median.tif"
@@ -3056,7 +3052,7 @@ def test_end2end_use_epipolar_a_priori():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        # Uncomment the 2 following instructions to update reference data
+
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -3289,7 +3285,6 @@ def test_end2end_ventoux_full_output_no_elevation():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        # Uncomment the following instruction to update reference data
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -3901,7 +3896,7 @@ def test_end2end_ventoux_with_color():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        # Uncomment the following instruction to update reference data
+
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -4248,7 +4243,6 @@ def test_end2end_ventoux_with_classif():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        # Uncomment the following instruction to update reference data
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -4388,7 +4382,7 @@ def test_compute_dsm_with_roi_ventoux():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        # Uncomment the 2 following instructions to update reference data
+
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -4544,7 +4538,6 @@ def test_compute_dsm_with_snap_to_img1():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        # Uncomment the 2 following instructions to update reference data
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -4693,7 +4686,6 @@ def test_end2end_quality_stats():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        # Uncomment the 2 following instructions to update reference data
         copy2(
             os.path.join(
                 out_dir, "dump_dir", "dem_generation", "dem_median.tif"
@@ -4987,7 +4979,6 @@ def test_end2end_ventoux_egm96_geoid():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        # Uncomment the 2 following instructions to update reference data
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -5230,7 +5221,6 @@ def test_end2end_ventoux_egm96_geoid():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        # Uncomment the 2 following instructions to update reference data
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -5377,7 +5367,6 @@ def test_end2end_paca_with_mask():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        # Uncomment the following instructions to update reference data
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -5681,7 +5670,6 @@ def test_end2end_disparity_filling():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        # Uncomment the 2 following instructions to update reference data
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -5821,7 +5809,6 @@ def test_end2end_disparity_filling_with_zeros():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        # Uncomment the 2 following instructions to update reference data
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
