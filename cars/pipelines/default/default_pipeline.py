@@ -861,9 +861,7 @@ class DefaultPipeline(PipelineTemplate):
             application_conf["dem_generation"]["method"]
             == "bulldozer_on_raster"
         ):
-            first_image_path = next(iter(inputs_conf["sensors"].values()))[
-                "image"
-            ]
+            first_image_path = next(iter(inputs_conf["sensors"].values()))["image"]["main_file_path"]
             first_image_size = rasterio_get_size(first_image_path)
             first_image_nb_pixels = math.prod(first_image_size)
             dem_gen_used_mem = first_image_nb_pixels / 1e8
@@ -914,8 +912,8 @@ class DefaultPipeline(PipelineTemplate):
         for key1, key2 in inputs_conf["pairing"]:
             corr_cfg = self.dense_matching_app.loader.get_conf()
             corr_cfg_sparse = self.sparse_mtch_pandora_app.loader.get_conf()
-            img_left = inputs_conf["sensors"][key1]["image"]
-            img_right = inputs_conf["sensors"][key2]["image"]
+            img_left = inputs_conf["sensors"][key1]["image"]["main_file_path"]
+            img_right = inputs_conf["sensors"][key2]["image"]["main_file_path"]
             classif_left = None
             classif_right = None
             if "classification" in inputs_conf["sensors"][key1]:

@@ -331,10 +331,14 @@ class PandoraLoader:
         metadata_left = get_metadata(img_left, classif=classif_left)
         metadata_right = get_metadata(img_right, classif=classif_right)
 
+        metadata_left = metadata_left.assign_coords(band_im=["b0", "b1", "b2"])
+        metadata_right = metadata_right.assign_coords(band_im=["b0", "b1", "b2"])
+
         user_cfg_pipeline = get_config_pipeline(user_cfg)
         saved_schema = copy.deepcopy(
             pandora.matching_cost.matching_cost.AbstractMatchingCost.schema
         )
+        print(user_cfg_pipeline)
         cfg_pipeline = check_pipeline_section(
             user_cfg_pipeline, metadata_left, metadata_right, pandora_machine
         )

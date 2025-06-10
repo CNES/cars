@@ -283,7 +283,7 @@ class CensusMccnnSgm(
         fake_dataset = xr.Dataset(
             data_vars={},
             coords={
-                "band_im": [None],
+                "band_im": ["b0"],
                 "row": np.arange(10),
                 "col": np.arange(10),
             },

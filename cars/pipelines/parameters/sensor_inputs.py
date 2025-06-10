@@ -37,6 +37,7 @@ from cars.pipelines.parameters import (
     depth_map_inputs_constants as depth_map_cst,
 )
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
+from cars.pipelines.parameters.sensor_loaders.basic_sensor_loader import BasicSensorLoader
 
 CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)
 
@@ -88,12 +89,10 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
     """
     # Validate each sensor image
     sensor_schema = {
-        sens_cst.INPUT_IMG: str,
-        sens_cst.INPUT_COLOR: str,
-        sens_cst.INPUT_NODATA: int,
+        sens_cst.INPUT_IMG: dict,
         sens_cst.INPUT_GEO_MODEL: Or(str, dict),
         sens_cst.INPUT_MSK: Or(str, None),
-        sens_cst.INPUT_CLASSIFICATION: Or(str, None),
+        sens_cst.INPUT_CLASSIFICATION: Or(dict, None),
     }
 
     checker_sensor = Checker(sensor_schema)
@@ -107,33 +106,22 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
                 sens_cst.INPUT_IMG: conf[sens_cst.SENSORS][sensor_image_key]
             }
 
-        # Overload optional parameters
+        # Overload parameters
+        image = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
+            sens_cst.INPUT_IMG, None
+        )
+        image = BasicSensorLoader(image, "image")
+        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+            sens_cst.INPUT_IMG
+        ] = image.get_pivot_format()
+
         geomodel = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             "geomodel",
-            overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-                sens_cst.INPUT_IMG
-            ],
+            image.get_main_file_path(),
         )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             "geomodel"
         ] = geomodel
-
-        color = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
-            "color",
-            overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-                sens_cst.INPUT_IMG
-            ],
-        )
-        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-            sens_cst.INPUT_COLOR
-        ] = color
-
-        no_data = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
-            sens_cst.INPUT_NODATA, 0
-        )
-        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-            sens_cst.INPUT_NODATA
-        ] = no_data
 
         mask = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_MSK, None
@@ -141,12 +129,15 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_MSK
         ] = mask
+
         classif = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_CLASSIFICATION, None
         )
+        classif = BasicSensorLoader(classif, "classification")
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_CLASSIFICATION
-        ] = classif
+        ] = classif.get_pivot_format()
+
         # Validate
         checker_sensor.validate(
             overloaded_conf[sens_cst.SENSORS][sensor_image_key]
@@ -162,18 +153,12 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
         check_input_size(
             sensor_image[sens_cst.INPUT_IMG],
             sensor_image[sens_cst.INPUT_MSK],
-            sensor_image[sens_cst.INPUT_COLOR],
             sensor_image[sens_cst.INPUT_CLASSIFICATION],
         )
         # check band nbits of msk and classification
         check_nbits(
             sensor_image[sens_cst.INPUT_MSK],
             sensor_image[sens_cst.INPUT_CLASSIFICATION],
-        )
-        # check image and color data consistency
-        check_input_data(
-            sensor_image[sens_cst.INPUT_IMG],
-            sensor_image[sens_cst.INPUT_COLOR],
         )
 
     # Validate pairs
@@ -394,11 +379,8 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
     for sensor_image_key in overloaded_conf[sens_cst.SENSORS]:
         sensor_image = overloaded_conf[sens_cst.SENSORS][sensor_image_key]
         for tag in [
-            sens_cst.INPUT_IMG,
             sens_cst.INPUT_MSK,
             sens_cst.INPUT_GEO_MODEL,
-            sens_cst.INPUT_COLOR,
-            sens_cst.INPUT_CLASSIFICATION,
         ]:
             if isinstance(sensor_image[tag], dict):
                 sensor_image[tag]["path"] = make_relative_path_absolute(
@@ -408,6 +390,15 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
                 sensor_image[tag] = make_relative_path_absolute(
                     sensor_image[tag], config_json_dir
                 )
+        for tag in [
+            sens_cst.INPUT_IMG,
+            sens_cst.INPUT_CLASSIFICATION,
+        ]:
+            if sensor_image[tag] is not None:
+                for band in sensor_image[tag]["bands"]:
+                    sensor_image[tag]["bands"][band]["path"] = make_relative_path_absolute(
+                        sensor_image[tag]["bands"][band]["path"], config_json_dir
+                    )
 
     if overloaded_conf[sens_cst.ROI] is not None:
         if isinstance(overloaded_conf[sens_cst.ROI], str):
@@ -517,7 +508,7 @@ def get_initial_elevation(config):
     return updated_config
 
 
-def check_input_size(image, mask, color, classif):
+def check_input_size(image, mask, classif):
     """
     Check image, mask, classif and color given
 
@@ -532,8 +523,13 @@ def check_input_size(image, mask, color, classif):
     :param classif: classif path
     :type classif: str
     """
-    if inputs.rasterio_get_nb_bands(image) != 1:
-        raise RuntimeError("{} is not mono-band images".format(image))
+    first_band_size = inputs.rasterio_get_size(image["bands"]["b0"]["path"])
+    for band in image["bands"]:
+        if first_band_size != inputs.rasterio_get_size(image["bands"][band]["path"]):
+            raise RuntimeError(
+                "The image bands {} and {} "
+                "do not have the same size".format("b0", band)
+            )
 
     if mask is not None:
         if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(mask):
@@ -542,19 +538,14 @@ def check_input_size(image, mask, color, classif):
                 "do not have the same size".format(image, mask)
             )
 
-    if color is not None:
-        if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(color):
-            raise RuntimeError(
-                "The image {} and the color {} "
-                "do not have the same size".format(image, color)
-            )
-
     if classif is not None:
-        if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(classif):
-            raise RuntimeError(
-                "The image {} and the classif {} "
-                "do not have the same size".format(image, classif)
-            )
+        first_band_size = inputs.rasterio_get_size(classif["bands"]["b0"]["path"])
+        for band in image["bands"]:
+            if first_band_size != inputs.rasterio_get_size(classif["bands"][band]["path"]):
+                raise RuntimeError(
+                    "The classification bands {} and {} "
+                    "do not have the same size".format("b0", band)
+                )
 
 
 def check_nbits(mask, classif):
@@ -600,14 +591,16 @@ def compare_image_type(imgs, image_type, key1, key2):
     :param key1: other key of the images pair
     :type key1: str
     """
-    dtype1 = inputs.rasterio_get_image_type(imgs[key1][image_type])
-    dtype2 = inputs.rasterio_get_image_type(imgs[key2][image_type])
-    if dtype1 != dtype2:
-        raise RuntimeError(
-            "The pair images haven't the same data type."
-            + "\nSensor[{}]: {}".format(key1, dtype1)
-            + "; Sensor[{}]: {}".format(key2, dtype2)
-        )
+    for band in imgs[key1][image_type]["bands"]:
+        if band in imgs[key2][image_type]["bands"]:
+            dtype1 = inputs.rasterio_get_image_type(imgs[key1][image_type]["bands"][band]["path"])
+            dtype2 = inputs.rasterio_get_image_type(imgs[key2][image_type]["bands"][band]["path"])
+            if dtype1 != dtype2:
+                raise RuntimeError(
+                    "The pair images haven't the same data type."
+                    + "\nSensor {}, band {}: {}".format(key1, band, dtype1)
+                    + "\nSensor {}, band {}: {}".format(key2, band, dtype2)
+                )
 
 
 def check_all_nbits_equal_one(nbits):
