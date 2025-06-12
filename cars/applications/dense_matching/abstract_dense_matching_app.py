@@ -183,6 +183,9 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :rtype: CarsDataset
         """
 
+    def get_required_bands(self):
+        return self.required_bands
+
     @abstractmethod
     def run(
         self,

@@ -267,6 +267,7 @@ def compute_matches(
 def dataset_matching(
     ds1,
     ds2,
+    used_band,
     matching_threshold=0.7,
     n_octave=8,
     n_scale_per_octave=3,
@@ -309,8 +310,8 @@ def dataset_matching(
     origin1 = [float(ds1.attrs["region"][0]), float(ds1.attrs["region"][1])]
     origin2 = [float(ds2.attrs["region"][0]), float(ds2.attrs["region"][1])]
 
-    left = ds1.im.values
-    right = ds2.im.values
+    left = ds1.im.loc[used_band].values
+    right = ds2.im.loc[used_band].values
     left_mask = ds1.msk.values == 0
     right_mask = ds2.msk.values == 0
 
@@ -353,22 +354,24 @@ def downsample(tab, resolution, dim_max):
     """
     # Zoom is using round, that lead to some bugs,
     # so we had to redefine the resolution
-    coords_row = np.floor(resolution * tab["im"].shape[0])
-    coords_col = np.floor(resolution * tab["im"].shape[1])
+    coords_row = np.floor(resolution * tab["im"].shape[1])
+    coords_col = np.floor(resolution * tab["im"].shape[2])
     upscaled_factor = (
-        coords_row / tab.im.shape[0],
-        coords_col / tab.im.shape[1],
+        coords_row / tab.im.shape[1],
+        coords_col / tab.im.shape[2],
     )
 
     # downsample
-    upsampled_raster = zoom(tab[cst.EPI_IMAGE], upscaled_factor, order=1)
+    upsampled_raster = zoom(tab.im.loc["b0"], upscaled_factor, order=1)
+    upsampled_raster = np.expand_dims(upsampled_raster, axis=0)
 
     # Construct the new dataset
     upsampled_dataset = xr.Dataset(
-        {cst.EPI_IMAGE: ([cst.ROW, cst.COL], upsampled_raster)},
+        {cst.EPI_IMAGE: ([cst.BAND_IM, cst.ROW, cst.COL], upsampled_raster)},
         coords={
-            cst.ROW: np.arange(0, upsampled_raster.shape[0]),
-            cst.COL: np.arange(0, upsampled_raster.shape[1]),
+            cst.BAND_IM: ["b0"],
+            cst.ROW: np.arange(0, upsampled_raster.shape[1]),
+            cst.COL: np.arange(0, upsampled_raster.shape[2]),
         },
         attrs=tab.attrs,
     )
@@ -381,12 +384,12 @@ def downsample(tab, resolution, dim_max):
     )
 
     if cst.EPI_MSK in tab:
+        upscaled_factor = (
+            coords_row / tab.im.shape[1],
+            coords_col / tab.im.shape[2],
+        )
         upsampled_msk = zoom(tab[cst.EPI_MSK], upscaled_factor, order=0)
         upsampled_dataset["msk"] = (["row", "col"], upsampled_msk)
-
-    if cst.EPI_COLOR in tab:
-        upsampled_color = zoom(tab[cst.EPI_MSK], upscaled_factor, order=0)
-        upsampled_dataset["color"] = (["row", "col"], upsampled_color)
 
     # Change useful attributes
     transform = tab.transform * tab.transform.scale(
@@ -407,7 +410,7 @@ def downsample(tab, resolution, dim_max):
     roi_with_margins[1] = np.floor(tab.roi_with_margins[1] * resolution)
     roi_with_margins[2] = np.floor(tab.roi_with_margins[2] * resolution)
     # Add the image's row size to prevent rounding issues
-    roi_with_margins[3] = roi_with_margins[1] + upsampled_raster.shape[0]
+    roi_with_margins[3] = roi_with_margins[1] + upsampled_raster.shape[1]
     upsampled_dataset.attrs["roi_with_margins"] = roi_with_margins.astype(int)
 
     # margins

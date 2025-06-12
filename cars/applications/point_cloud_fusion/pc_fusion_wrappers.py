@@ -157,14 +157,14 @@ def create_point_cloud_index(cloud_sample):
         cloud_indexes_with_types[cst.POINT_CLOUD_MSK] = "uint8"
 
     # Add color indexes
-    if cst.EPI_COLOR in cloud_sample:
+    if cst.EPI_IMAGE in cloud_sample:
         band_color = list(cloud_sample.coords[cst.BAND_IM].to_numpy())
-        color_type = "float32"
-        if "color_type" in cloud_sample.attrs:
-            color_type = cloud_sample.attrs["color_type"]
+        image_type = "float32"
+        if "image_type" in cloud_sample.attrs:
+            image_type = cloud_sample.attrs["image_type"]
         for band in band_color:
             band_index = "{}_{}".format(cst.POINT_CLOUD_CLR_KEY_ROOT, band)
-            cloud_indexes_with_types[band_index] = color_type
+            cloud_indexes_with_types[band_index] = image_type
 
     # Add classif indexes
     if cst.EPI_CLASSIFICATION in cloud_sample:

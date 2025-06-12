@@ -124,6 +124,7 @@ class CensusMccnnSgm(
         ]
         self.use_cross_validation = self.used_config["use_cross_validation"]
         self.denoise_disparity_map = self.used_config["denoise_disparity_map"]
+        self.required_bands = self.used_config["required_bands"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -220,6 +221,9 @@ class CensusMccnnSgm(
         )
         overloaded_conf["disp_range_propagation_filter_size"] = conf.get(
             "disp_range_propagation_filter_size", 300
+        )
+        overloaded_conf["required_bands"] = conf.get(
+            "required_bands", ["b0"]
         )
 
         # Saving files
@@ -334,6 +338,7 @@ class CensusMccnnSgm(
             "disp_range_propagation_filter_size": And(
                 Or(int, float), lambda x: x >= 0
             ),
+            "required_bands": [str],
             "loader_conf": Or(dict, collections.OrderedDict, str, None),
             "loader": str,
         }
@@ -891,7 +896,7 @@ class CensusMccnnSgm(
                     ind_rows_sensor,
                     _,
                 ) = geom_plugin_with_dem_and_geoid.inverse_loc(
-                    sensor_image_right["image"],
+                    sensor_image_right["image"]["main_file_path"],
                     sensor_image_right["geomodel"],
                     lat_mean,
                     lon_mean,
@@ -986,7 +991,9 @@ class CensusMccnnSgm(
             # compute reverse matrix
             transform_sensor = rasterio.Affine(
                 *np.abs(
-                    inputs.rasterio_get_transform(sensor_image_right["image"])
+                    inputs.rasterio_get_transform(
+                        sensor_image_right["image"]["main_file_path"]
+                    )
                 )
             )
 

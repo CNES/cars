@@ -50,22 +50,19 @@ def epipolar_rectify_images(
     epipolar_size_x,
     epipolar_size_y,
     interpolator_image="bicubic",
-    interpolator_color="bicubic",
     interpolator_classif="nearest",
     interpolator_mask="nearest",
     step=None,
-    color1=None,
     mask1=None,
     mask2=None,
     classif1=None,
     classif2=None,
     nodata1=0,
     nodata2=0,
-    add_color=True,
     add_classif=True,
 ):
     """
-    Resample left and right images, with color on left
+    Resample left and right images
     """
 
     # Force region to be float
@@ -114,10 +111,12 @@ def epipolar_rectify_images(
         img1,
         grid1,
         [epipolar_size_x, epipolar_size_y],
+        bands=[1, 2, 3],
         step=step,
         region=left_region,
         nodata=nodata1,
         mask=mask1,
+        band_coords=cst.BAND_IM,
         interpolator_img=interpolator_image,
         interpolator_mask=interpolator_mask,
         img_transform=left_img_transform,
@@ -140,10 +139,12 @@ def epipolar_rectify_images(
         img2,
         grid2,
         [epipolar_size_x, epipolar_size_y],
+        bands=[1, 2, 3],
         step=step,
         region=right_region,
         nodata=nodata2,
         mask=mask2,
+        band_coords=cst.BAND_IM,
         interpolator_img=interpolator_image,
         interpolator_mask=interpolator_mask,
         img_transform=right_img_transform,
@@ -159,33 +160,6 @@ def epipolar_rectify_images(
         right_dataset.attrs[cst.EPI_DISP_MIN] = margins.attrs["disp_min"]
     if "disp_max" in margins.attrs:
         right_dataset.attrs[cst.EPI_DISP_MAX] = margins.attrs["disp_max"]
-
-    left_color_dataset = None
-    if add_color:
-        # Build rectification pipeline for color image, and build datasets
-        if color1 is None:
-            color1 = img1
-
-        if inputs.rasterio_get_size(color1) == inputs.rasterio_get_size(img1):
-            left_color_dataset = resample_image(
-                color1,
-                grid1,
-                [epipolar_size_x, epipolar_size_y],
-                region=left_region,
-                band_coords=cst.BAND_IM,
-                interpolator_img=interpolator_color,
-                interpolator_mask=interpolator_mask,
-                img_transform=left_img_transform,
-            )
-        else:
-            raise RuntimeError(
-                "The image and the color "
-                "haven't the same sizes "
-                "{} != {}".format(
-                    inputs.rasterio_get_size(color1),
-                    inputs.rasterio_get_size(img1),
-                )
-            )
 
     # resample the mask images
     left_classif_dataset = None
@@ -218,7 +192,6 @@ def epipolar_rectify_images(
     return (
         left_dataset,
         right_dataset,
-        left_color_dataset,
         left_classif_dataset,
         right_classif_dataset,
     )
@@ -228,6 +201,7 @@ def resample_image(
     img,
     grid,
     largest_size,
+    bands=[1],
     step=None,
     region=None,
     nodata=None,
@@ -289,8 +263,8 @@ def resample_image(
     ymin = region[1]
     ymax = region[3]
     # Initialize outputs of the entire tile
-    nb_bands = inputs.rasterio_get_nb_bands(img)
-    resamp = np.empty((nb_bands, region[3] - region[1], 0), dtype=np.float32)
+    resamp = np.empty((len(bands), region[3] - region[1], 0), dtype=np.float32)
+    nodata = 0
     if nodata is not None or mask is not None:
         msk = np.empty((1, region[3] - region[1], 0), dtype=np.float32)
     else:
@@ -378,7 +352,7 @@ def resample_image(
 
             if in_sensor:
                 # Get sensor data
-                img_as_array = img_reader.read(window=img_window)
+                img_as_array = img_reader.read(bands, window=img_window)
 
                 # shift grid regarding the img extraction
                 grid_as_array[0, ...] -= x_offset
@@ -416,25 +390,26 @@ def resample_image(
             else:
                 block_resamp = np.zeros(
                     (
-                        img_reader.count,
+                        len(bands),
                         block_region[3] - block_region[1],
                         block_region[2] - block_region[0],
                     )
                 )
-
             resamp = np.concatenate((resamp, block_resamp), axis=2)
 
             # create msk
             if nodata is not None or mask is not None:
                 if in_sensor:
                     # get mask in source geometry
-                    nodata_index = img_as_array == nodata
+                    nodata_index = np.expand_dims(
+                        np.all(img_as_array == nodata, axis=0), axis=0
+                    )
 
                     if mask is not None:
                         with rio.open(mask) as msk_reader:
                             msk_as_array = msk_reader.read(window=img_window)
                     else:
-                        msk_as_array = np.zeros(img_as_array.shape)
+                        msk_as_array = np.zeros((1, *img_as_array.shape[1:]))
 
                     nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
                     msk_as_array[nodata_index] = nodata_msk
@@ -472,6 +447,7 @@ def resample_image(
                     )
 
                 msk = np.concatenate((msk, block_msk), axis=2)
+
     dataset = datasets.create_im_dataset(
         resamp, region, largest_size, img, band_coords, msk
     )

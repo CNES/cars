@@ -187,8 +187,8 @@ def compute_terrain_bbox(  # noqa: 751
         inter_xmax,
         inter_ymax,
     ) = projection.ground_intersection_envelopes(
-        sensor1,
-        sensor2,
+        sensor1["main_file_path"],
+        sensor2["main_file_path"],
         geomodel1,
         geomodel2,
         geometry_plugin,

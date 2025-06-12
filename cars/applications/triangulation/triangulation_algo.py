@@ -333,14 +333,12 @@ def compute_point_cloud(
     point_cloud = xr.Dataset(values, coords={cst.ROW: row, cst.COL: col})
 
     # add color and data type of image
-    color_type = None
-    if cst.EPI_COLOR in data:
-        triang_wrap.add_layer(data, cst.EPI_COLOR, cst.BAND_IM, point_cloud)
-        color_type = data[cst.EPI_COLOR].attrs["color_type"]
-    elif cst.EPI_IMAGE in data:
-        color_type = data[cst.EPI_IMAGE].attrs["color_type"]
-    if color_type:
-        point_cloud.attrs["color_type"] = color_type
+    image_type = None
+    if cst.EPI_IMAGE in data:
+        triang_wrap.add_layer(data, cst.EPI_IMAGE, cst.BAND_IM, point_cloud)
+        image_type = data[cst.EPI_IMAGE].attrs["image_type"]
+    if image_type:
+        point_cloud.attrs["image_type"] = image_type
 
     # add classif
     if cst.EPI_CLASSIFICATION in data:

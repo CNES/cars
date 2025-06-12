@@ -861,7 +861,9 @@ class DefaultPipeline(PipelineTemplate):
             application_conf["dem_generation"]["method"]
             == "bulldozer_on_raster"
         ):
-            first_image_path = next(iter(inputs_conf["sensors"].values()))["image"]["main_file_path"]
+            first_image_path = next(iter(inputs_conf["sensors"].values()))[
+                "image"
+            ]["main_file_path"]
             first_image_size = rasterio_get_size(first_image_path)
             first_image_nb_pixels = math.prod(first_image_size)
             dem_gen_used_mem = first_image_nb_pixels / 1e8
@@ -1115,7 +1117,6 @@ class DefaultPipeline(PipelineTemplate):
                     margins_fun=self.sparse_mtch_sift_app.get_margins_fun(),
                     tile_width=None,
                     tile_height=None,
-                    add_color=False,
                     add_classif=add_classif,
                 )
 
@@ -1255,7 +1256,6 @@ class DefaultPipeline(PipelineTemplate):
                     ),
                     tile_width=None,
                     tile_height=None,
-                    add_color=False,
                     add_classif=add_classif,
                 )
 
@@ -1855,7 +1855,6 @@ class DefaultPipeline(PipelineTemplate):
                 margins_fun=dense_matching_margins_fun,
                 tile_width=optimum_tile_size,
                 tile_height=optimum_tile_size,
-                add_color=True,
                 add_classif=True,
                 epipolar_roi=epipolar_roi,
             )

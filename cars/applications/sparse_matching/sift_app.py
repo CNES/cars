@@ -108,6 +108,7 @@ class Sift(SparseMatching, short_name=["sift"]):
             "match_filter_dev_factor"
         ]
         self.decimation_factor = self.used_config["decimation_factor"]
+        self.used_band = self.used_config["used_band"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -193,6 +194,10 @@ class Sift(SparseMatching, short_name=["sift"]):
             "match_filter_dev_factor", 3.0
         )
 
+        overloaded_conf["used_band"] = conf.get(
+            "used_band", "b0"
+        )
+
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
@@ -221,6 +226,7 @@ class Sift(SparseMatching, short_name=["sift"]):
             "match_filter_constant": Or(int, float),
             "match_filter_mean_factor": Or(int, float),
             "match_filter_dev_factor": Or(int, float),
+            "used_band": str,
             "save_intermediate_data": bool,
         }
 
@@ -558,6 +564,7 @@ class Sift(SparseMatching, short_name=["sift"]):
                     )(
                         epipolar_image_left[row, 0],
                         epipolar_image_right[row, 0],
+                        used_band=self.used_band,
                         matching_threshold=self.sift_matching_threshold,
                         n_octave=self.sift_n_octave,
                         n_scale_per_octave=self.sift_n_scale_per_octave,
@@ -583,6 +590,7 @@ class Sift(SparseMatching, short_name=["sift"]):
 def compute_matches_wrapper(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
+    used_band="b0",
     matching_threshold=None,
     n_octave=None,
     n_scale_per_octave=None,
@@ -632,6 +640,7 @@ def compute_matches_wrapper(
     matches = sparse_matching_algo.dataset_matching(
         left_image_object,
         right_image_object,
+        used_band,
         matching_threshold=matching_threshold,
         n_octave=n_octave,
         n_scale_per_octave=n_scale_per_octave,

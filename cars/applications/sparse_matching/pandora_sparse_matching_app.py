@@ -109,6 +109,7 @@ class PandoraSparseMatching(
         self.disparity_bounds_estimation = self.used_config[
             "disparity_bounds_estimation"
         ]
+        self.used_band = self.used_config["used_band"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -192,6 +193,10 @@ class PandoraSparseMatching(
             "match_filter_dev_factor", 3.0
         )
 
+        overloaded_conf["used_band"] = conf.get(
+            "used_band", "b0"
+        )
+
         # check loader
         loader_conf = conf.get("loader_conf", None)
 
@@ -234,6 +239,7 @@ class PandoraSparseMatching(
             "save_intermediate_data": bool,
             "confidence_filtering": dict,
             "disparity_bounds_estimation": dict,
+            "used_band": str,
         }
 
         # Check conf

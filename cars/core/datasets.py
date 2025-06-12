@@ -81,7 +81,7 @@ def create_im_dataset(
             if descriptions is None or None in descriptions:
                 if nb_bands > 4:
                     raise RuntimeError("Not implemented case")
-                default_band = ["R", "G", "B", "N"]
+                default_band = ["b0", "b1", "b2", "b3"]
                 descriptions = default_band[:nb_bands]
 
         dataset = xr.Dataset(

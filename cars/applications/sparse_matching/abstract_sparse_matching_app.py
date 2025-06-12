@@ -475,6 +475,9 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :rtype: bool
         """
 
+    def get_required_bands(self):
+        return self.required_bands
+
     @abstractmethod
     def run(self, epipolar_image_left, epipolar_image_right, **kwargs):
         """

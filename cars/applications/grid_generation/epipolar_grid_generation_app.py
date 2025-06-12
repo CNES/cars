@@ -169,8 +169,8 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         else:
             self.orchestrator = orchestrator
 
-        sensor1 = image_left[sens_cst.INPUT_IMG]
-        sensor2 = image_right[sens_cst.INPUT_IMG]
+        sensor1 = image_left[sens_cst.INPUT_IMG]["main_file_path"]
+        sensor2 = image_right[sens_cst.INPUT_IMG]["main_file_path"]
         geomodel1 = image_left[sens_cst.INPUT_GEO_MODEL]
         geomodel2 = image_right[sens_cst.INPUT_GEO_MODEL]
 

@@ -193,15 +193,9 @@ class LineOfSightIntersection(
             safe_makedirs(dump_dir)
 
         # Propagate color type in output file
-        color_type = None
-        if sens_cst.INPUT_COLOR in sensor_image_left:
-            color_type = inputs.rasterio_get_image_type(
-                sensor_image_left[sens_cst.INPUT_COLOR]
-            )
-        else:
-            color_type = inputs.rasterio_get_image_type(
-                sensor_image_left[sens_cst.INPUT_IMG]
-            )
+        color_type = inputs.rasterio_get_image_type(
+            sensor_image_left[sens_cst.INPUT_IMG]["main_file_path"]
+        )
 
         if output_dir is None:
             output_dir = dump_dir
@@ -739,7 +733,7 @@ class LineOfSightIntersection(
                 ],
                 "source_pc_names": source_pc_names,
                 "source_pc_name": pair_key,
-                "color_type": epipolar_image.attributes["color_type"],
+                "color_type": epipolar_image.attributes["image_type"],
                 "opt_epipolar_tile_size": epipolar_image.attributes[
                     "tile_width"
                 ],

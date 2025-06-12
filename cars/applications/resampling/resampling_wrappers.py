@@ -53,13 +53,15 @@ def get_sensors_bounds(sensor_image_left, sensor_image_right):
 
     left_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_left[sens_cst.INPUT_IMG], apply_resolution_sign=True
+            sensor_image_left[sens_cst.INPUT_IMG]["main_file_path"],
+            apply_resolution_sign=True,
         )
     )
 
     right_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_right[sens_cst.INPUT_IMG], apply_resolution_sign=True
+            sensor_image_right[sens_cst.INPUT_IMG]["main_file_path"],
+            apply_resolution_sign=True,
         )
     )
 
