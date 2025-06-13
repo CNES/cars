@@ -605,6 +605,22 @@ class Orchestrator:
         # reset registries
         self.reset_registries()
 
+    def cleanup(self):
+        """
+        Cleanup orchestrator
+
+        """
+
+        # close cluster
+        logging.info("Close cluster ...")
+        if self.launch_worker:
+            self.cluster.cleanup()
+
+        # # clean tmp dir
+        for tmp_dir in self.tmp_dir_list:
+            if tmp_dir is not None and os.path.exists(tmp_dir):
+                shutil.rmtree(tmp_dir)
+
     def __enter__(self):
         """
         Function run on enter
@@ -630,15 +646,8 @@ class Orchestrator:
 
         # TODO : check_json
 
-        # close cluster
-        logging.info("Close cluster ...")
-        if self.launch_worker:
-            self.cluster.cleanup()
-
-        # # clean tmp dir
-        for tmp_dir in self.tmp_dir_list:
-            if tmp_dir is not None and os.path.exists(tmp_dir):
-                shutil.rmtree(tmp_dir)
+        # cleanup
+        self.cleanup()
 
 
 def merge_dicts(dict1, dict2):

@@ -448,6 +448,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # Save
         self.orchestrator.breakpoint()
+        # cleanup
+        self.orchestrator.cleanup()
 
         # after saving, fit initial elevation if required
         if initial_elevation is not None and self.coregistration:
