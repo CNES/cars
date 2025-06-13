@@ -1141,6 +1141,8 @@ class CensusMccnnSgm(
             logging.error("grid min > grid max in {}".format(pair_folder))
             raise RuntimeError("grid min > grid max in {}".format(pair_folder))
 
+        # cleanup
+        grid_orchestrator.cleanup()
         return grid_disp_range
 
     def run(

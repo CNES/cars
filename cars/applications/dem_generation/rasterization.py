@@ -453,6 +453,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
 
         # Save
         self.orchestrator.breakpoint()
+        # cleanup
+        self.orchestrator.cleanup()
 
         if self.save_intermediate_data:
             intermediate_dem_min_path = os.path.join(
