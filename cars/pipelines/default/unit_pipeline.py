@@ -44,8 +44,8 @@ from cars import __version__
 # CARS imports
 from cars.applications import application_constants
 from cars.applications.application import Application
-from cars.applications.dem_generation.dem_generation_wrappers import (
-    modify_terrain_bounds,
+from cars.applications.dem_generation import (
+    dem_generation_wrappers as dem_wrappers,
 )
 from cars.applications.grid_generation import grid_correction_app
 from cars.applications.grid_generation.transform_grid import transform_grid_func
@@ -210,10 +210,10 @@ class UnitPipeline(PipelineTemplate):
                     "the epipolar resolution has to "
                     "be a single value"
                 )
-            else:
-                self.res_resamp = self.used_conf[ADVANCED][
-                    adv_cst.EPIPOLAR_RESOLUTIONS
-                ][0]
+
+            self.res_resamp = self.used_conf[ADVANCED][
+                adv_cst.EPIPOLAR_RESOLUTIONS
+            ][0]
         else:
             self.res_resamp = self.used_conf[ADVANCED][
                 adv_cst.EPIPOLAR_RESOLUTIONS
@@ -2198,7 +2198,7 @@ class UnitPipeline(PipelineTemplate):
 
                 if self.which_resolution not in ("final", "single"):
                     # To get the correct size for the dem generation
-                    self.terrain_bounds = modify_terrain_bounds(
+                    self.terrain_bounds = dem_wrappers.modify_terrain_bounds(
                         self.dem_generation_roi,
                         self.epsg,
                         self.dem_generation_application.margin,
@@ -2924,8 +2924,8 @@ class UnitPipeline(PipelineTemplate):
                 files_to_clean = glob.glob(
                     os.path.join(self.dump_dir, "out_res*")
                 )
-                for f in files_to_clean:
-                    self.cars_orchestrator.add_to_clean(f)
+                for file in files_to_clean:
+                    self.cars_orchestrator.add_to_clean(file)
 
                 if (
                     not any(
