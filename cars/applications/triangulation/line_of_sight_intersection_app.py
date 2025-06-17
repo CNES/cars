@@ -194,7 +194,7 @@ class LineOfSightIntersection(
 
         # Propagate color type in output file
         color_type = inputs.rasterio_get_image_type(
-            sensor_image_left[sens_cst.INPUT_IMG]["main_file_path"]
+            sensor_image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE]
         )
 
         if output_dir is None:
@@ -231,7 +231,7 @@ class LineOfSightIntersection(
         if save_output_color or dump_dir:
             color_output_dir = output_dir if save_output_color else dump_dir
             self.orchestrator.add_to_save_lists(
-                os.path.join(color_output_dir, "color.tif"),
+                os.path.join(color_output_dir, "texture.tif"),
                 cst.EPI_COLOR,
                 epipolar_point_cloud,
                 cars_ds_name="depth_map_color",
@@ -399,7 +399,7 @@ class LineOfSightIntersection(
 
         if save_output_color:
             index[cst.INDEX_DEPTH_MAP_COLOR] = os.path.join(
-                pair_key, "color.tif"
+                pair_key, "texture.tif"
             )
 
         if save_output_mask:

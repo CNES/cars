@@ -105,6 +105,7 @@ def compute_disparity(
     compute_disparity_masks=False,
     cropped_range=None,
     margins_to_keep=0,
+    texture_bands=None,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will compute disparity.
@@ -213,6 +214,7 @@ def compute_disparity(
         disp_max_grid=disp_max_grid,
         cropped_range=cropped_range,
         margins_to_keep=margins_to_keep,
+        texture_bands=texture_bands,
     )
 
     return disp_dataset

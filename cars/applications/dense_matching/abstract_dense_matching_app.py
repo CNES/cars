@@ -184,7 +184,10 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     def get_required_bands(self):
-        return self.required_bands
+        required_bands = {}
+        required_bands["left"] = self.required_bands
+        required_bands["right"] = self.required_bands
+        return required_bands
 
     @abstractmethod
     def run(

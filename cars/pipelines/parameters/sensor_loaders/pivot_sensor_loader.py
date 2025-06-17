@@ -19,16 +19,28 @@
 # limitations under the License.
 #
 """
-this module contains the AbstractSensorLoader class.
+this module contains the PivotSensorLoader class.
 """
 
+from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 
-class AbstractSensorLoader:
+@SensorLoader.register("pivot")
+class PivotSensorLoader:
     """
     AbstractSensorLoader
     """
 
-    def transform_config_to_pivot_format(self, sensor_conf):
-        """
-        transforme une conf "image" ou "classification" dans le format pivot
-        """
+    def __init__(self, input_config, input_type):
+        super().__init__(conf=input_config, input_type=input_type)
+
+    def check_conf(conf, input_type):
+        overloaded_conf = conf.copy()
+
+        return overloaded_conf
+
+    @staticmethod
+    def check_sensor_format(input):
+        return input
+
+    def get_pivot_format(self):
+        return self.pivot_format

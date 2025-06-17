@@ -23,12 +23,16 @@ this module contains the AbstractSensorLoader class.
 """
 
 
-class AbstractSensorLoader:
+class SensorLoaderTemplate:
     """
-    AbstractSensorLoader
+    SensorLoaderTemplate
     """
 
-    def transform_config_to_pivot_format(self):
+    def __init__(self, conf, input_type):
         """
-        transforme une conf "image" ou "classification" dans le format pivot
+        Init function of SensorLoaderTemplate
+
+        :param conf: configuration for sensor loader
+
         """
+        self.used_config = self.check_conf(conf, input_type)

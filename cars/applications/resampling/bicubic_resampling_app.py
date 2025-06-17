@@ -223,6 +223,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         tile_height=None,
         add_classif=True,
         epipolar_roi=None,
+        required_bands=None,
     ):
         """
         Run resampling application.
@@ -358,7 +359,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         # add image type in attributes for future checking
         im_type = inputs.rasterio_get_image_type(
-            sensor_image_left[sens_cst.INPUT_IMG]["main_file_path"]
+            sensor_image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE]
         )
 
         # update attributes
@@ -453,11 +454,17 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         }
         self.orchestrator.update_out_info(updating_dict)
 
-        # retrieves some data
+        # retrieve data
         epipolar_size_x = grid_left.attributes["epipolar_size_x"]
         epipolar_size_y = grid_left.attributes["epipolar_size_y"]
-        img1 = sensor_image_left[sens_cst.INPUT_IMG]["main_file_path"]
-        img2 = sensor_image_right[sens_cst.INPUT_IMG]["main_file_path"]
+        left_images = resampling_wrappers.get_paths_and_bands(
+            sensor_image_left[sens_cst.INPUT_IMG],
+            required_bands["left"],
+        )
+        right_images = resampling_wrappers.get_paths_and_bands(
+            sensor_image_right[sens_cst.INPUT_IMG],
+            required_bands["right"],
+        )
         grid1 = grid_left
         grid2 = grid_right
         nodata1 = sensor_image_left[sens_cst.INPUT_IMG].get(
@@ -468,8 +475,12 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         )
         mask1 = sensor_image_left.get(sens_cst.INPUT_MSK, None)
         mask2 = sensor_image_right.get(sens_cst.INPUT_MSK, None)
-        classif1 = sensor_image_left.get(sens_cst.INPUT_CLASSIFICATION, None)
-        classif2 = sensor_image_right.get(sens_cst.INPUT_CLASSIFICATION, None)
+        left_classifs = sensor_image_left.get(sens_cst.INPUT_CLASSIFICATION, None)
+        if left_classifs is not None:
+            left_classifs = resampling_wrappers.get_paths_and_bands(left_classifs)
+        right_classifs = sensor_image_right.get(sens_cst.INPUT_CLASSIFICATION, None)
+        if right_classifs is not None:
+            right_classifs = resampling_wrappers.get_paths_and_bands(right_classifs)
 
         # Set Epipolar roi
         epi_tilling_grid = epipolar_images_left.tiling_grid
@@ -558,8 +569,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         left_window,
                         epipolar_size_x,
                         epipolar_size_y,
-                        img1,
-                        img2,
+                        left_images,
+                        right_images,
                         broadcasted_grid1,
                         broadcasted_grid2,
                         self.interpolator_image,
@@ -571,8 +582,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         add_classif=add_classif,
                         mask1=mask1,
                         mask2=mask2,
-                        classif1=classif1,
-                        classif2=classif2,
+                        left_classifs=left_classifs,
+                        right_classifs=right_classifs,
                         nodata1=nodata1,
                         nodata2=nodata2,
                         saving_info_left=full_saving_info_left,
@@ -593,8 +604,8 @@ def generate_epipolar_images_wrapper(
     window,
     epipolar_size_x,
     epipolar_size_y,
-    img1,
-    img2,
+    left_imgs,
+    right_imgs,
     grid1,
     grid2,
     interpolator_image,
@@ -606,8 +617,8 @@ def generate_epipolar_images_wrapper(
     add_classif=True,
     mask1=None,
     mask2=None,
-    classif1=None,
-    classif2=None,
+    left_classifs=None,
+    right_classifs=None,
     nodata1=0,
     nodata2=0,
     saving_info_left=None,
@@ -653,8 +664,8 @@ def generate_epipolar_images_wrapper(
         left_classif_dataset,
         right_classif_dataset,
     ) = resampling_algo.epipolar_rectify_images(
-        img1,
-        img2,
+        left_imgs,
+        right_imgs,
         grid1,
         grid2,
         region,
@@ -667,14 +678,14 @@ def generate_epipolar_images_wrapper(
         step=step,
         mask1=mask1,
         mask2=mask2,
-        classif1=classif1,
-        classif2=classif2,
+        left_classifs=left_classifs,
+        right_classifs=right_classifs,
         nodata1=nodata1,
         nodata2=nodata2,
         add_classif=add_classif,
     )
 
-    image_type = inputs.rasterio_get_image_type(img1)
+    image_type = inputs.rasterio_get_image_type(next(iter(left_imgs)))
     left_dataset[cst.EPI_IMAGE].attrs["image_type"] = image_type
 
     # Add classification layers to dataset

@@ -42,6 +42,7 @@ def create_im_dataset(
     largest_size: List[int],
     img_path: str = None,
     band_coords: str = None,
+    bands: list = None,
     msk: np.ndarray = None,
 ) -> xr.Dataset:
     """
@@ -56,8 +57,6 @@ def create_im_dataset(
     :param msk: image mask as a numpy array (default None)
     :return: The image dataset as used in cars
     """
-    nb_bands = img.shape[0]
-
     # Get georef and transform
     img_crs = None
     img_transform = None
@@ -74,15 +73,12 @@ def create_im_dataset(
         img_transform = "None"
 
     # Add band dimension if needed
-    if band_coords or nb_bands > 1:
+    if band_coords:
         # Reorder dimensions in color dataset in order that the first dimension
         # is band.
         if band_coords == cst.BAND_IM:
             if descriptions is None or None in descriptions:
-                if nb_bands > 4:
-                    raise RuntimeError("Not implemented case")
-                default_band = ["b0", "b1", "b2", "b3"]
-                descriptions = default_band[:nb_bands]
+                descriptions = ["b" + str(band_id-1) for band_id in bands]
 
         dataset = xr.Dataset(
             {

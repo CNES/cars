@@ -89,6 +89,11 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
             overloaded_conf[adv_cst.PERFORMANCE_MAP_CLASSES]
         )
 
+    default_texture_bands = ["b0"]
+    overloaded_conf[adv_cst.TEXTURE_BANDS] = conf.get(
+        adv_cst.TEXTURE_BANDS, default_texture_bands
+    )
+
     overloaded_conf[adv_cst.GROUND_TRUTH_DSM] = conf.get(
         adv_cst.GROUND_TRUTH_DSM, {}
     )
@@ -167,6 +172,7 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
         adv_cst.PIPELINE: str,
         adv_cst.DSM_MERGING_TILE_SIZE: And(int, lambda x: x > 0),
+        adv_cst.TEXTURE_BANDS: list
     }
     if check_epipolar_a_priori:
         schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool

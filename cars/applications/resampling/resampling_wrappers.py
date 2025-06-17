@@ -36,6 +36,17 @@ from cars.core import constants as cst
 from cars.core import inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
+def get_paths_and_bands(sensor_image, required_bands):
+    paths = {}
+    for band in required_bands:
+        file_path = sensor_image["bands"][band]["path"]
+        band_id = sensor_image["bands"][band]["band"] + 1
+        if file_path in paths:
+            paths[file_path].append(band_id)
+        else:
+            paths[file_path] = [band_id]
+    return paths
+
 
 def get_sensors_bounds(sensor_image_left, sensor_image_right):
     """
@@ -53,14 +64,14 @@ def get_sensors_bounds(sensor_image_left, sensor_image_right):
 
     left_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_left[sens_cst.INPUT_IMG]["main_file_path"],
+            sensor_image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE],
             apply_resolution_sign=True,
         )
     )
 
     right_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_right[sens_cst.INPUT_IMG]["main_file_path"],
+            sensor_image_right[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE],
             apply_resolution_sign=True,
         )
     )

@@ -452,7 +452,7 @@ def create_combined_dense_cloud(  # noqa: C901
 
         # add additional information to point cloud
         arrays_to_add_to_point_cloud = [
-            (cst.EPI_IMAGE, cst.POINT_CLOUD_CLR_KEY_ROOT),
+            (cst.EPI_COLOR, cst.POINT_CLOUD_CLR_KEY_ROOT),
             (cst.EPI_MSK, cst.POINT_CLOUD_MSK),
             (cst.EPI_CLASSIFICATION, cst.POINT_CLOUD_CLASSIF_KEY_ROOT),
             (cst.EPI_FILLING, cst.POINT_CLOUD_FILLING_KEY_ROOT),
@@ -550,8 +550,6 @@ def create_combined_dense_cloud(  # noqa: C901
 
     pd_cloud = pandas.DataFrame(combined_cloud, columns=cloud_indexes)
     pd_cloud = pd_cloud.astype(cloud_indexes_with_types)
-
-    print(cloud_indexes_with_types)
 
     return pd_cloud, epsg
 

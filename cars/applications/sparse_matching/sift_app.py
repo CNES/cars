@@ -194,9 +194,7 @@ class Sift(SparseMatching, short_name=["sift"]):
             "match_filter_dev_factor", 3.0
         )
 
-        overloaded_conf["used_band"] = conf.get(
-            "used_band", "b0"
-        )
+        overloaded_conf["used_band"] = conf.get("used_band", "b0")
 
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(

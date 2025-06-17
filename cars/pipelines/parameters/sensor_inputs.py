@@ -37,7 +37,7 @@ from cars.pipelines.parameters import (
     depth_map_inputs_constants as depth_map_cst,
 )
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
-from cars.pipelines.parameters.sensor_loaders.basic_sensor_loader import BasicSensorLoader
+from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 
 CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)
 
@@ -110,7 +110,9 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
         image = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_IMG, None
         )
-        image = BasicSensorLoader(image, "image")
+        loader_name = image.get("loader", "basic")
+        loader = SensorLoader(loader_name)
+        image = loader(image, "image")
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_IMG
         ] = image.get_pivot_format()
@@ -133,7 +135,9 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
         classif = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_CLASSIFICATION, None
         )
-        classif = BasicSensorLoader(classif, "classification")
+        loader_name = image.get("loader", "basic")
+        loader = SensorLoader(loader_name)
+        classif = loader(classif, "classification")
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_CLASSIFICATION
         ] = classif.get_pivot_format()

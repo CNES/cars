@@ -23,42 +23,58 @@ this module contains the BasicSensorLoader class.
 """
 
 from cars.core import inputs
-from cars.pipelines.parameters.sensor_loaders.abstract_sensor_loader import (
+from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
     AbstractSensorLoader,
 )
+from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
+from cars.pipelines.parameters.sensor_loaders.pivot_sensor_loader import PivotSensorLoader
 
 
+@SensorLoader.register("basic")
 class BasicSensorLoader(AbstractSensorLoader):
     """
     BasicSensorLoader
     """
 
-    def __init__(self, input, data_type):
-        self.input_path = input
-        self.data_type = data_type
-        self.pivot_config = None
+    def __init__(self, input_config, input_type):
+        super().__init__(conf=input_config, input_type=input_type)
+
+    def check_conf(conf, input_type):
+        if isinstance(conf, str):
+            overloaded_conf = {}
+            overloaded_conf["path"] = conf
+            if input_type == "image":
+                overloaded_conf["nodata"] = 0
+        elif isinstance(conf, dict):
+            overloaded_conf = conf.copy()
+            overloaded_conf["path"] = conf["path"]
+            if input_type == "image":
+                overloaded_conf["nodata"] = conf.get("nodata", 0)
+        else:
+            raise TypeError("TODO")
+
+        return overloaded_conf
 
     def transform_config_to_pivot_format(self):
         """
-        transforme une conf "image" ou "classification" dans le format pivot
+        Transforme une conf "image" ou "classification" dans le format pivot
         """
-        pivot_config = {"main_file_path": self.input_path}
+        pivot_config = {"main_file_path": self.used_config["path"]}
         pivot_config["bands"] = {}
-        for band_id in range(inputs.rasterio_get_nb_bands(self.input_path)):
+        for band_id in range(inputs.rasterio_get_nb_bands(self.used_config["path"])):
             band_name = "b" + str(band_id)
             pivot_config["bands"][band_name] = {
                 "path": self.input_path,
                 "band": band_id,
             }
-        self.pivot_config = pivot_config
+        pivot_sensor_loader = PivotSensorLoader(pivot_config)
+        self.pivot_config = pivot_sensor_loader.get_pivot_format()
 
     def get_pivot_format(self):
-        if self.input_path is None:
-            return None
         if self.pivot_config is None:
             self.transform_config_to_pivot_format()
 
         return self.pivot_config
 
     def get_main_file_path(self):
-        return self.input_path
+        return self.used_config["path"]

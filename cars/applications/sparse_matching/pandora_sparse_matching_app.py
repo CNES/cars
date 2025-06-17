@@ -193,9 +193,7 @@ class PandoraSparseMatching(
             "match_filter_dev_factor", 3.0
         )
 
-        overloaded_conf["used_band"] = conf.get(
-            "used_band", "b0"
-        )
+        overloaded_conf["used_band"] = conf.get("used_band", "b0")
 
         # check loader
         loader_conf = conf.get("loader_conf", None)

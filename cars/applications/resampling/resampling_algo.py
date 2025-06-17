@@ -31,6 +31,7 @@ import numpy as np
 import rasterio as rio
 import resample as cresample
 from rasterio.windows import Window, bounds
+import xarray as xr
 
 from cars.conf import mask_cst as msk_cst
 
@@ -41,8 +42,8 @@ from cars.core.geometry import abstract_geometry
 
 
 def epipolar_rectify_images(
-    img1,
-    img2,
+    left_imgs,
+    right_imgs,
     grid1,
     grid2,
     region,
@@ -55,8 +56,8 @@ def epipolar_rectify_images(
     step=None,
     mask1=None,
     mask2=None,
-    classif1=None,
-    classif2=None,
+    left_classifs=None,
+    right_classifs=None,
     nodata1=0,
     nodata2=0,
     add_classif=True,
@@ -105,22 +106,31 @@ def epipolar_rectify_images(
     right_margins[2] = right_region[2] - right_roi[2]
     right_margins[3] = right_region[3] - right_roi[3]
 
-    # Resample left image
-    left_img_transform = inputs.rasterio_get_transform(img1)
-    left_dataset = resample_image(
-        img1,
-        grid1,
-        [epipolar_size_x, epipolar_size_y],
-        bands=[1, 2, 3],
-        step=step,
-        region=left_region,
-        nodata=nodata1,
-        mask=mask1,
-        band_coords=cst.BAND_IM,
-        interpolator_img=interpolator_image,
-        interpolator_mask=interpolator_mask,
-        img_transform=left_img_transform,
-    )
+    # Resample left images
+    left_img_transform = inputs.rasterio_get_transform(next(iter(left_imgs)))
+
+    # Loop over files and resample each file
+    left_dataset = None
+    for img in left_imgs:
+        bands_to_resample = left_imgs[img]
+        left_dataset_sample = resample_image(
+            img,
+            grid1,
+            [epipolar_size_x, epipolar_size_y],
+            bands=bands_to_resample,
+            step=step,
+            region=left_region,
+            nodata=nodata1,
+            mask=mask1,
+            band_coords=cst.BAND_IM,
+            interpolator_img=interpolator_image,
+            interpolator_mask=interpolator_mask,
+            img_transform=left_img_transform,
+        )
+        if left_dataset is None:
+            left_dataset = left_dataset_sample
+        else:
+            left_dataset = xr.concat([left_dataset, left_dataset_sample], cst.BAND_IM)
 
     # Update attributes
     left_dataset.attrs[cst.ROI] = np.array(left_roi)
@@ -134,21 +144,28 @@ def epipolar_rectify_images(
         left_dataset.attrs[cst.EPI_DISP_MAX] = margins.attrs["disp_max"]
 
     # Resample right image
-    right_img_transform = inputs.rasterio_get_transform(img2)
-    right_dataset = resample_image(
-        img2,
-        grid2,
-        [epipolar_size_x, epipolar_size_y],
-        bands=[1, 2, 3],
-        step=step,
-        region=right_region,
-        nodata=nodata2,
-        mask=mask2,
-        band_coords=cst.BAND_IM,
-        interpolator_img=interpolator_image,
-        interpolator_mask=interpolator_mask,
-        img_transform=right_img_transform,
-    )
+    right_img_transform = inputs.rasterio_get_transform(next(iter(right_imgs)))
+    right_dataset = None
+    for img in right_imgs:
+        bands_to_resample = right_imgs[img]
+        right_dataset_sample = resample_image(
+            img,
+            grid2,
+            [epipolar_size_x, epipolar_size_y],
+            bands=bands_to_resample,
+            step=step,
+            region=right_region,
+            nodata=nodata2,
+            mask=mask2,
+            band_coords=cst.BAND_IM,
+            interpolator_img=interpolator_image,
+            interpolator_mask=interpolator_mask,
+            img_transform=right_img_transform,
+        )
+        if right_dataset is None:
+            right_dataset = right_dataset_sample
+        else:
+            right_dataset = xr.concat([right_dataset, right_dataset_sample], cst.BAND_IM)
 
     # Update attributes
     right_dataset.attrs[cst.ROI] = np.array(right_roi)
@@ -161,33 +178,35 @@ def epipolar_rectify_images(
     if "disp_max" in margins.attrs:
         right_dataset.attrs[cst.EPI_DISP_MAX] = margins.attrs["disp_max"]
 
-    # resample the mask images
+    # Resample classifications
     left_classif_dataset = None
     right_classif_dataset = None
     if add_classif:
-        if classif1:
-            left_classif_dataset = resample_image(
-                classif1,
-                grid1,
-                [epipolar_size_x, epipolar_size_y],
-                region=left_region,
-                band_coords=cst.BAND_CLASSIF,
-                interpolator_img=interpolator_classif,
-                interpolator_mask=interpolator_mask,
-                img_transform=left_img_transform,
-            )
-
-        if classif2:
-            right_classif_dataset = resample_image(
-                classif2,
-                grid2,
-                [epipolar_size_x, epipolar_size_y],
-                region=right_region,
-                band_coords=cst.BAND_CLASSIF,
-                interpolator_img=interpolator_classif,
-                interpolator_mask=interpolator_mask,
-                img_transform=right_img_transform,
-            )
+        if left_classifs:
+            for classif in left_classifs:
+                bands_to_resample = left_imgs[img]
+                left_classif_dataset = resample_image(
+                    classif,
+                    grid1,
+                    [epipolar_size_x, epipolar_size_y],
+                    region=left_region,
+                    band_coords=cst.BAND_CLASSIF,
+                    interpolator_img=interpolator_classif,
+                    interpolator_mask=interpolator_mask,
+                    img_transform=left_img_transform,
+                )
+        if right_classifs:
+            for classif in right_classifs:
+                right_classif_dataset = resample_image(
+                    classif,
+                    grid2,
+                    [epipolar_size_x, epipolar_size_y],
+                    region=right_region,
+                    band_coords=cst.BAND_CLASSIF,
+                    interpolator_img=interpolator_classif,
+                    interpolator_mask=interpolator_mask,
+                    img_transform=right_img_transform,
+                )
 
     return (
         left_dataset,
@@ -449,7 +468,7 @@ def resample_image(
                 msk = np.concatenate((msk, block_msk), axis=2)
 
     dataset = datasets.create_im_dataset(
-        resamp, region, largest_size, img, band_coords, msk
+        resamp, region, largest_size, img, band_coords, bands, msk
     )
 
     return dataset

@@ -171,11 +171,12 @@ def add_disparity_grids(
         )
 
 
-def add_image(
+def add_texture(
     output_dataset: xr.Dataset,
-    image: np.ndarray = None,
-    image_type=None,
+    texture: np.ndarray = None,
+    color_type=None,
     band_im: list = None,
+    texture_bands: list = None,
 ):
     """
     Add image and image mask to dataset
@@ -186,17 +187,16 @@ def add_image(
     :param band_im: list of band names
 
     """
-    if image is not None:
-        if band_im is not None and cst.BAND_IM not in output_dataset.dims:
-            output_dataset.coords[cst.BAND_IM] = band_im
-        output_dataset[cst.EPI_IMAGE] = xr.DataArray(
-            image,
+    if texture_bands:
+        output_dataset.coords[cst.BAND_IM] = band_im[texture_bands]
+        output_dataset[cst.EPI_COLOR] = xr.DataArray(
+            texture[texture_bands],
             dims=[cst.BAND_IM, cst.ROW, cst.COL],
         )
 
-        if image_type is not None:
+        if color_type is not None:
             # Add input image type
-            output_dataset[cst.EPI_IMAGE].attrs["image_type"] = image_type
+            output_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
 
 
 def add_classification(
@@ -288,6 +288,7 @@ def create_disp_dataset(  # noqa: C901
     disp_max_grid=None,
     cropped_range=None,
     margins_to_keep=0,
+    texture_bands=None,
 ) -> xr.Dataset:
     """
     Create the disparity dataset.
@@ -343,7 +344,7 @@ def create_disp_dataset(  # noqa: C901
     # Retrieve disparity values
     disp_map = disp.disparity_map.values
 
-    # Retrive image
+    # Transform image to texture
     epi_image = ref_dataset[cst.EPI_IMAGE].values
     band_im = ref_dataset.coords[cst.BAND_IM]
     image_type = ref_dataset[cst.EPI_IMAGE].attrs.get("image_type", "float32")
@@ -439,12 +440,13 @@ def create_disp_dataset(  # noqa: C901
         coords={cst.ROW: row, cst.COL: col},
     )
 
-    # add left image
-    add_image(
+    # add left texture
+    add_texture(
         disp_ds,
-        image=epi_image,
-        image_type=image_type,
+        texture=epi_image,
+        color_type=image_type,
         band_im=band_im,
+        texture_bands=texture_bands
     )
 
     # add original mask

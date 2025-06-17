@@ -470,7 +470,7 @@ class SimpleGaussian(
             )
         elif save_intermediate_data:
             # File is not part of the official product, write it in dump_dir
-            out_clr_file_name = os.path.join(out_dump_dir, "color.tif")
+            out_clr_file_name = os.path.join(out_dump_dir, "texture.tif")
         if out_clr_file_name is not None:
             list_computed_layers += ["color"]
             if not self.color_dtype:

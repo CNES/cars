@@ -222,9 +222,7 @@ class CensusMccnnSgm(
         overloaded_conf["disp_range_propagation_filter_size"] = conf.get(
             "disp_range_propagation_filter_size", 300
         )
-        overloaded_conf["required_bands"] = conf.get(
-            "required_bands", ["b0"]
-        )
+        overloaded_conf["required_bands"] = conf.get("required_bands", ["b0"])
 
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -1169,6 +1167,7 @@ class CensusMccnnSgm(
         disp_range_grid=None,
         compute_disparity_masks=False,
         margins_to_keep=0,
+        texture_bands=None,
     ):
         """
         Run Matching application.
@@ -1271,7 +1270,7 @@ class CensusMccnnSgm(
                 )
 
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_color.tif"),
+                    os.path.join(pair_folder, "epi_disp_texture.tif"),
                     cst.EPI_COLOR,
                     epipolar_disparity_map,
                     cars_ds_name="epi_disp_color",
@@ -1427,6 +1426,7 @@ class CensusMccnnSgm(
                                 epipolar_disparity_map.overlaps[row, col]
                             ),
                             margins_to_keep=margins_to_keep,
+                            texture_bands=texture_bands,
                         )
 
         else:
@@ -1447,6 +1447,7 @@ def compute_disparity_wrapper(
     crop_with_range=None,
     left_overlaps=None,
     margins_to_keep=0,
+    texture_bands=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1551,6 +1552,7 @@ def compute_disparity_wrapper(
         compute_disparity_masks=compute_disparity_masks,
         cropped_range=mask_crop,
         margins_to_keep=margins_to_keep,
+        texture_bands=texture_bands,
     )
 
     # Fill with attributes
