@@ -25,7 +25,7 @@ contains functions used for grid transformation
 
 import numpy as np
 
-from cars.applications.grid_generation import grids
+from cars.applications.grid_generation import grid_generation_algo
 
 
 def transform_grid_func(grid_left, grid_right, resolution):
@@ -46,13 +46,13 @@ def transform_grid_func(grid_left, grid_right, resolution):
             for i, _ in enumerate(value):
                 value[i] = np.floor(value[i] / resolution)
 
-    grids.write_grid(
+    grid_generation_algo.write_grid(
         grid_left[0, 0],
         grid_left.attributes["path"],
         grid_left.attributes["grid_origin"],
         grid_left.attributes["grid_spacing"],
     )
-    grids.write_grid(
+    grid_generation_algo.write_grid(
         grid_right[0, 0],
         grid_right.attributes["path"],
         grid_left.attributes["grid_origin"],

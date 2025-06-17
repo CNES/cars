@@ -24,9 +24,9 @@ this module contains tools for the dem generation
 import contextlib
 import logging
 import os
-import pyproj
 
 import numpy as np
+import pyproj
 import rasterio as rio
 import xdem
 
@@ -34,8 +34,9 @@ import xdem
 from affine import Affine
 from rasterio.coords import BoundingBox
 from rasterio.enums import Resampling
-from rasterio.warp import reproject, calculate_default_transform
+from rasterio.warp import calculate_default_transform, reproject
 
+from cars.core import preprocessing
 
 
 def fit_initial_elevation_on_dem_median(
@@ -279,6 +280,7 @@ def downsample_dem(input_dem, scale):
     with rio.open(input_dem, "w", **metadata) as dst:
         dst.write(output, 1)
 
+
 def modify_terrain_bounds(dem_roi_to_use, epsg, margin):
     """
     Modify the terrain bounds
@@ -365,4 +367,3 @@ def reproject_dem(dsm_file_name, epsg_out, out_file_name):
                     dst_crs=epsg_out,
                     resampling=Resampling.nearest,
                 )
-
