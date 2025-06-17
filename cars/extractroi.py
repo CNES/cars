@@ -40,7 +40,7 @@ def is_bbx_in_image(bbx, image_dataset):
         image_dataset (rio.DatasetReader): Opened image dataset.
 
     """
-    image_box = box(0, 0, image_dataset.width, image_dataset.height)
+    image_box = box(0, 0, image_dataset.height, image_dataset.width)
 
     return image_box.contains(bbx)
 
@@ -125,7 +125,7 @@ def get_human_readable_bbox(image_dataset):
 
     human_readable_bbx = [
         transformer.xy(0, 0),
-        transformer.xy(image_dataset.width, image_dataset.height),
+        transformer.xy(image_dataset.height, image_dataset.width),
     ]
     # fix coordinates to precision -7 for (x, y)
     image_coords = [
