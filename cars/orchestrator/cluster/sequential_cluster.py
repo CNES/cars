@@ -96,7 +96,7 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
         """
         return object
 
-    def cleanup(self):
+    def cleanup(self, keep_shared_dir=False):
         """
         Cleanup cluster
 

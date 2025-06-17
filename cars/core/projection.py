@@ -327,7 +327,7 @@ def geo_to_aer(
 
 
 def point_cloud_conversion(
-    cloud_in: np.ndarray, epsg_in: int, epsg_out: int
+    cloud_in: np.ndarray, epsg_in: int, epsg_out: int, raster=False
 ) -> np.ndarray:
     """
     Convert a point cloud from a SRS to another one.
@@ -344,8 +344,15 @@ def point_cloud_conversion(
     # Project point cloud between CRS (keep always_xy for compatibility)
     cloud_in = np.array(cloud_in).T
     transformer = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)
-    cloud_in = transformer.transform(*cloud_in)
-    cloud_in = np.array(cloud_in).T
+
+    if not raster:
+        cloud_in = transformer.transform(*cloud_in)
+        cloud_in = np.array(cloud_in).T
+    else:
+        xs, ys, zs = cloud_in[:, 0], cloud_in[:, 1], cloud_in[:, 2]
+        x_new, y_new, z_new = transformer.transform(xs, ys, zs)
+
+        cloud_in = np.stack((x_new, y_new, z_new), axis=1)
 
     return cloud_in
 

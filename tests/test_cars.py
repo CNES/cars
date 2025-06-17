@@ -24,6 +24,7 @@ Test module for cars/cars.py
 
 # Standard imports
 import argparse
+import json
 import tempfile
 
 # Third party imports
@@ -94,12 +95,17 @@ def test_low_res_dsm_args():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         # test default args
         args = argparse.Namespace()
-        filled_absolute_path_input, _ = generate_input_json(
+        filled_absolute_path_input, conf_ = generate_input_json(
             absolute_data_path("input/phr_ventoux/input.json"),
             directory,
             "sequential",
         )
         args.conf = filled_absolute_path_input
+        conf_["advanced"]["epipolar_resolutions"] = 1
+
+        with open(filled_absolute_path_input, "w", encoding="utf8") as fstream:
+            json.dump(conf_, fstream, indent=2)
+
         main_cli(args, dry_run=True)
 
         # degraded cases injson
@@ -124,12 +130,17 @@ def test_full_res_dsm_args():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         # test default args
         args = argparse.Namespace()
-        filled_absolute_path_input, _ = generate_input_json(
+        filled_absolute_path_input, conf_ = generate_input_json(
             absolute_data_path("input/phr_ventoux/input.json"),
             directory,
             "sequential",
         )
         args.conf = filled_absolute_path_input
+        conf_["advanced"]["epipolar_resolutions"] = 1
+
+        with open(filled_absolute_path_input, "w", encoding="utf8") as fstream:
+            json.dump(conf_, fstream, indent=2)
+
         main_cli(args, dry_run=True)
 
         # degraded cases injson

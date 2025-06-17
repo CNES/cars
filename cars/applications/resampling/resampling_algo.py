@@ -385,7 +385,7 @@ def resample_image(
                         radius = min(rows, cols) // (2 * resolution)
 
                         row_mesh, col_mesh = np.ogrid[:rows, :cols]
-                        dist = (row_mesh - ccol) ** 2 + (col_mesh - crow) ** 2
+                        dist = (col_mesh - ccol) ** 2 + (row_mesh - crow) ** 2
                         mask_blur = dist <= radius**2
                         f_filtered = fourier * mask_blur
 

@@ -309,6 +309,8 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
             total_input_roi_epsg = inputs.rasterio_get_epsg_code(
                 conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
             )
+            if not isinstance(total_input_roi_epsg, int):
+                total_input_roi_epsg = total_input_roi_epsg.to_epsg()
             total_input_roi_poly = preprocessing.compute_roi_poly(
                 total_input_roi_poly, total_input_roi_epsg, 4326
             )

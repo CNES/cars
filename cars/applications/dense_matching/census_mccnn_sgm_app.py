@@ -129,6 +129,7 @@ class CensusMccnnSgm(
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
+        self.confidence_filtering = self.used_config["confidence_filtering"]
 
         # init orchestrator
         self.orchestrator = None
@@ -190,6 +191,11 @@ class CensusMccnnSgm(
         )
         overloaded_conf["denoise_disparity_map"] = conf.get(
             "denoise_disparity_map", False
+        )
+
+        # confidence filtering parameters
+        overloaded_conf["confidence_filtering"] = conf.get(
+            "confidence_filtering", {}
         )
 
         # Disparity threshold
@@ -343,11 +349,14 @@ class CensusMccnnSgm(
             "used_band": str,
             "loader_conf": Or(dict, collections.OrderedDict, str, None),
             "loader": str,
+            "confidence_filtering": dict,
         }
 
         # Check conf
         checker = Checker(application_schema)
         checker.validate(overloaded_conf)
+
+        self.check_conf_confidence_filtering(overloaded_conf)
 
         # Check consistency between bounds for optimal tile size search
         min_epi_tile_size = overloaded_conf["min_epi_tile_size"]
@@ -384,6 +393,49 @@ class CensusMccnnSgm(
             )
 
         return overloaded_conf
+
+    def check_conf_confidence_filtering(self, overloaded_conf):
+        """
+        Check the confidence filtering conf
+        """
+        overloaded_conf["confidence_filtering"]["activated"] = overloaded_conf[
+            "confidence_filtering"
+        ].get("activated", True)
+        overloaded_conf["confidence_filtering"]["upper_bound"] = (
+            overloaded_conf["confidence_filtering"].get("upper_bound", 5)
+        )
+        overloaded_conf["confidence_filtering"]["lower_bound"] = (
+            overloaded_conf["confidence_filtering"].get("lower_bound", -20)
+        )
+        overloaded_conf["confidence_filtering"]["risk_max"] = overloaded_conf[
+            "confidence_filtering"
+        ].get("risk_max", 60)
+        overloaded_conf["confidence_filtering"]["nan_threshold"] = (
+            overloaded_conf["confidence_filtering"].get("nan_threshold", 0.1)
+        )
+        overloaded_conf["confidence_filtering"]["win_nanratio"] = (
+            overloaded_conf["confidence_filtering"].get("win_nanratio", 20)
+        )
+        overloaded_conf["confidence_filtering"]["win_mean_risk_max"] = (
+            overloaded_conf["confidence_filtering"].get("win_mean_risk_max", 7)
+        )
+
+        confidence_filtering_schema = {
+            "activated": bool,
+            "upper_bound": int,
+            "lower_bound": int,
+            "risk_max": int,
+            "nan_threshold": float,
+            "win_nanratio": int,
+            "win_mean_risk_max": int,
+        }
+
+        checker_confidence_filtering_schema = Checker(
+            confidence_filtering_schema
+        )
+        checker_confidence_filtering_schema.validate(
+            overloaded_conf["confidence_filtering"]
+        )
 
     def get_margins_fun(self, grid_left, disp_range_grid):
         """
@@ -759,6 +811,7 @@ class CensusMccnnSgm(
 
             if None not in (dem_min, dem_max, dem_median):
                 dem_min_shape = inputs.rasterio_get_size(dem_min)
+                dem_epsg = inputs.rasterio_get_epsg(dem_min)
 
                 if dem_median_shape != dem_min_shape:
                     # dem min max are the same shape
@@ -780,7 +833,7 @@ class CensusMccnnSgm(
                     # Transform points to terrain_epsg (dem min is in 4326)
                     roi_points_terrain = point_cloud_conversion(
                         roi_points,
-                        4326,
+                        dem_epsg,
                         terrain_epsg,
                     )
 
@@ -856,6 +909,7 @@ class CensusMccnnSgm(
             indexes = np.array(
                 list(itertools.product(row_indexes, col_indexes))
             )
+
             row = indexes[:, 0]
             col = indexes[:, 1]
             terrain_positions = []
@@ -1447,6 +1501,7 @@ class CensusMccnnSgm(
                             ),
                             margins_to_keep=margins_to_keep,
                             texture_bands=texture_bands,
+                            conf_filtering=self.confidence_filtering,
                         )
 
         else:
@@ -1469,6 +1524,7 @@ def compute_disparity_wrapper(
     left_overlaps=None,
     margins_to_keep=0,
     texture_bands=None,
+    conf_filtering=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1578,6 +1634,27 @@ def compute_disparity_wrapper(
         margins_to_keep=margins_to_keep,
         texture_bands=texture_bands,
     )
+
+    mask = disp_dataset["disp_msk"].values
+    disp_map = disp_dataset["disp"].values
+    disp_map[mask == 0] = np.nan
+
+    # Filtering by using the confidence
+    requested_confidence = [
+        "confidence_from_risk_max.cars_2",
+        "confidence_from_interval_bounds_sup.cars_3",
+    ]
+
+    if (
+        all(key in disp_dataset for key in requested_confidence)
+        and conf_filtering["activated"] is True
+    ):
+        dm_wrappers.confidence_filtering(
+            disp_dataset,
+            disp_map,
+            requested_confidence,
+            conf_filtering,
+        )
 
     # Fill with attributes
     cars_dataset.fill_dataset(

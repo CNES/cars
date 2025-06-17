@@ -25,7 +25,7 @@ templating the pipeline concept.
 
 from abc import ABCMeta, abstractmethod
 
-from json_checker import Checker, OptionalKey
+from json_checker import Checker, OptionalKey, Or
 
 # CARS imports
 from cars.orchestrator import orchestrator
@@ -67,7 +67,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         global_schema = {
             pipeline_constants.INPUTS: dict,
             pipeline_constants.OUTPUT: dict,
-            OptionalKey(pipeline_constants.APPLICATIONS): dict,
+            OptionalKey(pipeline_constants.APPLICATIONS): Or(list, dict),
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
             OptionalKey(pipeline_constants.ADVANCED): dict,
         }
@@ -125,7 +125,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         """
 
     @abstractmethod
-    def check_applications(self, conf):
+    def check_applications(self, conf, key=None):
         """
         Check the given configuration for applications
 
