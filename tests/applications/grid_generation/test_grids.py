@@ -22,9 +22,10 @@
 Test module for cars/steps/epi_rectif/test_grids.py
 """
 
-# Standard imports
+# __future__ import
 from __future__ import absolute_import
 
+# Standard library
 import json
 import copy
 import os
@@ -32,27 +33,31 @@ import pickle
 import tempfile
 from shutil import copy2  # noqa: F401 # pylint: disable=unused-import
 
-# Third party imports
+# Third-party imports
 import numpy as np
 import pytest
 import rasterio as rio
 import xarray as xr
 
+# CARS imports
 from cars import __version__
 from cars.applications.application import Application
-from cars.applications.grid_generation.transform_grid import transform_grid_func
 from cars.applications.grid_generation import (
     grid_correction_app,
     grid_generation_algo,
 )
+from cars.applications.grid_generation.transform_grid import transform_grid_func
 from cars.applications.sparse_matching import sparse_matching_wrappers
-
-# CARS imports
 from cars.conf import input_parameters
 from cars.orchestrator import orchestrator
 
-# CARS Tests imports
-from tests.helpers import absolute_data_path, get_geometry_plugin, temporary_dir
+# CARS test utilities
+from tests.helpers import (
+    absolute_data_path,
+    assert_same_carsdatasets,
+    get_geometry_plugin,
+    temporary_dir,
+)
 
 
 def generate_grid_xr_dataset(grid_np):

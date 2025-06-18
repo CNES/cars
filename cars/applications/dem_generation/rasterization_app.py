@@ -21,6 +21,7 @@
 """
 this module contains the dichotomic dem generation application class.
 """
+# Standard library
 import logging
 import os
 import shutil
@@ -33,8 +34,8 @@ from json_checker import And, Checker, Or
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
 
+# CARS imports - Applications
 from cars.applications import application_constants
-
 from cars.applications.dem_generation.abstract_dem_generation_app import (
     DemGeneration,
 )
@@ -46,11 +47,11 @@ from cars.applications.dem_generation.dem_generation_wrappers import (
     downsample_dem,
     edit_transform,
     fit_initial_elevation_on_dem_median,
-    reverse_dem,
     reproject_dem,
+    reverse_dem,
 )
 
-# CARS imports
+# CARS imports - Core
 from cars.core import inputs
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -471,5 +472,3 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             return dem, paths, initial_elevation_out_path
 
         return dem, paths, None
-
-
