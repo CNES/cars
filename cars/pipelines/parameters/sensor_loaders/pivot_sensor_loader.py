@@ -22,25 +22,23 @@
 this module contains the PivotSensorLoader class.
 """
 
+from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
+    SensorLoaderTemplate,
+)
 from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 
 @SensorLoader.register("pivot")
-class PivotSensorLoader:
+class PivotSensorLoader(SensorLoaderTemplate):
     """
     AbstractSensorLoader
     """
 
-    def __init__(self, input_config, input_type):
-        super().__init__(conf=input_config, input_type=input_type)
 
-    def check_conf(conf, input_type):
+    def check_conf(self, conf, input_type):
         overloaded_conf = conf.copy()
 
         return overloaded_conf
 
-    @staticmethod
-    def check_sensor_format(input):
-        return input
 
-    def get_pivot_format(self):
-        return self.pivot_format
+    def set_pivot_format(self):
+        self.pivot_format = self.used_config

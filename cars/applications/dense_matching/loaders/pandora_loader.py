@@ -60,6 +60,7 @@ class PandoraLoader:
         perf_eta_step=0.04,
         use_cross_validation=True,
         denoise_disparity_map=False,
+        used_band="b0",
     ):
         """
         Init function of PandoraLoader
@@ -224,6 +225,9 @@ class PandoraLoader:
             != "disparity_denoiser"
         ):
             conf["pipeline"].update(disparity_denoiser_conf)
+
+        if "band" not in conf["pipeline"]["matching_cost"]:
+            conf["pipeline"]["matching_cost"]["band"] = used_band
 
         if generate_performance_map_from_intervals:
             # To ensure the consistency between the disparity map

@@ -1013,6 +1013,9 @@ class DefaultPipeline(PipelineTemplate):
             sensor_image_left,
             sensor_image_right,
         ) in self.list_sensor_pairs:
+            
+            print(sensor_image_left)
+            print(sensor_image_right)
 
             # initialize pairs for current pair
             self.pairs[pair_key] = {}

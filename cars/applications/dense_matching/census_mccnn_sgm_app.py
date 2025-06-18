@@ -125,6 +125,7 @@ class CensusMccnnSgm(
         self.use_cross_validation = self.used_config["use_cross_validation"]
         self.denoise_disparity_map = self.used_config["denoise_disparity_map"]
         self.required_bands = self.used_config["required_bands"]
+        self.used_band = self.used_config["used_band"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -223,6 +224,7 @@ class CensusMccnnSgm(
             "disp_range_propagation_filter_size", 300
         )
         overloaded_conf["required_bands"] = conf.get("required_bands", ["b0"])
+        overloaded_conf["used_band"] = conf.get("used_band", "b0")
 
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -273,6 +275,7 @@ class CensusMccnnSgm(
             perf_eta_step=overloaded_conf["perf_eta_step"],
             use_cross_validation=overloaded_conf["use_cross_validation"],
             denoise_disparity_map=overloaded_conf["denoise_disparity_map"],
+            used_band=overloaded_conf["used_band"],
         )
         overloaded_conf["loader"] = loader
 
@@ -285,7 +288,7 @@ class CensusMccnnSgm(
         fake_dataset = xr.Dataset(
             data_vars={},
             coords={
-                "band_im": ["b0"],
+                "band_im": ["b0", "b1", "b2"],
                 "row": np.arange(10),
                 "col": np.arange(10),
             },
@@ -337,6 +340,7 @@ class CensusMccnnSgm(
                 Or(int, float), lambda x: x >= 0
             ),
             "required_bands": [str],
+            "used_band": str,
             "loader_conf": Or(dict, collections.OrderedDict, str, None),
             "loader": str,
         }

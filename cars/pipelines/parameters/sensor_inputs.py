@@ -110,16 +110,17 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
         image = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_IMG, None
         )
-        loader_name = image.get("loader", "basic")
-        loader = SensorLoader(loader_name)
-        image = loader(image, "image")
+        loader_name = "basic"
+        image_loader = SensorLoader(loader_name, image, "image")
+        image_as_pivot_format = image_loader.get_pivot_format()
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_IMG
-        ] = image.get_pivot_format()
+        ] = image_as_pivot_format
+        image_path = image_as_pivot_format[sens_cst.MAIN_FILE]
 
         geomodel = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             "geomodel",
-            image.get_main_file_path(),
+            image_path,
         )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             "geomodel"
@@ -135,12 +136,17 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
         classif = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_CLASSIFICATION, None
         )
-        loader_name = image.get("loader", "basic")
-        loader = SensorLoader(loader_name)
-        classif = loader(classif, "classification")
-        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-            sens_cst.INPUT_CLASSIFICATION
-        ] = classif.get_pivot_format()
+        if classif is not None:
+            loader_name = classif.get("loader", "basic")
+            classif_loader = SensorLoader(loader_name, image, "classification")
+            classif_as_pivot_format = classif_loader.get_pivot_format()
+            overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+                sens_cst.INPUT_CLASSIFICATION
+            ] = classif_as_pivot_format
+        else:
+            overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+                sens_cst.INPUT_CLASSIFICATION
+            ] = None
 
         # Validate
         checker_sensor.validate(

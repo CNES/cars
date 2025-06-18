@@ -22,6 +22,7 @@
 this module contains the AbstractSensorLoader class.
 """
 
+from abc import abstractmethod
 
 class SensorLoaderTemplate:
     """
@@ -36,3 +37,26 @@ class SensorLoaderTemplate:
 
         """
         self.used_config = self.check_conf(conf, input_type)
+        self.input_type = input_type
+        self.pivot_format = None
+
+
+    @abstractmethod
+    def check_conf(self):
+        """
+        """
+
+
+    def get_pivot_format(self):
+        """
+        """
+        if self.pivot_format is None:
+            self.set_pivot_format()
+
+        return self.pivot_format
+
+
+    @abstractmethod
+    def set_pivot_format(self):
+        """
+        """

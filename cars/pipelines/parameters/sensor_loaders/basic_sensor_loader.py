@@ -24,22 +24,19 @@ this module contains the BasicSensorLoader class.
 
 from cars.core import inputs
 from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
-    AbstractSensorLoader,
+    SensorLoaderTemplate,
 )
 from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 from cars.pipelines.parameters.sensor_loaders.pivot_sensor_loader import PivotSensorLoader
 
 
 @SensorLoader.register("basic")
-class BasicSensorLoader(AbstractSensorLoader):
+class BasicSensorLoader(SensorLoaderTemplate):
     """
     BasicSensorLoader
     """
 
-    def __init__(self, input_config, input_type):
-        super().__init__(conf=input_config, input_type=input_type)
-
-    def check_conf(conf, input_type):
+    def check_conf(self, conf, input_type):
         if isinstance(conf, str):
             overloaded_conf = {}
             overloaded_conf["path"] = conf
@@ -55,7 +52,7 @@ class BasicSensorLoader(AbstractSensorLoader):
 
         return overloaded_conf
 
-    def transform_config_to_pivot_format(self):
+    def set_pivot_format(self):
         """
         Transforme une conf "image" ou "classification" dans le format pivot
         """
@@ -64,17 +61,8 @@ class BasicSensorLoader(AbstractSensorLoader):
         for band_id in range(inputs.rasterio_get_nb_bands(self.used_config["path"])):
             band_name = "b" + str(band_id)
             pivot_config["bands"][band_name] = {
-                "path": self.input_path,
+                "path": self.used_config["path"],
                 "band": band_id,
             }
-        pivot_sensor_loader = PivotSensorLoader(pivot_config)
-        self.pivot_config = pivot_sensor_loader.get_pivot_format()
-
-    def get_pivot_format(self):
-        if self.pivot_config is None:
-            self.transform_config_to_pivot_format()
-
-        return self.pivot_config
-
-    def get_main_file_path(self):
-        return self.used_config["path"]
+        pivot_sensor_loader = PivotSensorLoader(pivot_config, self.input_type)
+        self.pivot_format = pivot_sensor_loader.get_pivot_format()

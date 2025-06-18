@@ -4,8 +4,7 @@
         "matching_cost": {
             "matching_cost_method": "census",
             "window_size": 5,
-            "subpix": 1,
-            "band": "b0"
+            "subpix": 1
         },
         "optimization": {
             "optimization_method": "sgm",
