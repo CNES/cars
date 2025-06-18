@@ -827,6 +827,7 @@ def get_max_disp_from_opt_tile_size(
 
     return max_range
 
+
 def nan_ratio_func(window):
     """ "
     Calculate the number of nan in the window
