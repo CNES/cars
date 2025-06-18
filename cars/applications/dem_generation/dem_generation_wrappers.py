@@ -324,12 +324,26 @@ def modify_terrain_bounds(dem_roi_to_use, epsg, margin):
             crs_in, crs_out, always_xy=True
         )
 
-        xmin, ymin = transformer.transform(
+        xymin = transformer.transform(
             terrain_bounds[0], terrain_bounds[1]
         )  # pylint: disable=unpacking-non-sequence
-        xmax, ymax = transformer.transform(
+        xymax = transformer.transform(
             terrain_bounds[2], terrain_bounds[3]
         )  # pylint: disable=unpacking-non-sequence
+
+        if isinstance(xymin, (tuple, list)) and len(xymin) == 2:
+            xmin, ymin = xymin
+        else:
+            raise ValueError(
+                f"Unexpected result from transformer.transform: {xymin}"
+            )
+
+        if isinstance(xymax, (tuple, list)) and len(xymax) == 2:
+            xmax, ymax = xymax
+        else:
+            raise ValueError(
+                f"Unexpected result from transformer.transform: {xymax}"
+            )
 
     new_terrain_bounds = [xmin, ymin, xmax, ymax]
 
