@@ -1689,6 +1689,36 @@ class UnitPipeline(PipelineTemplate):
                     # sensor image is not used here
                     # TODO remove when only local diparity range will be used
 
+                    if self.use_sift_a_priori:
+                        dmin = np.nanmin(
+                            disp_range_grid[0, 0]["disp_min_grid"].values
+                        )
+                        dmax = np.nanmax(
+                            disp_range_grid[0, 0]["disp_max_grid"].values
+                        )
+
+                        # update orchestrator_out_json
+                        marg = self.sparse_mtch_sift_app.get_disparity_margin()
+                        updating_infos = {
+                            application_constants.APPLICATION_TAG: {
+                                sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
+                                    pair_key: {
+                                        sm_cst.DISPARITY_MARGIN_PARAM_TAG: marg,
+                                        sm_cst.MINIMUM_DISPARITY_TAG: dmin,
+                                        sm_cst.MAXIMUM_DISPARITY_TAG: dmax,
+                                    }
+                                }
+                            }
+                        }
+                        self.cars_orchestrator.update_out_info(updating_infos)
+
+                        advanced_parameters.update_conf(
+                            self.config_full_res,
+                            dmin=dmin,
+                            dmax=dmax,
+                            pair_key=pair_key,
+                        )
+
                     disp_range_grid = (
                         self.dense_matching_app.generate_disparity_grids(
                             self.pairs[pair_key]["sensor_image_right"],
