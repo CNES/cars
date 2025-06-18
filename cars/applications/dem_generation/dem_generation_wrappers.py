@@ -324,15 +324,12 @@ def modify_terrain_bounds(dem_roi_to_use, epsg, margin):
             crs_in, crs_out, always_xy=True
         )
 
-        if all(isinstance(val, (int, float)) for val in terrain_bounds):
-            xmin, ymin = transformer.transform(
-                terrain_bounds[0], terrain_bounds[1]
-            )
-            xmax, ymax = transformer.transform(
-                terrain_bounds[2], terrain_bounds[3]
-            )
-        else:
-            raise ValueError("the coordinates must be scalar")
+        xmin, ymin = transformer.transform(
+            terrain_bounds[0], terrain_bounds[1]
+        )  # pylint: disable=unpacking-non-sequence
+        xmax, ymax = transformer.transform(
+            terrain_bounds[2], terrain_bounds[3]
+        )  # pylint: disable=unpacking-non-sequence
 
     new_terrain_bounds = [xmin, ymin, xmax, ymax]
 
