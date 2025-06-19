@@ -309,23 +309,23 @@ class DefaultPipeline(PipelineTemplate):
             "resampling": 2,  # and 8
             "hole_detection": 3,
             "sparse_matching.sift": 4,
-            "dem_generation": 6,
-            "ground_truth_reprojection": 7,
-            "dense_matching": 9,
-            "dense_match_filling.1": 10,
-            "dense_match_filling.2": 11,
-            "triangulation": 12,
-            "point_cloud_outlier_removal.1": 13,
-            "point_cloud_outlier_removal.2": 14,
+            "ground_truth_reprojection": 6,
+            "dense_matching": 8,
+            "dense_match_filling.1": 9,
+            "dense_match_filling.2": 10,
+            "triangulation": 11,
+            "point_cloud_outlier_removal.1": 12,
+            "point_cloud_outlier_removal.2": 13,
         }
 
         depth_merge_apps = {
-            "point_cloud_fusion": 15,
+            "point_cloud_fusion": 14,
         }
 
         depth_to_dsm_apps = {
-            "pc_denoising": 16,
-            "point_cloud_rasterization": 17,
+            "pc_denoising": 15,
+            "point_cloud_rasterization": 16,
+            "dem_generation": 17,
             "dsm_filling.1": 18,
             "dsm_filling.2": 19,
             "dsm_filling.3": 20,
