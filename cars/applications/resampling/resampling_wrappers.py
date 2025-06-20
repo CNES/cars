@@ -42,9 +42,10 @@ def get_paths_and_bands(sensor_image, required_bands):
         file_path = sensor_image["bands"][band]["path"]
         band_id = sensor_image["bands"][band]["band"] + 1
         if file_path in paths:
-            paths[file_path].append(band_id)
+            paths[file_path]["band_id"].append(band_id)
+            paths[file_path]["band_name"].append(band)
         else:
-            paths[file_path] = [band_id]
+            paths[file_path] = {"band_id": [band_id], "band_name": [band]}
     return paths
 
 

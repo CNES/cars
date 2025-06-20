@@ -89,10 +89,10 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
     """
     # Validate each sensor image
     sensor_schema = {
-        sens_cst.INPUT_IMG: dict,
+        sens_cst.INPUT_IMG: Or(str, dict),
         sens_cst.INPUT_GEO_MODEL: Or(str, dict),
         sens_cst.INPUT_MSK: Or(str, None),
-        sens_cst.INPUT_CLASSIFICATION: Or(dict, None),
+        sens_cst.INPUT_CLASSIFICATION: Or(str, dict, None),
     }
 
     checker_sensor = Checker(sensor_schema)
@@ -110,7 +110,12 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
         image = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_IMG, None
         )
-        loader_name = "basic"
+        if isinstance(image, str):
+            loader_name = "basic"
+        elif isinstance(image, dict):
+            loader_name = image.get("loader", "basic")
+        else:
+            raise TypeError(f"Image {image} is not of type str or dict")
         image_loader = SensorLoader(loader_name, image, "image")
         image_as_pivot_format = image_loader.get_pivot_format()
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
@@ -137,7 +142,12 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
             sens_cst.INPUT_CLASSIFICATION, None
         )
         if classif is not None:
-            loader_name = classif.get("loader", "basic")
+            if isinstance(image, str):
+                loader_name = "basic"
+            elif isinstance(image, dict):
+                loader_name = image.get("loader", "basic")
+            else:
+                raise TypeError(f"Classif {classif} is not of type str or dict")
             classif_loader = SensorLoader(loader_name, image, "classification")
             classif_as_pivot_format = classif_loader.get_pivot_format()
             overloaded_conf[sens_cst.SENSORS][sensor_image_key][

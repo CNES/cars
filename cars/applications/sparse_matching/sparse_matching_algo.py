@@ -312,8 +312,8 @@ def dataset_matching(
 
     left = ds1.im.loc[used_band].values
     right = ds2.im.loc[used_band].values
-    left_mask = ds1.msk.values == 0
-    right_mask = ds2.msk.values == 0
+    left_mask = ds1.msk.loc[used_band].values == 0
+    right_mask = ds2.msk.loc[used_band].values == 0
 
     matches = compute_matches(
         left,
@@ -337,7 +337,7 @@ def dataset_matching(
     return matches
 
 
-def downsample(tab, resolution, dim_max):
+def downsample(tab, resolution, dim_max, used_band):
     """
     Downsample the image dataset
 
@@ -362,7 +362,7 @@ def downsample(tab, resolution, dim_max):
     )
 
     # downsample
-    upsampled_raster = zoom(tab.im.loc["b0"], upscaled_factor, order=1)
+    upsampled_raster = zoom(tab.im.loc[used_band], upscaled_factor, order=1)
     upsampled_raster = np.expand_dims(upsampled_raster, axis=0)
 
     # Construct the new dataset
@@ -388,8 +388,8 @@ def downsample(tab, resolution, dim_max):
             coords_row / tab.im.shape[1],
             coords_col / tab.im.shape[2],
         )
-        upsampled_msk = zoom(tab[cst.EPI_MSK], upscaled_factor, order=0)
-        upsampled_dataset["msk"] = (["row", "col"], upsampled_msk)
+        upsampled_msk = zoom(tab.msk.loc[used_band], upscaled_factor, order=0)
+        upsampled_dataset[cst.EPI_MSK] = ([cst.ROW, cst.COL], upsampled_msk)
 
     # Change useful attributes
     transform = tab.transform * tab.transform.scale(
@@ -451,6 +451,7 @@ def pandora_matches(
     left_image_object,
     right_image_object,
     corr_conf,
+    used_band,
     dim_max,
     conf_filtering,
     disp_upper_bound,
@@ -480,10 +481,10 @@ def pandora_matches(
 
     # Downsample the epipolar images
     epipolar_image_left_low_res, new_resolution, window, profile = downsample(
-        left_image_object, 1 / resolution, dim_max
+        left_image_object, 1 / resolution, dim_max, used_band
     )
     epipolar_image_right_low_res, _, _, _ = downsample(
-        right_image_object, 1 / resolution, dim_max
+        right_image_object, 1 / resolution, dim_max, used_band
     )
 
     # Calculate the disparity grid

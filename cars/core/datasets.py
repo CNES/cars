@@ -42,7 +42,7 @@ def create_im_dataset(
     largest_size: List[int],
     img_path: str = None,
     band_coords: str = None,
-    bands: list = None,
+    descriptions: list = None,
     msk: np.ndarray = None,
 ) -> xr.Dataset:
     """
@@ -60,12 +60,10 @@ def create_im_dataset(
     # Get georef and transform
     img_crs = None
     img_transform = None
-    descriptions = None
     if img_path is not None:
         with rio.open(img_path) as img_srs:
             img_crs = img_srs.profile["crs"]
             img_transform = img_srs.profile["transform"]
-            descriptions = list(img_srs.descriptions)
 
     if img_crs is None:
         img_crs = "None"
@@ -76,9 +74,6 @@ def create_im_dataset(
     if band_coords:
         # Reorder dimensions in color dataset in order that the first dimension
         # is band.
-        if band_coords == cst.BAND_IM:
-            if descriptions is None or None in descriptions:
-                descriptions = ["b" + str(band_id-1) for band_id in bands]
 
         dataset = xr.Dataset(
             {
@@ -93,9 +88,11 @@ def create_im_dataset(
                 cst.COL: np.array(range(region[0], region[2])),
             },
         )
+        if msk is not None:
+            dataset[cst.EPI_MSK] = xr.DataArray(
+                msk.astype(np.int16), dims=[band_coords, cst.ROW, cst.COL]
+            )
     else:
-        if descriptions is None or None in descriptions:
-            descriptions = None
         dataset = xr.Dataset(
             {cst.EPI_IMAGE: ([cst.ROW, cst.COL], img[0, ...])},
             coords={
@@ -103,11 +100,10 @@ def create_im_dataset(
                 cst.COL: np.array(range(region[0], region[2])),
             },
         )
-
-    if msk is not None:
-        dataset[cst.EPI_MSK] = xr.DataArray(
-            msk[0, ...].astype(np.int16), dims=[cst.ROW, cst.COL]
-        )
+        if msk is not None:
+            dataset[cst.EPI_MSK] = xr.DataArray(
+                msk[0, ...].astype(np.int16), dims=[cst.ROW, cst.COL]
+            )
 
     dataset.attrs[cst.EPI_VALID_PIXELS] = 0
     dataset.attrs[cst.EPI_NO_DATA_MASK] = 255

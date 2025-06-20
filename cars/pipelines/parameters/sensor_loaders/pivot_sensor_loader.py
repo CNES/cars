@@ -22,10 +22,10 @@
 this module contains the PivotSensorLoader class.
 """
 
+from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
     SensorLoaderTemplate,
 )
-from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 
 @SensorLoader.register("pivot")
 class PivotSensorLoader(SensorLoaderTemplate):

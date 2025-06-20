@@ -24,9 +24,10 @@ this module contains the AbstractSensorLoader class.
 
 from abc import abstractmethod
 
+
 class SensorLoaderTemplate:
     """
-    SensorLoaderTemplate
+    Class for general specification of a sensor loader
     """
 
     def __init__(self, conf, input_type):
@@ -34,7 +35,7 @@ class SensorLoaderTemplate:
         Init function of SensorLoaderTemplate
 
         :param conf: configuration for sensor loader
-
+        :param input_type: type of input : image or classification
         """
         self.used_config = self.check_conf(conf, input_type)
         self.input_type = input_type
@@ -42,13 +43,23 @@ class SensorLoaderTemplate:
 
 
     @abstractmethod
-    def check_conf(self):
+    def check_conf(self, conf):
         """
+        Check configuration
+
+        :param conf: configuration to check
+
+        :return: overloaded configuration
+        :rtype: dict
         """
 
 
     def get_pivot_format(self):
         """
+        Return sensor configuration as pivot format
+
+        :return: pivot format configuration
+        :rtype: dict
         """
         if self.pivot_format is None:
             self.set_pivot_format()
@@ -59,4 +70,5 @@ class SensorLoaderTemplate:
     @abstractmethod
     def set_pivot_format(self):
         """
+        Transform input configuration to pivot format and store it
         """

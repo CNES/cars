@@ -100,6 +100,7 @@ def compute_disparity(
     left_dataset,
     right_dataset,
     corr_cfg,
+    used_band=None,
     disp_min_grid=None,
     disp_max_grid=None,
     compute_disparity_masks=False,
@@ -190,6 +191,18 @@ def compute_disparity(
     left_dataset["disparity"] = left_disparity
     right_dataset["disparity"] = right_disparity
 
+    if used_band is not None:
+        # Remove band_im dimension from mask
+        left_msk = left_dataset[cst.EPI_MSK]
+        left_msk = left_msk.loc[used_band]
+        left_dataset = left_dataset.drop_vars([cst.EPI_MSK])
+        left_dataset[cst.EPI_MSK] = left_msk
+
+        right_msk = right_dataset[cst.EPI_MSK]
+        right_msk = right_msk.loc[used_band]
+        right_dataset = right_dataset.drop_vars([cst.EPI_MSK])
+        right_dataset[cst.EPI_MSK] = right_msk
+
     # Instantiate pandora state machine
     pandora_machine = PandoraMachine()
 
@@ -197,7 +210,6 @@ def compute_disparity(
     check_datasets(left_dataset, right_dataset)
 
     # Run the Pandora pipeline
-
     ref, _ = pandora.run(
         pandora_machine,
         left_dataset,
