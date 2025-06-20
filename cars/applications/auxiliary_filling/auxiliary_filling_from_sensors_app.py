@@ -435,13 +435,13 @@ def filling_from_sensor_wrapper(
     else:
         profile = dsm_profile
         number_of_color_bands = inputs.rasterio_get_nb_bands(
-            sensor_inputs[list(sensor_inputs.keys())[0]].get("color", None)
+            sensor_inputs[list(sensor_inputs.keys())[0]].get("texture", None)
         )
         color_values = np.full(
             (number_of_color_bands, *target_mask.shape), np.nan
         )
         color_band_names = inputs.get_descriptions_bands(
-            sensor_inputs[list(sensor_inputs.keys())[0]].get("color", None)
+            sensor_inputs[list(sensor_inputs.keys())[0]].get("texture", None)
         )
         # update profile
         profile.update(count=number_of_color_bands)

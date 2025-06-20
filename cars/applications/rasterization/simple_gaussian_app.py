@@ -237,7 +237,7 @@ class SimpleGaussian(
                 Each tile will be a future pandas DataFrame containing:
 
                 - data with keys  "x", "y", "z", "corr_msk" \
-                    optional: "color", "mask", "data_valid", "z_inf", "z_sup"\
+                    optional: "texture", "mask", "data_valid", "z_inf", "z_sup"\
                       "coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"
                 - attrs with keys "epsg", "ysize", "xsize", "xstart", "ystart"
 
@@ -250,7 +250,7 @@ class SimpleGaussian(
                 clouds:
                 list of CarsDataset of type array, with:
                 - data with keys x", "y", "z", "corr_msk", "z_inf", "z_sup"\
-                    optional: "color", "mask", "data_valid",\
+                    optional: "texture", "mask", "data_valid",\
                       "coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"
 
         :type point_clouds: CarsDataset filled with pandas.DataFrame
@@ -472,7 +472,7 @@ class SimpleGaussian(
             # File is not part of the official product, write it in dump_dir
             out_clr_file_name = os.path.join(out_dump_dir, "texture.tif")
         if out_clr_file_name is not None:
-            list_computed_layers += ["color"]
+            list_computed_layers += ["texture"]
             if not self.color_dtype:
                 self.color_dtype = color_dtype
             self.orchestrator.add_to_save_lists(
@@ -481,7 +481,7 @@ class SimpleGaussian(
                 terrain_raster,
                 dtype=self.color_dtype,
                 nodata=self.color_no_data,
-                cars_ds_name="color",
+                cars_ds_name="texture",
             )
 
         out_classif_file_name = classif_file_name

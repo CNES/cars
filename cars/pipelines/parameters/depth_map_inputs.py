@@ -123,7 +123,7 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
 
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
             cst.POINT_CLOUD_CLR_KEY_ROOT
-        ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("color", None)
+        ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("texture", None)
 
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
             cst.POINT_CLOUD_MSK

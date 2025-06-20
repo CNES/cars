@@ -36,8 +36,20 @@ from cars.core import constants as cst
 from cars.core import inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
-def get_paths_and_bands(sensor_image, required_bands):
+
+def get_paths_and_bands(sensor_image, required_bands=None):
+    """
+    Reformat file paths and bands required from each file to ease reading
+
+    :param sensor_image: input configuration of an image
+    :type sensor_image: dict
+    :param required_bands: required bands for resampling
+    :type required_bands: list
+    """
     paths = {}
+    if required_bands is None:
+        # All bands are required bands
+        required_bands = list(sensor_image["bands"].keys())
     for band in required_bands:
         file_path = sensor_image["bands"][band]["path"]
         band_id = sensor_image["bands"][band]["band"] + 1

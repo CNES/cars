@@ -82,7 +82,7 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
     return overloaded_conf
 
 
-def check_sensors(conf, overloaded_conf, config_json_dir=None):
+def check_sensors(conf, overloaded_conf, config_json_dir=None):  # noqa: C901
     """
     Check sensors
 
@@ -116,8 +116,12 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
             loader_name = image.get("loader", "basic")
         else:
             raise TypeError(f"Image {image} is not of type str or dict")
-        image_loader = SensorLoader(loader_name, image, "image")
-        image_as_pivot_format = image_loader.get_pivot_format()
+        image_loader = SensorLoader(
+            loader_name, image, "image", config_json_dir
+        )
+        image_as_pivot_format = (
+            image_loader.get_pivot_format()  # pylint: disable=E1101
+        )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_IMG
         ] = image_as_pivot_format
@@ -142,14 +146,18 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):
             sens_cst.INPUT_CLASSIFICATION, None
         )
         if classif is not None:
-            if isinstance(image, str):
+            if isinstance(classif, str):
                 loader_name = "basic"
-            elif isinstance(image, dict):
-                loader_name = image.get("loader", "basic")
+            elif isinstance(classif, dict):
+                loader_name = classif.get("loader", "basic")
             else:
                 raise TypeError(f"Classif {classif} is not of type str or dict")
-            classif_loader = SensorLoader(loader_name, image, "classification")
-            classif_as_pivot_format = classif_loader.get_pivot_format()
+            classif_loader = SensorLoader(
+                loader_name, classif, "classification", config_json_dir
+            )
+            classif_as_pivot_format = (
+                classif_loader.get_pivot_format()  # pylint: disable=E1101
+            )
             overloaded_conf[sens_cst.SENSORS][sensor_image_key][
                 sens_cst.INPUT_CLASSIFICATION
             ] = classif_as_pivot_format
@@ -416,8 +424,11 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
         ]:
             if sensor_image[tag] is not None:
                 for band in sensor_image[tag]["bands"]:
-                    sensor_image[tag]["bands"][band]["path"] = make_relative_path_absolute(
-                        sensor_image[tag]["bands"][band]["path"], config_json_dir
+                    sensor_image[tag]["bands"][band]["path"] = (
+                        make_relative_path_absolute(
+                            sensor_image[tag]["bands"][band]["path"],
+                            config_json_dir,
+                        )
                     )
 
     if overloaded_conf[sens_cst.ROI] is not None:
@@ -543,13 +554,9 @@ def check_input_size(image, mask, classif):
     :param classif: classif path
     :type classif: str
     """
-    first_band_size = inputs.rasterio_get_size(image["bands"]["b0"]["path"])
-    for band in image["bands"]:
-        if first_band_size != inputs.rasterio_get_size(image["bands"][band]["path"]):
-            raise RuntimeError(
-                "The image bands {} and {} "
-                "do not have the same size".format("b0", band)
-            )
+    image = image[sens_cst.MAIN_FILE]
+    if classif is not None:
+        classif = classif[sens_cst.MAIN_FILE]
 
     if mask is not None:
         if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(mask):
@@ -559,13 +566,11 @@ def check_input_size(image, mask, classif):
             )
 
     if classif is not None:
-        first_band_size = inputs.rasterio_get_size(classif["bands"]["b0"]["path"])
-        for band in image["bands"]:
-            if first_band_size != inputs.rasterio_get_size(classif["bands"][band]["path"]):
-                raise RuntimeError(
-                    "The classification bands {} and {} "
-                    "do not have the same size".format("b0", band)
-                )
+        if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(classif):
+            raise RuntimeError(
+                "The classification bands {} and {} "
+                "do not have the same size".format(image, classif)
+            )
 
 
 def check_nbits(mask, classif):
@@ -578,6 +583,8 @@ def check_nbits(mask, classif):
     :param classif: classif path
     :type classif: str
     """
+    if classif is not None:
+        classif = classif[sens_cst.MAIN_FILE]
 
     if mask is not None:
         nbits = inputs.rasterio_get_nbits(mask)
@@ -613,8 +620,12 @@ def compare_image_type(imgs, image_type, key1, key2):
     """
     for band in imgs[key1][image_type]["bands"]:
         if band in imgs[key2][image_type]["bands"]:
-            dtype1 = inputs.rasterio_get_image_type(imgs[key1][image_type]["bands"][band]["path"])
-            dtype2 = inputs.rasterio_get_image_type(imgs[key2][image_type]["bands"][band]["path"])
+            dtype1 = inputs.rasterio_get_image_type(
+                imgs[key1][image_type]["bands"][band]["path"]
+            )
+            dtype2 = inputs.rasterio_get_image_type(
+                imgs[key2][image_type]["bands"][band]["path"]
+            )
             if dtype1 != dtype2:
                 raise RuntimeError(
                     "The pair images haven't the same data type."

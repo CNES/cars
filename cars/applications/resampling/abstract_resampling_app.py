@@ -120,11 +120,11 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         corresponding to sensor images resampled in epipolar geometry.
 
         :param sensor_images_left: tiled sensor left image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_left: CarsDataset
         :param sensor_images_right: tiled sensor right image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_right: CarsDataset
         :param grid_left: left epipolar grid
@@ -167,7 +167,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
             - N x M Delayed tiles. \
                 Each tile will be a future xarray Dataset containing:
 
-                - data with keys : "im", "msk", "color", "classif"
+                - data with keys : "im", "msk", "texture", "classif"
                 - attrs with keys: "margins" with "disp_min" and "disp_max"\
                     "transform", "crs", "valid_pixels", "no_data_mask",
                     "no_data_img"

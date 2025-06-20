@@ -599,6 +599,12 @@ class CensusMccnnSgm(
 
         return opt_epipolar_tile_size, local_tile_optimal_size_fun
 
+    def get_required_bands(self):
+        required_bands = {}
+        required_bands["left"] = self.required_bands
+        required_bands["right"] = self.required_bands
+        return required_bands
+
     @cars_profile(name="Disp Grid Generation")
     def generate_disparity_grids(  # noqa: C901
         self,
@@ -898,7 +904,7 @@ class CensusMccnnSgm(
                     ind_rows_sensor,
                     _,
                 ) = geom_plugin_with_dem_and_geoid.inverse_loc(
-                    sensor_image_right["image"]["main_file_path"],
+                    sensor_image_right["image"]["main_file"],
                     sensor_image_right["geomodel"],
                     lat_mean,
                     lon_mean,
@@ -994,7 +1000,7 @@ class CensusMccnnSgm(
             transform_sensor = rasterio.Affine(
                 *np.abs(
                     inputs.rasterio_get_transform(
-                        sensor_image_right["image"]["main_file_path"]
+                        sensor_image_right["image"]["main_file"]
                     )
                 )
             )
@@ -1185,7 +1191,7 @@ class CensusMccnnSgm(
                 - N x M Delayed tiles. \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"\
                         "transform", "crs", "valid_pixels", "no_data_mask",\
                         "no_data_img"
@@ -1197,7 +1203,7 @@ class CensusMccnnSgm(
                 - N x M Delayed tiles. \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"
                         "transform", "crs", "valid_pixels", "no_data_mask",
                         "no_data_img"

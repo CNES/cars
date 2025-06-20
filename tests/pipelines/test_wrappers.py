@@ -95,7 +95,6 @@ def test_epipolar_pipeline(
         "path": configuration["input"][in_params.MODEL2_TAG],
         "model_type": configuration["input"][in_params.MODEL2_TYPE_TAG],
     }
-    color1 = configuration["input"].get(in_params.COLOR1_TAG, None)
     grid1 = {
         "path": configuration["preprocessing"]["output"]["left_epipolar_grid"]
     }
@@ -112,6 +111,8 @@ def test_epipolar_pipeline(
     corr_cfg = corr_conf_defaut()
     left_input = get_metadata(img1)
     right_input = get_metadata(img2)
+    left_input = left_input.assign_coords(band_im=["b0"])
+    right_input = right_input.assign_coords(band_im=["b0"])
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
     global_disp_min = -19
@@ -148,24 +149,25 @@ def test_epipolar_pipeline(
         "epipolar_size_y"
     ]
 
+    left_imgs = {img1: {"band_name": ["b0"], "band_id": [1]}}
+    img2 = configuration["input"][in_params.IMG2_TAG]
+    right_imgs = {img2: {"band_name": ["b0"], "band_id": [1]}}
+
     left_image, right_image = generate_epipolar_images_wrapper(
         overlaps,
         overlaps,
         window,
         epipolar_size_x,
         epipolar_size_y,
-        img1,
-        img2,
+        left_imgs,
+        right_imgs,
         grid1,
         grid2,
         interpolator_image="bicubic",
-        interpolator_color="bicubic",
         interpolator_classif="nearest",
         interpolator_mask="nearest",
         used_disp_min=global_disp_min,
         used_disp_max=global_disp_max,
-        add_color=True,
-        color1=color1,
         mask1=mask1,
         mask2=mask2,
         nodata1=nodata1,
@@ -190,7 +192,12 @@ def test_epipolar_pipeline(
     )
 
     disp_map = compute_disparity_wrapper(
-        left_image, right_image, corr_cfg, disp_range_grid
+        left_image,
+        right_image,
+        corr_cfg,
+        "b0",
+        disp_range_grid,
+        texture_bands=[0],
     )
 
     epipolar_point_cloud, _ = triangulation_wrapper(

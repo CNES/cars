@@ -381,7 +381,7 @@ def add_color(dataset, color_array, margin=None):
     return new_dataset
 
 
-def create_corr_conf(user_cfg, left_input, right_input):
+def create_corr_conf(user_cfg, left_input, right_input, used_band="b0"):
     """
     Create correlator configuration for stereo testing
     TODO: put in CARS source code ? (external?)
@@ -397,10 +397,11 @@ def create_corr_conf(user_cfg, left_input, right_input):
 
     left_input = left_input.copy()
     right_input = right_input.copy()
-    left_input.coords[cst.BAND_IM] = [None]
-    right_input.coords[cst.BAND_IM] = [None]
     left_input.attrs["disparity_source"] = None
     right_input.attrs["disparity_source"] = None
+
+    if used_band:
+        user_cfg_pipeline["pipeline"]["matching_cost"]["band"] = used_band
 
     cfg_pipeline = check_pipeline_section(
         user_cfg_pipeline, left_input, right_input, pandora_machine

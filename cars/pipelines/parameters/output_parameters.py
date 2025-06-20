@@ -84,10 +84,10 @@ def check_output_parameters(conf):
     )
 
     # Load auxiliary and subfields
-    overloaded_conf[output_constants.AUXILIARY][output_constants.AUX_TEXTURE] = (
-        overloaded_conf[output_constants.AUXILIARY].get(
-            output_constants.AUX_TEXTURE, True
-        )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_TEXTURE
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_TEXTURE, True
     )
     overloaded_conf[output_constants.AUXILIARY][
         output_constants.AUX_WEIGHTS

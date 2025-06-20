@@ -30,17 +30,18 @@ class SensorLoaderTemplate:
     Class for general specification of a sensor loader
     """
 
-    def __init__(self, conf, input_type):
+    def __init__(self, conf, input_type, config_json_dir):
         """
         Init function of SensorLoaderTemplate
 
         :param conf: configuration for sensor loader
         :param input_type: type of input : image or classification
         """
-        self.used_config = self.check_conf(conf, input_type)
         self.input_type = input_type
-        self.pivot_format = None
+        self.json_dir = config_json_dir
+        self.used_config = self.check_conf(conf)
 
+        self.pivot_format = None
 
     @abstractmethod
     def check_conf(self, conf):
@@ -53,7 +54,6 @@ class SensorLoaderTemplate:
         :rtype: dict
         """
 
-
     def get_pivot_format(self):
         """
         Return sensor configuration as pivot format
@@ -65,7 +65,6 @@ class SensorLoaderTemplate:
             self.set_pivot_format()
 
         return self.pivot_format
-
 
     @abstractmethod
     def set_pivot_format(self):

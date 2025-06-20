@@ -136,11 +136,11 @@ class DirectLocalization(
         Run direct localization for ground truth disparity
 
         :param sensor_left: Tiled sensor left image.
-            Dict must contain keys: "image", "color", "geomodel",
+            Dict must contain keys: "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolute.
         :type sensor_left: CarsDataset
         :param sensor_right: Tiled sensor right image.
-            Dict must contain keys: "image", "color", "geomodel",
+            Dict must contain keys: "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolute.
         :type sensor_right: CarsDataset
         :param grid_left: Grid left.
@@ -512,7 +512,7 @@ def maps_generation_wrapper(
     Computes ground truth epipolar disparity map and sensor geometry.
 
     :param sensor_left: sensor data
-        Dict must contain keys: "image", "color", "geomodel",
+        Dict must contain keys: "image", "texture", "geomodel",
         "no_data", "mask". Paths must be absolute.
     :type sensor_left: dict
     :param grid_left: Grid left.

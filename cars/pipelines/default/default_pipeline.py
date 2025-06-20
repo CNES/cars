@@ -863,7 +863,7 @@ class DefaultPipeline(PipelineTemplate):
         ):
             first_image_path = next(iter(inputs_conf["sensors"].values()))[
                 "image"
-            ]["main_file_path"]
+            ]["main_file"]
             first_image_size = rasterio_get_size(first_image_path)
             first_image_nb_pixels = math.prod(first_image_size)
             dem_gen_used_mem = first_image_nb_pixels / 1e8
@@ -914,8 +914,8 @@ class DefaultPipeline(PipelineTemplate):
         for key1, key2 in inputs_conf["pairing"]:
             corr_cfg = self.dense_matching_app.loader.get_conf()
             corr_cfg_sparse = self.sparse_mtch_pandora_app.loader.get_conf()
-            img_left = inputs_conf["sensors"][key1]["image"]["main_file_path"]
-            img_right = inputs_conf["sensors"][key2]["image"]["main_file_path"]
+            img_left = inputs_conf["sensors"][key1]["image"]["main_file"]
+            img_right = inputs_conf["sensors"][key2]["image"]["main_file"]
             classif_left = None
             classif_right = None
             if "classification" in inputs_conf["sensors"][key1]:
@@ -1013,9 +1013,6 @@ class DefaultPipeline(PipelineTemplate):
             sensor_image_left,
             sensor_image_right,
         ) in self.list_sensor_pairs:
-            
-            print(sensor_image_left)
-            print(sensor_image_right)
 
             # initialize pairs for current pair
             self.pairs[pair_key] = {}
@@ -1239,7 +1236,9 @@ class DefaultPipeline(PipelineTemplate):
                     continue
 
                 # Get required bands of second resampling
-                required_bands = self.sparse_mtch_pandora_app.get_required_bands()
+                required_bands = (
+                    self.sparse_mtch_pandora_app.get_required_bands()
+                )
 
                 # Run second epipolar resampling
                 (
@@ -1854,7 +1853,9 @@ class DefaultPipeline(PipelineTemplate):
             required_bands = self.dense_matching_app.get_required_bands()
 
             # Add left required bands for texture
-            required_bands["left"] = list(set(required_bands["left"]).union(set(self.texture_bands)))
+            required_bands["left"] = list(
+                set(required_bands["left"]).union(set(self.texture_bands))
+            )
             required_bands["left"].sort()
 
             # Run third epipolar resampling
@@ -1932,7 +1933,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pc_outlier_removal_1_app.get_epipolar_margin()
                     + self.pc_outlier_removal_2_app.get_epipolar_margin()
                 ),
-                texture_bands=[1,2],
+                texture_bands=[0],
             )
 
             if self.quit_on_app("dense_matching"):
@@ -2493,8 +2494,10 @@ class DefaultPipeline(PipelineTemplate):
                     out_cst.DSM_DIRECTORY,
                     "texture.tif",
                 )
-                if "color" in dict_path
-                or self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_TEXTURE]
+                if "texture" in dict_path
+                or self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_TEXTURE
+                ]
                 else None
             )
 
@@ -2594,7 +2597,9 @@ class DefaultPipeline(PipelineTemplate):
                     "texture.tif",
                 )
                 if self.save_output_dsm
-                and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_TEXTURE]
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_TEXTURE
+                ]
                 else None
             )
 

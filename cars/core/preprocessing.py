@@ -106,11 +106,11 @@ def compute_terrain_bbox(  # noqa: 751
     :param geoid: geoid path
     :type geoid: str
     :param sensor_image_left: left image
-           Dict Must contain keys : "image", "color", "geomodel",
+           Dict Must contain keys : "image", "texture", "geomodel",
            "no_data", "mask". Paths must be absolutes
     :type sensor_image_left: dict
     :param sensor_image_right: right image
-           Dict Must contain keys : "image", "color", "geomodel",
+           Dict Must contain keys : "image", "texture", "geomodel",
            "no_data", "mask". Paths must be absolutes
     :type sensor_image_right: dict
     :param grid_left: left grid. Grid dict contains :
@@ -187,8 +187,8 @@ def compute_terrain_bbox(  # noqa: 751
         inter_xmax,
         inter_ymax,
     ) = projection.ground_intersection_envelopes(
-        sensor1["main_file_path"],
-        sensor2["main_file_path"],
+        sensor1["main_file"],
+        sensor2["main_file"],
         geomodel1,
         geomodel2,
         geometry_plugin,
@@ -388,11 +388,11 @@ def compute_epsg(
     Compute epsg to use
 
     :param sensor_image_left: left image
-           Dict Must contain keys : "image", "color", "geomodel",
+           Dict Must contain keys : "image", "texture", "geomodel",
            "no_data", "mask". Paths must be absolutes
     :type sensor_image_left: dict
     :param sensor_image_right: right image
-           Dict Must contain keys : "image", "color", "geomodel",
+           Dict Must contain keys : "image", "texture", "geomodel",
            "no_data", "mask". Paths must be absolutes
     :type sensor_image_right: dict
     :param grid_left: left grid. Grid dict contains :

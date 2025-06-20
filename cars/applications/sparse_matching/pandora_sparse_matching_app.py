@@ -346,6 +346,12 @@ class PandoraSparseMatching(
             overloaded_conf["disparity_bounds_estimation"]
         )
 
+    def get_required_bands(self):
+        required_bands = {}
+        required_bands["left"] = [self.used_band]
+        required_bands["right"] = [self.used_band]
+        return required_bands
+
     def get_save_matches(self):
         """
         Get save_matches parameter
@@ -515,7 +521,7 @@ class PandoraSparseMatching(
                - N x M Delayed tiles. \
                    Each tile will be a future xarray Dataset containing:
 
-                   - data with keys : "im", "msk", "color"
+                   - data with keys : "im", "msk", "texture"
                    - attrs with keys: "margins" with "disp_min" and "disp_max"\
                        "transform", "crs", "valid_pixels", "no_data_mask",\
                        "no_data_img"
@@ -527,7 +533,7 @@ class PandoraSparseMatching(
                - N x M Delayed tiles. \
                    Each tile will be a future xarray Dataset containing:
 
-                   - data with keys : "im", "msk", "color"
+                   - data with keys : "im", "msk", "texture"
                    - attrs with keys: "margins" with "disp_min" and "disp_max"
                        "transform", "crs", "valid_pixels", "no_data_mask",
                        "no_data_img"
@@ -764,6 +770,7 @@ def compute_pandora_matches_wrapper(
                         left_image_object,
                         right_image_object,
                         corr_conf,
+                        used_band,
                         dim_max,
                         confidence_filtering,
                         disp_upper_bound,
@@ -776,6 +783,7 @@ def compute_pandora_matches_wrapper(
                     left_image_object,
                     right_image_object,
                     corr_conf,
+                    used_band,
                     dim_max,
                     confidence_filtering,
                     disp_upper_bound,

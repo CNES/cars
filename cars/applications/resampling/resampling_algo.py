@@ -31,7 +31,6 @@ import numpy as np
 import rasterio as rio
 import resample as cresample
 from rasterio.windows import Window, bounds
-import xarray as xr
 
 from cars.conf import mask_cst as msk_cst
 
@@ -234,6 +233,7 @@ def resample_image(
     :type interpolator: str ("nearest" "linear" "bco")
     :rtype: xarray.Dataset with resampled image and mask
     """
+    img_sample = next(iter(imgs))
     # Handle region is None
     if region is None:
         region = [0, 0, largest_size[0], largest_size[1]]
@@ -246,7 +246,7 @@ def resample_image(
         ]
 
     if img_transform is None:
-        img_transform = inputs.rasterio_get_transform(img)
+        img_transform = inputs.rasterio_get_transform(img_sample)
 
     # Convert largest_size to int if needed
     largest_size = [int(x) for x in largest_size]
@@ -269,24 +269,18 @@ def resample_image(
         bands = imgs[img]
         nb_bands = len(bands["band_id"])
         # Initialize outputs of the entire tile
-        resamp = np.empty((nb_bands, region[3] - region[1], 0), dtype=np.float32)
+        resamp = np.empty(
+            (nb_bands, region[3] - region[1], 0), dtype=np.float32
+        )
         nodata = 0
         if nodata is not None or mask is not None:
-            msk = np.empty((nb_bands, region[3] - region[1], 0), dtype=np.float32)
+            msk = np.empty(
+                (nb_bands, region[3] - region[1], 0), dtype=np.float32
+            )
         else:
             msk = None
 
-<<<<<<< HEAD
-    with rio.open(grid["path"]) as grid_reader, rio.open(img) as img_reader:
-        for xmin, xmax in zip(xmin_of_blocks, xmax_of_blocks):  # noqa: B905
-            block_region = [xmin, ymin, xmax, ymax]
-            # Build rectification pipelines for images
-            res_x, res_y = grid_reader.res
-            assert res_x == res_y
-            oversampling = int(res_x)
-            assert res_x == oversampling
-=======
-        with rio.open(grid) as grid_reader, rio.open(img) as img_reader:
+        with rio.open(grid["path"]) as grid_reader, rio.open(img) as img_reader:
             for xmin, xmax in zip(xmin_of_blocks, xmax_of_blocks):  # noqa: B905
                 block_region = [xmin, ymin, xmax, ymax]
                 # Build rectification pipelines for images
@@ -294,7 +288,6 @@ def resample_image(
                 assert res_x == res_y
                 oversampling = int(res_x)
                 assert res_x == oversampling
->>>>>>> f46bebbe (feat: add used_band parameter in dense_matching and refacto of resampling application)
 
                 grid_origin_x = grid_reader.transform[2]
                 grid_origin_y = grid_reader.transform[5]
@@ -346,8 +339,12 @@ def resample_image(
                 left -= filter_margin
                 right += filter_margin
 
-                left, right = list(np.clip([left, right], 0, img_reader.shape[0]))
-                top, bottom = list(np.clip([top, bottom], 0, img_reader.shape[1]))
+                left, right = list(
+                    np.clip([left, right], 0, img_reader.shape[0])
+                )
+                top, bottom = list(
+                    np.clip([top, bottom], 0, img_reader.shape[1])
+                )
 
                 img_window = Window.from_slices([left, right], [top, bottom])
 
@@ -369,7 +366,9 @@ def resample_image(
 
                 if in_sensor:
                     # Get sensor data
-                    img_as_array = img_reader.read(bands["band_id"], window=img_window)
+                    img_as_array = img_reader.read(
+                        bands["band_id"], window=img_window
+                    )
 
                     # shift grid regarding the img extraction
                     grid_as_array[0, ...] -= x_offset
@@ -422,8 +421,12 @@ def resample_image(
 
                         if mask is not None:
                             with rio.open(mask) as msk_reader:
-                                msk_as_array = msk_reader.read(window=img_window)
-                            msk_as_array = np.repeat(msk_as_array, img_as_array.shape[0])
+                                msk_as_array = msk_reader.read(
+                                    1, window=img_window
+                                )
+                            msk_as_array = np.array(
+                                [msk_as_array] * img_as_array.shape[0]
+                            )
                         else:
                             msk_as_array = np.zeros(img_as_array.shape)
 
@@ -468,7 +471,13 @@ def resample_image(
     resamp_final = np.concatenate(resampled_images_list, axis=0)
     msk_final = np.concatenate(resampled_masks_list, axis=0)
     dataset = datasets.create_im_dataset(
-        resamp_final, region, largest_size, img, band_coords, band_names, msk_final
+        resamp_final,
+        region,
+        largest_size,
+        img_sample,
+        band_coords,
+        band_names,
+        msk_final,
     )
 
     return dataset

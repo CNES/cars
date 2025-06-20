@@ -214,7 +214,6 @@ def test_simple_rasterization_single():
     )
     cloud_df = cloud_xr.to_dataframe()
     cloud_df.attrs = {"attributes": {"number_of_pc": 1}}
-
     # Remove data where data in invalid
     cloud_df = cloud_df[cloud_df["data_valid"] == 1]
     cloud_df = cloud_df.drop(columns=["data_valid"])

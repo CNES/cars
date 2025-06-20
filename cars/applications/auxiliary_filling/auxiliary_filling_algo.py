@@ -204,9 +204,7 @@ def fill_from_one_sensor(  # noqa C901
     """
 
     # Check if the sensor has color or classification
-    reference_sensor_image = sensor.get(
-        "color", sensor.get("classification", None)
-    )
+    reference_sensor_image = sensor["image"]["main_file"]
 
     output_not_interpolated_mask = np.ones(len(altitudes), dtype=bool)
     all_values = np.zeros((number_of_color_bands, len(altitudes)))
@@ -305,10 +303,10 @@ def fill_from_one_sensor(  # noqa C901
                     validity_mask, not_interpolated_mask
                 )
 
-    if sensor.get("color"):
-        with rio.open(sensor["color"]) as sensor_color_image:
+    if sensor.get("image"):
+        with rio.open(sensor["image"]["main_file"]) as sensor_color_image:
             # Only fill color if the number of bands matches. For exemple do
-            # not try to fill an output RGB image from a greyscale "color"
+            # not try to fill an output RGB image from a greyscale "texture"
             # image.
             if sensor_color_image.count == number_of_color_bands:
                 first_row = np.floor(
@@ -396,7 +394,9 @@ def fill_from_one_sensor(  # noqa C901
                 weights[interpolated_mask] += 1
 
     if filled_classif is not None and sensor.get("classification"):
-        with rio.open(sensor["classification"]) as sensor_classif_image:
+        with rio.open(
+            sensor["classification"]["main_file"]
+        ) as sensor_classif_image:
 
             if sensor_classif_image.count == number_of_classification_bands:
                 first_row = np.floor(

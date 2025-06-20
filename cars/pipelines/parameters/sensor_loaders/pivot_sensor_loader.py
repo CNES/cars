@@ -27,18 +27,17 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
     SensorLoaderTemplate,
 )
 
+
 @SensorLoader.register("pivot")
 class PivotSensorLoader(SensorLoaderTemplate):
     """
     AbstractSensorLoader
     """
 
-
-    def check_conf(self, conf, input_type):
+    def check_conf(self, conf):
         overloaded_conf = conf.copy()
 
         return overloaded_conf
-
 
     def set_pivot_format(self):
         self.pivot_format = self.used_config

@@ -23,6 +23,7 @@ this module contains the BasicSensorLoader class.
 """
 
 from cars.core import inputs
+from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.parameters.sensor_loaders.pivot_sensor_loader import (
     PivotSensorLoader,
 )
@@ -38,7 +39,7 @@ class BasicSensorLoader(SensorLoaderTemplate):
     Default sensor loader (used when no sensor loader is specified)
     """
 
-    def check_conf(self, conf, input_type):
+    def check_conf(self, conf):
         """
         Check configuration
 
@@ -49,16 +50,20 @@ class BasicSensorLoader(SensorLoaderTemplate):
         """
         if isinstance(conf, str):
             overloaded_conf = {}
-            overloaded_conf["path"] = conf
-            if input_type == "image":
+            image_path = make_relative_path_absolute(conf, self.json_dir)
+            overloaded_conf["path"] = image_path
+            if self.input_type == "image":
                 overloaded_conf["nodata"] = 0
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
-            overloaded_conf["path"] = conf["path"]
-            if input_type == "image":
+            image_path = make_relative_path_absolute(
+                conf["path"], self.json_dir
+            )
+            overloaded_conf["path"] = image_path
+            if self.input_type == "image":
                 overloaded_conf["nodata"] = conf.get("nodata", 0)
         else:
-            raise TypeError(f"Input {input_type} is not a string ot dict")
+            raise TypeError(f"Input {self.input_type} is not a string ot dict")
 
         return overloaded_conf
 
@@ -66,13 +71,20 @@ class BasicSensorLoader(SensorLoaderTemplate):
         """
         Transform input configuration to pivot format and store it
         """
-        pivot_config = {"main_file_path": self.used_config["path"]}
+        pivot_config = {
+            "loader": "pivot",
+            "main_file": self.used_config["path"],
+        }
         pivot_config["bands"] = {}
-        for band_id in range(inputs.rasterio_get_nb_bands(self.used_config["path"])):
+        for band_id in range(
+            inputs.rasterio_get_nb_bands(self.used_config["path"])
+        ):
             band_name = "b" + str(band_id)
             pivot_config["bands"][band_name] = {
                 "path": self.used_config["path"],
                 "band": band_id,
             }
-        pivot_sensor_loader = PivotSensorLoader(pivot_config, self.input_type)
+        pivot_sensor_loader = PivotSensorLoader(
+            pivot_config, self.input_type, self.json_dir
+        )
         self.pivot_format = pivot_sensor_loader.get_pivot_format()

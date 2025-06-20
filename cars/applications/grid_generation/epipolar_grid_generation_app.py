@@ -136,10 +136,12 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         The returned dicts contain all the attributes of the grid & their path
 
         :param image_left: left image. Dict Must contain keys : \
-         "image", "color", "geomodel","no_data", "mask". Paths must be absolutes
+         "image", "texture", "geomodel","no_data", "mask". Paths must be
+         absolutes
         :type image_left: dict
         :param image_right: right image. Dict Must contain keys :\
-         "image", "color", "geomodel","no_data", "mask". Paths must be absolutes
+         "image", "texture", "geomodel","no_data", "mask". Paths must be
+         absolutes
         :type image_right: dict
         :param geometry_plugin: geometry plugin to use
         :type geometry_plugin: AbstractGeometry

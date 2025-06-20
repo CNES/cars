@@ -251,6 +251,12 @@ class Sift(SparseMatching, short_name=["sift"]):
 
         return overloaded_conf
 
+    def get_required_bands(self):
+        required_bands = {}
+        required_bands["left"] = [self.used_band]
+        required_bands["right"] = [self.used_band]
+        return required_bands
+
     def get_save_matches(self):
         """
         Get save_matches parameter
@@ -389,7 +395,7 @@ class Sift(SparseMatching, short_name=["sift"]):
                 - N x M Delayed tiles \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"
                         "transform", "crs", "valid_pixels", "no_data_mask",
                         "no_data_img"
@@ -401,7 +407,7 @@ class Sift(SparseMatching, short_name=["sift"]):
                 - N x M Delayed tiles \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"\
                         "transform", "crs", "valid_pixels", "no_data_mask",\
                         "no_data_img"

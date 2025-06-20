@@ -44,17 +44,13 @@ def test_check_full_conf():
         "sensors": {
             "left": {
                 "image": "left_image.tif",
-                "color": "color_image.tif",
                 "geomodel": {"path": "left_image.geom"},
-                "no_data": 0,
                 "mask": None,
                 "classification": None,
             },
             "right": {
                 "image": "right_image.tif",
                 "geomodel": {"path": "right_image.geom"},
-                "color": "right_image.tif",
-                "no_data": 0,
                 "mask": None,
                 "classification": None,
             },

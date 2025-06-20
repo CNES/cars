@@ -25,6 +25,7 @@ Test module for cars/steps/epi_rectif/test_grids.py
 # Standard imports
 from __future__ import absolute_import
 
+import json
 import os
 import pickle
 import tempfile
@@ -310,13 +311,9 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
     "input_file,ref_file",
     [
         (
-            "grid_generation_gizeh_ROI_no_color.pickle",
+            "grid_generation_gizeh_ROI_no_color.json",
             "grid_generation_gizeh_ROI_ref_no_color",
-        ),
-        (
-            "grid_generation_gizeh_ROI_color.pickle",
-            "grid_generation_gizeh_ROI_ref_color",
-        ),
+        )
     ],
 )
 def test_grid_generation(save_reference, input_file, ref_file):
@@ -352,8 +349,9 @@ def test_grid_generation(save_reference, input_file, ref_file):
                 "rb",
             ) as file:
                 # load pickle data
-                data = pickle.load(file)
-                adapt_path_for_test_dir(data, input_path, input_relative_path)
+                data = json.load(file)
+                adapt_path_for_test_dir(data, input_path)
+
                 # Run grid generation
                 geometry_plugin = get_geometry_plugin(
                     dem=os.path.join(
@@ -427,27 +425,19 @@ def test_grid_generation(save_reference, input_file, ref_file):
                     assert ref_grid_right_attrs == grid_right
 
 
-def adapt_path_for_test_dir(data, input_path, input_relative_path):
+def adapt_path_for_test_dir(data, input_path):
     """
     Adapt path of source for the test dir
     """
     for primary_key in data:
-        for key2 in data[primary_key]:
-            if isinstance(data[primary_key][key2], str):
-                if input_relative_path in data[primary_key][key2]:
-                    basename = os.path.basename(data[primary_key][key2])
-                    data[primary_key][key2] = os.path.join(input_path, basename)
-            # adapt for third level for geomodel path (quick dirty fix)
-            if (
-                key2 == "geomodel"
-                and input_relative_path in data[primary_key][key2]["path"]
-            ):
-                basename = os.path.basename(
-                    data[primary_key]["geomodel"]["path"]
-                )
-                data[primary_key]["geomodel"]["path"] = os.path.join(
-                    input_path, basename
-                )
+        image_path = os.path.basename(data[primary_key]["image"]["main_file"])
+        data[primary_key]["image"]["main_file"] = os.path.join(
+            input_path, image_path
+        )
+        geomodel_path = os.path.basename(data[primary_key]["geomodel"]["path"])
+        data[primary_key]["geomodel"]["path"] = os.path.join(
+            input_path, geomodel_path
+        )
 
 
 def serialize_grid_ref_data(grid_left, grid_right, ref_dicts):

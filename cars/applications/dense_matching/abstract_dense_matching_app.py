@@ -183,12 +183,6 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :rtype: CarsDataset
         """
 
-    def get_required_bands(self):
-        required_bands = {}
-        required_bands["left"] = self.required_bands
-        required_bands["right"] = self.required_bands
-        return required_bands
-
     @abstractmethod
     def run(
         self,
@@ -202,6 +196,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         compute_disparity_masks=False,
         disp_to_alt_ratio=None,
         margins_to_keep=0,
+        texture_bands=None,
     ):
         """
         Run Matching application.
@@ -215,7 +210,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 - N x M Delayed tiles. \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"\
                         "transform", "crs", "valid_pixels", "no_data_mask",\
                         "no_data_img"
@@ -227,7 +222,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 - N x M Delayed tiles. \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"
                         "transform", "crs", "valid_pixels", "no_data_mask",
                         "no_data_img"

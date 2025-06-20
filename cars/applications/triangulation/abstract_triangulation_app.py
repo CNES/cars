@@ -129,11 +129,11 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         corresponding to 3D point clouds, stored on epipolar geometry grid.
 
         :param sensor_image_left: tiled sensor left image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_left: CarsDataset
         :param sensor_image_right: tiled sensor right image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_right: CarsDataset
         :param grid_left: left epipolar grid. Grid CarsDataset contains :
@@ -221,7 +221,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
                 Each tile will be a future xarray Dataset containing:
 
                 - data : with keys : "x", "y", "z", "corr_msk"\
-                    optional: "color", "msk", "z_inf", "z_sup"
+                    optional: "texture", "msk", "z_inf", "z_sup"
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound", \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"

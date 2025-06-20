@@ -119,7 +119,7 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
         :param geom_plugin_dem_median: Geometry plugin with dem median
         :type geom_plugin_dem_median: geometry_plugin
         :param sensor_left: Tiled sensor left image.
-            Dict must contain keys: "image", "color", "geomodel",
+            Dict must contain keys: "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolute.
         :type sensor_left: CarsDataset
         :param grid_left: Grid left.

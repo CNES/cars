@@ -475,12 +475,20 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         )
         mask1 = sensor_image_left.get(sens_cst.INPUT_MSK, None)
         mask2 = sensor_image_right.get(sens_cst.INPUT_MSK, None)
-        left_classifs = sensor_image_left.get(sens_cst.INPUT_CLASSIFICATION, None)
+        left_classifs = sensor_image_left.get(
+            sens_cst.INPUT_CLASSIFICATION, None
+        )
         if left_classifs is not None:
-            left_classifs = resampling_wrappers.get_paths_and_bands(left_classifs)
-        right_classifs = sensor_image_right.get(sens_cst.INPUT_CLASSIFICATION, None)
+            left_classifs = resampling_wrappers.get_paths_and_bands(
+                left_classifs
+            )
+        right_classifs = sensor_image_right.get(
+            sens_cst.INPUT_CLASSIFICATION, None
+        )
         if right_classifs is not None:
-            right_classifs = resampling_wrappers.get_paths_and_bands(right_classifs)
+            right_classifs = resampling_wrappers.get_paths_and_bands(
+                right_classifs
+            )
 
         # Set Epipolar roi
         epi_tilling_grid = epipolar_images_left.tiling_grid

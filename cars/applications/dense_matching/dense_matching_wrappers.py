@@ -446,7 +446,7 @@ def create_disp_dataset(  # noqa: C901
         texture=epi_image,
         color_type=image_type,
         band_im=band_im,
-        texture_bands=texture_bands
+        texture_bands=texture_bands,
     )
 
     # add original mask

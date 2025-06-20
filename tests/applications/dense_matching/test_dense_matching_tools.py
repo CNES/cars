@@ -124,9 +124,8 @@ def test_compute_disparity_1():
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
-
-    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,
@@ -173,8 +172,8 @@ def test_compute_disparity_3():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
-    disp_min_grid = -43 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 41 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -43 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 41 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,
@@ -214,7 +213,7 @@ def test_compute_disparity_with_all_confidences():
     Test compute_disparity on ventoux dataset with pandora
     """
     left_input = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_left.nc")
+        absolute_data_path("input/intermediate_results/data1_ref_left_copy.nc")
     )
     right_input = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_right.nc")
@@ -224,8 +223,8 @@ def test_compute_disparity_with_all_confidences():
     corr_cfg = corr_conf_with_confidence()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
-    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,
@@ -274,8 +273,8 @@ def test_compute_disparity_1_msk_ref():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
-    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,
@@ -326,8 +325,8 @@ def test_compute_disparity_1_msk_sec():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
-    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,

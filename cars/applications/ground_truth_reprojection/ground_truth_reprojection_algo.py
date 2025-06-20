@@ -53,7 +53,7 @@ def get_ground_truth(
     :param grid: Grid left.
     :type grid: CarsDataset
     :param sensor: sensor data
-        Dict must contain keys: "image", "color", "geomodel",
+        Dict must contain keys: "image", "texture", "geomodel",
         "no_data", "mask". Paths must be absolute.
     :type sensor: dict
     :param disp_to_alt_ratio: Disp to altitude ratio used for performance map.

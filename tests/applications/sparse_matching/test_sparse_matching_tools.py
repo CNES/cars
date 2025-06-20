@@ -46,8 +46,18 @@ def test_dataset_matching():
     Test dataset_matching method
     """
     region = [200, 250, 320, 400]
-    img1 = absolute_data_path("input/phr_reunion/left_image.tif")
-    img2 = absolute_data_path("input/phr_reunion/right_image.tif")
+    imgs_left = {
+        absolute_data_path("input/phr_reunion/left_image.tif"): {
+            "band_name": ["b0"],
+            "band_id": [1],
+        }
+    }
+    imgs_right = {
+        absolute_data_path("input/phr_reunion/right_image.tif"): {
+            "band_name": ["b0"],
+            "band_id": [1],
+        }
+    }
     mask1 = absolute_data_path("input/phr_reunion/left_mask.tif")
     mask2 = absolute_data_path("input/phr_reunion/right_mask.tif")
     nodata1 = 0
@@ -67,23 +77,25 @@ def test_dataset_matching():
     epipolar_size_y = 596
 
     left = resampling_algo.resample_image(
-        img1,
+        imgs_left,
         grid1,
         [epipolar_size_x, epipolar_size_y],
         region=region,
         nodata=nodata1,
         mask=mask1,
+        band_coords="band_im",
     )
     right = resampling_algo.resample_image(
-        img2,
+        imgs_right,
         grid2,
         [epipolar_size_x, epipolar_size_y],
         region=region,
         nodata=nodata2,
         mask=mask2,
+        band_coords="band_im",
     )
 
-    matches = sparse_matching_algo.dataset_matching(left, right)
+    matches = sparse_matching_algo.dataset_matching(left, right, "b0")
 
     # Uncomment to update baseline
     # np.save(absolute_data_path("ref_output_application/sparse_matching"
@@ -98,23 +110,25 @@ def test_dataset_matching():
     region = [0, 0, 2, 2]
 
     left = resampling_algo.resample_image(
-        img1,
+        imgs_left,
         grid1,
         [epipolar_size_x, epipolar_size_y],
         region=region,
         nodata=nodata1,
         mask=mask1,
+        band_coords="band_im",
     )
     right = resampling_algo.resample_image(
-        img1,
+        imgs_right,
         grid1,
         [epipolar_size_x, epipolar_size_y],
         region=region,
         nodata=nodata1,
         mask=mask1,
+        band_coords="band_im",
     )
 
-    matches = sparse_matching_algo.dataset_matching(left, right)
+    matches = sparse_matching_algo.dataset_matching(left, right, "b0")
 
     assert matches.shape == (0, 4)
 
