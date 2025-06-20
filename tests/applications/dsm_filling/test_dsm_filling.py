@@ -134,7 +134,8 @@ def test_fill_dsm(method):
         # copy2(
         #     input_dsm_noroi,
         #     absolute_data_path(
-        #         "ref_output/dsm_filling_{}_gizeh_crop_no_roi.tif".format(
+        #         "ref_output_application/dsm_filling/"
+        #         "dsm_filling_{}_gizeh_crop_no_roi.tif".format(
         #             method
         #         )
         #     ),
@@ -143,7 +144,8 @@ def test_fill_dsm(method):
         assert_same_images(
             input_dsm_noroi,
             absolute_data_path(
-                "ref_output/dsm_filling_{}_gizeh_crop_no_roi.tif".format(method)
+                "ref_output_application/dsm_filling/"
+                "dsm_filling_{}_gizeh_crop_no_roi.tif".format(method)
             ),
             rtol=0.1,
             atol=0.1,
@@ -159,7 +161,8 @@ def test_fill_dsm(method):
         # copy2(
         #     input_dsm_roi,
         #     absolute_data_path(
-        #         "ref_output/dsm_filling_{}_gizeh_crop_roi.tif".format(
+        #         "ref_output_application/dsm_filling/"
+        #         "dsm_filling_{}_gizeh_crop_roi.tif".format(
         #             method
         #         )
         #     ),
@@ -168,7 +171,8 @@ def test_fill_dsm(method):
         assert_same_images(
             input_dsm_roi,
             absolute_data_path(
-                "ref_output/dsm_filling_{}_gizeh_crop_roi.tif".format(method)
+                "ref_output_application/dsm_filling/"
+                "dsm_filling_{}_gizeh_crop_roi.tif".format(method)
             ),
             rtol=0.1,
             atol=0.1,

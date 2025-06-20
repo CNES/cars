@@ -133,10 +133,14 @@ def test_correct_right_grid():
         corrected_grid = corrected_grid_cars_ds[0, 0]
 
         # Uncomment to update ref
-        # np.save(absolute_data_path("ref_output/corrected_right_grid.npy"),
+        # np.save(absolute_data_path("ref_output_application/grid_generation"
+        # "/corrected_right_grid.npy"),
         #  corrected_grid)
         corrected_grid_ref = np.load(
-            absolute_data_path("ref_output/corrected_right_grid.npy")
+            absolute_data_path(
+                "ref_output_application/grid_generation"
+                "/corrected_right_grid.npy"
+            )
         )
         np.testing.assert_allclose(
             corrected_grid, corrected_grid_ref, atol=0.05, rtol=1.0e-6
@@ -226,20 +230,25 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
 
     # Uncomment to update baseline
     # generate_grid_xr_dataset(left_grid).to_netcdf(absolute_data_path(
-    #  "ref_output/left_grid_default_alt.nc"))
+    #  "ref_output_application/grid_generation/left_grid_default_alt.nc"))
 
     left_grid_ref = xr.open_dataset(
-        absolute_data_path("ref_output/left_grid_default_alt.nc")
+        absolute_data_path(
+            "ref_output_application/grid_generation/left_grid_default_alt.nc"
+        )
     )
     assert np.allclose(left_grid_ref["x"].values, left_grid[:, :, 0])
     assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
 
     # Uncomment to update baseline
     # generate_grid_xr_dataset(right_grid).to_netcdf(absolute_data_path(
-    # "ref_output/right_grid_default_alt.nc"))
+    # "ref_output_application/grid_generation/right_grid_default_alt.nc"))
 
     right_grid_ref = xr.open_dataset(
-        absolute_data_path("ref_output/right_grid_default_alt.nc")
+        absolute_data_path(
+            "ref_output_application/grid_generation"
+            "/right_grid_default_alt.nc"
+        )
     )
     assert np.allclose(right_grid_ref["x"].values, right_grid[:, :, 0])
     assert np.allclose(right_grid_ref["y"].values, right_grid[:, :, 1])
@@ -285,20 +294,25 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
 
     # Uncomment to update baseline
     # generate_grid_xr_dataset(left_grid).to_netcdf(
-    # absolute_data_path("ref_output/left_grid.nc"))
+    # absolute_data_path("ref_output_application/grid_generation/left_grid.nc"))
 
     left_grid_ref = xr.open_dataset(
-        absolute_data_path("ref_output/left_grid.nc")
+        absolute_data_path(
+            "ref_output_application/grid_generation/left_grid.nc"
+        )
     )
     assert np.allclose(left_grid_ref["x"].values, left_grid[:, :, 0])
     assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
 
     # Uncomment to update baseline
     # generate_grid_xr_dataset(right_grid).to_netcdf(
-    # absolute_data_path("ref_output/right_grid.nc"))
+    # absolute_data_path("ref_output_application/"
+    # "grid_generation/right_grid.nc"))
 
     right_grid_ref = xr.open_dataset(
-        absolute_data_path("ref_output/right_grid.nc")
+        absolute_data_path(
+            "ref_output_application/grid_generation/right_grid.nc"
+        )
     )
     assert np.allclose(right_grid_ref["x"].values, right_grid[:, :, 0])
     assert np.allclose(right_grid_ref["y"].values, right_grid[:, :, 1])

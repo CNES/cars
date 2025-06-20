@@ -75,18 +75,18 @@ conf_2 = {
     [
         (
             conf_0,
-            "ref_output/color_end2end_paca_aux_filling_0.tif",
-            "ref_output/classification_end2end_paca_aux_filling_0.tif",
+            "input/color_end2end_paca_aux_filling_0.tif",
+            "input/classification_end2end_paca_aux_filling_0.tif",
         ),
         (
             conf_1,
-            "ref_output/color_end2end_paca_aux_filling_1.tif",
-            "ref_output/classification_end2end_paca_aux_filling_1.tif",
+            "input/color_end2end_paca_aux_filling_1.tif",
+            "input/classification_end2end_paca_aux_filling_1.tif",
         ),
         (
             conf_2,
-            "ref_output/color_end2end_paca_aux_filling_2.tif",
-            "ref_output/classification_end2end_paca_aux_filling_2.tif",
+            "input/color_end2end_paca_aux_filling_2.tif",
+            "input/classification_end2end_paca_aux_filling_2.tif",
         ),
     ],
 )

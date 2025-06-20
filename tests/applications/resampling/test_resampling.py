@@ -221,27 +221,34 @@ def test_epipolar_rectify_images_1(
     print("clr dataset: {}".format(clr))
 
     # Uncomment to update baseline
-    # left.to_netcdf(absolute_data_path("ref_output/data1_ref_left.nc"))
+    # left.to_netcdf(absolute_data_path("ref_output_application/resampling"
+    # "/data1_ref_left.nc"))
 
     left_ref = xr.open_dataset(
-        absolute_data_path("ref_output/data1_ref_left.nc")
+        absolute_data_path(
+            "ref_output_application/resampling/data1_ref_left.nc"
+        )
     )
     assert_same_datasets(left, left_ref)
 
     # Uncomment to update baseline
-    # right.to_netcdf(absolute_data_path("ref_output/data1_ref_right.nc"))
+    # right.to_netcdf(absolute_data_path("ref_output_application/resampling"
+    # "/data1_ref_right.nc"))
 
     right_ref = xr.open_dataset(
-        absolute_data_path("ref_output/data1_ref_right.nc")
+        absolute_data_path(
+            "ref_output_application/resampling/data1_ref_right.nc"
+        )
     )
     assert_same_datasets(right, right_ref)
 
     # Uncomment to update baseline
-    # with open(absolute_data_path("ref_output/data1_ref_color"), "wb") as file:
+    # with open(absolute_data_path("ref_output_application/resampling"
+    # "/data1_ref_color"), "wb") as file:
     #     pickle.dump(clr, file)
 
     with open(
-        absolute_data_path("ref_output/data1_ref_color"),
+        absolute_data_path("ref_output_application/resampling/data1_ref_color"),
         "rb",
     ) as file2:
         # load pickle data
@@ -333,24 +340,31 @@ def test_epipolar_rectify_images_3(
     print("clr dataset: {}".format(clr))
 
     left_ref = xr.open_dataset(
-        absolute_data_path("ref_output/data1_ref_left.nc")
+        absolute_data_path(
+            "ref_output_application/resampling/data1_ref_left.nc"
+        )
     )
     assert_same_datasets(left, left_ref)
 
     right_ref = xr.open_dataset(
-        absolute_data_path("ref_output/data1_ref_right.nc")
+        absolute_data_path(
+            "ref_output_application/resampling/data1_ref_right.nc"
+        )
     )
     assert_same_datasets(right, right_ref)
 
     # Uncomment to update baseline
     # with open(absolute_data_path(os.path.join(
-    #           "ref_output","data3_ref_color_4bands"
+    #           "ref_output_application/resampling",
+    #           "data3_ref_color_4bands"
     #      )), "wb") as file:
     #     pickle.dump(clr, file)
 
     with open(
         absolute_data_path(
-            os.path.join("ref_output", "data3_ref_color_4bands")
+            os.path.join(
+                "ref_output_application/resampling", "data3_ref_color_4bands"
+            )
         ),
         "rb",
     ) as file2:

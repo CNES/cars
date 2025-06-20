@@ -142,9 +142,9 @@ def test_phased_dsm():
     Test phased_dsm function
     """
 
-    dsm_one = absolute_data_path("ref_output/dsm_end2end_ventoux_split.tif")
+    dsm_one = absolute_data_path("input/dsm_end2end_ventoux_split.tif")
 
-    dsm_two = absolute_data_path("ref_output/dsm_end2end_paca_bulldozer.tif")
+    dsm_two = absolute_data_path("input/dsm_end2end_paca_bulldozer.tif")
 
     input_test = {
         "one": {
@@ -242,11 +242,15 @@ def test_simple_rasterization_single():
 
     # Uncomment to update references
     # raster.to_netcdf(
-    #     absolute_data_path('ref_output/ref_simple_rasterization.nc'),
+    #     absolute_data_path("ref_output_application/rasterization"
+    #     "/ref_simple_rasterization.nc"),
     # )
 
     ref_rasterized = xr.open_dataset(
-        absolute_data_path("ref_output/ref_simple_rasterization.nc")
+        absolute_data_path(
+            "ref_output_application/rasterization"
+            "/ref_simple_rasterization.nc"
+        )
     )
 
     assert_same_datasets(raster, ref_rasterized, atol=1.0e-10, rtol=1.0e-10)
@@ -322,11 +326,14 @@ def test_simple_rasterization_dataset_1():
 
     # Uncomment to update references
     # raster.to_netcdf(
-    #     absolute_data_path('ref_output/rasterization_res_ref_1.nc'),
+    #     absolute_data_path('ref_output_application/rasterization'
+    #     '/rasterization_res_ref_1.nc'),
     # )
 
     raster_ref = xr.open_dataset(
-        absolute_data_path("ref_output/rasterization_res_ref_1.nc")
+        absolute_data_path(
+            "ref_output_application/rasterization/rasterization_res_ref_1.nc"
+        )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
 
@@ -404,11 +411,15 @@ def test_simple_rasterization_dataset_1_intervals():
     )
     # Uncomment to update references
     # raster.to_netcdf(
-    #     absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc"),
+    #     absolute_data_path("ref_output_application/rasterization"
+    #     "/rasterization_res_ref_1_intervals.nc"),
     # )
 
     raster_ref = xr.open_dataset(
-        absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc")
+        absolute_data_path(
+            "ref_output_application/rasterization"
+            "/rasterization_res_ref_1_intervals.nc"
+        )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
 
@@ -484,11 +495,14 @@ def test_simple_rasterization_dataset_2():
 
     # Uncomment to update references
     # raster.to_netcdf(
-    #     absolute_data_path('ref_output/rasterization_res_ref_2.nc'),
+    #     absolute_data_path('ref_output_application/rasterization'
+    #     '/rasterization_res_ref_2.nc'),
     # )
 
     raster_ref = xr.open_dataset(
-        absolute_data_path("ref_output/rasterization_res_ref_2.nc")
+        absolute_data_path(
+            "ref_output_application/rasterization/rasterization_res_ref_2.nc"
+        )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
 
@@ -564,11 +578,14 @@ def test_simple_rasterization_dataset_():
 
     # Uncomment to update references
     # raster.to_netcdf(
-    #     absolute_data_path('ref_output/rasterization_res_ref_1.nc'),
+    #     absolute_data_path('ref_output_application/rasterization'
+    #     '/rasterization_res_ref_1.nc'),
     # )
 
     raster_ref = xr.open_dataset(
-        absolute_data_path("ref_output/rasterization_res_ref_1.nc")
+        absolute_data_path(
+            "ref_output_application/rasterization/rasterization_res_ref_1.nc"
+        )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
 
@@ -651,11 +668,15 @@ def test_simple_rasterization_multiple_datasets():
 
     # Uncomment to update reference
     # raster.to_netcdf(
-    #     absolute_data_path('ref_output/rasterization_multiple_res_ref.nc'),
+    #     absolute_data_path('ref_output_application/rasterization'
+    #     '/rasterization_multiple_res_ref.nc'),
     # )
 
     raster_ref = xr.open_dataset(
-        absolute_data_path("ref_output/rasterization_multiple_res_ref.nc")
+        absolute_data_path(
+            "ref_output_application/rasterization"
+            "/rasterization_multiple_res_ref.nc"
+        )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
 
@@ -741,13 +762,15 @@ def test_simple_rasterization_multiple_datasets_with_source_map():
     # Uncomment to update reference
     # raster.to_netcdf(
     #     absolute_data_path(
-    #         'ref_output/rasterization_multiple_with_source_res_ref.nc'
+    #         'ref_output_application/rasterization'
+    #         '/rasterization_multiple_with_source_res_ref.nc'
     #     )
     # )
 
     raster_ref = xr.open_dataset(
         absolute_data_path(
-            "ref_output/rasterization_multiple_with_source_res_ref.nc"
+            "ref_output_application/rasterization"
+            "/rasterization_multiple_with_source_res_ref.nc"
         )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
