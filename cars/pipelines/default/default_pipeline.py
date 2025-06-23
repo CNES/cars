@@ -916,6 +916,12 @@ class DefaultPipeline(PipelineTemplate):
             corr_cfg_sparse = self.sparse_mtch_pandora_app.loader.get_conf()
             img_left = inputs_conf["sensors"][key1]["image"]["main_file"]
             img_right = inputs_conf["sensors"][key2]["image"]["main_file"]
+            bands_left = list(
+                inputs_conf["sensors"][key1]["image"]["bands"].keys()
+            )
+            bands_right = list(
+                inputs_conf["sensors"][key2]["image"]["bands"].keys()
+            )
             classif_left = None
             classif_right = None
             if "classification" in inputs_conf["sensors"][key1]:
@@ -927,6 +933,8 @@ class DefaultPipeline(PipelineTemplate):
                     corr_cfg,
                     img_left,
                     img_right,
+                    bands_left,
+                    bands_right,
                     classif_left,
                     classif_right,
                 )
@@ -936,6 +944,8 @@ class DefaultPipeline(PipelineTemplate):
                     corr_cfg_sparse,
                     img_left,
                     img_right,
+                    bands_left,
+                    bands_right,
                     classif_left,
                     classif_right,
                 )
@@ -1853,10 +1863,15 @@ class DefaultPipeline(PipelineTemplate):
             required_bands = self.dense_matching_app.get_required_bands()
 
             # Add left required bands for texture
-            required_bands["left"] = list(
+            required_bands["left"] = sorted(
                 set(required_bands["left"]).union(set(self.texture_bands))
             )
-            required_bands["left"].sort()
+
+            # Find index of texture band in left_dataset
+            texture_bands = [
+                required_bands["left"].index(band)
+                for band in self.texture_bands
+            ]
 
             # Run third epipolar resampling
             (
@@ -1933,7 +1948,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pc_outlier_removal_1_app.get_epipolar_margin()
                     + self.pc_outlier_removal_2_app.get_epipolar_margin()
                 ),
-                texture_bands=[0],
+                texture_bands=texture_bands,
             )
 
             if self.quit_on_app("dense_matching"):

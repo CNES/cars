@@ -312,6 +312,8 @@ class PandoraLoader:
         user_cfg,
         img_left,
         img_right,
+        bands_left,
+        bands_right,
         classif_left=None,
         classif_right=None,
     ):
@@ -335,10 +337,8 @@ class PandoraLoader:
         metadata_left = get_metadata(img_left, classif=classif_left)
         metadata_right = get_metadata(img_right, classif=classif_right)
 
-        metadata_left = metadata_left.assign_coords(band_im=["b0", "b1", "b2"])
-        metadata_right = metadata_right.assign_coords(
-            band_im=["b0", "b1", "b2"]
-        )
+        metadata_left = metadata_left.assign_coords(band_im=bands_left)
+        metadata_right = metadata_right.assign_coords(band_im=bands_right)
 
         user_cfg_pipeline = get_config_pipeline(user_cfg)
         saved_schema = copy.deepcopy(

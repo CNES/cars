@@ -89,9 +89,8 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
             overloaded_conf[adv_cst.PERFORMANCE_MAP_CLASSES]
         )
 
-    default_texture_bands = ["b0"]
-    overloaded_conf[adv_cst.TEXTURE_BANDS] = conf.get(
-        adv_cst.TEXTURE_BANDS, default_texture_bands
+    (overloaded_conf[adv_cst.TEXTURE_BANDS]) = check_texture_bands(
+        inputs, conf.get(adv_cst.TEXTURE_BANDS, None)
     )
 
     overloaded_conf[adv_cst.GROUND_TRUTH_DSM] = conf.get(
@@ -260,6 +259,56 @@ def check_performance_classes(performance_map_classes):
                     "performance_map_classes list must be ordered."
                 )
             previous_step = step
+
+
+def check_texture_bands(inputs, texture_bands_in_advanced_cfg):
+    """
+    Define bands used for texture and put it on advanced and
+    inputs configuration
+    """
+    texture_bands_dict = {}
+    bands_set = None
+    if texture_bands_in_advanced_cfg is not None:
+        texture_bands_dict[tuple(texture_bands_in_advanced_cfg)] = "advanced"
+    for [sensor_left, _] in inputs[sens_cst.PAIRING]:
+        image = inputs[sens_cst.SENSORS][sensor_left][sens_cst.INPUT_IMG]
+        bands = set(image["bands"].keys())
+        if bands_set is None:
+            bands_set = bands
+        else:
+            bands_set = bands_set & bands
+        texture_bands = image["texture_bands"]
+        if texture_bands is not None:
+            for texture_band in texture_bands:
+                if texture_band not in bands:
+                    raise RuntimeError(
+                        "Band {} not found in sensor {}".format(
+                            texture_band,
+                            sensor_left,
+                        )
+                    )
+            texture_bands_dict[tuple(texture_bands)] = "sensor " + sensor_left
+            if len(texture_bands_dict) == 2:
+                keys = list(texture_bands_dict.keys())
+                raise RuntimeError(
+                    "Texture bands defined in {} ({}) and {} ({}) "
+                    "are not the same".format(
+                        texture_bands_dict[keys[0]],
+                        keys[0],
+                        texture_bands_dict[keys[1]],
+                        keys[1],
+                    )
+                )
+    if len(texture_bands_dict) == 0:
+        if len(bands_set) == 0:
+            logging.warning("No common band found between sensors")
+            return []
+        logging.info(
+            "Texture bands are not defined, "
+            "taking all possible bands : {}".format(bands_set)
+        )
+        return sorted(bands_set)
+    return list(next(iter(texture_bands_dict)))
 
 
 def validate_epipolar_a_priori(

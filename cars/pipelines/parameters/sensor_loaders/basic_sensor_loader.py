@@ -54,6 +54,8 @@ class BasicSensorLoader(SensorLoaderTemplate):
             overloaded_conf["path"] = image_path
             if self.input_type == "image":
                 overloaded_conf["nodata"] = 0
+            else:
+                overloaded_conf["nodata"] = None
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
@@ -62,6 +64,8 @@ class BasicSensorLoader(SensorLoaderTemplate):
             overloaded_conf["path"] = image_path
             if self.input_type == "image":
                 overloaded_conf["nodata"] = conf.get("nodata", 0)
+            else:
+                overloaded_conf["nodata"] = None
         else:
             raise TypeError(f"Input {self.input_type} is not a string ot dict")
 
@@ -84,6 +88,7 @@ class BasicSensorLoader(SensorLoaderTemplate):
                 "path": self.used_config["path"],
                 "band": band_id,
             }
+        pivot_config["texture_bands"] = None
         pivot_sensor_loader = PivotSensorLoader(
             pivot_config, self.input_type, self.json_dir
         )
