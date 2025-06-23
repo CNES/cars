@@ -112,6 +112,8 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         add_color=True,
         add_classif=True,
         epipolar_roi=None,
+        required_bands=None,
+        texture_bands=None,
     ):  # noqa: C901
         """
         Run resampling application.

@@ -266,6 +266,9 @@ def check_texture_bands(inputs, texture_bands_in_advanced_cfg):
     Define bands used for texture and put it on advanced and
     inputs configuration
     """
+    if inputs[sens_cst.SENSORS] is None:
+        # Parameter "texture_band" is used only when inputs are sensors
+        return []
     texture_bands_dict = {}
     bands_set = None
     if texture_bands_in_advanced_cfg is not None:

@@ -24,6 +24,7 @@ this module contains the BasicSensorLoader class.
 
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_loaders.pivot_sensor_loader import (
     PivotSensorLoader,
 )
@@ -53,9 +54,9 @@ class BasicSensorLoader(SensorLoaderTemplate):
             image_path = make_relative_path_absolute(conf, self.json_dir)
             overloaded_conf["path"] = image_path
             if self.input_type == "image":
-                overloaded_conf["nodata"] = 0
+                overloaded_conf[sens_cst.INPUT_NODATA] = 0
             else:
-                overloaded_conf["nodata"] = None
+                overloaded_conf[sens_cst.INPUT_NODATA] = None
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
@@ -63,9 +64,11 @@ class BasicSensorLoader(SensorLoaderTemplate):
             )
             overloaded_conf["path"] = image_path
             if self.input_type == "image":
-                overloaded_conf["nodata"] = conf.get("nodata", 0)
+                overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
+                    sens_cst.INPUT_NODATA, 0
+                )
             else:
-                overloaded_conf["nodata"] = None
+                overloaded_conf[sens_cst.INPUT_NODATA] = None
         else:
             raise TypeError(f"Input {self.input_type} is not a string ot dict")
 

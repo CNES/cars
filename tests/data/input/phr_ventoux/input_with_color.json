@@ -2,8 +2,32 @@
     "inputs": { 
         "sensors" : {
             "left": {
-                "image": "left_image.tif",
-                "color" : "color_image.tif",
+                "image": {
+                    "loader": "pivot",
+                    "bands": {
+                        "b0": {
+                            "path": "left_image.tif",
+                            "band": 0
+                        },
+                        "b1": {
+                            "path": "color_image.tif",
+                            "band": 0
+                        },
+                        "b2": {
+                            "path": "color_image.tif",
+                            "band": 1
+                        },
+                        "b3": {
+                            "path": "color_image.tif",
+                            "band": 2
+                        },
+                        "b4": {
+                            "path": "color_image.tif",
+                            "band": 3
+                        }
+                    },
+                    "texture_bands": ["b1", "b2", "b3", "b4"]
+                },
                 "geomodel": {
                     "path": "left_image.geom"
                 }

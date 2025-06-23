@@ -37,6 +37,7 @@ RIO_TAG_PERFORMANCE_MAP_CLASSES = "rio_tag_performance_map_classes"
 X = "x"
 Y = "y"
 Z = "z"
+TEXTURE = "texture"
 PERFORMANCE_MAP_FROM_RISK = "risk_performance_map"
 PERFORMANCE_MAP_FROM_INTERVALS = "intervals_performance_map"
 RESOLUTION = "resolution"
@@ -48,6 +49,7 @@ DISPARITY = "disparity"
 PC_EPSG = "point_cloud_epsg"
 
 BAND_NAMES = "band_names"
+IMAGE_TYPE = "image_type"
 NBITS = "nbits"
 EPSG_WSG84 = 4326
 # stereo keys

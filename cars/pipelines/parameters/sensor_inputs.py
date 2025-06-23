@@ -618,20 +618,18 @@ def compare_image_type(imgs, image_type, key1, key2):
     :param key1: other key of the images pair
     :type key1: str
     """
-    for band in imgs[key1][image_type]["bands"]:
-        if band in imgs[key2][image_type]["bands"]:
-            dtype1 = inputs.rasterio_get_image_type(
-                imgs[key1][image_type]["bands"][band]["path"]
-            )
-            dtype2 = inputs.rasterio_get_image_type(
-                imgs[key2][image_type]["bands"][band]["path"]
-            )
-            if dtype1 != dtype2:
-                raise RuntimeError(
-                    "The pair images haven't the same data type."
-                    + "\nSensor {}, band {}: {}".format(key1, band, dtype1)
-                    + "\nSensor {}, band {}: {}".format(key2, band, dtype2)
-                )
+    dtype1 = inputs.rasterio_get_image_type(
+        imgs[key1][image_type][sens_cst.MAIN_FILE]
+    )
+    dtype2 = inputs.rasterio_get_image_type(
+        imgs[key2][image_type][sens_cst.MAIN_FILE]
+    )
+    if dtype1 != dtype2:
+        raise RuntimeError(
+            "The pair images haven't the same data type."
+            + "\nSensor[{}]: {}".format(key1, dtype1)
+            + "; Sensor[{}]: {}".format(key2, dtype2)
+        )
 
 
 def check_all_nbits_equal_one(nbits):

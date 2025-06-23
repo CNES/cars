@@ -108,7 +108,6 @@ def epipolar_rectify_images(
     # Resample left images
     left_img_transform = inputs.rasterio_get_transform(next(iter(left_imgs)))
 
-    # Loop over files and resample each file
     left_dataset = resample_image(
         left_imgs,
         grid1,
@@ -264,6 +263,7 @@ def resample_image(
     resampled_images_list = []
     resampled_masks_list = []
     band_names = []
+    data_types = []
     nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
     for img in imgs:
         bands = imgs[img]
@@ -465,6 +465,7 @@ def resample_image(
 
                     msk = np.concatenate((msk, block_msk), axis=2)
         band_names += bands["band_name"]
+        data_types += [inputs.rasterio_get_image_type(img)] * nb_bands
         resampled_images_list.append(resamp)
         resampled_masks_list.append(msk)
 
@@ -477,6 +478,7 @@ def resample_image(
         img_sample,
         band_coords,
         band_names,
+        data_types,
         msk_final,
     )
 

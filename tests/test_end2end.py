@@ -99,7 +99,7 @@ def test_end2end_dsm_fusion():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
                 "msk_no_data": 254,
                 "save_intermediate_data": True,
             },
@@ -116,7 +116,7 @@ def test_end2end_dsm_fusion():
             "performance_map": True,
             "weights": True,
             "filling": True,
-            "color": True,
+            "texture": True,
             "contributing_pair": True,
             "classification": True,
         }
@@ -139,7 +139,7 @@ def test_end2end_dsm_fusion():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "color_end2end_ventoux_lr.tif"
@@ -196,7 +196,7 @@ def test_end2end_dsm_fusion():
             "weights": absolute_data_path(
                 "ref_output/weights_end2end_ventoux_lr.tif"
             ),
-            "color": absolute_data_path(
+            "texture": absolute_data_path(
                 "ref_output/color_end2end_ventoux_lr.tif"
             ),
             "classification": absolute_data_path(
@@ -232,7 +232,7 @@ def test_end2end_dsm_fusion():
             "performance_map": True,
             "weights": True,
             "filling": True,
-            "color": True,
+            "texture": True,
             "contributing_pair": True,
             "classification": True,
         }
@@ -259,7 +259,7 @@ def test_end2end_dsm_fusion():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "color_end2end_ventoux_fusion.tif"
@@ -315,7 +315,7 @@ def test_end2end_dsm_fusion():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_fusion.tif")
             ),
@@ -356,11 +356,11 @@ def test_end2end_dsm_fusion():
         # assertion on descriptions and classes
 
         assert inputs.get_descriptions_bands(
-            os.path.join(out_dir, "dsm", "color.tif")
+            os.path.join(out_dir, "dsm", "texture.tif")
         ) == (None, None, None, None)
         assert inputs.get_descriptions_bands(
             os.path.join(out_dir, "dsm", "classification.tif")
-        ) == ("forest", "shadow", "water")
+        ) == ("b0", "b1", "b2")
         assert inputs.get_descriptions_bands(
             os.path.join(out_dir, "dsm", "contributing_pair.tif")
         ) == ("left_right",)
@@ -437,7 +437,9 @@ def test_end2end_color_after_dsm_reentrance():
         "weights": absolute_data_path(
             "ref_output/weights_end2end_ventoux_lr.tif"
         ),
-        "color": absolute_data_path("ref_output/color_end2end_ventoux_lr.tif"),
+        "texture": absolute_data_path(
+            "ref_output/color_end2end_ventoux_lr.tif"
+        ),
     }
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_dsm_config = {
@@ -487,7 +489,7 @@ def test_end2end_color_after_dsm_reentrance():
         dsm_merging_pipeline.run()
 
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -497,7 +499,7 @@ def test_end2end_color_after_dsm_reentrance():
         )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "colorisation_end2end_gizeh_reentrance.tif"
@@ -560,7 +562,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
                 "msk_no_data": 254,
             },
         }
@@ -600,7 +602,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -697,7 +699,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
@@ -1183,7 +1185,7 @@ def test_end2end_ventoux_unique():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
                 "save_intermediate_data": True,
             },
             "dense_matching": {
@@ -1295,7 +1297,7 @@ def test_end2end_ventoux_unique():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "color_end2end_ventoux.tif"
@@ -1542,7 +1544,7 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
@@ -1551,7 +1553,7 @@ def test_end2end_ventoux_unique():
         )
         assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
-    # Test that we have the same results without setting the color1
+    # Test that we have the same results without setting the texture
     input_json = absolute_data_path(
         "input/phr_ventoux/input_without_color.json"
     )
@@ -1688,7 +1690,7 @@ def test_end2end_ventoux_unique():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -1711,7 +1713,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
@@ -1801,7 +1803,7 @@ def test_end2end_ventoux_unique():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -1824,7 +1826,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
@@ -1885,7 +1887,9 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                             "x": os.path.join(depth_map_path, "X.tif"),
                             "y": os.path.join(depth_map_path, "Y.tif"),
                             "z": os.path.join(depth_map_path, "Z.tif"),
-                            "color": os.path.join(depth_map_path, "color.tif"),
+                            "texture": os.path.join(
+                                depth_map_path, "texture.tif"
+                            ),
                         }
                     },
                     "roi": {
@@ -1912,9 +1916,6 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                     "sensors": {
                         "left": {
                             "image": absolute_data_path(
-                                "input/phr_ventoux/left_image.tif"
-                            ),
-                            "color": absolute_data_path(
                                 "input/phr_ventoux/left_image.tif"
                             ),
                             "geomodel": {
@@ -1978,7 +1979,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 ),
             )
             copy2(
-                os.path.join(out_dir_dsm, "dsm", "color.tif"),
+                os.path.join(out_dir_dsm, "dsm", "texture.tif"),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
@@ -2009,7 +2010,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm", "color.tif"),
+                os.path.join(out_dir_dsm, "dsm", "texture.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "color_end2end_ventoux_split_4326.tif"
@@ -2128,7 +2129,7 @@ def test_end2end_ventoux_unique_split():
             },
             "dense_match_filling.1": {
                 "method": "plane",
-                "classification": ["forest"],
+                "classification": ["b0"],
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
@@ -2156,7 +2157,7 @@ def test_end2end_ventoux_unique_split():
         input_config_pc["output"]["auxiliary"] = {
             "classification": True,
             "filling": True,
-            "color": True,
+            "texture": True,
             "performance_map": True,
             "ambiguity": True,
         }
@@ -2180,7 +2181,9 @@ def test_end2end_ventoux_unique_split():
                             "x": os.path.join(depth_map_path, "X.tif"),
                             "y": os.path.join(depth_map_path, "Y.tif"),
                             "z": os.path.join(depth_map_path, "Z.tif"),
-                            "color": os.path.join(depth_map_path, "color.tif"),
+                            "texture": os.path.join(
+                                depth_map_path, "texture.tif"
+                            ),
                             "classification": os.path.join(
                                 depth_map_path, "classification.tif"
                             ),
@@ -2235,7 +2238,7 @@ def test_end2end_ventoux_unique_split():
                         "dsm_radius": 3,
                         "sigma": 0.3,
                         "dsm_no_data": -999,
-                        "color_no_data": 0,
+                        "texture_no_data": 0,
                         "save_intermediate_data": True,
                     },
                 },
@@ -2277,7 +2280,7 @@ def test_end2end_ventoux_unique_split():
                 ),
             )
             copy2(
-                os.path.join(out_dir_dsm, "dsm", "color.tif"),
+                os.path.join(out_dir_dsm, "dsm", "texture.tif"),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
@@ -2382,7 +2385,7 @@ def test_end2end_ventoux_unique_split():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm", "color.tif"),
+                os.path.join(out_dir_dsm, "dsm", "texture.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "color_end2end_ventoux_split.tif"
@@ -2526,7 +2529,7 @@ def test_end2end_ventoux_unique_split():
                 ),
             )
             copy2(
-                os.path.join(out_dir_dsm, "dsm", "color.tif"),
+                os.path.join(out_dir_dsm, "dsm", "texture.tif"),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
@@ -2632,7 +2635,7 @@ def test_end2end_ventoux_unique_split():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm", "color.tif"),
+                os.path.join(out_dir_dsm, "dsm", "texture.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -2998,7 +3001,7 @@ def test_end2end_use_epipolar_a_priori():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
                 "save_intermediate_data": True,
             },
             "dense_matching": {
@@ -3063,7 +3066,7 @@ def test_end2end_use_epipolar_a_priori():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -3091,7 +3094,7 @@ def test_end2end_use_epipolar_a_priori():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_no_srtm.tif"
@@ -3264,7 +3267,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             "directory": out_dir,
             "product_level": ["depth_map", "point_cloud", "dsm"],
             "auxiliary": {
-                "color": True,
+                "texture": True,
                 "weights": True,
                 "filling": True,
                 "mask": True,
@@ -3295,7 +3298,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -3349,7 +3352,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             ),
         )
         copy2(
-            os.path.join(out_dir, "depth_map", "left_right", "color.tif"),
+            os.path.join(out_dir, "depth_map", "left_right", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -3426,7 +3429,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_no_elevation.tif"
@@ -3547,7 +3550,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "color.tif"),
+            os.path.join(depth_map_dir, "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3601,7 +3604,7 @@ def test_end2end_ventoux_full_output_no_elevation():
                     "x": "left_right/X.tif",
                     "y": "left_right/Y.tif",
                     "z": "left_right/Z.tif",
-                    "color": "left_right/color.tif",
+                    "texture": "left_right/texture.tif",
                     "mask": "left_right/mask.tif",
                     "classification": "left_right/classification.tif",
                     "performance_map": None,
@@ -3614,7 +3617,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             dsm_index = json.load(json_file)
             assert dsm_index == {
                 "dsm": "dsm.tif",
-                "color": "color.tif",
+                "texture": "texture.tif",
                 "mask": "mask.tif",
                 "weights": "weights.tif",
                 "classification": "classification.tif",
@@ -3744,7 +3747,7 @@ def test_end2end_ventoux_with_color():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
                 "save_intermediate_data": True,
             },
             "dense_matching": {
@@ -3902,16 +3905,16 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "dsm_end2end_ventoux_with_color.tif",
+                    "dsm_end2end_ventoux_with_texture.tif",
                 )
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "color_end2end_ventoux_with_color.tif",
+                    "color_end2end_ventoux_with_texture.tif",
                 )
             ),
         )
@@ -3922,7 +3925,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "performance_map_end2end_ventoux_with_color.tif",
+                    "performance_map_end2end_ventoux_with_texture.tif",
                 )
             ),
         )
@@ -3931,7 +3934,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "weights_end2end_ventoux_with_color.tif",
+                    "weights_end2end_ventoux_with_texture.tif",
                 )
             ),
         )
@@ -3946,7 +3949,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "performance_map_from_risk_end2end_ventoux_with_color.tif",
+                    "performance_map_from_risk_end2end_ventoux_with_texture.tif",
                 )
             ),
         )
@@ -3955,17 +3958,17 @@ def test_end2end_ventoux_with_color():
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "dsm_end2end_ventoux_with_color.tif"
+                    ref_output_dir, "dsm_end2end_ventoux_with_texture.tif"
                 )
             ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "color_end2end_ventoux_with_color.tif"
+                    ref_output_dir, "color_end2end_ventoux_with_texture.tif"
                 )
             ),
             rtol=0.0002,
@@ -3978,7 +3981,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "performance_map_end2end_ventoux_with_color.tif",
+                    "performance_map_end2end_ventoux_with_texture.tif",
                 )
             ),
             rtol=0.0002,
@@ -3989,7 +3992,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "weights_end2end_ventoux_with_color.tif",
+                    "weights_end2end_ventoux_with_texture.tif",
                 )
             ),
             rtol=0.0002,
@@ -4006,7 +4009,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "performance_map_from_risk_end2end_ventoux_with_color.tif",
+                    "performance_map_from_risk_end2end_ventoux_with_texture.tif",
                 )
             ),
             rtol=0.0002,
@@ -4113,7 +4116,7 @@ def test_end2end_ventoux_with_classif():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
             },
             "dense_matching": {
                 "method": "census_sgm_default",
@@ -4336,7 +4339,7 @@ def test_compute_dsm_with_roi_ventoux():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -4393,7 +4396,7 @@ def test_compute_dsm_with_roi_ventoux():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -4413,7 +4416,7 @@ def test_compute_dsm_with_roi_ventoux():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_with_roi.tif"
@@ -4516,7 +4519,7 @@ def test_compute_dsm_with_snap_to_img1():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -4548,7 +4551,7 @@ def test_compute_dsm_with_snap_to_img1():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -4568,7 +4571,7 @@ def test_compute_dsm_with_snap_to_img1():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -4642,7 +4645,7 @@ def test_end2end_quality_stats():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -4725,7 +4728,7 @@ def test_end2end_quality_stats():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -4816,7 +4819,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_quality_stats.tif"
@@ -4939,7 +4942,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -4988,7 +4991,7 @@ def test_end2end_ventoux_egm96_geoid():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "color_end2end_ventoux_egm96.tif"
@@ -5005,7 +5008,7 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
@@ -5014,7 +5017,7 @@ def test_end2end_ventoux_egm96_geoid():
         )
     assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
-    # Test that we have the same results without setting the color1
+    # Test that we have the same results without setting the texture1
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path(
             "input/phr_ventoux/input_without_color.json"
@@ -5077,7 +5080,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -5106,7 +5109,7 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
@@ -5179,7 +5182,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -5231,7 +5234,7 @@ def test_end2end_ventoux_egm96_geoid():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -5251,7 +5254,7 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -5318,7 +5321,7 @@ def test_end2end_paca_with_mask():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
                 "msk_no_data": 254,
             },
             "dsm_filling.1": {"method": "exogenous_filling", "activated": True},
@@ -5376,7 +5379,7 @@ def test_end2end_paca_with_mask():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -5423,7 +5426,7 @@ def test_end2end_paca_with_mask():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_paca_aux_filling.tif"
@@ -5448,7 +5451,7 @@ def test_end2end_paca_with_mask():
             {
                 "dense_match_filling.2": {
                     "method": "zero_padding",
-                    "classification": ["water", "road"],
+                    "classification": ["b0", "b2"],
                 },
                 "dsm_filling.1": {
                     "method": "exogenous_filling",
@@ -5489,7 +5492,7 @@ def test_end2end_paca_with_mask():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -5518,7 +5521,7 @@ def test_end2end_paca_with_mask():
             atol=2.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_paca_matches_filling.tif"
@@ -5545,12 +5548,12 @@ def test_end2end_paca_with_mask():
             {
                 "dense_match_filling.2": {
                     "method": "zero_padding",
-                    "classification": ["water", "road"],
+                    "classification": ["b0", "b2"],
                 },
                 "dsm_filling.1": {
                     "method": "exogenous_filling",
                     "activated": True,
-                    "classification": ["water", "road"],
+                    "classification": ["b0", "b2"],
                 },
                 "dsm_filling.2": {
                     "method": "bulldozer",
@@ -5560,7 +5563,7 @@ def test_end2end_paca_with_mask():
                 "dsm_filling.3": {
                     "method": "border_interpolation",
                     "activated": True,
-                    "classification": ["water", "road"],
+                    "classification": ["b0", "b2"],
                 },
             }
         )
@@ -5623,7 +5626,7 @@ def test_end2end_disparity_filling():
             "dense_match_filling.1": {
                 "method": "plane",
                 "save_intermediate_data": True,
-                "classification": ["shadow"],
+                "classification": ["b1"],
             },
             "point_cloud_outlier_removal.1": {
                 "method": "small_components",
@@ -5642,7 +5645,7 @@ def test_end2end_disparity_filling():
                 "dsm_radius": 3,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
-                "color_no_data": 0,
+                "texture_no_data": 0,
                 "msk_no_data": 254,
             },
         }
@@ -5679,7 +5682,7 @@ def test_end2end_disparity_filling():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "color_end2end_gizeh_fill.tif"
@@ -5712,7 +5715,7 @@ def test_end2end_disparity_filling():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_gizeh_fill.tif")
             ),
@@ -5773,7 +5776,7 @@ def test_end2end_disparity_filling_with_zeros():
             "dense_match_filling.2": {
                 "method": "zero_padding",
                 "save_intermediate_data": True,
-                "classification": ["bat"],
+                "classification": ["b0"],
             },
             "point_cloud_outlier_removal.1": {
                 "method": "small_components",
@@ -5819,7 +5822,7 @@ def test_end2end_disparity_filling_with_zeros():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -5857,7 +5860,7 @@ def test_end2end_disparity_filling_with_zeros():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
+            os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_gizeh_fill_with_zero.tif"
@@ -5964,7 +5967,9 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                             "x": os.path.join(depth_map_path, "X.tif"),
                             "y": os.path.join(depth_map_path, "Y.tif"),
                             "z": os.path.join(depth_map_path, "Z.tif"),
-                            "color": os.path.join(depth_map_path, "color.tif"),
+                            "texture": os.path.join(
+                                depth_map_path, "texture.tif"
+                            ),
                         }
                     }
                 },

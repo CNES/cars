@@ -224,6 +224,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         add_classif=True,
         epipolar_roi=None,
         required_bands=None,
+        texture_bands=None,
     ):
         """
         Run resampling application.
@@ -358,9 +359,16 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         )
 
         # add image type in attributes for future checking
-        im_type = inputs.rasterio_get_image_type(
-            sensor_image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE]
-        )
+        if texture_bands is not None:
+            im_type = inputs.rasterio_get_image_type(
+                sensor_image_left[sens_cst.INPUT_IMG]["bands"][
+                    texture_bands[0]
+                ]["path"]
+            )
+        else:
+            im_type = inputs.rasterio_get_image_type(
+                sensor_image_left[sens_cst.INPUT_IMG]["main_file"]
+            )
 
         # update attributes
         epipolar_images_attributes = {
@@ -692,9 +700,6 @@ def generate_epipolar_images_wrapper(
         nodata2=nodata2,
         add_classif=add_classif,
     )
-
-    image_type = inputs.rasterio_get_image_type(next(iter(left_imgs)))
-    left_dataset[cst.EPI_IMAGE].attrs["image_type"] = image_type
 
     # Add classification layers to dataset
     if add_classif:

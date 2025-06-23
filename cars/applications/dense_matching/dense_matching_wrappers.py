@@ -347,7 +347,12 @@ def create_disp_dataset(  # noqa: C901
     # Transform image to texture
     epi_image = ref_dataset[cst.EPI_IMAGE].values
     band_im = ref_dataset.coords[cst.BAND_IM]
-    image_type = ref_dataset[cst.EPI_IMAGE].attrs.get("image_type", "float32")
+    image_type = ref_dataset.attrs.get("image_type", "float32")
+    if isinstance(image_type, list):
+        if texture_bands is not None:
+            image_type = image_type[texture_bands[0]]
+        else:
+            image_type = image_type[0]
     # Cast image
     if np.issubdtype(image_type, np.floating):
         min_value_clr = np.finfo(image_type).min

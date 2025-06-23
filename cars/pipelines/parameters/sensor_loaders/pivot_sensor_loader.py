@@ -22,6 +22,8 @@
 this module contains the PivotSensorLoader class.
 """
 
+from cars.core import inputs
+from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
     SensorLoaderTemplate,
@@ -36,6 +38,44 @@ class PivotSensorLoader(SensorLoaderTemplate):
 
     def check_conf(self, conf):
         overloaded_conf = conf.copy()
+        # Check consistency between files
+        b0_path = overloaded_conf["bands"]["b0"]["path"]
+        b0_size = inputs.rasterio_get_size(b0_path)
+        b0_transform = inputs.rasterio_get_size(b0_path)
+        for band in overloaded_conf["bands"]:
+            band_path = overloaded_conf["bands"][band]["path"]
+            if band_path != b0_path:
+                band_size = inputs.rasterio_get_size(band_path)
+                band_transform = inputs.rasterio_get_size(band_path)
+                if b0_size != band_size:
+                    raise RuntimeError(
+                        "The files {} and {} do not have the same size"
+                        "but are in the same image".format(b0_path, band_path)
+                    )
+                if b0_transform != band_transform:
+                    raise RuntimeError(
+                        "The files {} and {} do not have the same size"
+                        "but are in the same image".format(
+                            b0_transform,
+                            band_transform,
+                        )
+                    )
+        overloaded_conf["main_file"] = conf.get("main_file", None)
+        if overloaded_conf["main_file"] is None:
+            overloaded_conf["main_file"] = make_relative_path_absolute(
+                overloaded_conf["bands"]["b0"]["path"], self.json_dir
+            )
+        for band in overloaded_conf["bands"]:
+            overloaded_conf["bands"][band]["path"] = (
+                make_relative_path_absolute(
+                    overloaded_conf["bands"][band]["path"], self.json_dir
+                )
+            )
+        overloaded_conf["texture_bands"] = conf.get("texture_bands", None)
+        if self.input_type == "image":
+            overloaded_conf["nodata"] = conf.get("nodata", 0)
+        else:
+            overloaded_conf["nodata"] = None
 
         return overloaded_conf
 

@@ -163,7 +163,7 @@ def create_raster_dataset(  # noqa: C901
     y_size: int,
     resolution: float,
     hgt_no_data: int,
-    color_no_data: int,
+    texture_no_data: int,
     msk_no_data: int,
     epsg: int,
     mean: np.ndarray,
@@ -198,7 +198,7 @@ def create_raster_dataset(  # noqa: C901
     :param resolution: Resolution of rasterized cells,
         expressed in cloud CRS units or None.
     :param hgt_no_data: no data value to use for height
-    :param color_no_data: no data value to use for color
+    :param texture_no_data: no data value to use for color
     :param msk_no_data: no data value to use for mask and classif
     :param epsg: epsg code for the CRS of the final raster
     :param mean: mean of height and colors
@@ -240,7 +240,7 @@ def create_raster_dataset(  # noqa: C901
     )
 
     if raster.shape[0] > 1:  # rasterizer produced color output
-        color = np.nan_to_num(raster[1:], nan=color_no_data)
+        color = np.nan_to_num(raster[1:], nan=texture_no_data)
         for idx, band_name in enumerate(band_im):
             band_im[idx] = band_name.replace(
                 cst.POINT_CLOUD_CLR_KEY_ROOT + "_", ""

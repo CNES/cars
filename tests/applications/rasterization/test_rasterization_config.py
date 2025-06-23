@@ -41,8 +41,8 @@ def test_check_full_conf():
         "sigma": None,
         "grid_points_division_factor": None,
         "dsm_no_data": -32768,
-        "color_no_data": 0,
-        "color_dtype": None,
+        "texture_no_data": 0,
+        "texture_dtype": None,
         "msk_no_data": 255,
         "save_intermediate_data": False,
     }

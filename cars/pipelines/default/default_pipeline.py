@@ -924,10 +924,20 @@ class DefaultPipeline(PipelineTemplate):
             )
             classif_left = None
             classif_right = None
-            if "classification" in inputs_conf["sensors"][key1]:
-                classif_left = inputs_conf["sensors"][key1]["classification"]
-            if "classification" in inputs_conf["sensors"][key2]:
-                classif_right = inputs_conf["sensors"][key2]["classification"]
+            if (
+                "classification" in inputs_conf["sensors"][key1]
+                and inputs_conf["sensors"][key1]["classification"] is not None
+            ):
+                classif_left = inputs_conf["sensors"][key1]["classification"][
+                    "main_file"
+                ]
+            if (
+                "classification" in inputs_conf["sensors"][key2]
+                and inputs_conf["sensors"][key1]["classification"] is not None
+            ):
+                classif_right = inputs_conf["sensors"][key2]["classification"][
+                    "main_file"
+                ]
             self.dense_matching_app.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
@@ -1868,7 +1878,7 @@ class DefaultPipeline(PipelineTemplate):
             )
 
             # Find index of texture band in left_dataset
-            texture_bands = [
+            texture_bands_indices = [
                 required_bands["left"].index(band)
                 for band in self.texture_bands
             ]
@@ -1894,6 +1904,7 @@ class DefaultPipeline(PipelineTemplate):
                 add_classif=True,
                 epipolar_roi=epipolar_roi,
                 required_bands=required_bands,
+                texture_bands=self.texture_bands,
             )
 
             # Run ground truth dsm computation
@@ -1948,7 +1959,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pc_outlier_removal_1_app.get_epipolar_margin()
                     + self.pc_outlier_removal_2_app.get_epipolar_margin()
                 ),
-                texture_bands=texture_bands,
+                texture_bands=texture_bands_indices,
             )
 
             if self.quit_on_app("dense_matching"):
@@ -2678,8 +2689,12 @@ class DefaultPipeline(PipelineTemplate):
                     )
 
                     inter_poly, _ = projection.ground_intersection_envelopes(
-                        sensor_image_left[sens_cst.INPUT_IMG],
-                        sensor_image_right[sens_cst.INPUT_IMG],
+                        sensor_image_left[sens_cst.INPUT_IMG][
+                            sens_cst.MAIN_FILE
+                        ],
+                        sensor_image_right[sens_cst.INPUT_IMG][
+                            sens_cst.MAIN_FILE
+                        ],
                         sensor_image_left[sens_cst.INPUT_GEO_MODEL],
                         sensor_image_right[sens_cst.INPUT_GEO_MODEL],
                         self.geom_plugin_with_dem_and_geoid,

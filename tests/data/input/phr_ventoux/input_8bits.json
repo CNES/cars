@@ -3,7 +3,6 @@
         "sensors" : {
             "left": {
                 "image": "left_image_8bits.tif",
-                "color": "left_image.tif",
                 "geomodel": {
                     "path": "left_image_8bits.geom"
                 }

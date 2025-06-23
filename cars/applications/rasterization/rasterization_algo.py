@@ -56,7 +56,7 @@ def simple_rasterization_dataset_wrapper(
     sigma: float = None,
     radius: int = 1,
     dsm_no_data: int = np.nan,
-    color_no_data: int = np.nan,
+    texture_no_data: int = np.nan,
     msk_no_data: int = 255,
     list_computed_layers: List[str] = None,
     source_pc_names: List[str] = None,
@@ -84,7 +84,7 @@ def simple_rasterization_dataset_wrapper(
         (If None, set to resolution)
     :param radius: Radius for hole filling.
     :param dsm_no_data: no data value to use in the final raster
-    :param color_no_data: no data value to use in the final colored raster
+    :param texture_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
     :param list_computed_layers: list of computed output data
     :param source_pc_names: list of names of point cloud before merging :
@@ -124,7 +124,7 @@ def simple_rasterization_dataset_wrapper(
         sigma=sigma,
         radius=radius,
         hgt_no_data=dsm_no_data,
-        color_no_data=color_no_data,
+        texture_no_data=texture_no_data,
         msk_no_data=msk_no_data,
         list_computed_layers=list_computed_layers,
         source_pc_names=source_pc_names,
@@ -364,7 +364,7 @@ def rasterize(
     sigma: float = None,
     radius: int = 1,
     hgt_no_data: int = -32768,
-    color_no_data: int = 0,
+    texture_no_data: int = 0,
     msk_no_data: int = 255,
     list_computed_layers: List[str] = None,
     source_pc_names: List[str] = None,
@@ -386,7 +386,7 @@ def rasterize(
     :param sigma: sigma for gaussian interpolation. If None, set to resolution
     :param radius: Radius for hole filling.
     :param hgt_no_data: no data value to use for height
-    :param color_no_data: no data value to use for color
+    :param texture_no_data: no data value to use for color
     :param msk_no_data: no data value to use in the final mask image
     :param list_computed_layers: list of computed output data
     :param source_pc_names: list of source pc names
@@ -501,7 +501,7 @@ def rasterize(
         y_size,
         resolution,
         hgt_no_data,
-        color_no_data,
+        texture_no_data,
         msk_no_data,
         epsg,
         mean,

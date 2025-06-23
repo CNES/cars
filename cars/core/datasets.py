@@ -43,6 +43,7 @@ def create_im_dataset(
     img_path: str = None,
     band_coords: str = None,
     descriptions: list = None,
+    data_types: list = None,
     msk: np.ndarray = None,
 ) -> xr.Dataset:
     """
@@ -113,6 +114,8 @@ def create_im_dataset(
     dataset.attrs["region"] = np.array(region)
     if descriptions is not None:
         dataset.attrs[cst.BAND_NAMES] = descriptions
+    if data_types is not None:
+        dataset.attrs[cst.IMAGE_TYPE] = data_types
     return dataset
 
 

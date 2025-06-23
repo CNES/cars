@@ -34,7 +34,7 @@ COMPUTED = [0, 255, 0]
 NONE_TILE = [255, 0, 0]
 UNKNOWN = [0, 0, 255]
 
-COLOR = "texture"
+COLOR = "color"
 
 
 class TileProfiler:  # pylint: disable=too-few-public-methods
@@ -103,7 +103,7 @@ class TileProfiler:  # pylint: disable=too-few-public-methods
             progress = ["None", "Computed", "In progress"]
             dataset = xr.Dataset(
                 data_vars={
-                    "texture": (["row", "col", "progress"], new_arr),
+                    "color": (["row", "col", "progress"], new_arr),
                 },
                 coords={"progress": progress, "row": rows, "col": cols},
                 attrs={
@@ -207,7 +207,7 @@ def main():
                     "marginTop": "20px",
                     "marginBottom": "20px",
                     "textAlign": "center",
-                    "texture": "#01172E",
+                    "color": "#01172E",
                 },
             ),
             html.H1(
@@ -216,7 +216,7 @@ def main():
                     "marginTop": "20px",
                     "marginBottom": "20px",
                     "textAlign": "center",
-                    "texture": "#01172E",
+                    "color": "#01172E",
                 },
             ),
             html.Div(
@@ -225,7 +225,7 @@ def main():
                     "marginTop": "20px",
                     "marginBottom": "20px",
                     "textAlign": "center",
-                    "texture": "#01172E",
+                    "color": "#01172E",
                 },
             ),
             dcc.Interval(
@@ -264,7 +264,7 @@ def main():
                         y0=dataset.attrs["y0"] + dataset.attrs["dy"] / 2,
                         dx=dataset.attrs["dx"],
                         dy=dataset.attrs["dy"],
-                        z=dataset["texture"].values,
+                        z=dataset["color"].values,
                     )
                 )
 

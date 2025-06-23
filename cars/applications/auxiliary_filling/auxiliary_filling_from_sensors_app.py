@@ -222,20 +222,20 @@ class AuxiliaryFillingFromSensors(
 
         # Initialize no data value
         classification_no_data_value = 0
-        color_no_data_value = 0
+        texture_no_data_value = 0
         color_dtype = np.float32
         classif_dtype = np.uint8
 
         if os.path.exists(color_not_filled_file):
             with rio.open(color_not_filled_file, "r") as descriptor:
-                color_no_data_value = descriptor.nodata
+                texture_no_data_value = descriptor.nodata
                 color_dtype = descriptor.profile.get("dtype", np.float32)
 
         self.orchestrator.add_to_save_lists(
             os.path.join(dump_dir, color_file),
             cst.RASTER_COLOR_IMG,
             aux_filled_image,
-            nodata=color_no_data_value,
+            nodata=texture_no_data_value,
             dtype=color_dtype,
             cars_ds_name="filled_color",
         )

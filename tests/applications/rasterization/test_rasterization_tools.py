@@ -236,7 +236,7 @@ def test_simple_rasterization_single():
         0.3,
         3,
         hgt_no_data=np.nan,
-        color_no_data=np.nan,
+        texture_no_data=np.nan,
     )
 
     # Uncomment to update references
