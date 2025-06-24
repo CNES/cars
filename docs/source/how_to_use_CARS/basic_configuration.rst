@@ -53,10 +53,8 @@ The structure follows this organization:
                             "sensors": {
                                 "my_name_for_this_image": {
                                     "image" : "path_to_image.tif",
-                                    "color" : "path_to_color.tif",
                                     "mask" : "path_to_mask.tif",
                                     "classification" : "path_to_classification.tif",
-                                    "nodata": 0
                                 }
                             }
                         }
@@ -67,10 +65,6 @@ The structure follows this organization:
                 +===================+============================================================================================+================+===============+==========+
                 | *image*           | Path to the image                                                                          | string         |               | Yes      |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *color*           | Path to the color image                                                                    | string         |               | No       |
-                +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *no_data*         | No data value of the image                                                                 | int            | 0             | No       |
-                +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
                 | *geomodel*        | Path to the geomodel and plugin-specific attributes                                        | string, dict   |               | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
                 | *mask*            | Path to the binary mask                                                                    | string         | None          | No       |
@@ -79,10 +73,8 @@ The structure follows this organization:
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
                 .. note::
-
-                    - *color*: This image can be composed of XS bands in which case a PAN+XS fusion has been be performed. Please, see the section :ref:`make_a_simple_pan_sharpening` to make a simple pan sharpening with OTB if necessary.
                     - *mask*: This image is a binary file. By using this file, the 1 values are not processed, only 0 values are considered as valid data.
-                    - *classification*: This image is a multiband binary file. Each band should have a specific name (Please, see the section :ref:`add_band_description_in_image` to add band name / description in order to be used in Applications). By using this file, a different process for each band is applied for the 1 values (Please, see the Applications section for details).
+                    - *classification*: This image is a multiband binary file.
                     - Please, see the section :ref:`convert_image_to_binary_image` to make binary *mask* image or binary *classification* image with 1 bit per band.
                     - *geomodel*: If the geomodel file is not provided, CARS will try to use the RPC loaded with rasterio opening *image*.
                     - It is possible to add sensors inputs while using depth_maps or dsm inputs
@@ -140,7 +132,7 @@ The structure follows this organization:
                                     "x" : "path_to_x.tif",
                                     "y" : "path_to_y.tif",
                                     "z" : "path_to_z.tif",
-                                    "color" : "path_to_color.tif",
+                                    "texture" : "path_to_texture.tif",
                                     "z_inf" : "path_to_z_inf.tif",
                                     "z_sup" : "path_to_z_sup.tif",
                                     "mask": "path_to_mask.tif",
@@ -178,7 +170,7 @@ The structure follows this organization:
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *z*              | Path to the z coordinates of depth map                            | string         |               | Yes      |
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *color*          | Color of depth map                                                | string         |               | Yes      |
+                | *texture*        | Texture of depth map                                              | string         |               | Yes      |
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *z_inf*          | Path to the z_inf coordinates of depth map                        | string         |               | No       |
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
@@ -195,7 +187,7 @@ The structure follows this organization:
                 | *epsg*           | Epsg code of depth map                                            | int            | 4326          | No       |
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
 
-            .. tab:: DSMS inputs
+            .. tab:: DSMs inputs
 
                 +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
                 | Name                    | Description                                                         | Type                  | Default value        | Required |
@@ -205,7 +197,7 @@ The structure follows this organization:
 
 
 
-                **DSMS**
+                **DSMs**
 
                 For each DSMS, give a particular name (what you want):
 
@@ -217,7 +209,7 @@ The structure follows this organization:
                                 "my_name_for_this_dsm": {
                                     "dsm" : "path_to_dsm.tif",
                                     "classification" : "path_to_classif.tif",
-                                    "color" : "path_to_color.tif",
+                                    "texture" : "path_to_texture.tif",
                                     "performance_map" : "path_to_performance_map.tif",
                                     "filling" : "path_to_filling.tif",
                                     "mask" : "path_to_mask.tif",
@@ -250,7 +242,7 @@ The structure follows this organization:
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *weights*                  | Path to the weights file                                          | string         |               | Yes      |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *color*                    | Path to the color file                                            | string         |               | No       |
+                | *texture*                  | Path to the texture file                                          | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *classification*           | Path to the classification file                                   | string         |               | No       |
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
@@ -714,7 +706,7 @@ The structure follows this organization:
                                             "x" : "path_to_x.tif",
                                             "y" : "path_to_y.tif",
                                             "z" : "path_to_z.tif",
-                                            "color" : "path_to_color.tif",
+                                            "texture" : "path_to_texture.tif",
                                             "mask": "path_to_mask.tif",
                                             "classification": "path_to_classification.tif",
                                             "filling": "path_to_filling.tif",
@@ -835,7 +827,7 @@ The structure follows this organization:
                 +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
                 | Name                  | Description                                                 | Type   | Default value  | Required  |
                 +=======================+=============================================================+========+================+===========+
-                | *color*               | Save output color (dsm or depth_map)                        | bool   | True           | No        |
+                | *texture*             | Save output texture (dsm or depth_map)                      | bool   | True           | No        |
                 +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
                 | *weights*             | Save output dsm weights (dsm)                               | bool   | False          | No        |
                 +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
@@ -879,7 +871,7 @@ The structure follows this organization:
 
                     {
                         "dsm": "dsm.tif",
-                        "color": "color.tif",
+                        "texture": "texture.tif",
                         "mask": "mask.tif",
                         "classification": "classification.tif",
                         "performance_map": "performance_map.tif",
@@ -902,7 +894,7 @@ The structure follows this organization:
                             "x": "one_two/X.tif",
                             "y": "one_two/Y.tif",
                             "z": "one_two/Z.tif",
-                            "color": "one_two/color.tif",
+                            "texture": "one_two/texture.tif",
                             "mask": "one_two/mask.tif",
                             "classification": "one_two/classification.tif",
                             "performance_map": "one_two/performance_map.tif",
@@ -913,7 +905,7 @@ The structure follows this organization:
                             "x": "one_three/X.tif",
                             "y": "one_three/Y.tif",
                             "z": "one_three/Z.tif",
-                            "color": "one_three/color.tif",
+                            "texture": "one_three/texture.tif",
                             "mask": "one_two/mask.tif",
                             "classification": "one_two/classification.tif",
                             "performance_map": "one_two/performance_map.tif",

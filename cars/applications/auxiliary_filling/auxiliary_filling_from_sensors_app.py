@@ -99,8 +99,8 @@ class AuxiliaryFillingFromSensors(
                 "and full"
             )
 
-        overloaded_conf["color_interpolator"] = conf.get(
-            "color_interpolator", "linear"
+        overloaded_conf["texture_interpolator"] = conf.get(
+            "texture_interpolator", "linear"
         )
         overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["use_mask"] = conf.get("use_mask", True)
@@ -115,7 +115,7 @@ class AuxiliaryFillingFromSensors(
             "activated": bool,
             "mode": str,
             "use_mask": bool,
-            "color_interpolator": str,
+            "texture_interpolator": str,
             "save_intermediate_data": bool,
         }
 
@@ -297,7 +297,9 @@ class AuxiliaryFillingFromSensors(
                     full_saving_info,
                     geom_plugin,
                     mode=self.used_config["mode"],
-                    color_interpolator=self.used_config["color_interpolator"],
+                    texture_interpolator=self.used_config[
+                        "texture_interpolator"
+                    ],
                     use_mask=self.used_config["use_mask"],
                 )
 
@@ -322,11 +324,11 @@ def filling_from_sensor_wrapper(
     saving_info,
     geom_plugin,
     mode,
-    color_interpolator,
+    texture_interpolator,
     use_mask,
 ):
     """
-    fill color and classifcation from sensor information for a terrain tile
+    Fill color and classification from sensor information for a terrain tile
 
     :param dsm_file: path to the filled dsm file
     :type dsm_file: str
@@ -352,9 +354,9 @@ def filling_from_sensor_wrapper(
     :type geom_plugin: AbstractGeometry
     :param mode: geometry plugin used for inverse locations
     :type mode: str
-    :param color_interpolator: scipy interpolator use to interpolate color
+    :param texture_interpolator: scipy interpolator use to interpolate color
         values
-    :type color_interpolator: str
+    :type texture_interpolator: str
     :param use_mask: use mask information from sensors in color computation
     :type use_mask: bool
 
@@ -500,7 +502,7 @@ def filling_from_sensor_wrapper(
                 geom_plugin,
                 number_of_color_bands,
                 number_of_classification_bands,
-                color_interpolator=color_interpolator,
+                texture_interpolator=texture_interpolator,
                 use_mask=use_mask,
             )
         )

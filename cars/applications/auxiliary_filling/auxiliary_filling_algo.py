@@ -37,7 +37,7 @@ def fill_auxiliary(
     geom_plugin,
     number_of_color_bands,
     number_of_classification_bands,
-    color_interpolator,
+    texture_interpolator,
     use_mask=False,
 ):
     """
@@ -60,9 +60,9 @@ def fill_auxiliary(
     :type number_of_color_bands: int
     :param number_of_classification_bands: number of bands in the color image
     :type number_of_classification_bands: int
-    :param color_interpolator: scipy interpolator use to interpolate color
+    :param texture_interpolator: scipy interpolator use to interpolate color
         values
-    :type color_interpolator: str
+    :type texture_interpolator: str
     :param use_mask: use mask information from sensors in color computation
     :type use_mask: bool
 
@@ -104,7 +104,7 @@ def fill_auxiliary(
                 geom_plugin,
                 number_of_color_bands,
                 number_of_classification_bands,
-                color_interpolator,
+                texture_interpolator,
                 not_interpolated_mask=None,
                 use_mask=use_mask,
                 return_all_points=True,
@@ -129,7 +129,7 @@ def fill_auxiliary(
                     geom_plugin,
                     number_of_color_bands,
                     number_of_classification_bands,
-                    color_interpolator,
+                    texture_interpolator,
                     not_interpolated_mask,
                     use_mask=use_mask,
                     return_all_points=False,
@@ -162,7 +162,7 @@ def fill_from_one_sensor(  # noqa C901
     geom_plugin,
     number_of_color_bands,
     number_of_classification_bands,
-    color_interpolator,
+    texture_interpolator,
     not_interpolated_mask=None,
     use_mask=False,
     return_all_points=False,
@@ -191,9 +191,9 @@ def fill_from_one_sensor(  # noqa C901
     :type number_of_color_bands: int
     :param number_of_classification_bands: number of bands in the color image
     :type number_of_classification_bands: int
-    :param color_interpolator: scipy interpolator use to interpolate color
+    :param texture_interpolator: scipy interpolator use to interpolate color
         values
-    :type color_interpolator: str
+    :type texture_interpolator: str
     :param not_interpolated_mask: use mask information in color computation
     :type not_interpolated_mask: numpy.array
     :param use_mask: use mask information in color computation
@@ -246,12 +246,12 @@ def fill_from_one_sensor(  # noqa C901
     ):
         return output_not_interpolated_mask, all_values
 
-    if color_interpolator in ("linear", "nearest"):
-        color_interpolator_margin = 1
-    elif color_interpolator == "cubic":
-        color_interpolator_margin = 3
+    if texture_interpolator in ("linear", "nearest"):
+        texture_interpolator_margin = 1
+    elif texture_interpolator == "cubic":
+        texture_interpolator_margin = 3
     else:
-        raise RuntimeError(f"Invalid interpolator {color_interpolator}")
+        raise RuntimeError(f"Invalid interpolator {texture_interpolator}")
 
     # Classification interpolator is always nearest
     classif_interpolator = "nearest"
@@ -310,20 +310,24 @@ def fill_from_one_sensor(  # noqa C901
             # image.
             if sensor_color_image.count == number_of_color_bands:
                 first_row = np.floor(
-                    max(np.min(ind_rows_sensor) - color_interpolator_margin, 0)
+                    max(
+                        np.min(ind_rows_sensor) - texture_interpolator_margin, 0
+                    )
                 )
                 last_row = np.ceil(
                     min(
-                        np.max(ind_rows_sensor) + color_interpolator_margin,
+                        np.max(ind_rows_sensor) + texture_interpolator_margin,
                         sensor_color_image.height,
                     )
                 )
                 first_col = np.floor(
-                    max(np.min(ind_cols_sensor) - color_interpolator_margin, 0)
+                    max(
+                        np.min(ind_cols_sensor) - texture_interpolator_margin, 0
+                    )
                 )
                 last_col = np.ceil(
                     min(
-                        np.max(ind_cols_sensor) + color_interpolator_margin,
+                        np.max(ind_cols_sensor) + texture_interpolator_margin,
                         sensor_color_image.width,
                     )
                 )
@@ -356,7 +360,7 @@ def fill_from_one_sensor(  # noqa C901
                                 sensor_data,
                                 (ind_rows_sensor, ind_cols_sensor),
                                 bounds_error=False,
-                                method=color_interpolator,
+                                method=texture_interpolator,
                             )
                             band_values = all_values[band, validity_mask]
                         # No need to interpolate on every points
@@ -369,7 +373,7 @@ def fill_from_one_sensor(  # noqa C901
                                     ind_cols_sensor[validity_mask],
                                 ),
                                 bounds_error=False,
-                                method=color_interpolator,
+                                method=texture_interpolator,
                             )
                         nan_values = np.isnan(band_values)
                         interpolated_mask[validity_mask] = np.logical_or(
@@ -383,7 +387,7 @@ def fill_from_one_sensor(  # noqa C901
                             sensor_data,
                             (ind_rows_sensor, ind_cols_sensor),
                             bounds_error=False,
-                            method=color_interpolator,
+                            method=texture_interpolator,
                         )
                         interpolated_mask = np.logical_or(
                             interpolated_mask, ~np.isnan(band_values)

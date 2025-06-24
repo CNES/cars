@@ -3905,7 +3905,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "dsm_end2end_ventoux_with_texture.tif",
+                    "dsm_end2end_ventoux_with_color.tif",
                 )
             ),
         )
@@ -3914,7 +3914,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "color_end2end_ventoux_with_texture.tif",
+                    "color_end2end_ventoux_with_color.tif",
                 )
             ),
         )
@@ -3925,7 +3925,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "performance_map_end2end_ventoux_with_texture.tif",
+                    "performance_map_end2end_ventoux_with_color.tif",
                 )
             ),
         )
@@ -3934,7 +3934,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "weights_end2end_ventoux_with_texture.tif",
+                    "weights_end2end_ventoux_with_color.tif",
                 )
             ),
         )
@@ -3949,7 +3949,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "performance_map_from_risk_end2end_ventoux_with_texture.tif",
+                    "performance_map_from_risk_end2end_ventoux_with_color.tif",
                 )
             ),
         )
@@ -3958,7 +3958,7 @@ def test_end2end_ventoux_with_color():
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "dsm_end2end_ventoux_with_texture.tif"
+                    ref_output_dir, "dsm_end2end_ventoux_with_color.tif"
                 )
             ),
             atol=0.0001,
@@ -3968,7 +3968,7 @@ def test_end2end_ventoux_with_color():
             os.path.join(out_dir, "dsm", "texture.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "color_end2end_ventoux_with_texture.tif"
+                    ref_output_dir, "color_end2end_ventoux_with_color.tif"
                 )
             ),
             rtol=0.0002,
@@ -3981,7 +3981,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "performance_map_end2end_ventoux_with_texture.tif",
+                    "performance_map_end2end_ventoux_with_color.tif",
                 )
             ),
             rtol=0.0002,
@@ -3992,7 +3992,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "weights_end2end_ventoux_with_texture.tif",
+                    "weights_end2end_ventoux_with_color.tif",
                 )
             ),
             rtol=0.0002,
@@ -4009,7 +4009,7 @@ def test_end2end_ventoux_with_color():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "performance_map_from_risk_end2end_ventoux_with_texture.tif",
+                    "performance_map_from_risk_end2end_ventoux_with_color.tif",
                 )
             ),
             rtol=0.0002,
@@ -5331,7 +5331,7 @@ def test_end2end_paca_with_mask():
                 "mode": "full",
                 "activated": True,
                 "use_mask": True,
-                "color_interpolator": "linear",
+                "texture_interpolator": "linear",
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
