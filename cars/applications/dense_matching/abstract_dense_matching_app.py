@@ -230,7 +230,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
                     "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
         :param local_tile_optimal_size_fun: function to compute local
-             optimal tile size
+            optimal tile size
         :type local_tile_optimal_size_fun: func
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
@@ -243,6 +243,9 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type disp_to_alt_ratio: float
         :param margins_to_keep: margin to keep after dense matching
         :type margins_to_keep: int
+        :param texture_bands: indices of bands from epipolar_images_left
+            used for output texture
+        :type texture_bands: list
 
         :return: disparity map: \
             The CarsDataset contains:

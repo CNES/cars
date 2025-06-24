@@ -600,6 +600,12 @@ class CensusMccnnSgm(
         return opt_epipolar_tile_size, local_tile_optimal_size_fun
 
     def get_required_bands(self):
+        """
+        Get bands required by this application
+
+        :return: required bands for left and right image
+        :rtype: dict
+        """
         required_bands = {}
         required_bands["left"] = self.required_bands
         required_bands["right"] = self.required_bands
@@ -1211,7 +1217,7 @@ class CensusMccnnSgm(
                     "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
         :param local_tile_optimal_size_fun: function to compute local
-             optimal tile size
+            optimal tile size
         :type local_tile_optimal_size_fun: func
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
@@ -1222,6 +1228,9 @@ class CensusMccnnSgm(
         :type disp_range_grid: CarsDataset
         :param margins_to_keep: margin to keep after dense matching
         :type margins_to_keep: int
+        :param texture_bands: indices of bands from epipolar_images_left
+            used for output texture
+        :type texture_bands: list
 
         :return: disparity map: \
             The CarsDataset contains:
@@ -1483,6 +1492,8 @@ def compute_disparity_wrapper(
     :type right_image_object: xr.Dataset
     :param corr_cfg: Correlator configuration
     :type corr_cfg: dict
+    :param used_band: name of band used for correlation
+    :type used_band: str
     :param disp_range_grid: minimum and maximum disparity grid
     :type disp_range_grid: np.ndarray
     :param compute_disparity_masks: Compute all the disparity \

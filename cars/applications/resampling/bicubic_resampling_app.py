@@ -271,6 +271,10 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :param epipolar_roi: Epipolar roi to use if set.
             Set None tiles outsize roi
         :type epipolar_roi: list(int), [row_min, row_max,  col_min, col_max]
+        :param required_bands: bands to resample on left and right image
+        :type required_bands: dict
+        :param texture_bands: name of bands used for output texture
+        :type texture_bands: list
 
         :return: left epipolar image, right epipolar image. \
             Each CarsDataset contains:

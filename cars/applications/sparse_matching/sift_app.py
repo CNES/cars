@@ -252,6 +252,12 @@ class Sift(SparseMatching, short_name=["sift"]):
         return overloaded_conf
 
     def get_required_bands(self):
+        """
+        Get bands required by this application
+
+        :return: required bands for left and right image
+        :rtype: dict
+        """
         required_bands = {}
         required_bands["left"] = [self.used_band]
         required_bands["right"] = [self.used_band]

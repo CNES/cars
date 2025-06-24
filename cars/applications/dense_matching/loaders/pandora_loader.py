@@ -75,7 +75,8 @@ class PandoraLoader:
         :param performance_map_conf: true if generate performance maps
         :param use_cross_validation: true to add crossvalidation
         :param denoise_disparity_map: true to add the disparity denoiser filter
-
+        :param used_band: name of band used for correlation
+        :type used_band: str
         """
 
         if method_name is None:

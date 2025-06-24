@@ -117,6 +117,8 @@ def compute_disparity(
     :type right_dataset: xarray.Dataset
     :param corr_cfg: Correlator configuration
     :type corr_cfg: dict
+    :param used_band: name of band used for correlation
+    :type used_band: str
     :param disp_min_grid: Minimum disparity grid
                      (if None, value is taken from left dataset)
     :type disp_min_grid: np ndarray
