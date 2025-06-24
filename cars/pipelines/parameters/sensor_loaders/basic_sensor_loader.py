@@ -22,6 +22,8 @@
 this module contains the BasicSensorLoader class.
 """
 
+from json_checker import Checker, Or
+
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -53,6 +55,7 @@ class BasicSensorLoader(SensorLoaderTemplate):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.json_dir)
             overloaded_conf["path"] = image_path
+            overloaded_conf["loader"] = "basic"
             if self.input_type == "image":
                 overloaded_conf[sens_cst.INPUT_NODATA] = 0
             else:
@@ -63,6 +66,7 @@ class BasicSensorLoader(SensorLoaderTemplate):
                 conf["path"], self.json_dir
             )
             overloaded_conf["path"] = image_path
+            overloaded_conf["loader"] = conf.get("loader", "basic")
             if self.input_type == "image":
                 overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
                     sens_cst.INPUT_NODATA, 0
@@ -71,6 +75,12 @@ class BasicSensorLoader(SensorLoaderTemplate):
                 overloaded_conf[sens_cst.INPUT_NODATA] = None
         else:
             raise TypeError(f"Input {self.input_type} is not a string ot dict")
+
+        sensor_schema = {"loader": str, "path": str, "no_data": Or(None, int)}
+
+        # Check conf
+        checker = Checker(sensor_schema)
+        checker.validate(overloaded_conf)
 
         return overloaded_conf
 

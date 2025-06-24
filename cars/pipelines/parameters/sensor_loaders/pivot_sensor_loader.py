@@ -22,8 +22,11 @@
 this module contains the PivotSensorLoader class.
 """
 
+from json_checker import Checker, Or
+
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
     SensorLoaderTemplate,
@@ -33,17 +36,39 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
 @SensorLoader.register("pivot")
 class PivotSensorLoader(SensorLoaderTemplate):
     """
-    AbstractSensorLoader
+    Pivot sensor loader : used by CARS to read inputs
     """
 
     def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+
+        :return: overloaded configuration
+        :rtype: dict
+        """
         overloaded_conf = conf.copy()
+        # Make relative paths absolutes
+        for band in overloaded_conf["bands"]:
+            overloaded_conf["bands"][band]["path"] = (
+                make_relative_path_absolute(
+                    overloaded_conf["bands"][band]["path"], self.json_dir
+                )
+            )
         # Check consistency between files
         b0_path = overloaded_conf["bands"]["b0"]["path"]
         b0_size = inputs.rasterio_get_size(b0_path)
         b0_transform = inputs.rasterio_get_size(b0_path)
         for band in overloaded_conf["bands"]:
             band_path = overloaded_conf["bands"][band]["path"]
+            band_id = overloaded_conf["bands"][band]["band"]
+            nb_bands = inputs.rasterio_get_nb_bands(band_path)
+            if band_id >= nb_bands:
+                raise RuntimeError(
+                    "Band id {} is not valid for sensor which "
+                    "has only {} bands".format(band_id, nb_bands)
+                )
             if band_path != b0_path:
                 band_size = inputs.rasterio_get_size(band_path)
                 band_transform = inputs.rasterio_get_size(band_path)
@@ -62,20 +87,42 @@ class PivotSensorLoader(SensorLoaderTemplate):
                     )
         overloaded_conf["main_file"] = conf.get("main_file", None)
         if overloaded_conf["main_file"] is None:
+            overloaded_conf["main_file"] = overloaded_conf["bands"]["b0"][
+                "path"
+            ]
+        else:
             overloaded_conf["main_file"] = make_relative_path_absolute(
-                overloaded_conf["bands"]["b0"]["path"], self.json_dir
-            )
-        for band in overloaded_conf["bands"]:
-            overloaded_conf["bands"][band]["path"] = (
-                make_relative_path_absolute(
-                    overloaded_conf["bands"][band]["path"], self.json_dir
-                )
+                overloaded_conf["main_file"], self.json_dir
             )
         overloaded_conf["texture_bands"] = conf.get("texture_bands", None)
+        if overloaded_conf["texture_bands"] is not None:
+            for texture_band in overloaded_conf["texture_bands"]:
+                if texture_band not in overloaded_conf["bands"]:
+                    raise RuntimeError(
+                        "Texture band {} not found in bands {} "
+                        "of sensor image".format(
+                            texture_band, overloaded_conf["bands"]
+                        )
+                    )
+
         if self.input_type == "image":
-            overloaded_conf["nodata"] = conf.get("nodata", 0)
+            overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
+                sens_cst.INPUT_NODATA, 0
+            )
         else:
-            overloaded_conf["nodata"] = None
+            overloaded_conf[sens_cst.INPUT_NODATA] = None
+
+        sensor_schema = {
+            "loader": str,
+            "main_file": str,
+            "bands": dict,
+            "texture_bands": Or(None, [str]),
+            "no_data": Or(None, int),
+        }
+
+        # Check conf
+        checker = Checker(sensor_schema)
+        checker.validate(overloaded_conf)
 
         return overloaded_conf
 
