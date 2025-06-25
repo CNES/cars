@@ -467,8 +467,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         self.orchestrator.update_out_info(updating_dict)
 
         # retrieve data
-        epipolar_size_x = grid_left.attributes["epipolar_size_x"]
-        epipolar_size_y = grid_left.attributes["epipolar_size_y"]
+        epipolar_size_x = grid_left["epipolar_size_x"]
+        epipolar_size_y = grid_left["epipolar_size_y"]
         left_images = resampling_wrappers.get_paths_and_bands(
             sensor_image_left[sens_cst.INPUT_IMG],
             required_bands["left"],
