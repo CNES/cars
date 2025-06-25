@@ -4,7 +4,7 @@
 CARS pipeline
 =============
 
-To summarize, CARS pipeline is organized in sequential steps from input pairs (and metadata) to output data. Each step is performed tile-wise and distributed among workers.
+To summarize, CARS's default pipeline is organized into sequential steps, starting from input pairs (and metadata) and producing output data. Each step is performed tile-wise and distributed among workers. Part of the pipeline operates at multiple resolutions to reach the final results while minimizing computation time. It is possible to run CARS at a single resolution, but this may be very inefficient for large or medium size images.
 
 
 .. figure:: ../images/cars_pipeline_multi_pair.png
@@ -17,17 +17,20 @@ The pipeline will perform the following steps |cars_isprs| |cars_igarss|:
 - For each stereo pair:
     
     1. Create stereo-rectification grids for left and right views.
-    2. Resample the both images into epipolar geometry.
+    2. Resample both images into epipolar geometry.
     3. Compute sift matches between left and right views in epipolar geometry.
-    4. Predict an optimal disparity range from the filtered point cloud resulting from the sift matches triangulation.
-    5. Create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
-    6. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`DTM` (such as SRTM) in order to reduce the disparity intervals to explore.
-    7. Compute disparity for each image pair in epipolar geometry.
-    8. Fill holes in disparity maps for each image pair in epipolar geometry.
-    9. Triangulate the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
+    4. Create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
 
-- Then
+- For each resolution
+    
+    - For each stereo pair:
+        
+        5. Resample the stereo pair in epipolar geometry, at the right resolution, by using either the input :term:`DTM` (such as an SRTM) if the current resolution is the first one, or the previous resolution's `DEM Median`.
+        6. Compute the disparity map in epipolar geometry, by using the `DEM Min` and `DEM Max` as disparity intervals.
+        7. Triangulate the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
 
-    10. Merge points clouds coming from each stereo pairs.
-    11. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
-    12. Rasterize: Project these altitudes on a regular grid as well as the associated color.
+    - Then
+
+        8. Merge points clouds coming from each stereo pairs.
+        9. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
+        10. Rasterize: Project these altitudes on a regular grid to create a `DSM` and its associated color, as well as (if not at the last resolution) `DEM Min/Max/Median`.

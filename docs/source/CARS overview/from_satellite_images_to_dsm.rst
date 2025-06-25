@@ -56,6 +56,12 @@ Generate a DSM step by step
 
 .. |rasterization_spa_image| image:: ../images/image29.png
 
+.. |multires_res4| image:: ../images/gizeh_multires_res4.png
+
+.. |multires_res2| image:: ../images/gizeh_multires_res2.png
+
+.. |multires_res1| image:: ../images/gizeh_multires_res1.png
+
 .. |br| raw:: html
 
      <br>
@@ -123,23 +129,27 @@ To obtain a raster image, the final process projects each point into a 2D grid: 
 | |rasterization_circled| |br| |                                             |
 +------------------------------+---------------------------------------------+
 
-Initial Input Digital Elevation Model
--------------------------------------
-
-The user can provide as input a low resolution Digital Elevation Model (:term:`DEM`). It helps to minimize the disparity intervals to explore. Any geotiff file can be used.
-If the DEM is not specified by the user, an internal DEM is generated with sparse matches.
-
-To download the low resolution DEM corresponding to your area, see section :ref:`download_srtm_tiles`.
-
-The parameter is ``dem`` in ``initial_elevation`` as seen in :ref:`basic configuration`.
-
-
-Altimetric exploration and geometric inaccuracies
+Altimetric exploration at multiple resolutions
 -------------------------------------------------
 
-To reduce the search interval (i.e. altimetric exploration) in the matching step and thus save computing time, a faster sparse matching step is typically used. This matching step also enables geometric errors to be corrected, thus ensuring that the epipolar geometry (based on these models) is correct.
+To reduce the search interval (i.e. altimetric exploration) in the dense matching step and thus save computing time, CARS's pipeline runs the dense matching algorithm and surrounding applications at multiple resolutions, going from a very low resolution to the highest. Each time, based on the previous resolution, the disparity interval searched will be reduced. 
 
-Matching can be performed with keypoints like :term:`SIFT` (`Here is an article <https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf>`_).
+This reduces computation time greatly while providing better results than a bruteforce approach. 
+
++---------------------+---------------------+---------------------+
+| DSM at resolution 4 | DSM at resolution 2 | DSM at resolution 1 |
++---------------------+---------------------+---------------------+
+| |multires_res4|     | |multires_res2|     | |multires_res1|     |
++---------------------+---------------------+---------------------+
+
+Geometric inaccuracies
+----------------------
+
+To reduce geometric errors present in the sensor images' geometry model, a sparse matching step is performed on the full-resolution images in 2D. These matches are then used to correct geometric errors in the geometry model, ensuring that the epipolar geometry is correct, in turn allowing for better results.
+
+Those matches will also be used to reduce the disparity interval searched in the pipeline's first resolution run.
+
+This sparse matching step is performed with keypoints, like :term:`SIFT` to ensure that the matches found are accurate, as inaccurate ones may result in distortions and bad dense matching results. (`SIFT Article: <https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf>`_).
 
 .. _matchingsparse:
 
@@ -152,31 +162,3 @@ Matching can be performed with keypoints like :term:`SIFT` (`Here is an article 
 | |triangulation_spa| |br|    |                                             |
 | |rasterization_spa| |br|    |                                             |
 +-----------------------------+---------------------------------------------+
-
-The result is a sparse point cloud...
-
-.. _triangulationsparse:
-
-+----------------------------------+---------------------------------------------+
-| Pipeline                         | Triangulation (sparse)                      |
-+----------------------------------+---------------------------------------------+
-| |images_models|     |br|         | |triangulation_spa_image|                   |
-| |resampling|        |br|         |                                             |
-| |matching_spa|      |br|         |                                             |
-| |triangulation_spa_circled| |br| |                                             |
-| |rasterization_spa| |br|         |                                             |
-+----------------------------------+---------------------------------------------+
-
-and a sparse digital surface model.
-
-.. _rasterizationsparse:
-
-+----------------------------------+---------------------------------------------+
-| Pipeline                         | Rasterization (sparse)                      |
-+----------------------------------+---------------------------------------------+
-| |images_models|     |br|         | |rasterization_spa_image|                   |
-| |resampling|        |br|         |                                             |
-| |matching_spa|      |br|         |                                             |
-| |triangulation_spa| |br|         |                                             |
-| |rasterization_spa_circled| |br| |                                             |
-+----------------------------------+---------------------------------------------+

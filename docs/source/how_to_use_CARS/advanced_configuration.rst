@@ -25,25 +25,57 @@ The structure follows this organization:
 
     .. tab:: Applications
 
-        This key is optional and allows to redefine parameters for each application used in pipeline.
+        This key is optional and allows to redefine parameters for each application used in pipeline. You can personnalize the configuration for each resolution at which the pipeline is ran, or override the parameters for all resolutions at once. CARS applications are defined and called by their name in applications configuration section.
 
-        This section describes all possible configuration of CARS applications.
+        .. tabs::
 
-        CARS applications are defined and called by their name in applications configuration section:
+            .. tab:: Overriding all resolutions at once
 
-        .. code-block:: json
+                This is the default behaviour when providing a configuration dict directly in the `applications` key.
 
-            "applications":{
-                "application_name": {
-                    "method": "application_dependent",
-                    "parameter1": 3,
-                    "parameter2": 0.3
-                }
-            }
+                This example overrides the configuration of `application_name` for all resolutions at once :
+
+                .. code-block:: json
+
+                    "applications": {
+                        "application_name": {
+                            "method": "application_dependent",
+                            "parameter1": 3,
+                            "parameter2": 0.3
+                        }
+                    }
 
 
-        Be careful with these parameters: no mechanism ensures consistency between applications for now.
-        And some parameters can degrade performance and DSM quality heavily.
+            .. tab:: Overriding a single resolution
+
+                To override a configuration at a specific resolution, you first need to identify which resolution you want to modify. By default, CARS uses the resolutions 16, 4, and 1.
+
+                Once you have chosen the resolution value, you can override the configuration by adding an entry to the `applications` dictionary with the key `resolution_{resolution_value}`.
+
+                The following example overrides the configuration for `application_name` at resolutions 4 and 1, using different parameters for each. Resolution 16 will retain its default configuration.
+
+                .. code-block:: json
+
+                    "applications": {
+                        "resolution_4": {
+                            "application_name": {
+                                "method": "first_method",
+                                "parameter1": 26,
+                                "parameter2": 0.9
+                            }
+                        },
+                        "resolution_1": {
+                            "application_name": {
+                                "method": "second_method",
+                                "parameter1": 8,
+                                "parameter2": 0.2
+                            }
+                        }
+                    }
+
+        This section describes all possible configurations of CARS applications.
+
+        Be careful with these parameters: no mechanism ensures consistency between applications for now. Some parameters can degrade performance and DSM quality heavily.
         The default parameters have been set as a robust and consistent end to end configuration for the whole pipeline.
 
         .. tabs::
@@ -1091,7 +1123,7 @@ The structure follows this organization:
 
     .. tab:: Advanced parameters
 
-        Here are the advanced parameters. This key is optionnal and can be useful if you want to use CARS more as a developer.
+        Here are the advanced parameters. This key is optional and can be useful if you want to use CARS more as a developer.
 
         .. list-table:: Configuration
             :widths: 19 19 19 19 19
@@ -1103,10 +1135,15 @@ The structure follows this organization:
               - Default value
               - Required
             * - save_intermediate_data
-              - Save intermediate data for all applications
-              - bool
+              - Save intermediate data for all applications and any or all resolutions
+              - bool or list[bool]
               - False
               - Yes
+            * - keep_low_res_dir
+              - Whether to save the output of all resolution runs or not 
+              - bool
+              - true
+              - No
             * - use_epipolar_a_priori
               - Active epipolar a priori
               - bool
@@ -1121,6 +1158,11 @@ The structure follows this organization:
               - Provide terrain a priori information (see section below)
               - dict
               -
+              - No
+            * - epipolar_resolutions
+              - The resolutions at which the Unit Pipeline will be ran for each pair
+              - list[int]
+              - [16, 4, 1]
               - No
             * - debug_with_roi
               - Use input ROI with the tiling of the entire image (see Inputs section)
@@ -1175,18 +1217,51 @@ The structure follows this organization:
 
                 The `save_intermediate_data` flag can be used to activate and deactivate the saving of the possible output of applications.
 
-                It is set in the `advanced` category and can be overloaded in each application separately. It default to false, meaning that no intermediate product in saved). Intermediate data are saved in the `dump_dir` folder found in CARS output directory, with a subfolder corresponding to each application.
+                It is set in the `advanced` category and can be overloaded in each application separately. It defaults to false, meaning that no intermediate product in saved. 
+                Intermediate data are saved in the `dump_dir` folder found in CARS output directory, with a subfolder corresponding to each application.
 
-                For exemple setting `save_intermediate_data` to `true` in `advanced` and to `false` in `application/point_cloud_rasterization` will activate product saving in all applications excepting `point_cloud_rasterization`. Conversely, setting it to `false` in `advanced` and to `true` in `application/point_cloud_rasterization`  will only save rasterization outputs.
+                For exemple setting `save_intermediate_data` to `true` in `advanced` and to `false` in `applications/point_cloud_rasterization` will activate product saving in all applications except `point_cloud_rasterization`. 
+                Conversely, setting it to `false` in `advanced` and to `true` in `applications/point_cloud_rasterization`  will only save rasterization outputs.
 
-                Intermediate data refers to all files that are not part of an output product. Files that compose an output product will not be found in the application dump directory. For exemple if `dsm` is requested as output product, the `dsm.tif` files and all activated dsm auxiliary files will not be found in `rasterization` dump directory. This directory will still contain the files generated by the `rasterization` application that are not part of the `dsm` product.
+                Intermediate data refers to all files that are not part of an output product. Files that compose an output product will not be found in the application dump directory. 
+                For exemple if `dsm` is requested as output product, the `dsm.tif` files and all activated dsm auxiliary files will not be found in `rasterization` dump directory. 
+                This directory will still contain the files generated by the `rasterization` application that are not part of the `dsm` product.
+
+                `save_intermediate_data` can be either a list or a bool. 
+                A bool will enable `save_intermediate_data` for all resolutions, while a list will enable it for any resolution where it's at true and disable it for any resolution where it's at false, based on the position in the list.
+
+                The following example enables `save_intermediate_data` for all applications at all resolutions : 
 
                 .. code-block:: json
 
-                      "advanced": {
-                          "save_intermediate_data": true
-                          }
+                    "advanced": {
+                        "save_intermediate_data": true
+                    }
 
+                
+                The following example enables `save_intermediate_data` for all applications at resolutions 16 and 1 while disabling it for resolution 4 (with the default CARS resolutions) :
+
+                .. code-block:: json
+
+                    "advanced": {
+                        "save_intermediate_data": [true, false, true]
+                    }
+
+
+            .. tab:: Keep low res dir
+
+                The `keep_low_res_dir` parameter flag can be used to specify that you would like the intermediate DSMs and DEMs to be saved in their respective directory.
+
+                By default, since `keep_low_res_dir` is true, you will find the intermediate DSMs and DEMs in `dump_dir/out_res{resolution_value}`.
+
+                The following example disables the saving of all intermediate resolutions' outputs :
+
+                .. code-block:: json
+
+                    "advanced": {
+                        "keep_low_res_dir": false
+                    }
+              
             .. tab:: Epipolar a priori
 
                 The CARS pipeline produces a ``used_conf.json`` in the `outdir` that contains the `epipolar_a_priori`
@@ -1227,6 +1302,21 @@ The structure follows this organization:
                 +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
                 | *dem_max*      | DEM generated with max function                             | str    |                | if use_epipolar_a_priori is True |
                 +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+
+            .. tab:: Epipolar resolutions
+
+                The `epipolar_resolutions` parameter is used to specify the number and resolution of Unit Pipeline runs.
+                Resolutions are set from the lowest to the highest, with 1 being the heighest possible.
+                A resolution of n means that one pixel from the downsampled image will be calculated using n² pixels from the full-res image.
+                
+                For example, epipolar_resolutions = [16, 4, 2, 1] with an image of 2048x3072 will run the Unit Pipeline four times :
+
+                - First with a size of 128x192
+                - Then with a resolution of 512x768
+                - Then with a resolution of 1024x1536
+                - And a last time with a resolution of 2048x3072
+
+                Each run will provide an apriori on the height of the terrain at each position for the next run, resulting in a low computation time.
 
 
             .. tab:: Ground truth DSM
