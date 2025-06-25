@@ -1261,7 +1261,9 @@ def test_end2end_ventoux_unique():
                 "save_intermediate_data": True,
             },
         }
-        input_config_dense_dsm["applications"][1].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"]["resolution_1"].update(
+            dense_dsm_applications
+        )
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
         # update output product
@@ -1703,7 +1705,9 @@ def test_end2end_ventoux_unique():
                 "texture_no_data": 0,
             },
         }
-        input_config_dense_dsm["applications"][1].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"]["resolution_1"].update(
+            dense_dsm_applications
+        )
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
         # resolution
@@ -1817,7 +1821,9 @@ def test_end2end_ventoux_unique():
                 "texture_no_data": 0,
             },
         }
-        input_config_dense_dsm["applications"][1].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"]["resolution_1"].update(
+            dense_dsm_applications
+        )
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
         # resolution
@@ -3678,9 +3684,8 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "left_right": {
                     "0_0": "left_right/0_0.laz",
                     "0_1": "left_right/0_1.laz",
+                    "0_2": "left_right/0_2.laz",
                     "1_0": "left_right/1_0.laz",
-                    "1_1": "left_right/1_1.laz",
-                    "2_1": "left_right/2_1.laz",
                 }
             }
 
@@ -5479,7 +5484,7 @@ def test_end2end_paca_with_mask():
         # clean out dir for second run
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        input_config_dense_dsm["applications"][1].update(
+        input_config_dense_dsm["applications"]["resolution_1"].update(
             {
                 "dense_match_filling.2": {
                     "method": "zero_padding",
@@ -5576,7 +5581,7 @@ def test_end2end_paca_with_mask():
         # clean out dir for second run
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        input_config_dense_dsm["applications"][1].update(
+        input_config_dense_dsm["applications"]["resolution_1"].update(
             {
                 "dense_match_filling.2": {
                     "method": "zero_padding",
