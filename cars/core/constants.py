@@ -61,7 +61,7 @@ CROPPED_DISPARITY_RANGE = "cropped_disparity_range"
 # epipolar image dataset
 EPI_IMAGE = "im"  # has to be synchronized with the PANDORA input format
 EPI_MSK = "msk"  # has to be synchronized with the PANDORA input format
-EPI_COLOR = "texture"
+EPI_TEXTURE = "texture"
 EPI_CLASSIFICATION = "classif"
 EPI_FILLING = "filling"
 EPI_CONFIDENCE_KEY_ROOT = "confidence"

@@ -531,7 +531,7 @@ def compute_point_cloud_wrapper(
             - cst.X
             - cst.Y
             - cst.Z
-            - cst.EPI_COLOR
+            - cst.EPI_TEXTURE
     :type point_clouds: list((xr.Dataset, int))
     :param  epsg_code: epsg code for the CRS of the output DSM
     :type epsg_code: int
@@ -564,7 +564,7 @@ def compute_point_cloud_wrapper(
             - cst.X
             - cst.Y
             - cst.Z
-            - cst.EPI_COLOR
+            - cst.EPI_TEXTURE
             - attrs : xmin, xmax, ymin, ymax, saving_info
     :rtype: pandas.DataFrame
     """

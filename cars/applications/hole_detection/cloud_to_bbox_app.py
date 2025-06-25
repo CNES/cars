@@ -273,13 +273,13 @@ def compute_mask_bboxes_wrapper(
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :type left_image_dataset: xr.Dataset
       - dataset with :
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :param right_image_dataset: tiled Right image
     :type right_image_dataset: xr.Dataset
     :param window_left: left window
@@ -305,7 +305,7 @@ def compute_mask_bboxes_wrapper(
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     """
 
     # compute offsets

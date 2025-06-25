@@ -666,7 +666,7 @@ def generate_epipolar_images_wrapper(
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     """
 
     region, margins = format_transformation.region_margins_from_window(

@@ -133,6 +133,7 @@ def test_compute_disparity_1():
         corr_cfg,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
+        texture_bands=[0],
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -181,6 +182,7 @@ def test_compute_disparity_3():
         corr_cfg,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
+        texture_bands=[0],
     )
 
     # TODO add validity mask input
@@ -232,6 +234,7 @@ def test_compute_disparity_with_all_confidences():
         corr_cfg,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
+        texture_bands=[0],
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -283,6 +286,7 @@ def test_compute_disparity_1_msk_ref():
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
         compute_disparity_masks=True,
+        texture_bands=[0],
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -335,6 +339,7 @@ def test_compute_disparity_1_msk_sec():
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
         compute_disparity_masks=True,
+        texture_bands=[0],
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)

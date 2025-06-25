@@ -189,14 +189,14 @@ def add_texture(
     """
     if texture_bands:
         output_dataset.coords[cst.BAND_IM] = band_im[texture_bands]
-        output_dataset[cst.EPI_COLOR] = xr.DataArray(
+        output_dataset[cst.EPI_TEXTURE] = xr.DataArray(
             texture[texture_bands],
             dims=[cst.BAND_IM, cst.ROW, cst.COL],
         )
 
         if color_type is not None:
             # Add input image type
-            output_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
+            output_dataset[cst.EPI_TEXTURE].attrs["color_type"] = color_type
 
 
 def add_classification(

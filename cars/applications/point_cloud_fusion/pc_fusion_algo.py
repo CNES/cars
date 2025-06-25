@@ -452,7 +452,7 @@ def create_combined_dense_cloud(  # noqa: C901
 
         # add additional information to point cloud
         arrays_to_add_to_point_cloud = [
-            (cst.EPI_COLOR, cst.POINT_CLOUD_CLR_KEY_ROOT),
+            (cst.EPI_TEXTURE, cst.POINT_CLOUD_CLR_KEY_ROOT),
             (cst.EPI_MSK, cst.POINT_CLOUD_MSK),
             (cst.EPI_CLASSIFICATION, cst.POINT_CLOUD_CLASSIF_KEY_ROOT),
             (cst.EPI_FILLING, cst.POINT_CLOUD_FILLING_KEY_ROOT),
@@ -841,15 +841,15 @@ def generate_pc_wrapper(  # noqa: C901
             if cst.BAND_CLASSIF not in coords:
                 coords[cst.BAND_CLASSIF] = descriptions
 
-        elif key == cst.EPI_COLOR:
+        elif key == cst.EPI_TEXTURE:
             data = pc_wrap.read_image_full(
                 cloud[key], window=window, squeeze=False
             )
             descriptions = list(inputs.get_descriptions_bands(cloud[key]))
             attributes["color_type"] = color_type
-            values[cst.EPI_COLOR] = ([cst.BAND_IM, cst.ROW, cst.COL], data)
+            values[cst.EPI_TEXTURE] = ([cst.BAND_IM, cst.ROW, cst.COL], data)
 
-            if cst.EPI_COLOR not in coords:
+            if cst.EPI_TEXTURE not in coords:
                 coords[cst.BAND_IM] = descriptions
 
         elif key == cst.EPI_CONFIDENCE_KEY_ROOT:

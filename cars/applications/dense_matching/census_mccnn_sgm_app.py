@@ -1290,7 +1290,7 @@ class CensusMccnnSgm(
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp_texture.tif"),
-                    cst.EPI_COLOR,
+                    cst.EPI_TEXTURE,
                     epipolar_disparity_map,
                     cars_ds_name="epi_disp_color",
                 )
@@ -1481,13 +1481,13 @@ def compute_disparity_wrapper(
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :type left_image_object: xr.Dataset
       - dataset with :
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :param right_image_object: tiled Right image
     :type right_image_object: xr.Dataset
     :param corr_cfg: Correlator configuration
@@ -1519,7 +1519,7 @@ def compute_disparity_wrapper(
 
         - cst_disp.MAP
         - cst_disp.VALID
-        - cst.EPI_COLOR
+        - cst.EPI_TEXTURE
 
     """
     # Generate disparity grids

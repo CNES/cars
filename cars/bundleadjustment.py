@@ -486,8 +486,8 @@ def new_rpcs_from_matches(
 
     images = {}
     for key in sensors_keys:
-        images[key] = sensors[key]["image"] = os.path.abspath(
-            os.path.join(config_directory, sensors[key]["image"])
+        images[key] = sensors[key]["image"]["main_file"] = os.path.abspath(
+            os.path.join(config_directory, sensors[key]["image"]["main_file"])
         )
 
     grid_step = step * 25

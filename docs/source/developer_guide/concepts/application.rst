@@ -222,12 +222,12 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
           * dataset with :
                 - cst.EPI_IMAGE
                 - cst.EPI_MSK (if given)
-                - cst.EPI_COLOR (for left, if given)
+                - cst.EPI_TEXTURE (for left, if given)
         :type left_image_object: xr.Dataset
           * dataset with :
                 - cst.EPI_IMAGE
                 - cst.EPI_MSK (if given)
-                - cst.EPI_COLOR (for left, if given)
+                - cst.EPI_TEXTURE (for left, if given)
         :param right_image_object: tiled Right image
         :type right_image_object: xr.Dataset
         :param corr_cfg: Correlator configuration
@@ -240,7 +240,7 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             * dataset with :
                 - cst_disp.MAP
                 - cst_disp.VALID
-                - cst.EPI_COLOR
+                - cst.EPI_TEXTURE
         """
 
         # Get disp_min and disp_max

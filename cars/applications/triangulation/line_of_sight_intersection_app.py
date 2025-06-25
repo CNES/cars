@@ -232,7 +232,7 @@ class LineOfSightIntersection(
             color_output_dir = output_dir if save_output_color else dump_dir
             self.orchestrator.add_to_save_lists(
                 os.path.join(color_output_dir, "texture.tif"),
-                cst.EPI_COLOR,
+                cst.EPI_TEXTURE,
                 epipolar_point_cloud,
                 cars_ds_name="depth_map_color",
                 dtype=color_type,
@@ -959,7 +959,7 @@ def triangulation_wrapper(
     :param disparity_object: Left disparity map dataset with :
             - cst_disp.MAP
             - cst_disp.VALID
-            - cst.EPI_COLOR
+            - cst.EPI_TEXTURE
     :type disparity_object: xr.Dataset
     :param sensor1: path to left sensor image
     :type sensor1: str
@@ -993,7 +993,7 @@ def triangulation_wrapper(
             - cst.X
             - cst.Y
             - cst.Z
-            - cst.EPI_COLOR
+            - cst.EPI_TEXTURE
             - cst.Z_INF (optional)
             - cst.Z_SUP (optional)
     """

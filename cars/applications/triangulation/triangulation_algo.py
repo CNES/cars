@@ -327,16 +327,16 @@ def compute_point_cloud(
     # except color and pandora validity mask (already copied in corr_msk)
     for key, val in data.items():
         if len(val.values.shape) == 2:
-            if key not in (cst.EPI_COLOR, cst_disp.VALID):
+            if key not in (cst.EPI_TEXTURE, cst_disp.VALID):
                 values[key] = ([cst.ROW, cst.COL], val.values)
 
     point_cloud = xr.Dataset(values, coords={cst.ROW: row, cst.COL: col})
 
     # add color and data type of image
     color_type = None
-    if cst.EPI_COLOR in data:
-        triang_wrap.add_layer(data, cst.EPI_COLOR, cst.BAND_IM, point_cloud)
-        color_type = data[cst.EPI_COLOR].attrs["color_type"]
+    if cst.EPI_TEXTURE in data:
+        triang_wrap.add_layer(data, cst.EPI_TEXTURE, cst.BAND_IM, point_cloud)
+        color_type = data[cst.EPI_TEXTURE].attrs["color_type"]
     elif cst.EPI_IMAGE in data:
         color_type = data[cst.EPI_IMAGE].attrs["color_type"]
     if color_type:

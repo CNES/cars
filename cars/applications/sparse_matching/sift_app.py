@@ -623,12 +623,12 @@ def compute_matches_wrapper(
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :type left_image_object: xr.Dataset with :
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :param right_image_object: tiled Right image
     :type right_image_object: xr.Dataset
 

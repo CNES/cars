@@ -242,7 +242,10 @@ def test_epipolar_rectify_images_1(
             "ref_output_application/resampling/data1_ref_left.nc"
         )
     )
+
+    # Brackets are lost in dataset reading
     left_ref.attrs["band_names"] = [left_ref.attrs["band_names"]]
+    left_ref.attrs["image_type"] = [left_ref.attrs["image_type"]]
     assert_same_datasets(left, left_ref)
 
     # Uncomment to update baseline
@@ -255,6 +258,7 @@ def test_epipolar_rectify_images_1(
         )
     )
     right_ref.attrs["band_names"] = [right_ref.attrs["band_names"]]
+    right_ref.attrs["image_type"] = [right_ref.attrs["image_type"]]
     assert_same_datasets(right, right_ref)
 
 
@@ -346,7 +350,9 @@ def test_epipolar_rectify_images_3(
             "ref_output_application/resampling/data1_ref_left.nc"
         )
     )
+    # Brackets are lost in dataset reading
     left_ref.attrs["band_names"] = [left_ref.attrs["band_names"]]
+    left_ref.attrs["image_type"] = [left_ref.attrs["image_type"]]
     assert_same_datasets(left, left_ref)
 
     right_ref = xr.open_dataset(
@@ -355,6 +361,7 @@ def test_epipolar_rectify_images_3(
         )
     )
     right_ref.attrs["band_names"] = [right_ref.attrs["band_names"]]
+    right_ref.attrs["image_type"] = [right_ref.attrs["image_type"]]
     assert_same_datasets(right, right_ref)
 
     assert class1 is None
