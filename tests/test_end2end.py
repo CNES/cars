@@ -931,7 +931,9 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dump_dir", "dem_generation", "dem_min.tif"),
+            os.path.join(
+                out_dir_res4, "dump_dir", "dem_generation", "dem_min.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_min_end2end_ventoux_8bit.tif"
@@ -939,7 +941,9 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(
+                out_dir_res4, "dump_dir", "dem_generation", "dem_max.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_max_end2end_ventoux_8bit.tif"
@@ -964,9 +968,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 out_dir_res4, "dump_dir", "dem_generation", "dem_min.tif"
             ),
             absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir, "dem_min_end2end_ventoux_8bit.tif"
-                )
+                os.path.join(ref_output_dir, "dem_min_end2end_ventoux_8bit.tif")
             ),
             atol=0.0001,
             rtol=1e-6,
@@ -976,9 +978,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 out_dir_res4, "dump_dir", "dem_generation", "dem_max.tif"
             ),
             absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir, "dem_max_end2end_ventoux_8bit.tif"
-                )
+                os.path.join(ref_output_dir, "dem_max_end2end_ventoux_8bit.tif")
             ),
             atol=0.0001,
             rtol=1e-6,
@@ -1090,7 +1090,6 @@ def test_end2end_ventoux_unique():
             input_config_sparse_dsm["output"]["directory"], "out_res4"
         )
 
-
         copy2(
             os.path.join(
                 out_dir_res4, "dump_dir", "dem_generation", "dem_median.tif"
@@ -1102,7 +1101,9 @@ def test_end2end_ventoux_unique():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dump_dir", "dem_generation", "dem_min.tif"),
+            os.path.join(
+                out_dir_res4, "dump_dir", "dem_generation", "dem_min.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_min_end2end_ventoux.tif"
@@ -1110,7 +1111,9 @@ def test_end2end_ventoux_unique():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(
+                out_dir_res4, "dump_dir", "dem_generation", "dem_max.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_max_end2end_ventoux.tif"
@@ -2915,10 +2918,12 @@ def test_end2end_use_epipolar_a_priori():
             ref_output_dir = "ref_output"
             output_dir_res4 = os.path.join(out_dir, "dump_dir", "out_res4")
 
-
             copy2(
                 os.path.join(
-                    output_dir_res4, "dump_dir", "dem_generation", "dem_median.tif"
+                    output_dir_res4,
+                    "dump_dir",
+                    "dem_generation",
+                    "dem_median.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -4778,7 +4783,9 @@ def test_end2end_quality_stats():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dump_dir", "dem_generation", "dem_min.tif"),
+            os.path.join(
+                out_dir_res4, "dump_dir", "dem_generation", "dem_min.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -4787,7 +4794,9 @@ def test_end2end_quality_stats():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(
+                out_dir_res4, "dump_dir", "dem_generation", "dem_max.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
