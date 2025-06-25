@@ -66,7 +66,7 @@ Getting Started
 
 * Go to the ``data_gizeh/outresults/`` output directory to get a :term:`DSM` and color image associated.
 
-Open the ``dsm.tif`` DSM and ``color.tif`` color image in `QGIS`_ software.
+Open the ``dsm.tif`` DSM and ``texture.tif`` color image in `QGIS`_ software.
 
 .. |dsm| image:: images/dsm.png
   :width: 100%
@@ -75,10 +75,10 @@ Open the ``dsm.tif`` DSM and ``color.tif`` color image in `QGIS`_ software.
 .. |dsmcolor| image:: images/dsm_clr.png
   :width: 100%
 
-+--------------+-------------+-------------+
-|   dsm.tif    |   color.tif | `QGIS`_ Mix |
-+--------------+-------------+-------------+
-| |dsm|        | |color|     |  |dsmcolor| |
-+--------------+-------------+-------------+
++--------------+---------------+-------------+
+|   dsm.tif    |   texture.tif | `QGIS`_ Mix |
++--------------+---------------+-------------+
+| |dsm|        | |color|       |  |dsmcolor| |
++--------------+---------------+-------------+
 
 .. _`QGIS`: https://www.qgis.org/

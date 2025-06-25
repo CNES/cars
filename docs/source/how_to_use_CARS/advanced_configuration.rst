@@ -1162,6 +1162,11 @@ The structure follows this organization:
               - str
               - "default"
               - No
+            * - texture_bands
+              - Name of the bands used for output ortho image (see Sensor loaders configuration for details)
+              - list
+              - None
+              - No
 
 
         .. tabs::
@@ -1387,3 +1392,88 @@ The structure follows this organization:
                           "pipeline": "your_pipeline_name"
                           }
                       }
+
+    .. tab:: Sensor loaders
+
+        Sensor loaders are used to read images and classifications on sensor geometry with an advanced level on configuration. They are used inside the Inputs configuration (see :ref:`basic configuration`).
+
+        Two sensor loaders are available in CARS : "basic" and "pivot".
+
+        .. tabs::
+
+            .. tab:: Basic loader 
+
+                The basic loader is the simpler way to define an image. The basic loader is the one used by default when only a path is giver. However, it is possible to use the basic loader with a dictionary : 
+
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | Name           | Description           | Type   | Default value | Available values | Required |
+                +================+=======================+========+===============+==================+==========+
+                | *loader*       | Name of sensor loader | str    | "basic"       | "basic"          | False    |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *path*         | File path             | str    |               |                  | True     |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *no_data*      | No data value of file | int    | 0             |                  | False    |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+      
+            .. tab:: Pivot loader 
+
+                The pivot loader allows the maximal level of configuration. To use the pivot loader, it is required to set the "loader" parameter in sensor loader configuration.
+
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | Name            | Description                                                                           | Type   | Default value     | Available values | Required |
+                +=================+=======================================================================================+========+===================+==================+==========+
+                | *loader*        | Name of sensor loader                                                                 | str    | "pivot"           | "pivot"          | True     |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *main_file*     | Main file path among the files given in `bands` parameter                             | str    | File of band "b0" |                  | False    |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *bands*         | Dictionary listing for every band of the image, the corresponding file and band index | int    |                   |                  | True     |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *texture_bands* | List of bands used for output ortho image                                             | list   | None              |                  | False    |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *no_data*       | No data value of file                                                                 | int    | 0                 |                  | False    |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+
+                The `bands` dictionary have keys which corresponds to name of bands. The name of bands is imposed by CARS : if the image has n band, the name of the bands must be ["b0", "b1", ..., "b{n-1}"].
+                Eack key points to a dictionary with keys "path" and "band_id".
+
+                With the pivot format, an image can be composed of several files.
+
+                Full configuration example for pivot sensor loader :
+
+                .. code-block:: json
+
+                    "image": {
+                      "loader": "pivot",
+                      "main_file": "img1.tif"
+                      "bands": {
+                        "b0": {
+                          "path": "img1.tif",
+                          "band": 0
+                        },
+                        "b1": {
+                          "path": "color1.tif",
+                          "band": 0
+                        },
+                        "b2": {
+                          "path": "color1.tif",
+                          "band": 1
+                        },
+                        "b3": {
+                          "path": "color1.tif",
+                          "band": 2
+                        }
+                      },
+                      "texture_bands": ["b1", "b2", "b3"]
+                    }
+
+                .. note::
+
+                     - In the above example, the texture bands corresponds to the three bands of color1.tif which is a RGB file, so the output `texture.tif` will be RGB.
+                     - Order matters : if the "texture_bands" parameter is set to ["b3", "b2", "b1"], the output will be BGR.
+                     - It is possible to fuse the diffrent files in output ortho image : if the "texture_bands" parameter is set to ["b0", "b3", "b2", "b1"], the output will be PBGR (with P from panchromatic).
+                     - If "texture_bands" parameter is None (default value), all bands will be texture bands, so the output will be PRGB.
+                     - Parameter "texture_bands" must be the same as the one defined in Advanced parameters. If multiple pairs are used in the configuration, every left image must have the same texture bands in order to fuse them.
+
+                
+
+
