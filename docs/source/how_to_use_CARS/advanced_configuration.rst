@@ -1474,6 +1474,8 @@ The structure follows this organization:
                      - If "texture_bands" parameter is None (default value), all bands will be texture bands, so the output will be PRGB.
                      - Parameter "texture_bands" must be the same as the one defined in Advanced parameters. If multiple pairs are used in the configuration, every left image must have the same texture bands in order to fuse them.
 
+                Documentation on plugin creation can be found in :ref:`creating_a_plugin`
+
                 
 
 
