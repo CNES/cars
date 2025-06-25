@@ -125,13 +125,12 @@ def test_correct_right_grid(tmp_path):
 
     # Uncomment to update ref
     # np.save(absolute_data_path("ref_output_application/grid_generation"
-        # "/corrected_right_grid.npy"),
+    # "/corrected_right_grid.npy"),
     #  corrected_grid)
     corrected_grid_ref = np.load(
         absolute_data_path(
-                "ref_output_application/grid_generation"
-                "/corrected_right_grid.npy"
-            )
+            "ref_output_application/grid_generation/corrected_right_grid.npy"
+        )
     )
     np.testing.assert_allclose(
         corrected_grid, corrected_grid_ref, atol=0.05, rtol=1.0e-6
