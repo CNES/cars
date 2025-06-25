@@ -40,22 +40,25 @@ def is_bbx_in_image(bbx, image_dataset):
         image_dataset (rio.DatasetReader): Opened image dataset.
 
     """
-    image_box = box(0, 0, image_dataset.width, image_dataset.height)
+    image_box = box(0, 0, image_dataset.height, image_dataset.width)
 
     return image_box.contains(bbx)
 
 
-def get_slices_from_bbx(image_dataset, bbx):
+def get_slices_from_bbx(image_dataset, bbx, rpc_options):
     """get slices from bounding box
 
     Parameters:
         image_dataset (rio.DatasetReader): Opened image dataset.
         bbx (array): The bounding box of the image.
+        rpc_options (dict): Options for GDALCreateRPCTransformer.
 
     Returns:
         tuple: The slices from the bounding box.
     """
-    transformer = rio.transform.RPCTransformer(image_dataset.rpcs)
+    transformer = rio.transform.RPCTransformer(
+        image_dataset.rpcs, **rpc_options
+    )
     coordinates = [
         transformer.rowcol(bbx[0], bbx[1]),
         transformer.rowcol(bbx[2], bbx[1]),
@@ -72,7 +75,7 @@ def get_slices_from_bbx(image_dataset, bbx):
 
 
 def process_image_file(
-    bbx, input_image_path, output_image_path, geom_file_path
+    bbx, input_image_path, output_image_path, geom_file_path, rpc_options
 ):
     """
     Processes an image file by extracting a region based on the given geometry.
@@ -82,13 +85,14 @@ def process_image_file(
         input_image_path (str): Path to the input image file.
         output_image_path (str): Path to save the output image.
         geom_file_path (str): Path to save the .geom file.
+        rpc_options (dict): Options for GDALCreateRPCTransformer.
     """
 
     with rio.open(input_image_path) as image_dataset:
         if not image_dataset.rpcs:
             raise ValueError("Image dataset has no RPCs")
-        validate_bounding_box(bbx, image_dataset)
-        row, col = get_slices_from_bbx(image_dataset, bbx)
+        validate_bounding_box(bbx, image_dataset, rpc_options)
+        row, col = get_slices_from_bbx(image_dataset, bbx, rpc_options)
         window = rio.windows.Window.from_slices(row, col)
         array = image_dataset.read(window=window)
         profile = image_dataset.profile
@@ -109,23 +113,26 @@ def process_image_file(
         create_geom_file(image_dataset, geom_file_path)
 
 
-def get_human_readable_bbox(image_dataset):
+def get_human_readable_bbox(image_dataset, rpc_options):
     """
     Get the human-readable bounding box from an image dataset.
 
     Parameters:
         image_dataset (rio.DatasetReader): Opened image dataset.
+        rpc_options (dict): Options for GDALCreateRPCTransformer.
 
     Returns:
         tuple: The human-readable bounding box in the format
         (min_x, max_x, min_y, max_y).
     """
 
-    transformer = rio.transform.RPCTransformer(image_dataset.rpcs)
+    transformer = rio.transform.RPCTransformer(
+        image_dataset.rpcs, **rpc_options
+    )
 
     human_readable_bbx = [
         transformer.xy(0, 0),
-        transformer.xy(image_dataset.width, image_dataset.height),
+        transformer.xy(image_dataset.height, image_dataset.width),
     ]
     # fix coordinates to precision -7 for (x, y)
     image_coords = [
@@ -139,21 +146,26 @@ def get_human_readable_bbox(image_dataset):
     return min_x, max_x, min_y, max_y
 
 
-def validate_bounding_box(bbx, image_dataset):
+def validate_bounding_box(bbx, image_dataset, rpc_options):
     """
     Validate the bounding box coordinates.
 
     Parameters:
         bbx (array): The bounding box of the image.
         image_dataset (rio.DatasetReader): Opened image dataset.
+        rpc_options (dict): Options for GDALCreateRPCTransformer.
     """
 
-    transformer = rio.transform.RPCTransformer(image_dataset.rpcs)
+    transformer = rio.transform.RPCTransformer(
+        image_dataset.rpcs, **rpc_options
+    )
     input_box = box(
         *transformer.rowcol(bbx[0], bbx[1]), *transformer.rowcol(bbx[2], bbx[3])
     )
     if not is_bbx_in_image(input_box, image_dataset):
-        min_x, max_x, min_y, max_y = get_human_readable_bbox(image_dataset)
+        min_x, max_x, min_y, max_y = get_human_readable_bbox(
+            image_dataset, rpc_options
+        )
         raise ValueError(
             f"Coordinates must between "
             f"({min_x}, {min_y}) and ({max_x}, {max_y})"
@@ -216,9 +228,28 @@ def main():
         required=True,
     )
 
+    parser.add_argument(
+        "--rpc_height",
+        type=float,
+        help="Constant height offset used for projection",
+    )
+
+    parser.add_argument(
+        "--rpc_dem",
+        type=str,
+        help="Digital Elevation Model used for projection",
+    )
+
     args = parser.parse_args()
     if not os.path.exists(args.out):
         os.makedirs(args.out)
+
+    rpc_options = {}
+
+    if args.rpc_height is not None:
+        rpc_options["rpc_height"] = args.rpc_height
+    if args.rpc_dem is not None:
+        rpc_options["rpc_dem"] = args.rpc_dem
 
     # check first input in list to determine pipeline
     for idx, image_path in enumerate(args.il):
@@ -226,7 +257,7 @@ def main():
         geom_file_path = os.path.splitext(output_image_path)[0] + ".geom"
 
         process_image_file(
-            args.bbx, image_path, output_image_path, geom_file_path
+            args.bbx, image_path, output_image_path, geom_file_path, rpc_options
         )
 
 
