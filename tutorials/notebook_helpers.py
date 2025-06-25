@@ -143,7 +143,7 @@ def mkdir(root_dir, name_dir):
     return full_path_name_dir
 
 
-def get_full_data(cars_ds, tag, nodata=-32768):
+def get_full_data(cars_ds, tag, nodata=-32768, band=None):
     """
     Get combined data of CarsDataset
 
@@ -187,6 +187,9 @@ def get_full_data(cars_ds, tag, nodata=-32768):
     if tag not in merged_dataset[0]:
         raise RuntimeError("Tag {} not in dataset".format(tag))
     array = merged_dataset[0][tag].values
+
+    if band is not None:
+        array = array[band]
 
     if len(array.shape) == 3:
         array = np.rollaxis(array, 0, 3)
