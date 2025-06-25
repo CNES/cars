@@ -60,9 +60,10 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.SAVE_INTERMEDIATE_DATA, False
     )
 
-    overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA_GLOBAL] = conf.get(
-        adv_cst.SAVE_INTERMEDIATE_DATA_GLOBAL, False
+    overloaded_conf[adv_cst.KEEP_LOW_RES_DIR] = conf.get(
+        adv_cst.KEEP_LOW_RES_DIR, True
     )
+
     overloaded_conf[adv_cst.DEBUG_WITH_ROI] = conf.get(
         adv_cst.DEBUG_WITH_ROI, False
     )
@@ -171,8 +172,8 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     schema = {
         adv_cst.DEBUG_WITH_ROI: bool,
         adv_cst.MERGING: bool,
-        adv_cst.SAVE_INTERMEDIATE_DATA: bool,
-        adv_cst.SAVE_INTERMEDIATE_DATA_GLOBAL: bool,
+        adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
+        adv_cst.KEEP_LOW_RES_DIR: bool,
         adv_cst.GROUND_TRUTH_DSM: Or(dict, str),
         adv_cst.PHASING: Or(dict, None),
         adv_cst.PERFORMANCE_MAP_CLASSES: Or(None, list),

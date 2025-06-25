@@ -43,6 +43,10 @@ AUX_FILLING = "filling"
 AUX_CONTRIBUTING_PAIR = "contributing_pair"
 AUX_AMBIGUITY = "ambiguity"
 
+AUX_DEM_MIN = "dem_min"
+AUX_DEM_MAX = "dem_max"
+AUX_DEM_MEDIAN = "dem_median"
+
 
 # Output tree constants
 DSM_DIRECTORY = "dsm"

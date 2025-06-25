@@ -31,7 +31,6 @@ CARS default pipeline class file
 from __future__ import print_function
 
 import copy
-import glob
 import logging
 import math
 import os
@@ -195,10 +194,6 @@ class UnitPipeline(PipelineTemplate):
 
         self.save_all_intermediate_data = self.used_conf[ADVANCED][
             adv_cst.SAVE_INTERMEDIATE_DATA
-        ]
-
-        self.save_intermediate_data_global = self.used_conf[ADVANCED][
-            adv_cst.SAVE_INTERMEDIATE_DATA_GLOBAL
         ]
 
         if isinstance(
@@ -857,6 +852,7 @@ class UnitPipeline(PipelineTemplate):
 
         if not initial_elevation:
             self.dense_matching_app.confidence_filtering["activated"] = False
+
         # check classification application parameter compare
         # to each sensors inputs classification list
         for application_key in application_conf:
@@ -1359,7 +1355,7 @@ class UnitPipeline(PipelineTemplate):
                     self.pairs[pair_key]["corrected_grid_left"],
                     self.pairs[pair_key]["corrected_grid_right"],
                     pair_folder=os.path.join(
-                        self.dump_dir, "sparse_matching.sift", pair_key
+                        self.out_dir, "dsm/sensor_matches", pair_key
                     ),
                     save_matches=save_matches,
                 )
@@ -1508,14 +1504,14 @@ class UnitPipeline(PipelineTemplate):
                 save_matches = self.sparse_mtch_sift_app.get_save_matches()
 
                 self.sensor_matches_left = os.path.join(
-                    self.first_res_dump_dir,
-                    "sparse_matching.sift",
+                    self.first_res_out_dir,
+                    "dsm/sensor_matches",
                     pair_key,
                     "sensor_matches_left.npy",
                 )
                 self.sensor_matches_right = os.path.join(
-                    self.first_res_dump_dir,
-                    "sparse_matching.sift",
+                    self.first_res_out_dir,
+                    "dsm/sensor_matches",
                     pair_key,
                     "sensor_matches_right.npy",
                 )
@@ -2116,6 +2112,7 @@ class UnitPipeline(PipelineTemplate):
                     )
                     else None
                 )
+
                 filtered_epipolar_point_cloud_1 = (
                     self.pc_outlier_removal_1_app.run(
                         epipolar_point_cloud,
@@ -2408,6 +2405,45 @@ class UnitPipeline(PipelineTemplate):
                 else None
             )
 
+            dem_min_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "dem_min.tif",
+                )
+                if self.save_output_dsm
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_DEM_MIN
+                ]
+                else None
+            )
+
+            dem_max_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "dem_max.tif",
+                )
+                if self.save_output_dsm
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_DEM_MAX
+                ]
+                else None
+            )
+
+            dem_median_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "dem_median.tif",
+                )
+                if self.save_output_dsm
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_DEM_MEDIAN
+                ]
+                else None
+            )
+
             dem_generation_output_dir = os.path.join(
                 self.dump_dir, "dem_generation"
             )
@@ -2421,6 +2457,9 @@ class UnitPipeline(PipelineTemplate):
             _, paths, _ = self.dem_generation_application.run(
                 dsm_file_name,
                 dem_generation_output_dir,
+                dem_min_file_name,
+                dem_max_file_name,
+                dem_median_file_name,
                 self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
                     sens_cst.GEOID
                 ],
@@ -2946,41 +2985,25 @@ class UnitPipeline(PipelineTemplate):
             self.cars_orchestrator.add_to_clean(
                 os.path.join(self.dump_dir, "tile_processing")
             )
-            if not self.used_conf[ADVANCED][
-                adv_cst.SAVE_INTERMEDIATE_DATA_GLOBAL
-            ]:
-                # Remove dump_dir if no intermediate data should be written
 
-                files_to_clean = glob.glob(
-                    os.path.join(self.dump_dir, "out_res*")
+            # Remove dump_dir if no intermediate data should be written
+            if (
+                not any(
+                    app.get("save_intermediate_data", False) is True
+                    for app in self.used_conf[APPLICATIONS].values()
                 )
-                for file in files_to_clean:
-                    self.cars_orchestrator.add_to_clean(file)
-
-                if (
-                    not any(
-                        app.get("save_intermediate_data", False) is True
-                        for app in self.used_conf[APPLICATIONS].values()
-                    )
-                    and not self.dsms_in_inputs
-                ):
-                    if self.which_resolution not in ("final", "single"):
-                        # Delete the low res directory
-                        self.cars_orchestrator.add_to_clean(
-                            os.path.join(self.out_dir)
-                        )
-                    else:
-                        self.cars_orchestrator.add_to_clean(self.dump_dir)
+                and not self.dsms_in_inputs
+            ):
+                self.cars_orchestrator.add_to_clean(self.dump_dir)
 
     @cars_profile(name="run_dense_pipeline", interval=0.5)
     def run(
         self,
         orchestrator_conf=None,
-        which_resolution="single",
         generate_dems=False,
+        which_resolution="single",
         use_sift_a_priori=False,
-        previous_dump_dir=None,
-        first_res_dump_dir=None,
+        first_res_out_dir=None,
         final_out_dir=None,
     ):  # noqa C901
         """
@@ -2990,18 +3013,16 @@ class UnitPipeline(PipelineTemplate):
 
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
         self.dump_dir = os.path.join(self.out_dir, "dump_dir")
+        self.first_res_out_dir = first_res_out_dir
         self.texture_bands = self.used_conf[ADVANCED][adv_cst.TEXTURE_BANDS]
 
-        self.previous_dump_dir = previous_dump_dir
-        self.first_res_dump_dir = first_res_dump_dir
-
         self.auxiliary = self.used_conf[OUTPUT][out_cst.AUXILIARY]
-
-        self.which_resolution = which_resolution
 
         self.use_sift_a_priori = use_sift_a_priori
 
         self.generate_dems = generate_dems
+
+        self.which_resolution = which_resolution
 
         # Save used conf
         cars_dataset.save_dict(

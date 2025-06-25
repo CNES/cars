@@ -31,9 +31,11 @@ CARS default pipeline class file
 from __future__ import print_function
 
 import copy
+import json
 import logging
 import math
 import os
+import shutil
 
 # CARS imports
 from cars import __version__
@@ -60,7 +62,10 @@ from cars.pipelines.pipeline_constants import (
     ORCHESTRATOR,
     OUTPUT,
 )
-from cars.pipelines.pipeline_template import PipelineTemplate
+from cars.pipelines.pipeline_template import (
+    PipelineTemplate,
+    _merge_resolution_conf_rec,
+)
 
 
 @Pipeline.register(
@@ -131,22 +136,6 @@ class DefaultPipeline(PipelineTemplate):
         if isinstance(resolutions, int):
             resolutions = [resolutions]
 
-        # Error is the sizes don't match
-        if "applications" in conf:
-            if isinstance(conf["applications"], list):
-                if len(conf["applications"]) != len(resolutions):
-                    raise RuntimeError(
-                        "The applications list "
-                        "should match the resolutions one"
-                    )
-            else:
-                if len(resolutions) != 1:
-                    raise RuntimeError(
-                        "You need to enter only "
-                        "one resolution when the "
-                        "application step is a dictionnary"
-                    )
-
         if (
             (depth_cst.DEPTH_MAPS in inputs) or (dsm_cst.DSMS in inputs)
         ) and len(resolutions) != 1:
@@ -158,8 +147,39 @@ class DefaultPipeline(PipelineTemplate):
         i = 0
         last_res = False
         for res in resolutions:
+            if not isinstance(res, int) or res < 0:
+                raise RuntimeError("The resolution has to be an int > 0")
+
             # Get the current key
             key = "resolution_" + str(res)
+
+            # Choose the right default configuration regarding the resolution
+            package_path = os.path.dirname(__file__)
+
+            if i == 0:
+                json_file = os.path.join(
+                    package_path,
+                    "..",
+                    "conf_resolution",
+                    "conf_first_resolution.json",
+                )
+            elif i == len(resolutions) - 1 or len(resolutions) == 1:
+                json_file = os.path.join(
+                    package_path,
+                    "..",
+                    "conf_resolution",
+                    "conf_final_resolution.json",
+                )
+            else:
+                json_file = os.path.join(
+                    package_path,
+                    "..",
+                    "conf_resolution",
+                    "conf_intermediate_resolution.json",
+                )
+
+            with open(json_file, "r", encoding="utf8") as fstream:
+                resolution_config = json.load(fstream)
 
             self.used_conf[key] = {}
 
@@ -179,57 +199,74 @@ class DefaultPipeline(PipelineTemplate):
             self.used_conf[key][OUTPUT] = copy.deepcopy(output)
 
             # Override the output directory
-            if i != len(resolutions) - 1:
-                new_dir = (
-                    self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY]
-                    + "/dump_dir/out_res"
-                    + str(res)
-                )
-                self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY] = new_dir
-                safe_makedirs(
-                    self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY]
-                )
+            new_dir = (
+                self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY]
+                + "/out_res"
+                + str(res)
+            )
+            self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY] = new_dir
+            safe_makedirs(self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY])
 
-            # Get save intermediate data global
+            # Get save intermediate data per res
             # If true we don't delete the resolution directory
-            self.save_intermediate_data_global = self.used_conf[key][ADVANCED][
-                adv_cst.SAVE_INTERMEDIATE_DATA_GLOBAL
-            ]
-
-            if (
-                i != len(resolutions) - 1
-                and not self.save_intermediate_data_global
+            if isinstance(
+                self.used_conf[key][ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA],
+                dict,
             ):
-                # For each resolutions we need to calculate the dsm
-                # (except the last one)
-                self.used_conf[key][OUTPUT][out_cst.PRODUCT_LEVEL] = "dsm"
 
-                # The idea is to calculate the less possible things
-                # So we override those parameters
                 self.used_conf[key][ADVANCED][
                     adv_cst.SAVE_INTERMEDIATE_DATA
-                ] = False
-                self.used_conf[key][ADVANCED][adv_cst.MERGING] = False
-                self.used_conf[key][ADVANCED][adv_cst.PHASING] = None
-                self.used_conf[key][OUTPUT][out_cst.SAVE_BY_PAIR] = False
+                ] = self.used_conf[key][ADVANCED][
+                    adv_cst.SAVE_INTERMEDIATE_DATA
+                ].get(
+                    key, False
+                )
+
+            self.save_intermediate_data = self.used_conf[key][ADVANCED][
+                adv_cst.SAVE_INTERMEDIATE_DATA
+            ]
+
+            self.keep_low_res_dir = self.used_conf[key][ADVANCED][
+                adv_cst.KEEP_LOW_RES_DIR
+            ]
+
+            if i != len(resolutions) - 1:
                 self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_PERFORMANCE_MAP
-                ] = False
+                    out_cst.AUX_DEM_MAX
+                ] = True
                 self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_AMBIGUITY
-                ] = False
+                    out_cst.AUX_DEM_MIN
+                ] = True
                 self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_CONTRIBUTING_PAIR
-                ] = False
-            elif (
-                i != len(resolutions) - 1 and self.save_intermediate_data_global
-            ):
-                # If save_intermediate_data_global is true,
-                # we save the depth_maps also to debug
-                self.used_conf[key][OUTPUT][out_cst.PRODUCT_LEVEL] = [
-                    "dsm",
-                    "depth_map",
-                ]
+                    out_cst.AUX_DEM_MEDIAN
+                ] = True
+
+                if not self.save_intermediate_data:
+                    # For each resolutions we need to calculate the dsm
+                    # (except the last one)
+                    self.used_conf[key][OUTPUT][out_cst.PRODUCT_LEVEL] = "dsm"
+
+                    # The idea is to calculate the less possible things
+                    # So we override those parameters
+                    self.used_conf[key][ADVANCED][adv_cst.MERGING] = False
+                    self.used_conf[key][ADVANCED][adv_cst.PHASING] = None
+                    self.used_conf[key][OUTPUT][out_cst.SAVE_BY_PAIR] = False
+                    self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
+                        out_cst.AUX_PERFORMANCE_MAP
+                    ] = False
+                    self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
+                        out_cst.AUX_AMBIGUITY
+                    ] = False
+                    self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
+                        out_cst.AUX_CONTRIBUTING_PAIR
+                    ] = False
+                else:
+                    # If save_intermediate_data is true,
+                    # we save the depth_maps also to debug
+                    self.used_conf[key][OUTPUT][out_cst.PRODUCT_LEVEL] = [
+                        "dsm",
+                        "depth_map",
+                    ]
             else:
                 # For the final res we don't change anything
                 last_res = True
@@ -257,24 +294,32 @@ class DefaultPipeline(PipelineTemplate):
 
             self.phasing = self.used_conf[key][ADVANCED][adv_cst.PHASING]
 
-            self.save_all_intermediate_data = self.used_conf[key][ADVANCED][
-                adv_cst.SAVE_INTERMEDIATE_DATA
-            ]
             self.save_all_point_clouds_by_pair = self.used_conf[key][
                 OUTPUT
             ].get(out_cst.SAVE_BY_PAIR, False)
 
             # Check conf application
-            application_all_conf = conf.get(APPLICATIONS, {})
-
-            if isinstance(application_all_conf, list):
-                application_conf = self.check_applications(
-                    application_all_conf[i], key, last_res
-                )
+            if APPLICATIONS in conf:
+                if all(
+                    "resolution_" + str(val) not in conf[APPLICATIONS]
+                    for val in resolutions
+                ):
+                    application_all_conf = conf.get(APPLICATIONS, {})
+                else:
+                    self.check_application_keys_name(
+                        resolutions, conf[APPLICATIONS]
+                    )
+                    application_all_conf = conf[APPLICATIONS].get(key, {})
             else:
-                application_conf = self.check_applications(
-                    application_all_conf, key, last_res
-                )
+                application_all_conf = {}
+
+            application_all_conf = self.merge_resolution_conf(
+                application_all_conf, resolution_config
+            )
+
+            application_conf = self.check_applications(
+                application_all_conf, key, res, last_res
+            )
 
             self.used_conf[key][APPLICATIONS] = application_conf
 
@@ -511,10 +556,51 @@ class DefaultPipeline(PipelineTemplate):
         """
         return output_parameters.check_output_parameters(conf)
 
+    def merge_resolution_conf(self, config1, config2):
+        """
+        Merge two configuration dict, generating a new configuration
+
+        :param conf1: configuration
+        :type conf1: dict
+        :param conf2: configuration
+        :type conf2: dict
+
+        :return: merged conf
+        :rtype: dict
+
+        """
+
+        merged_dict = config1.copy()
+
+        _merge_resolution_conf_rec(merged_dict, config2)
+
+        return merged_dict
+
+    def check_application_keys_name(self, resolutions, applications_conf):
+        """
+        Check if the application name for each res match 'resolution_res'
+        """
+
+        for key_app, _ in applications_conf.items():
+            if not key_app.startswith("resolution"):
+                raise RuntimeError(
+                    "If you decided to define an "
+                    "application per resolution, "
+                    "all the keys have to be : "
+                    "resolution_res"
+                )
+            if int(key_app.split("_")[1]) not in resolutions:
+                raise RuntimeError(
+                    "This resolution "
+                    + key_app.split("_")[1]
+                    + " is not in the resolution list"
+                )
+
     def check_applications(  # noqa: C901 : too complex
         self,
         conf,
-        key,
+        key=None,
+        res=None,
         last_res=False,
     ):
         """
@@ -587,7 +673,7 @@ class DefaultPipeline(PipelineTemplate):
         for app_key in needed_applications:
             used_conf[app_key] = conf.get(app_key, {})
             used_conf[app_key]["save_intermediate_data"] = (
-                self.save_all_intermediate_data
+                self.save_intermediate_data
                 or used_conf[app_key].get("save_intermediate_data", False)
             )
 
@@ -628,10 +714,8 @@ class DefaultPipeline(PipelineTemplate):
                 self.epipolar_grid_generation_application.get_conf()
             )
 
-            if not last_res:
-                used_conf["grid_generation"]["save_intermediate_data"] = True
-
             # image resampling
+
             self.resampling_application = Application(
                 "resampling", cfg=used_conf.get("resampling", {})
             )
@@ -743,15 +827,13 @@ class DefaultPipeline(PipelineTemplate):
                 self.dem_generation_application.get_conf()
             )
 
-            if not last_res:
-                used_conf["dem_generation"]["save_intermediate_data"] = True
-
             # Points cloud small component outlier removal
             if "point_cloud_outlier_removal.1" in used_conf:
                 if "method" not in used_conf["point_cloud_outlier_removal.1"]:
                     used_conf["point_cloud_outlier_removal.1"][
                         "method"
                     ] = "small_components"
+
             self.pc_outlier_removal_1_app = Application(
                 "point_cloud_outlier_removal",
                 cfg=used_conf.get(
@@ -759,9 +841,24 @@ class DefaultPipeline(PipelineTemplate):
                     {"method": "small_components"},
                 ),
             )
+
+            connection_val = None
+            if (
+                "connection_distance"
+                not in used_conf["point_cloud_outlier_removal.1"]
+            ):
+                connection_val = (
+                    self.pc_outlier_removal_1_app.connection_distance * res
+                )
+
             used_conf["point_cloud_outlier_removal.1"] = (
                 self.pc_outlier_removal_1_app.get_conf()
             )
+
+            if connection_val is not None:
+                used_conf["point_cloud_outlier_removal.1"][
+                    "connection_distance"
+                ] = connection_val
 
             # Points cloud statistical outlier removal
             self.pc_outlier_removal_2_app = Application(
@@ -980,14 +1077,31 @@ class DefaultPipeline(PipelineTemplate):
 
         return application_conf
 
+    def cleanup_low_res_dir(self):
+        """
+        Clean low res dir
+        """
+
+        items = list(self.used_conf.items())
+        for _, conf_res in items[:-1]:
+            out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
+            if os.path.exists(out_dir) and os.path.isdir(out_dir):
+                try:
+                    shutil.rmtree(out_dir)
+                    print(f"th directory {out_dir} has been cleaned.")
+                except Exception as exception:
+                    print(f"Error while deleting {out_dir}: {exception}")
+            else:
+                print(f"The directory {out_dir} has not been deleted")
+
     @cars_profile(name="run_dense_pipeline", interval=0.5)
     def run(self):  # noqa C901
         """
         Run pipeline
 
         """
-        first_res_dump_dir = None
-        previous_dump_dir = None
+        first_res_out_dir = None
+        previous_out_dir = None
         generate_dems = True
         last_key = list(self.used_conf)[-1]
         final_out_dir = self.used_conf[last_key][OUTPUT][out_cst.OUT_DIRECTORY]
@@ -995,12 +1109,10 @@ class DefaultPipeline(PipelineTemplate):
 
         i = 0
         for _, conf_res in self.used_conf.items():
-            self.out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
-            self.dump_dir = os.path.join(self.out_dir, "dump_dir")
-            self.auxiliary = conf_res[OUTPUT][out_cst.AUXILIARY]
+            out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
 
             # Get the resolution step
-            if previous_dump_dir is not None:
+            if previous_out_dir is not None:
                 if i == len(self.used_conf) - 1:
                     which_resolution = "final"
                     generate_dems = False
@@ -1011,18 +1123,14 @@ class DefaultPipeline(PipelineTemplate):
                     which_resolution = "single"
                 else:
                     which_resolution = "first"
-                    first_res_dump_dir = self.dump_dir
+                    first_res_out_dir = out_dir
 
             # Build a priori
             if which_resolution in ("final", "intermediate"):
-                dem_min = os.path.join(
-                    previous_dump_dir, "dem_generation/dem_min.tif"
-                )
-                dem_max = os.path.join(
-                    previous_dump_dir, "dem_generation/dem_max.tif"
-                )
+                dem_min = os.path.join(previous_out_dir, "dsm/dem_min.tif")
+                dem_max = os.path.join(previous_out_dir, "dsm/dem_max.tif")
                 dem_median = os.path.join(
-                    previous_dump_dir, "dem_generation/dem_median.tif"
+                    previous_out_dir, "dsm/dem_median.tif"
                 )
 
                 conf_res[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {
@@ -1037,9 +1145,9 @@ class DefaultPipeline(PipelineTemplate):
             # start cars orchestrator
             with orchestrator.Orchestrator(
                 orchestrator_conf=conf_res[ORCHESTRATOR],
-                out_dir=self.out_dir,
+                out_dir=out_dir,
                 out_json_path=os.path.join(
-                    self.out_dir,
+                    out_dir,
                     out_cst.INFO_FILENAME,
                 ),
             ) as self.cars_orchestrator:
@@ -1049,13 +1157,15 @@ class DefaultPipeline(PipelineTemplate):
 
                 UnitPipeline(conf_res).run(
                     self.cars_orchestrator,
-                    which_resolution,
                     generate_dems,
+                    which_resolution,
                     use_sift_a_priori,
-                    previous_dump_dir,
-                    first_res_dump_dir,
+                    first_res_out_dir,
                     final_out_dir,
                 )
 
-            previous_dump_dir = self.dump_dir
+            previous_out_dir = out_dir
             i += 1
+
+        if not self.keep_low_res_dir:
+            self.cleanup_low_res_dir()

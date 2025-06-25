@@ -79,9 +79,8 @@ def test_end2end_dsm_fusion():
                 "max_ram_per_worker": 500,
             },
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "sparse_matching.sift": {
                     "method": "sift",
@@ -105,8 +104,9 @@ def test_end2end_dsm_fusion():
                     "msk_no_data": 254,
                     "save_intermediate_data": True,
                 },
-            },
-        ]
+            }
+        }
+
         input_dense_dsm_lr["applications"] = dense_dsm_applications
 
         # update epsg
@@ -129,7 +129,9 @@ def test_end2end_dsm_fusion():
         dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm_lr)
         dense_dsm_pipeline.run()
 
-        out_dir = input_dense_dsm_lr["output"]["directory"]
+        out_dir = os.path.join(
+            input_dense_dsm_lr["output"]["directory"], "out_res1"
+        )
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -488,7 +490,9 @@ def test_end2end_color_after_dsm_reentrance():
         input_dsm_config["output"] = {}
         input_dsm_config["output"]["directory"] = directory
 
-        out_dir = input_dsm_config["output"]["directory"]
+        out_dir = os.path.join(
+            input_dsm_config["output"]["directory"], "out_res1"
+        )
 
         input_dsm_config["advanced"] = {}
         input_dsm_config["advanced"]["epipolar_resolutions"] = 1
@@ -545,9 +549,8 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "max_ram_per_worker": 500,
             },
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "dem_generation": {"resolution": 30},
                 "sparse_matching.sift": {
@@ -570,8 +573,9 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                     "texture_no_data": 0,
                     "msk_no_data": 254,
                 },
-            },
-        ]
+            }
+        }
+
         input_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -593,7 +597,9 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_dense_dsm["output"]["directory"]
+        out_dir = os.path.join(
+            input_dense_dsm["output"]["directory"], "out_res1"
+        )
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -813,8 +819,8 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             },
         )
 
-        application_config = [
-            {
+        application_config = {
+            "resolution_4": {
                 "sparse_matching.sift": {
                     "method": "sift",
                     # Uncomment the following line to update dsm reference data
@@ -826,7 +832,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                     "decimation_factor": 100,
                 },
             },
-            {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic"},
                 "sparse_matching.sift": {
@@ -848,7 +854,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                     "save_intermediate_data": True
                 },
             },
-        ]
+        }
 
         output_config = {
             # reduce computation time by not going further for nothing
@@ -859,14 +865,13 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         input_config_sparse_dsm["output"].update(output_config)
 
         input_config_sparse_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
-        input_config_sparse_dsm["advanced"][
-            "save_intermediate_data_global"
-        ] = True
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_sparse_dsm["output"]["directory"], "out_res1"
+        )
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -906,7 +911,9 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         # check used_conf file exists
         assert os.path.isfile(used_conf_path)
 
-        out_dir_res4 = os.path.join(out_dir, "dump_dir", "out_res4")
+        out_dir_res4 = os.path.join(
+            input_config_sparse_dsm["output"]["directory"], "out_res4"
+        )
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -999,9 +1006,8 @@ def test_end2end_ventoux_unique():
                 "max_ram_per_worker": 1000,
             },
         )
-        application_config = [
-            {},
-            {
+        application_config = {
+            "resolution_1": {
                 "grid_generation": {
                     "method": "epipolar",
                     "epi_step": 30,
@@ -1027,7 +1033,7 @@ def test_end2end_ventoux_unique():
                     "save_intermediate_data": True
                 },
             },
-        ]
+        }
         output_config = {
             # reduce computation time by not going further for nothing
             "product_level": ["depth_map"]
@@ -1037,15 +1043,13 @@ def test_end2end_ventoux_unique():
         input_config_sparse_dsm["output"].update(output_config)
 
         input_config_sparse_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
-        input_config_sparse_dsm["advanced"][
-            "save_intermediate_data_global"
-        ] = True
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_sparse_dsm["output"]["directory"], "out_res1"
+        )
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -1082,7 +1086,9 @@ def test_end2end_ventoux_unique():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        out_dir_res4 = os.path.join(out_dir, "dump_dir", "out_res4")
+        out_dir_res4 = os.path.join(
+            input_config_sparse_dsm["output"]["directory"], "out_res4"
+        )
 
 
         copy2(
@@ -1289,15 +1295,13 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["resolution"] = 0.5
 
         input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
-        input_config_dense_dsm["advanced"][
-            "save_intermediate_data_global"
-        ] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         # Check used_conf for dense dsm
         used_conf_path = os.path.join(out_dir, "used_conf.json")
 
@@ -1601,9 +1605,8 @@ def test_end2end_ventoux_unique():
                 "max_ram_per_worker": 1000,
             },
         )
-        application_config = [
-            {},
-            {
+        application_config = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -1625,7 +1628,7 @@ def test_end2end_ventoux_unique():
                     "save_intermediate_data": True
                 },
             },
-        ]
+        }
 
         input_config_sparse_dsm["applications"] = application_config
 
@@ -1634,7 +1637,9 @@ def test_end2end_ventoux_unique():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_sparse_dsm["output"]["directory"], "out_res1"
+        )
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1732,7 +1737,9 @@ def test_end2end_ventoux_unique():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_sparse_dsm["output"]["directory"], "out_res1"
+        )
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -1765,9 +1772,8 @@ def test_end2end_ventoux_unique():
                 "max_ram_per_worker": 1000,
             },
         )
-        application_config = [
-            {},
-            {
+        application_config = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -1789,7 +1795,7 @@ def test_end2end_ventoux_unique():
                     "save_intermediate_data": True
                 },
             },
-        ]
+        }
 
         input_config_sparse_dsm["applications"] = application_config
 
@@ -1798,7 +1804,9 @@ def test_end2end_ventoux_unique():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_sparse_dsm["output"]["directory"], "out_res1"
+        )
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1843,7 +1851,9 @@ def test_end2end_ventoux_unique():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_sparse_dsm["output"]["directory"], "out_res1"
+        )
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -1902,7 +1912,9 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
         pc_pipeline.run()
 
-        out_dir = input_config_pc["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_pc["output"]["directory"], "out_res1"
+        )
         geometry_plugin_name = input_config_pc["advanced"]["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
@@ -1995,7 +2007,9 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             dsm_pipeline = default.UnitPipeline(input_dsm_config)
             dsm_pipeline.run()
 
-            out_dir_dsm = input_dsm_config["output"]["directory"]
+            out_dir_dsm = os.path.join(
+                input_dsm_config["output"]["directory"], "out_res1"
+            )
 
             # Ref output dir dependent from geometry plugin chosen
             intermediate_output_dir = "intermediate_data"
@@ -2088,9 +2102,8 @@ def test_end2end_ventoux_unique_split():
                 "max_ram_per_worker": 1000,
             },
         )
-        application_config = [
-            {},
-            {
+        application_config = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 200},
                 "sparse_matching.sift": {
@@ -2175,7 +2188,7 @@ def test_end2end_ventoux_unique_split():
                     "use_median": False,
                 },
             },
-        ]
+        }
 
         input_config_pc["applications"] = application_config
 
@@ -2193,7 +2206,9 @@ def test_end2end_ventoux_unique_split():
         pc_pipeline = default.DefaultPipeline(input_config_pc)
         pc_pipeline.run()
 
-        out_dir = input_config_pc["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_pc["output"]["directory"], "out_res1"
+        )
         geometry_plugin_name = input_config_pc["advanced"]["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
@@ -2281,7 +2296,9 @@ def test_end2end_ventoux_unique_split():
             dsm_pipeline = default.UnitPipeline(input_dsm_config)
             dsm_pipeline.run()
 
-            out_dir_dsm = input_dsm_config["output"]["directory"]
+            out_dir_dsm = os.path.join(
+                input_dsm_config["output"]["directory"], "out_res1"
+            )
 
             # Ref output dir dependent from geometry plugin chosen
             intermediate_output_dir = "intermediate_data"
@@ -2547,7 +2564,9 @@ def test_end2end_ventoux_unique_split():
             dsm_pipeline = default.UnitPipeline(input_dsm_config)
             dsm_pipeline.run()
 
-            out_dir_dsm = input_dsm_config["output"]["directory"]
+            out_dir_dsm = os.path.join(
+                input_dsm_config["output"]["directory"], "out_res1"
+            )
 
             copy2(
                 os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
@@ -2804,22 +2823,22 @@ def test_end2end_use_epipolar_a_priori():
         # no srtm
         input_config_sparse_res["inputs"]["initial_elevation"] = None
 
-        application_config = [
-            {
+        application_config = {
+            "resolution_4": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "nb_points_threshold": 150,
                     "connection_distance": 3.0,
                 },
             },
-            {
+            "resolution_2": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "nb_points_threshold": 150,
                     "connection_distance": 3.0,
                 },
             },
-            {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 200},
                 "sparse_matching.sift": {
@@ -2840,7 +2859,7 @@ def test_end2end_use_epipolar_a_priori():
                     "save_intermediate_data": True
                 },
             },
-        ]
+        }
         output_config = {
             # reduce computation time by not going further for nothing
             "product_level": ["depth_map"]
@@ -2850,14 +2869,13 @@ def test_end2end_use_epipolar_a_priori():
         input_config_sparse_res["applications"] = application_config
 
         input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 2, 1]
-        input_config_sparse_res["advanced"][
-            "save_intermediate_data_global"
-        ] = True
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_sparse_res["output"]["directory"], "out_res1"
+        )
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -3071,12 +3089,13 @@ def test_end2end_use_epipolar_a_priori():
 
         dense_dsm_pipeline = default.UnitPipeline(input_config_dense_dsm)
 
-        first_res_dump_dir = os.path.join(output_dir_res4, "dump_dir")
         dense_dsm_pipeline.run(
-            use_sift_a_priori=True, first_res_dump_dir=first_res_dump_dir
+            use_sift_a_priori=True, first_res_out_dir=output_dir_res4
         )
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
 
         # Check used_conf for dense_dsm
         used_conf_path = os.path.join(out_dir, "used_conf.json")
@@ -3189,8 +3208,8 @@ def test_prepare_ventoux_bias():
                 "max_ram_per_worker": 2000,
             },
         )
-        application_config = [
-            {
+        application_config = {
+            "resolution_4": {
                 "sparse_matching.sift": {
                     "method": "sift",
                     "epipolar_error_upper_bound": 43.0,
@@ -3202,7 +3221,7 @@ def test_prepare_ventoux_bias():
                     "decimation_factor": 100,
                 },
             },
-            {
+            "resolution_2": {
                 "sparse_matching.sift": {
                     "method": "sift",
                     "epipolar_error_upper_bound": 43.0,
@@ -3214,7 +3233,7 @@ def test_prepare_ventoux_bias():
                     "decimation_factor": 100,
                 },
             },
-            {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 100},
                 "sparse_matching.sift": {
@@ -3238,7 +3257,7 @@ def test_prepare_ventoux_bias():
                     "coregistration": False,
                 },
             },
-        ]
+        }
 
         output_config = {
             # reduce computation time by not going further for nothing
@@ -3253,7 +3272,9 @@ def test_prepare_ventoux_bias():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_sparse_res["output"]["directory"], "out_res1"
+        )
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -3296,10 +3317,8 @@ def test_end2end_ventoux_full_output_no_elevation():
             },
         )
 
-        application_config = [
-            {},
-            {},
-            {
+        application_config = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {
                     "method": "bicubic",
@@ -3321,10 +3340,10 @@ def test_end2end_ventoux_full_output_no_elevation():
                     "use_cross_validation": True,
                 },
             },
-        ]
+        }
         advanced_config = {"save_intermediate_data": True}
 
-        out_dir = os.path.join(directory, "output_dsm")
+        out_dir = os.path.join(directory, "output_dsm", "out_res1")
         output_config = {
             "directory": out_dir,
             "product_level": ["depth_map", "point_cloud", "dsm"],
@@ -3724,9 +3743,8 @@ def test_end2end_ventoux_with_color():
                 "max_ram_per_worker": 1000,
             },
         )
-        application_config = [
-            {},
-            {
+        application_config = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {
                     "method": "bicubic",
@@ -3752,7 +3770,7 @@ def test_end2end_ventoux_with_color():
                     "save_intermediate_data": True
                 },
             },
-        ]
+        }
 
         output_config = {
             # reduce computation time by not going further for nothing
@@ -3776,7 +3794,9 @@ def test_end2end_ventoux_with_color():
 
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_sparse_res["output"]["directory"], "out_res1"
+        )
 
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -3860,8 +3880,9 @@ def test_end2end_ventoux_with_color():
 
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         assert (
             os.path.exists(
                 os.path.join(
@@ -4099,9 +4120,8 @@ def test_end2end_ventoux_with_classif():
                 "max_ram_per_worker": 1000,
             },
         )
-        application_config = [
-            {},
-            {
+        application_config = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {
                     "method": "bicubic",
@@ -4126,7 +4146,7 @@ def test_end2end_ventoux_with_classif():
                     "save_intermediate_data": True
                 },
             },
-        ]
+        }
 
         output_config = {
             # reduce computation time by not going further for nothing
@@ -4140,7 +4160,9 @@ def test_end2end_ventoux_with_classif():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_sparse_res["output"]["directory"], "out_res1"
+        )
 
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -4213,8 +4235,9 @@ def test_end2end_ventoux_with_classif():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_sparse_res["output"]["directory"], "out_res1"
+        )
         pc1 = "0_0"
 
         assert (
@@ -4364,9 +4387,8 @@ def test_compute_dsm_with_roi_ventoux():
                 "max_ram_per_worker": 1000,
             },
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "dense_matching": {
@@ -4391,7 +4413,7 @@ def test_compute_dsm_with_roi_ventoux():
                     "texture_no_data": 0,
                 },
             },
-        ]
+        }
         input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -4431,8 +4453,9 @@ def test_compute_dsm_with_roi_ventoux():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -4523,9 +4546,8 @@ def test_compute_dsm_with_snap_to_img1():
                 "max_ram_per_worker": 1000,
             },
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -4566,7 +4588,7 @@ def test_compute_dsm_with_snap_to_img1():
                     "texture_no_data": 0,
                 },
             },
-        ]
+        }
         input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -4581,7 +4603,9 @@ def test_compute_dsm_with_snap_to_img1():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4652,8 +4676,8 @@ def test_end2end_quality_stats():
 
         # no srtm
         input_config_dense_dsm["inputs"]["initial_elevation"] = None
-        dense_dsm_applications = [
-            {
+        dense_dsm_applications = {
+            "resolution_4": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "activated": True,
@@ -4661,7 +4685,7 @@ def test_end2end_quality_stats():
                     "connection_distance": 3.0,
                 },
             },
-            {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -4695,7 +4719,7 @@ def test_end2end_quality_stats():
                     "texture_no_data": 0,
                 },
             },
-        ]
+        }
         input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -4715,8 +4739,9 @@ def test_end2end_quality_stats():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -4737,7 +4762,9 @@ def test_end2end_quality_stats():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        out_dir_res4 = os.path.join(out_dir, "dump_dir/out_res4")
+        out_dir_res4 = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res4"
+        )
 
         copy2(
             os.path.join(
@@ -4948,9 +4975,8 @@ def test_end2end_ventoux_egm96_geoid():
                 "max_ram_per_worker": 1000,
             },
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "grid_generation": {
                     "method": "epipolar",
                     "epi_step": 30,
@@ -4992,7 +5018,7 @@ def test_end2end_ventoux_egm96_geoid():
                     "texture_no_data": 0,
                 },
             },
-        ]
+        }
         input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -5008,8 +5034,9 @@ def test_end2end_ventoux_egm96_geoid():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -5081,9 +5108,8 @@ def test_end2end_ventoux_egm96_geoid():
                 "max_ram_per_worker": 1000,
             },
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "grid_generation": {
                     "method": "epipolar",
                     "epi_step": 30,
@@ -5125,7 +5151,7 @@ def test_end2end_ventoux_egm96_geoid():
                     "texture_no_data": 0,
                 },
             },
-        ]
+        }
         input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -5142,8 +5168,9 @@ def test_end2end_ventoux_egm96_geoid():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -5178,9 +5205,8 @@ def test_end2end_ventoux_egm96_geoid():
                 "max_ram_per_worker": 1000,
             },
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "grid_generation": {
                     "method": "epipolar",
                     "epi_step": 30,
@@ -5222,7 +5248,7 @@ def test_end2end_ventoux_egm96_geoid():
                     "texture_no_data": 0,
                 },
             },
-        ]
+        }
         input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -5240,8 +5266,9 @@ def test_end2end_ventoux_egm96_geoid():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -5325,9 +5352,8 @@ def test_end2end_paca_with_mask():
                 "max_ram_per_worker": 1000,
             },
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -5378,7 +5404,7 @@ def test_end2end_paca_with_mask():
                     "texture_interpolator": "linear",
                 },
             },
-        ]
+        }
         input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -5410,8 +5436,9 @@ def test_end2end_paca_with_mask():
 
         dense_dsm_pipeline_bulldozer.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -5661,9 +5688,8 @@ def test_end2end_disparity_filling():
                 "max_ram_per_worker": 300,
             },
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "dense_matching": {
                     "method": "census_sgm_default",
                     "use_cross_validation": True,
@@ -5697,7 +5723,7 @@ def test_end2end_disparity_filling():
                     "msk_no_data": 254,
                 },
             },
-        ]
+        }
         input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -5717,8 +5743,9 @@ def test_end2end_disparity_filling():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -5806,9 +5833,8 @@ def test_end2end_disparity_filling_with_zeros():
             directory,
             "multiprocessing",
         )
-        dense_dsm_applications = [
-            {},
-            {
+        dense_dsm_applications = {
+            "resolution_1": {
                 "sparse_matching.sift": {
                     "decimation_factor": 80,
                 },
@@ -5836,7 +5862,7 @@ def test_end2end_disparity_filling_with_zeros():
                     "use_median": False,
                 },
             },
-        ]
+        }
         input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
@@ -5853,8 +5879,9 @@ def test_end2end_disparity_filling_with_zeros():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(
+            input_config_dense_dsm["output"]["directory"], "out_res1"
+        )
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -5973,17 +6000,14 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             4,
             1,
         ]
-        sensors_input_config_first_run["advanced"][
-            "save_intermediate_data_global"
-        ] = True
 
         sensors_pipeline_first_run = default.DefaultPipeline(
             sensors_input_config_first_run
         )
         sensors_pipeline_first_run.run()
-        sensors_out_dir_first_run = sensors_input_config_first_run["output"][
-            "directory"
-        ]
+        sensors_out_dir_first_run = os.path.join(
+            sensors_input_config_first_run["output"]["directory"], "out_res1"
+        )
 
         # Run sensors pipeline with generated config
         used_conf = os.path.join(sensors_out_dir_first_run, "used_conf.json")
@@ -5994,19 +6018,17 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             "directory"
         ] += "_from_used_conf"
 
-        first_res_dump_dir = os.path.join(
-            sensors_out_dir_first_run, "dump_dir/out_res4/dump_dir"
-        )
+        first_res_out_dir = os.path.join(sensors_out_dir_first_run, "out_res4")
 
         sensors_pipeline_second_run = default.UnitPipeline(
             sensors_input_config_second_run
         )
         sensors_pipeline_second_run.run(
-            use_sift_a_priori=True, first_res_dump_dir=first_res_dump_dir
+            use_sift_a_priori=True, first_res_out_dir=first_res_out_dir
         )
-        sensors_out_dir_second_run = sensors_input_config_second_run["output"][
-            "directory"
-        ]
+        sensors_out_dir_second_run = os.path.join(
+            sensors_input_config_second_run["output"]["directory"], "out_res1"
+        )
 
         assert_same_images(
             os.path.join(sensors_out_dir_first_run, "dsm", "dsm.tif"),
@@ -6046,9 +6068,9 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 pc_input_config_first_run
             )
             pc_pipeline_first_run.run()
-            pc_out_dir_first_run = pc_input_config_first_run["output"][
-                "directory"
-            ]
+            pc_out_dir_first_run = os.path.join(
+                pc_input_config_first_run["output"]["directory"], "out_res1"
+            )
 
             # Run pc pipeline with generated config
             used_conf = os.path.join(pc_out_dir_first_run, "used_conf.json")
@@ -6063,9 +6085,9 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 pc_input_config_second_run
             )
             pc_pipeline_second_run.run()
-            pc_out_dir_second_run = pc_input_config_second_run["output"][
-                "directory"
-            ]
+            pc_out_dir_second_run = os.path.join(
+                pc_input_config_second_run["output"]["directory"], "out_res1"
+            )
 
             assert_same_images(
                 os.path.join(pc_out_dir_first_run, "dsm", "dsm.tif"),

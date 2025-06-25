@@ -188,6 +188,9 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         self,
         dsm_file_name,
         output_dir,
+        dem_min_file_name,
+        dem_max_file_name,
+        dem_median_file_name,
         geoid_path,
         initial_elevation=None,
         cars_orchestrator=None,
@@ -199,6 +202,12 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         :type dsm_file_name: CarsDataset
         :param output_dir: directory to save dem
         :type output_dir: str
+        :param dem_min_file_name: path of dem_min
+        :type dem_min_file_name: str
+        :param dem_max_file_name: path of dem_max
+        :type dem_max_file_name: str
+        :param dem_median_file_name: path of dem_median
+        :type dem_median_file_name: str
         :param geoid_path: geoid path
         :param dem_roi_to_use: dem roi polygon to use as roi
 
@@ -214,9 +223,22 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         resolution_in_meters = self.resolution
 
         # rasterize point cloud
-        dem_min_path = os.path.join(output_dir, "dem_min.tif")
+        dem_min_path = dem_min_file_name
+        if dem_min_path is None:
+            # File is not part of the official product, write it in dump_dir
+            dem_min_path = os.path.join(output_dir, "dem_min.tif")
+
+        dem_max_path = dem_max_file_name
+        if dem_max_path is None:
+            # File is not part of the official product, write it in dump_dir
+            dem_max_path = os.path.join(output_dir, "dem_max.tif")
+
+        dem_median_path_out = dem_median_file_name
+        if dem_median_path_out is None:
+            # File is not part of the official product, write it in dump_dir
+            dem_median_path_out = os.path.join(output_dir, "dem_median.tif")
+
         dem_median_path_in = dsm_file_name
-        dem_max_path = os.path.join(output_dir, "dem_max.tif")
 
         dem_epsg = inputs.rasterio_get_epsg(dsm_file_name)
 
@@ -321,7 +343,6 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         )
 
         # save
-        dem_median_path_out = os.path.join(output_dir, "dem_median.tif")
         with rio.open(dem_min_path, "w", **profile) as out_dem:
             out_dem.write(dem_min, 1)
         with rio.open(dem_median_path_out, "w", **profile) as out_dem:
