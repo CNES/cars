@@ -3686,6 +3686,8 @@ def test_end2end_ventoux_full_output_no_elevation():
                     "0_1": "left_right/0_1.laz",
                     "0_2": "left_right/0_2.laz",
                     "1_0": "left_right/1_0.laz",
+                    "1_1": "left_right/1_1.laz",
+                    "2_1": "left_right/2_1.laz",
                 }
             }
 
