@@ -386,9 +386,9 @@ class AbstractGeometry(metaclass=ABCMeta):
             )
 
         # Get data
-        grid_data = rio.open(grid["path"])
-        row_dep = grid_data.read(2)
-        col_dep = grid_data.read(1)
+        with rio.open(grid["path"]) as grid_data:
+            row_dep = grid_data.read(2)
+            col_dep = grid_data.read(1)
 
         # Get step
         step_col = grid["grid_spacing"][1]

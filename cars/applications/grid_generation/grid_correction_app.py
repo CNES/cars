@@ -103,9 +103,9 @@ def correct_grid(grid, grid_correction, pair_folder, save_grid=None):
 
     coefsx_2d, coefsy_2d = grid_correction
 
-    right_grid = rio.open(grid["path"])
-    right_grid_row = right_grid.read(1)
-    right_grid_col = right_grid.read(2)
+    with rio.open(grid["path"]) as right_grid:
+        right_grid_row = right_grid.read(1)
+        right_grid_col = right_grid.read(2)
 
     origin = grid["grid_origin"]
     spacing = grid["grid_spacing"]
@@ -222,9 +222,9 @@ def estimate_right_grid_correction(
         )
 
     # Get grids attributes
-    right_grid = rio.open(grid_right["path"])
-    right_grid_row = right_grid.read(1)
-    right_grid_col = right_grid.read(2)
+    with rio.open(grid_right["path"]) as right_grid:
+        right_grid_row = right_grid.read(1)
+        right_grid_col = right_grid.read(2)
 
     origin = grid_right["grid_origin"]
     spacing = grid_right["grid_spacing"]
