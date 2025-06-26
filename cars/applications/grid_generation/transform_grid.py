@@ -44,7 +44,7 @@ def transform_grid_func(grid_left, grid_right, resolution):
             grid_left.attributes[key] = np.floor(value / resolution)
         elif isinstance(value, list):
             for i, _ in enumerate(value):
-                value[i] = np.floor(value[i] / resolution)
+                grid_left.attributes[key][i] = np.floor(value[i] / resolution)
 
     grid_generation_algo.write_grid(
         grid_left[0, 0],

@@ -714,6 +714,8 @@ class DefaultPipeline(PipelineTemplate):
                 self.epipolar_grid_generation_application.get_conf()
             )
 
+            used_conf["grid_generation"]["epi_step"] = res * 5
+
             # image resampling
 
             self.resampling_application = Application(
