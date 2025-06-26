@@ -65,8 +65,8 @@ for file_intermediate in os.listdir(absolute_data_path(DIRECTORY_INTERMEDIATE)):
                     rasterio.open(intermediate_file_path) as src1,
                     rasterio.open(ref_file_path) as src2,
                 ):
-                    data_intermediate = src1.read(1)
-                    data_ref = src2.read(1)
+                    data_intermediate = src1.read(1, out_dtype=float)
+                    data_ref = src2.read(1, out_dtype=float)
 
                     print("####", file_intermediate, "####\n")
 
