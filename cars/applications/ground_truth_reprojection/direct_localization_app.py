@@ -226,8 +226,8 @@ class DirectLocalization(
             )
 
             epi_disparity_ground_truth_left.create_grid(
-                grid_left.attributes["epipolar_size_x"],
-                grid_left.attributes["epipolar_size_y"],
+                grid_left["epipolar_size_x"],
+                grid_left["epipolar_size_y"],
                 self.tile_size,
                 self.tile_size,
                 0,

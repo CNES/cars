@@ -384,6 +384,7 @@ class CensusMccnnSgm(
         matching method, to use during resampling
 
         :param grid_left: left epipolar grid
+        :type grid_left: dict
         :param disp_range_grid: minimum and maximum disparity grid
         :return: function that generates margin for given roi
 
@@ -397,7 +398,7 @@ class CensusMccnnSgm(
         col_range = disp_range_grid.attributes["col_range"]
 
         # get disp_to_alt_ratio
-        disp_to_alt_ratio = grid_left.attributes["disp_to_alt_ratio"]
+        disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
 
         # Check if we need to override disp_min
         if self.min_elevation_offset is not None:
@@ -617,7 +618,7 @@ class CensusMccnnSgm(
         :param sensor_image_right: sensor image right
         :type sensor_image_right: dict
         :param grid_right: right epipolar grid
-        :type grid_right: CarsDataset
+        :type grid_right: dict
         :param geom_plugin_with_dem_and_geoid: geometry plugin with dem mean
             used to generate epipolar grids
         :type geom_plugin_with_dem_and_geoid: GeometryPlugin
@@ -650,9 +651,9 @@ class CensusMccnnSgm(
             orchestrator_conf={"mode": "sequential"}
         )
 
-        epi_size_row = grid_right.attributes["epipolar_size_y"]
-        epi_size_col = grid_right.attributes["epipolar_size_x"]
-        disp_to_alt_ratio = grid_right.attributes["disp_to_alt_ratio"]
+        epi_size_row = grid_right["epipolar_size_y"]
+        epi_size_col = grid_right["epipolar_size_x"]
+        disp_to_alt_ratio = grid_right["disp_to_alt_ratio"]
 
         # Generate grid array
         nb_rows = int(epi_size_row / self.local_disp_grid_step) + 1

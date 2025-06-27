@@ -43,7 +43,6 @@ from shareloc.image import Image
 from cars.core import constants as cst
 from cars.core import inputs, projection
 from cars.core.geometry.abstract_geometry import AbstractGeometry
-from cars.data_structures import cars_dataset
 
 GRID_TYPE = "GRID"
 RPC_TYPE = "RPC"
@@ -263,8 +262,8 @@ class SharelocGeometry(AbstractGeometry):
         geomodel2,
         mode: str,
         matches: Union[xr.Dataset, np.ndarray],
-        grid1: str,
-        grid2: str,
+        grid1: Union[dict, RectificationGrid],
+        grid2: Union[dict, RectificationGrid],
         roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
@@ -276,8 +275,8 @@ class SharelocGeometry(AbstractGeometry):
         :param mode: triangulation mode
         (constants.DISP_MODE or constants.MATCHES)
         :param matches: cars disparity dataset or matches as numpy array
-        :param grid1: path or dataset for epipolar grid of sensor1
-        :param grid2: path or dataset for epipolar grid of sensor2
+        :param grid1: dict or RectificationGrid for epipolar grid of sensor1
+        :param grid2: dict or RectificationGrid for epipolar grid of sensor2
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
 
@@ -287,20 +286,14 @@ class SharelocGeometry(AbstractGeometry):
         shareloc_model1 = SharelocGeometry.load_geom_model(geomodel1)
         shareloc_model2 = SharelocGeometry.load_geom_model(geomodel2)
 
-        # get path if grid is of type CarsDataset TODO remove
-        if isinstance(grid1, cars_dataset.CarsDataset):
-            grid1 = grid1.attributes["path"]
-        if isinstance(grid2, cars_dataset.CarsDataset):
-            grid2 = grid2.attributes["path"]
-        # interpolate if grid is a path
-        if isinstance(grid1, str):
+        if isinstance(grid1, dict):
+            # create rectificationgrid
             grid1 = RectificationGrid(
-                grid1,
+                grid1["path"],
                 interpolator=self.interpolator,
             )
-        if isinstance(grid2, str):
             grid2 = RectificationGrid(
-                grid2,
+                grid2["path"],
                 interpolator=self.interpolator,
             )
 

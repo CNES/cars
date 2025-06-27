@@ -52,12 +52,16 @@ def test_dataset_matching():
     mask2 = absolute_data_path("input/phr_reunion/right_mask.tif")
     nodata1 = 0
     nodata2 = 0
-    grid1 = absolute_data_path(
-        "input/preprocessing_input/left_epipolar_grid_reunion.tif"
-    )
-    grid2 = absolute_data_path(
-        "input/preprocessing_input/right_epipolar_grid_reunion.tif"
-    )
+    grid1 = {
+        "path": absolute_data_path(
+            "input/preprocessing_input/left_epipolar_grid_reunion.tif"
+        )
+    }
+    grid2 = {
+        "path": absolute_data_path(
+            "input/preprocessing_input/right_epipolar_grid_reunion.tif"
+        )
+    }
 
     epipolar_size_x = 596
     epipolar_size_y = 596

@@ -46,7 +46,6 @@ from cars.applications.triangulation.line_of_sight_intersection_app import (
     triangulation_wrapper,
 )
 from cars.conf import input_parameters as in_params
-from cars.data_structures import cars_dataset
 
 # CARS Tests imports
 from ..helpers import (
@@ -97,8 +96,12 @@ def test_epipolar_pipeline(
         "model_type": configuration["input"][in_params.MODEL2_TYPE_TAG],
     }
     color1 = configuration["input"].get(in_params.COLOR1_TAG, None)
-    grid1 = configuration["preprocessing"]["output"]["left_epipolar_grid"]
-    grid2 = configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    grid1 = {
+        "path": configuration["preprocessing"]["output"]["left_epipolar_grid"]
+    }
+    grid2 = {
+        "path": configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    }
     nodata1 = configuration["input"].get(in_params.NODATA1_TAG, None)
     nodata2 = configuration["input"].get(in_params.NODATA2_TAG, None)
     mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
@@ -169,8 +172,7 @@ def test_epipolar_pipeline(
         nodata2=nodata2,
     )
 
-    right_grid = cars_dataset.CarsDataset("arrays")
-    right_grid.attributes = {
+    right_grid = {
         "epipolar_size_x": epipolar_size_x,
         "epipolar_size_y": epipolar_size_y,
         "disp_to_alt_ratio": None,

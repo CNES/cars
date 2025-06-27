@@ -27,7 +27,6 @@ import logging
 import os
 
 # Third party imports
-import numpy as np
 from json_checker import And, Checker
 
 import cars.orchestrator.orchestrator as ocht
@@ -43,7 +42,6 @@ from cars.core import projection
 
 # CARS imports
 from cars.core.utils import safe_makedirs
-from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
@@ -133,8 +131,9 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         """
         Run EpipolarGridGeneration application
 
-        Create left and right grid CarsDataset filled with xarray.Dataset ,
+        Create left and right grid files,
         corresponding to left and right epipolar grids.
+        The returned dicts contain all the attributes of the grid & their path
 
         :param image_left: left image. Dict Must contain keys : \
          "image", "color", "geomodel","no_data", "mask". Paths must be absolutes
@@ -150,16 +149,13 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         :param pair_key: pair configuration id
         :type pair_key: str
 
-        :return: left grid, right grid. Each grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape\
-                array in xarray Dataset
+        :return: left grid, right grid. Each grid dict contains :
             - Attributes containing: "grid_spacing", "grid_origin", \
                 "epipolar_size_x", epipolar_size_y", "epipolar_origin_x", \
                 "epipolar_origin_y","epipolar_spacing_x", \
-                "epipolar_spacing", "disp_to_alt_ratio",
+                "epipolar_spacing", "disp_to_alt_ratio", "path"
 
-        :rtype: Tuple(CarsDataset, CarsDataset)
+        :rtype: Tuple(dict, dict)
         """
 
         # Default orchestrator
@@ -246,26 +242,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         )
 
         # Create CarsDataset
-        grid_left = cars_dataset.CarsDataset(
-            "arrays", name="grid_left_" + pair_key
-        )
-        grid_right = cars_dataset.CarsDataset(
-            "arrays", name="grid_right_" + pair_key
-        )
-
-        # Compute tiling grid
-        # Only one tile
-        grid_left.tiling_grid = np.array(
-            [[[0, epipolar_size[0], 0, epipolar_size[1]]]]
-        )
-        grid_right.tiling_grid = grid_left.tiling_grid
-
-        # Fill tile
-        grid_left[0, 0] = grid1
-        grid_right[0, 0] = grid2
-
-        # Fill attributes
-        grid_attributes = {
+        grid_left = {
             "grid_spacing": grid_spacing,
             "grid_origin": grid_origin,
             "epipolar_size_x": epipolar_size[0],
@@ -278,11 +255,10 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             "epipolar_step": self.epi_step,
             "path": None,
         }
-        grid_left.attributes = grid_attributes.copy()
-        grid_right.attributes = grid_attributes.copy()
+        grid_right = grid_left.copy()
 
-        grid_origin = grid_left.attributes["grid_origin"]
-        grid_spacing = grid_left.attributes["grid_spacing"]
+        grid_origin = grid_left["grid_origin"]
+        grid_spacing = grid_left["grid_spacing"]
 
         if self.save_intermediate_data:
             left_grid_path = os.path.join(pair_folder, "left_epi_grid.tif")
@@ -299,14 +275,14 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             right_grid_path = os.path.join(tmp_folder, "right_epi_grid.tif")
 
         grid_generation_algo.write_grid(
-            grid_left[0, 0], left_grid_path, grid_origin, grid_spacing
+            grid1, left_grid_path, grid_origin, grid_spacing
         )
         grid_generation_algo.write_grid(
-            grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
+            grid2, right_grid_path, grid_origin, grid_spacing
         )
 
-        grid_left.attributes["path"] = left_grid_path
-        grid_right.attributes["path"] = right_grid_path
+        grid_left["path"] = left_grid_path
+        grid_right["path"] = right_grid_path
 
         # Add infos to orchestrator.out_json
         updating_dict = {

@@ -290,13 +290,13 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 Each tile will be a future pandas DataFrame containing:
 
                 - data : (L, 4) shape matches
-            - attributes containing "disp_lower_bound",  "disp_upper_bound", \
+            - attributes containing "disp_lower_bound", "disp_upper_bound", \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
         :type epipolar_matches_left: CarsDataset
-        :param grid_left: left epipolar grid
-        :type grid_left: CarsDataset
-        :param grid_right: right epipolar grid
-        :type grid_right: CarsDataset
+        :param grid_left: left epipolar grid dict
+        :type grid_left: dict
+        :param grid_right: right epipolar grid dict
+        :type grid_right: dict
         :param save_matches: true is matches needs to be saved
         :type save_matches: bool
 
@@ -323,11 +323,11 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_error_maximum_bias = self.get_epipolar_error_maximum_bias()
 
         grid_left = RectificationGrid(
-            grid_left.attributes["path"],
+            grid_left["path"],
             interpolator=geom_plugin.interpolator,
         )
         grid_right = RectificationGrid(
-            grid_right.attributes["path"],
+            grid_right["path"],
             interpolator=geom_plugin.interpolator,
         )
 

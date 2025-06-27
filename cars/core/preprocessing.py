@@ -113,26 +113,20 @@ def compute_terrain_bbox(  # noqa: 751
            Dict Must contain keys : "image", "color", "geomodel",
            "no_data", "mask". Paths must be absolutes
     :type sensor_image_right: dict
-    :param grid_left: left grid. Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape \
-                array in xarray Dataset
-            - Attributes containing: "grid_spacing", "grid_origin", \
+    :param grid_left: left grid. Grid dict contains :
+            - "grid_spacing", "grid_origin", \
                 "epipolar_size_x", "epipolar_size_y", \
                 "epipolar_origin_x", "epipolar_origin_y", \
                 "epipolar_spacing_x", "epipolar_spacing", \
-                "disp_to_alt_ratio",
-    :type grid_left: CarsDataset
-    :param grid_right: right grid. Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape \
-                array in xarray Dataset
-            - Attributes containing: "grid_spacing", "grid_origin",\
+                "disp_to_alt_ratio", "path"
+    :type grid_left: dict
+    :param grid_right: right grid. Grid dict contains :
+            - "grid_spacing", "grid_origin",\
                 "epipolar_size_x", "epipolar_size_y", \
                 "epipolar_origin_x", "epipolar_origin_y", \
                 "epipolar_spacing_x", "epipolar_spacing", \
-                "disp_to_alt_ratio",
-    :type grid_right: CarsDataset
+                "disp_to_alt_ratio", "path"
+    :type grid_right: dict
     :param epsg: epsg to use
     :type epsg: str
     :param geometry_plugin: geometry plugin to use
@@ -258,8 +252,8 @@ def compute_terrain_bbox(  # noqa: 751
     largest_epipolar_region = [
         0,
         0,
-        grid_left.attributes["epipolar_size_x"],
-        grid_left.attributes["epipolar_size_y"],
+        grid_left["epipolar_size_x"],
+        grid_left["epipolar_size_y"],
     ]
 
     # Numpy array with corners of largest epipolar region.
@@ -401,26 +395,20 @@ def compute_epsg(
            Dict Must contain keys : "image", "color", "geomodel",
            "no_data", "mask". Paths must be absolutes
     :type sensor_image_right: dict
-    :param grid_left: left grid. Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape \
-                array in xarray Dataset
+    :param grid_left: left grid. Grid dict contains :
             - Attributes containing: "grid_spacing", "grid_origin", \
                 "epipolar_size_x", "epipolar_size_y", \
                 "epipolar_origin_x", "epipolar_origin_y", \
                 "epipolar_spacing_x", "epipolar_spacing", \
-                "disp_to_alt_ratio",
-    :type grid_left: CarsDataset
-    :param grid_right: right grid. Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape \
-                array in xarray Dataset
+                "disp_to_alt_ratio", "path"
+    :type grid_left: dict
+    :param grid_right: right grid. Grid dict contains :
             - Attributes containing: "grid_spacing", "grid_origin", \
                 "epipolar_size_x", "epipolar_size_y", \
                 "epipolar_origin_x", "epipolar_origin_y", \
                 "epipolar_spacing_x", "epipolar_spacing", \
-                "disp_to_alt_ratio",
-    :type grid_right: CarsDataset
+                "disp_to_alt_ratio", "path"
+    :type grid_right: dict
     :param geometry_plugin: geometry plugin to use
     :type geometry_plugin: AbstractGeometry
     :param srtm_dir: srtm directory
@@ -445,8 +433,8 @@ def compute_epsg(
     largest_epipolar_region = [
         0,
         0,
-        grid_left.attributes["epipolar_size_x"],
-        grid_left.attributes["epipolar_size_y"],
+        grid_left["epipolar_size_x"],
+        grid_left["epipolar_size_y"],
     ]
 
     # Numpy array with corners of largest epipolar region.
@@ -713,8 +701,8 @@ def compute_epipolar_roi(
         disp_min=disp_min,
         disp_max=disp_max,
         tile_size=100,
-        epipolar_size_x=grid_left.attributes["epipolar_size_x"],
-        epipolar_size_y=grid_left.attributes["epipolar_size_y"],
+        epipolar_size_x=grid_left["epipolar_size_x"],
+        epipolar_size_y=grid_left["epipolar_size_y"],
     )
 
     return epipolar_roi

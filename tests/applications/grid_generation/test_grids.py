@@ -28,6 +28,7 @@ from __future__ import absolute_import
 import os
 import pickle
 import tempfile
+from shutil import copy2  # noqa: F401 # pylint: disable=unused-import
 
 # Third party imports
 import numpy as np
@@ -45,16 +46,10 @@ from cars.applications.sparse_matching import sparse_matching_wrappers
 
 # CARS imports
 from cars.conf import input_parameters
-from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 
 # CARS Tests imports
-from tests.helpers import (
-    absolute_data_path,
-    assert_same_carsdatasets,
-    get_geometry_plugin,
-    temporary_dir,
-)
+from tests.helpers import absolute_data_path, get_geometry_plugin, temporary_dir
 
 
 def generate_grid_xr_dataset(grid_np):
@@ -82,7 +77,7 @@ def generate_grid_xr_dataset(grid_np):
 
 
 @pytest.mark.unit_tests
-def test_correct_right_grid():
+def test_correct_right_grid(tmp_path):
     """
     Call right grid correction method and check outputs properties
     """
@@ -102,92 +97,83 @@ def test_correct_right_grid():
         matches
     )
 
-    with rio.open(grid_file) as rio_grid:
-        grid = rio_grid.read()
-        grid = np.transpose(grid, (1, 2, 0))
+    grid = rio.open(grid_file).read()
+    grid = np.moveaxis(grid, 0, -1)
 
-        # Estimate grid correction
-        # Create fake cars dataset with grid
-        grid_right = cars_dataset.CarsDataset("arrays")
-        grid_right.tiling_grid = np.array(
-            [[[0, grid.shape[0], 0, grid.shape[1]]]]
-        )
-        grid_right[0, 0] = grid
-        grid_right.attributes["grid_origin"] = origin
-        grid_right.attributes["grid_spacing"] = spacing
+    grid_right = {
+        "grid_origin": origin,
+        "grid_spacing": spacing,
+        "path": grid_file,
+    }
 
-        (
-            grid_correction_coef,
-            corrected_matches,
-            _,
-            in_stats,
-            out_stats,
-        ) = grid_correction_app.estimate_right_grid_correction(
-            matches_filtered, grid_right
-        )
+    (
+        grid_correction_coef,
+        corrected_matches,
+        _,
+        in_stats,
+        out_stats,
+    ) = grid_correction_app.estimate_right_grid_correction(
+        matches_filtered, grid_right
+    )
 
-        # Correct grid right
-        corrected_grid_cars_ds = grid_correction_app.correct_grid(
-            grid_right, grid_correction_coef
-        )
-        corrected_grid = corrected_grid_cars_ds[0, 0]
+    # Correct grid right
+    corrected_grid_dict = grid_correction_app.correct_grid(
+        grid_right, grid_correction_coef, tmp_path
+    )
+    corrected_grid = rio.open(corrected_grid_dict["path"]).read()
+    corrected_grid = np.moveaxis(corrected_grid, 0, -1)
 
-        # Uncomment to update ref
-        # np.save(absolute_data_path("ref_output_application/grid_generation"
-        # "/corrected_right_grid.npy"),
-        #  corrected_grid)
-        corrected_grid_ref = np.load(
-            absolute_data_path(
-                "ref_output_application/grid_generation"
-                "/corrected_right_grid.npy"
-            )
+    # Uncomment to update ref
+    # np.save(absolute_data_path("ref_output_application/grid_generation"
+    # "/corrected_right_grid.npy"),
+    #  corrected_grid)
+    corrected_grid_ref = np.load(
+        absolute_data_path(
+            "ref_output_application/grid_generation/corrected_right_grid.npy"
         )
-        np.testing.assert_allclose(
-            corrected_grid, corrected_grid_ref, atol=0.05, rtol=1.0e-6
-        )
+    )
+    np.testing.assert_allclose(
+        corrected_grid, corrected_grid_ref, atol=0.05, rtol=1.0e-6
+    )
 
-        assert corrected_grid.shape == grid.shape
+    assert corrected_grid.shape == grid.shape
 
-        # Assert that we improved all stats
-        assert abs(out_stats["mean_epipolar_error"][0]) < abs(
-            in_stats["mean_epipolar_error"][0]
-        )
-        assert abs(out_stats["mean_epipolar_error"][1]) < abs(
-            in_stats["mean_epipolar_error"][1]
-        )
-        assert abs(out_stats["median_epipolar_error"][0]) < abs(
-            in_stats["median_epipolar_error"][0]
-        )
-        assert abs(out_stats["median_epipolar_error"][1]) < abs(
-            in_stats["median_epipolar_error"][1]
-        )
-        assert (
-            out_stats["std_epipolar_error"][0]
-            < in_stats["std_epipolar_error"][0]
-        )
-        assert (
-            out_stats["std_epipolar_error"][1]
-            < in_stats["std_epipolar_error"][1]
-        )
-        assert out_stats["rms_epipolar_error"] < in_stats["rms_epipolar_error"]
-        assert (
-            out_stats["rmsd_epipolar_error"] < in_stats["rmsd_epipolar_error"]
-        )
+    # Assert that we improved all stats
+    assert abs(out_stats["mean_epipolar_error"][0]) < abs(
+        in_stats["mean_epipolar_error"][0]
+    )
+    assert abs(out_stats["mean_epipolar_error"][1]) < abs(
+        in_stats["mean_epipolar_error"][1]
+    )
+    assert abs(out_stats["median_epipolar_error"][0]) < abs(
+        in_stats["median_epipolar_error"][0]
+    )
+    assert abs(out_stats["median_epipolar_error"][1]) < abs(
+        in_stats["median_epipolar_error"][1]
+    )
+    assert (
+        out_stats["std_epipolar_error"][0] < in_stats["std_epipolar_error"][0]
+    )
+    assert (
+        out_stats["std_epipolar_error"][1] < in_stats["std_epipolar_error"][1]
+    )
+    assert out_stats["rms_epipolar_error"] < in_stats["rms_epipolar_error"]
+    assert out_stats["rmsd_epipolar_error"] < in_stats["rmsd_epipolar_error"]
 
-        # Assert absolute performances
+    # Assert absolute performances
 
-        assert abs(out_stats["median_epipolar_error"][0]) < 0.1
-        assert abs(out_stats["median_epipolar_error"][1]) < 0.1
+    assert abs(out_stats["median_epipolar_error"][0]) < 0.1
+    assert abs(out_stats["median_epipolar_error"][1]) < 0.1
 
-        assert abs(out_stats["mean_epipolar_error"][0]) < 0.1
-        assert abs(out_stats["mean_epipolar_error"][1]) < 0.1
-        assert out_stats["rms_epipolar_error"] < 0.5
+    assert abs(out_stats["mean_epipolar_error"][0]) < 0.1
+    assert abs(out_stats["mean_epipolar_error"][1]) < 0.1
+    assert out_stats["rms_epipolar_error"] < 0.5
 
-        # Assert corrected matches are corrected
-        assert (
-            np.fabs(np.mean(corrected_matches[:, 1] - corrected_matches[:, 3]))
-            < 0.1
-        )
+    # Assert corrected matches are corrected
+    assert (
+        np.fabs(np.mean(corrected_matches[:, 1] - corrected_matches[:, 3]))
+        < 0.1
+    )
 
 
 @pytest.mark.unit_tests
@@ -395,27 +381,50 @@ def test_grid_generation(save_reference, input_file, ref_file):
                         ref_file,
                     )
                 )
+                ref_dicts = os.path.join(ref_data_path, "grids_attrs.pickle")
+                ref_grid_left = os.path.join(ref_data_path, "grid_left.tif")
+                ref_grid_right = os.path.join(ref_data_path, "grid_right.tif")
 
                 # serialize reference data if needed
                 if save_reference:
-                    serialize_grid_ref_data(
-                        grid_left, grid_right, ref_data_path
-                    )
+                    serialize_grid_ref_data(grid_left, grid_right, ref_dicts)
+                    copy2(grid_left["path"], ref_grid_left)
+                    copy2(grid_right["path"], ref_grid_right)
+
                 # load reference output data
-                with open(ref_data_path, "rb") as file:
+                with open(ref_dicts, "rb") as file:
                     ref_data = pickle.load(file)
-                    assert_same_carsdatasets(
-                        cast_swigobj_grid(grid_left),
-                        ref_data["grid_left"],
-                        atol=1.0e-5,
+
+                    ref_grid_left_attrs = ref_data["grid_left"]
+                    ref_grid_right_attrs = ref_data["grid_right"]
+                    del ref_grid_left_attrs["path"]
+                    del ref_grid_right_attrs["path"]
+
+                    ref_grid_left_data = rio.open(ref_grid_left).read()
+                    ref_grid_right_data = rio.open(ref_grid_right).read()
+
+                    grid_left_data = rio.open(grid_left["path"]).read()
+                    grid_right_data = rio.open(grid_right["path"]).read()
+
+                    del grid_left["path"]
+                    del grid_right["path"]
+
+                    np.testing.assert_allclose(
+                        ref_grid_left_data,
+                        grid_left_data,
                         rtol=1.0e-5,
-                    )
-                    assert_same_carsdatasets(
-                        cast_swigobj_grid(grid_right),
-                        ref_data["grid_right"],
                         atol=1.0e-5,
-                        rtol=1.0e-5,
                     )
+                    np.testing.assert_allclose(
+                        ref_grid_right_data,
+                        grid_right_data,
+                        rtol=1.0e-5,
+                        atol=1.0e-5,
+                    )
+
+                    # == between two dicts does a deep check
+                    assert ref_grid_left_attrs == grid_left
+                    assert ref_grid_right_attrs == grid_right
 
 
 def adapt_path_for_test_dir(data, input_path, input_relative_path):
@@ -441,7 +450,7 @@ def adapt_path_for_test_dir(data, input_path, input_relative_path):
                 )
 
 
-def serialize_grid_ref_data(grid_left, grid_right, ref_data_path):
+def serialize_grid_ref_data(grid_left, grid_right, ref_dicts):
     """
     Serialize reference data if needed with pickle
     """
@@ -449,7 +458,7 @@ def serialize_grid_ref_data(grid_left, grid_right, ref_data_path):
     cast_swigobj_grid(grid_left)
     cast_swigobj_grid(grid_right)
     data_dict = {"grid_left": grid_left, "grid_right": grid_right}
-    with open(ref_data_path, "wb") as file:
+    with open(ref_dicts, "wb") as file:
         pickle.dump(data_dict, file)
 
 
@@ -457,8 +466,8 @@ def cast_swigobj_grid(grid):
     """
     cast swig object attribute of the grid carsdataset
     """
-    grid.attributes["grid_spacing"] = list(grid.attributes["grid_spacing"])
-    grid.attributes["grid_origin"] = list(grid.attributes["grid_origin"])
+    grid["grid_spacing"] = list(grid["grid_spacing"])
+    grid["grid_origin"] = list(grid["grid_origin"])
     return grid
 
 
@@ -489,8 +498,12 @@ def test_terrain_region_to_epipolar(
     sensor2 = configuration["input"]["img2"]
     geomodel1 = {"path": configuration["input"]["model1"]}
     geomodel2 = {"path": configuration["input"]["model2"]}
-    grid_left = configuration["preprocessing"]["output"]["left_epipolar_grid"]
-    grid_right = configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    grid_left = {
+        "path": configuration["preprocessing"]["output"]["left_epipolar_grid"]
+    }
+    grid_right = {
+        "path": configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    }
 
     epipolar_region = grid_generation_algo.terrain_region_to_epipolar(
         terrain_region,

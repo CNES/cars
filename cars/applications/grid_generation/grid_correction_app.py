@@ -32,6 +32,7 @@ import os
 # Third party imports
 import numpy as np
 import pandas
+import rasterio as rio
 from scipy.interpolate import LinearNDInterpolator
 from scipy.spatial import Delaunay  # pylint: disable=E0611
 
@@ -76,50 +77,54 @@ def correct_grid_from_1d(
 
     # Correct grid right with provided epipolar a priori
     corrected_grid_right = correct_grid(
-        grid, grid_correction_coef, save_grid, pair_folder
+        grid, grid_correction_coef, pair_folder, save_grid
     )
 
     return corrected_grid_right
 
 
 @cars_profile(name="Correct grid")
-def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
+def correct_grid(grid, grid_correction, pair_folder, save_grid=None):
     """
     Correct grid
 
     :param grid: grid to correct
-    :type grid: CarsDataset
+    :type grid: dict
     :param grid_correction: grid correction to apply
     :type grid_correction: Tuple(np.ndarray, np.ndarray)
             (coefsx_2d, coefsy_2d) , each of size (2,2)
-    :param save_grid: if True grids are saved in root or pair_folder
-    :type save_grid: bool
-    :param pair_folder: directory where grids are saved
+    :param pair_folder: directory where grids are saved: either in
+        pair_folder/tmp, or at the root of pair_folder if save_grid is True
     :type pair_folder: str
+    :param save_grid: if True grids are saved in root of pair_folder,
+        instead of tmp
+    :type save_grid: bool
     """
 
     coefsx_2d, coefsy_2d = grid_correction
 
-    right_grid = np.copy(grid[0, 0])
-    origin = grid.attributes["grid_origin"]
-    spacing = grid.attributes["grid_spacing"]
+    with rio.open(grid["path"]) as right_grid:
+        right_grid_row = right_grid.read(1)
+        right_grid_col = right_grid.read(2)
+
+    origin = grid["grid_origin"]
+    spacing = grid["grid_spacing"]
 
     # Form 3D array with grid positions
     x_values_1d = np.linspace(
         origin[0],
-        origin[0] + right_grid.shape[0] * spacing[0],
-        right_grid.shape[0],
+        origin[0] + right_grid_row.shape[0] * spacing[0],
+        right_grid_row.shape[0],
     )
     y_values_1d = np.linspace(
         origin[1],
-        origin[1] + right_grid.shape[1] * spacing[1],
-        right_grid.shape[1],
+        origin[1] + right_grid_row.shape[1] * spacing[1],
+        right_grid_row.shape[1],
     )
     x_values_2d, y_values_2d = np.meshgrid(y_values_1d, x_values_1d)
 
     # Compute corresponding point in sensor geometry (grid encodes (x_sensor -
     # x_epi,y_sensor - y__epi)
-    source_points = right_grid
 
     # Interpolate the regression model at grid position
     correction_grid_x = np.polynomial.polynomial.polyval2d(
@@ -130,43 +135,34 @@ def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
     )
 
     # Compute corrected grid
-    corrected_grid_x = source_points[:, :, 0] - correction_grid_x
-    corrected_grid_y = source_points[:, :, 1] - correction_grid_y
+    corrected_grid_x = right_grid_row - correction_grid_x
+    corrected_grid_y = right_grid_col - correction_grid_y
     corrected_right_grid = np.stack(
         (corrected_grid_x, corrected_grid_y), axis=2
     )
 
-    # create new cars ds
-    corrected_grid_right = cars_dataset.CarsDataset("arrays")
-    corrected_grid_right.attributes = grid.attributes.copy()
-    corrected_grid_right.tiling_grid = grid.tiling_grid
-    corrected_grid_right[0, 0] = corrected_right_grid
+    # create new grid dict
+    corrected_grid_right = grid.copy()
 
     # Dump corrected grid
-    grid_origin = grid.attributes["grid_origin"]
-    grid_spacing = grid.attributes["grid_spacing"]
+    grid_origin = grid["grid_origin"]
+    grid_spacing = grid["grid_spacing"]
 
     # Get save folder (permanent or temporay according to save_grid parameter)
-    if None in (pair_folder, save_grid):
-        # Set path to None
-        corrected_grid_right.attributes["path"] = None
+    if save_grid:
+        safe_makedirs(pair_folder)
+        save_folder = os.path.join(pair_folder, "corrected_right_epi_grid.tif")
     else:
-        if save_grid:
-            safe_makedirs(pair_folder)
-            save_folder = os.path.join(
-                pair_folder, "corrected_right_epi_grid.tif"
-            )
-        else:
-            safe_makedirs(os.path.join(pair_folder, "tmp"))
-            save_folder = os.path.join(
-                pair_folder, "tmp", "corrected_right_epi_grid.tif"
-            )
-
-        grid_generation_algo.write_grid(
-            corrected_grid_right[0, 0], save_folder, grid_origin, grid_spacing
+        safe_makedirs(os.path.join(pair_folder, "tmp"))
+        save_folder = os.path.join(
+            pair_folder, "tmp", "corrected_right_epi_grid.tif"
         )
 
-        corrected_grid_right.attributes["path"] = save_folder
+    grid_generation_algo.write_grid(
+        corrected_right_grid, save_folder, grid_origin, grid_spacing
+    )
+
+    corrected_grid_right["path"] = save_folder
 
     return corrected_grid_right
 
@@ -188,7 +184,7 @@ def estimate_right_grid_correction(
     :param matches: matches
     :type matches: np.ndarray
     :param grid_right: grid to correct
-    :type grid_right: CarsDataset
+    :type grid_right: dict
     :param save_matches: true is matches needs to be saved
     :type save_matches: bool
     :param minimum_nb_matches: minimum number of matches required
@@ -226,26 +222,28 @@ def estimate_right_grid_correction(
         )
 
     # Get grids attributes
-    right_grid = np.copy(grid_right[0, 0])
-    origin = grid_right.attributes["grid_origin"]
-    spacing = grid_right.attributes["grid_spacing"]
+    with rio.open(grid_right["path"]) as right_grid:
+        right_grid_row = right_grid.read(1)
+        right_grid_col = right_grid.read(2)
+
+    origin = grid_right["grid_origin"]
+    spacing = grid_right["grid_spacing"]
 
     # Form 3D array with grid positions
     x_values_1d = np.arange(
         origin[0],
-        origin[0] + right_grid.shape[0] * spacing[0],
+        origin[0] + right_grid_row.shape[0] * spacing[0],
         spacing[0],
     )
     y_values_1d = np.arange(
         origin[1],
-        origin[1] + right_grid.shape[1] * spacing[1],
+        origin[1] + right_grid_row.shape[1] * spacing[1],
         spacing[1],
     )
     x_values_2d, y_values_2d = np.meshgrid(y_values_1d, x_values_1d)
 
     # Compute corresponding point in sensor geometry (grid encodes (x_sensor -
     # x_epi,y_sensor - y__epi)
-    source_points = right_grid
 
     # Extract matches for convenience
     matches_y1 = matches[:, 1]
@@ -257,7 +255,7 @@ def estimate_right_grid_correction(
 
     triangulation = Delaunay(points)
 
-    values = np.ravel(source_points[:, :, 0])
+    values = np.ravel(right_grid_row)
 
     interpolator = LinearNDInterpolator(triangulation, values)
     sensor_matches_raw_x = interpolator(matches_x2, matches_y2)
@@ -266,7 +264,7 @@ def estimate_right_grid_correction(
     # them to sensor geometry
     sensor_matches_perfect_x = interpolator(matches_x2, matches_y1)
 
-    values = np.ravel(source_points[:, :, 1])
+    values = np.ravel(right_grid_col)
     interpolator = LinearNDInterpolator(triangulation, values)
     sensor_matches_raw_y = interpolator(matches_x2, matches_y2)
 
@@ -376,7 +374,7 @@ def estimate_right_grid_correction(
 
     # Map corrected matches to epipolar geometry
     points = np.column_stack(
-        (np.ravel(source_points[:, :, 0]), np.ravel(source_points[:, :, 1]))
+        (np.ravel(right_grid_row), np.ravel(right_grid_col))
     )
     triangulation = Delaunay(points)
 
