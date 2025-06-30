@@ -309,8 +309,12 @@ def test_epipolar_rectify_images_3(
     left_imgs = {img1: {"band_name": ["b0"], "band_id": [1]}}
     img2 = configuration["input"][in_params.IMG2_TAG]
     right_imgs = {img2: {"band_name": ["b0"], "band_id": [1]}}
-    grid1 = configuration["preprocessing"]["output"]["left_epipolar_grid"]
-    grid2 = configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    grid1 = {
+        "path": configuration["preprocessing"]["output"]["left_epipolar_grid"]
+    }
+    grid2 = {
+        "path": configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    }
     nodata1 = configuration["input"].get(in_params.NODATA1_TAG, None)
     nodata2 = configuration["input"].get(in_params.NODATA2_TAG, None)
     mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
