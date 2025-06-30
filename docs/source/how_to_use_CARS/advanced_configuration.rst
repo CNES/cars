@@ -10,11 +10,11 @@ The structure follows this organization:
 .. code-block:: json
 
     {
-	"inputs": {},
-	"orchestrator": {},
-	"applications": {},
-	"output": {},
-	"advanced": {}
+        "inputs": {},
+        "orchestrator": {},
+        "applications": {},
+        "output": {},
+        "advanced": {}
     }
 
 .. warning::
@@ -25,7 +25,8 @@ The structure follows this organization:
 
     .. tab:: Applications
 
-        This key is optional and allows to redefine parameters for each application used in pipeline. You can personnalize the configuration for each resolution at which the pipeline is ran, or override the parameters for all resolutions at once. CARS applications are defined and called by their name in applications configuration section.
+        This key is optional and is used to redefine parameters for each application used in the pipeline. 
+        You can personnalize the configuration for each resolution at which the pipeline is ran, or override the parameters for all resolutions at once, as explained in the section right below. 
 
         .. tabs::
 
@@ -73,7 +74,35 @@ The structure follows this organization:
                         }
                     }
 
-        This section describes all possible configurations of CARS applications.
+        By default, the configuration can be different for the first resolution, the intermediate resolution(s) and the last resolution. 
+        The changes to the default values can be modified in the source code, in ``cars/pipelines/conf_resolution/*``.
+
+        The section below includes the files directly.
+
+        .. tabs::
+
+            .. tab:: Overriding configuration : first resolution
+
+                This is empty for now.
+              
+                .. include:: ../../../cars/pipelines/conf_resolution/conf_first_resolution.json
+                    :literal:
+
+            .. tab:: Overriding configuration : all intermediate resolutions
+              
+                This is empty for now.
+
+                .. include:: ../../../cars/pipelines/conf_resolution/conf_intermediate_resolution.json
+                    :literal:
+
+            .. tab:: Overriding configuration : final resolution
+              
+                .. include:: ../../../cars/pipelines/conf_resolution/conf_final_resolution.json
+                    :literal:
+
+        The section below describes all the available parameters for each CARS application.
+
+        CARS applications are defined and called by their **name**. An example configuration is provided for each application.
 
         Be careful with these parameters: no mechanism ensures consistency between applications for now. Some parameters can degrade performance and DSM quality heavily.
         The default parameters have been set as a robust and consistent end to end configuration for the whole pipeline.
@@ -1135,10 +1164,10 @@ The structure follows this organization:
               - Default value
               - Required
             * - save_intermediate_data
-              - Save intermediate data for all applications and any or all resolutions
+              - Save intermediate data for all applications, at any or all resolutions
               - bool or list[bool]
               - False
-              - Yes
+              - No
             * - keep_low_res_dir
               - Whether to save the output of all resolution runs or not 
               - bool
