@@ -1,0 +1,7 @@
+variables:
+  CARS_ENV_IMAGE_TAG: latest
+  # CARS environment image configuration
+  DOCKERFILE: "ci/cars-deps-env/Dockerfile"
+  CARS_ENV_IMAGE_NAME: "cars-ci-docker-snapshot-local/cars-deps-env"
+  #CARS_ENV_IMAGE_TAG: "latest"
+  CARS_ENV_DOCKERFILE: "${CI_PROJECT_DIR}/${DOCKERFILE}"
