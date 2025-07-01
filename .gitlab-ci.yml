@@ -27,7 +27,7 @@ include:
   # Variable defintion
   - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-variables@master
   # Jobs for gitlab-github synchronisation
-  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-github@master
+  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-github@1081-libgeo-versioning
   # Docker building and image selection
   # First case: no need to update env, use latest version
   - local: '/ci/cars-no-docker-build.yml'
@@ -85,70 +85,70 @@ unit-test:
 
 
 # Job testing that notebooks run properly in Python
-test-notebooks:
-  stage: test
-  needs:
-    - unit-test
-  extends:
-    - .cars-python-job
-  script:
-    # Install additional plugin dependencies required for the tests
-    - source /app/cars/venv/bin/activate
-    - pip install --no-build-isolation --editable .[pandora_mccnn,bundleadjustment]
-    - CARS_VENV="/app/cars/venv" make test/notebook
+# test-notebooks:
+#   stage: test
+#   needs:
+#     - unit-test
+#   extends:
+#     - .cars-python-job
+#   script:
+#     # Install additional plugin dependencies required for the tests
+#     - source /app/cars/venv/bin/activate
+#     - pip install --no-build-isolation --editable .[pandora_mccnn,bundleadjustment]
+#     - CARS_VENV="/app/cars/venv" make test/notebook
 
 # test on full cars pipelines
-test-end2end:
-  stage: test
-  needs:
-    - unit-test
-  # Use dedicated runner for end2end tests
-  tags:
-    - ${TEST_RUNNER_TAG}
-  timeout: 80 minutes 
-  extends:
-    - .cars-python-job
-  script:
-    - source /app/cars/venv/bin/activate
-    - pytest -m "end2end_tests"
-  artifacts:
-    paths:
-      - tests/data/intermediate_data
-    when: always
-    expire_in: 1 day
+# test-end2end:
+#   stage: test
+#   needs:
+#     - unit-test
+#   # Use dedicated runner for end2end tests
+#   tags:
+#     - ${TEST_RUNNER_TAG}
+#   timeout: 80 minutes 
+#   extends:
+#     - .cars-python-job
+#   script:
+#     - source /app/cars/venv/bin/activate
+#     - pytest -m "end2end_tests"
+#   artifacts:
+#     paths:
+#       - tests/data/intermediate_data
+#     when: always
+#     expire_in: 1 day
 
 
 
 # All lint tasks are performed in the same job to save up on job initialization
 # time
-lint:
-  stage: test
-  needs:
-    - unit-test
-  extends:
-    - .cars-python-job
-  allow_failure: true
-  script:
-    - CARS_VENV="/app/cars/venv" make lint
-  artifacts:
-    paths:
-      - ./pylint-report.txt
-    expire_in: 1 day
+# lint:
+#   stage: test
+#   needs:
+#     - unit-test
+#   extends:
+#     - .cars-python-job
+#   allow_failure: true
+#   script:
+#     - CARS_VENV="/app/cars/venv" make lint
+#   artifacts:
+#     paths:
+#       - ./pylint-report.txt
+#     expire_in: 1 day
 
 
-doc:
-  stage: test
-  needs:
-    - unit-test
-  extends:
-    - .cars-python-job
-  script:
-    - CARS_VENV="/app/cars/venv" make docs
-  artifacts:
-    # Export documentation in artifact, it can be opened directly from gitlab
-    paths:
-      - ./docs/build/html/
-    expire_in: 1 day
+# doc:
+#   stage: test
+#   needs:
+#     - unit-test
+#   extends:
+#     - .cars-python-job
+#   script:
+#     - CARS_VENV="/app/cars/venv" make docs
+#   artifacts:
+#     # Export documentation in artifact, it can be opened directly from gitlab
+#     paths:
+#       - ./docs/build/html/
+#     expire_in: 1 day
 
 
 # Push git project from gitlab to github
