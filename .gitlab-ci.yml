@@ -1,0 +1,160 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_REF_NAME == "master"
+
+stages:
+  - init
+  - build
+  - test
+  - sonarqube
+  - sync
+
+
+variables: 
+    # Token used to push reports to SonarQube
+    SONARQUBE_TOKEN: "${CARS_CI_SONARQUBE_TOKEN}"
+
+    # Git variables
+    # Limit git depth to speed up cloning
+    GIT_DEPTH: 1
+
+include:
+  # Sonarqube job
+  - project: "usinelogicielle/public/gitlab-ci-templates" # Inclut le stage de qualité sonarqube
+    ref: v1.1.3 # référence de tag
+    file: "jobs/sonarqube-gitlab-ci.yml"
+  # Variable defintion
+  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-variables@master
+  # Jobs for gitlab-github synchronisation
+  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-github@master
+  # Docker building and image selection
+  # First case: no need to update env, use latest version
+  - local: '/ci/cars-no-docker-build.yml'
+    rules:
+      # do not trigger this case if env has changed(see second case)
+      - changes:
+        - "ci/cars-deps-env/Dockerfile"
+        - "pyproject.toml"
+        when: never
+      # do not trigger this case on master (see third case)
+      - if: $CI_COMMIT_REF_NAME == "master"
+        when: never
+  # Second case: env should be generated on a dev branch, create a temporary
+  # image
+  - local: '/ci/cars-docker-build.yml'
+    inputs:
+      tag: ${CI_COMMIT_REF_NAME}
+    rules:
+      - changes:
+        - "ci/cars-deps-env/Dockerfile"
+        - "pyproject.toml"
+      # do not trigger this case on master (see third case)
+      - if: $CI_COMMIT_REF_NAME == "master"
+        when: never
+  # Third case: master branch pipeline: generate a "latest" image
+  - local: '/ci/cars-docker-build.yml'
+    inputs:
+      tag: "latest"
+    rules:
+      - if: $CI_COMMIT_REF_NAME == "master"
+
+# Common part for jobs using python: use env image and install cars
+.cars-python-job:
+  image: ${UL_ARTIFACTORY_HOST}/${CARS_ENV_IMAGE_NAME}:${CARS_ENV_IMAGE_TAG}
+  before_script:
+    - source /app/cars/venv/bin/activate
+    # All dependencies should already be installed in the docker env
+    - pip install --no-build-isolation --editable .[dev,docs,notebook]
+
+
+# run unit tests before other tasks (lint, quality, end2end ...) to catch early
+# errors
+unit-test:
+  stage: test
+  extends:
+    - .cars-python-job
+  script:
+    - CARS_VENV="/app/cars/venv" make test/ci
+  artifacts:
+    paths:
+      - ./pytest-report.xml
+      - ./coverage.xml
+    expire_in: 1 day
+
+
+# Job testing that notebooks run properly in Python
+test-notebooks:
+  stage: test
+  needs:
+    - unit-test
+  extends:
+    - .cars-python-job
+  script:
+    # Install additional plugin dependencies required for the tests
+    - source /app/cars/venv/bin/activate
+    - pip install --no-build-isolation --editable .[pandora_mccnn,bundleadjustment]
+    - CARS_VENV="/app/cars/venv" make test/notebook
+
+# test on full cars pipelines
+test-end2end:
+  stage: test
+  needs:
+    - unit-test
+  # Use dedicated runner for end2end tests
+  tags:
+    - ${TEST_RUNNER_TAG}
+  timeout: 80 minutes 
+  extends:
+    - .cars-python-job
+  script:
+    - source /app/cars/venv/bin/activate
+    - pytest -m "end2end_tests"
+  artifacts:
+    paths:
+      - tests/data/intermediate_data
+    when: always
+    expire_in: 1 day
+
+
+
+# All lint tasks are performed in the same job to save up on job initialization
+# time
+lint:
+  stage: test
+  needs:
+    - unit-test
+  extends:
+    - .cars-python-job
+  allow_failure: true
+  script:
+    - CARS_VENV="/app/cars/venv" make lint
+  artifacts:
+    paths:
+      - ./pylint-report.txt
+    expire_in: 1 day
+
+
+doc:
+  stage: test
+  needs:
+    - unit-test
+  extends:
+    - .cars-python-job
+  script:
+    - CARS_VENV="/app/cars/venv" make docs
+  artifacts:
+    # Export documentation in artifact, it can be opened directly from gitlab
+    paths:
+      - ./docs/build/html/
+    expire_in: 1 day
+
+
+# Push git project from gitlab to github
+github-sync:
+  extends:
+    - .github-sync-base
+
+  variables:
+    BRANCH: "master"
+    GITHUB_URL: https://github.com/CNES/cars.git
