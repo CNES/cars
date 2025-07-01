@@ -1403,7 +1403,7 @@ The structure follows this organization:
 
             .. tab:: Basic loader 
 
-                The basic loader is the simpler way to define an image. The basic loader is the one used by default when only a path is giver. However, it is possible to use the basic loader with a dictionary : 
+                The basic loader is the simplest way to define an image. The basic loader is the one used by default when only a path is given. However, it is possible to use the basic loader with a dictionary : 
 
                 +----------------+-----------------------+--------+---------------+------------------+----------+
                 | Name           | Description           | Type   | Default value | Available values | Required |
@@ -1433,8 +1433,8 @@ The structure follows this organization:
                 | *no_data*       | No data value of file                                                                 | int    | 0                 |                  | False    |
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
 
-                The `bands` dictionary have keys which corresponds to name of bands. The name of bands is imposed by CARS : if the image has n band, the name of the bands must be ["b0", "b1", ..., "b{n-1}"].
-                Eack key points to a dictionary with keys "path" and "band_id".
+                The `bands` dictionary have keys which correspond to name of bands. The name of bands is imposed by CARS : if the image has n bands, the name of the bands must be ["b0", "b1", ..., "b{n-1}"].
+                Each key points to a dictionary with keys "path" and "band_id".
 
                 With the pivot format, an image can be composed of several files.
 
@@ -1468,9 +1468,9 @@ The structure follows this organization:
 
                 .. note::
 
-                     - In the above example, the texture bands corresponds to the three bands of color1.tif which is a RGB file, so the output `texture.tif` will be RGB.
+                     - In the above example, the texture bands correspond to the three bands of `color1.tif` which is a RGB file, so the output `texture.tif` will be RGB.
                      - Order matters : if the "texture_bands" parameter is set to ["b3", "b2", "b1"], the output will be BGR.
-                     - It is possible to fuse the diffrent files in output ortho image : if the "texture_bands" parameter is set to ["b0", "b3", "b2", "b1"], the output will be PBGR (with P from panchromatic).
+                     - It is possible to fuse the different files in output ortho image : if the "texture_bands" parameter is set to ["b0", "b3", "b2", "b1"], the output will be PBGR (with P from panchromatic).
                      - If "texture_bands" parameter is None (default value), all bands will be texture bands, so the output will be PRGB.
                      - Parameter "texture_bands" must be the same as the one defined in Advanced parameters. If multiple pairs are used in the configuration, every left image must have the same texture bands in order to fuse them.
 
