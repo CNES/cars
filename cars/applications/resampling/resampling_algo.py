@@ -290,6 +290,7 @@ def resample_image(
         with rio.open(grid["path"]) as grid_reader, rio.open(img) as img_reader:
             for xmin, xmax in zip(xmin_of_blocks, xmax_of_blocks):  # noqa: B905
                 block_region = [xmin, ymin, xmax, ymax]
+
                 # Build rectification pipelines for images
                 res_x, res_y = grid_reader.res
                 assert res_x == res_y
@@ -386,8 +387,8 @@ def resample_image(
 
                         row_mesh, col_mesh = np.ogrid[:rows, :cols]
                         dist = (col_mesh - ccol) ** 2 + (row_mesh - crow) ** 2
-                        mask_blur = dist <= radius**2
-                        f_filtered = fourier * mask_blur
+                        gaussian_mask = np.exp(-dist / (2 * radius**2))
+                        f_filtered = fourier * gaussian_mask
 
                         img_as_array = np.real(ifft2(ifftshift(f_filtered)))
 

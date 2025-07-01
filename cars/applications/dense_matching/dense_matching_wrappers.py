@@ -878,7 +878,9 @@ def confidence_filtering(
         (var_map > conf_filtering["risk_max"])
         & (nan_ratio > conf_filtering["nan_threshold"])
     )
-    disp_map[mask] = np.nan
+
+    dataset["disp"].values[mask] = np.nan
+    dataset["disp_msk"].values[mask] = 0
 
     dims = list(dataset.sizes.keys())[:2]
 

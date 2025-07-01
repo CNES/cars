@@ -850,9 +850,6 @@ class UnitPipeline(PipelineTemplate):
                     "'dichotomic' method for DEM generation"
                 )
 
-        if not initial_elevation:
-            self.dense_matching_app.confidence_filtering["activated"] = False
-
         # check classification application parameter compare
         # to each sensors inputs classification list
         for application_key in application_conf:

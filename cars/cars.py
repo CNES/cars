@@ -115,6 +115,13 @@ def main_cli(args, dry_run=False):  # noqa: C901
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         out_dir = config["output"]["directory"]
+
+        if config.get("advanced", {}).get("epipolar_resolutions"):
+            res = config["advanced"]["epipolar_resolutions"][-1]
+            out_dir = os.path.join(out_dir, "out_res" + str(res))
+        else:
+            out_dir = os.path.join(out_dir, "out_res1")
+
         cars_logging.setup_logging(
             loglevel,
             out_dir=os.path.join(out_dir, "logs"),
