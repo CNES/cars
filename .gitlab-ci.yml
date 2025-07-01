@@ -135,19 +135,19 @@ unit-test:
 #     expire_in: 1 day
 
 
-# doc:
-#   stage: test
-#   needs:
-#     - unit-test
-#   extends:
-#     - .cars-python-job
-#   script:
-#     - CARS_VENV="/app/cars/venv" make docs
-#   artifacts:
-#     # Export documentation in artifact, it can be opened directly from gitlab
-#     paths:
-#       - ./docs/build/html/
-#     expire_in: 1 day
+doc:
+  stage: test
+  needs:
+    - unit-test
+  extends:
+    - .cars-python-job
+  script:
+    - CARS_VENV="/app/cars/venv" make docs
+  artifacts:
+    # Export documentation in artifact, it can be opened directly from gitlab
+    paths:
+      - ./docs/build/html/
+    expire_in: 1 day
 
 
 # Push git project from gitlab to github
