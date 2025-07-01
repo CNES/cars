@@ -1,0 +1,42 @@
+format: sonarqube                         # Output format (tty | json | checkstyle | codeclimate | gitlab_codeclimate | gnu | codacy)
+ignored:                                  # list of rules
+  - DL3012                                 
+  - DL3045
+  - DL3047
+  - DL3049
+  - DL3050
+  - DL3051
+  - DL3052
+  - DL3053
+  - DL3054
+  - DL3055
+  - DL3056
+  - DL3057
+  - DL3058
+  - SC1000
+  - SC1001
+  - SC1010
+  - SC1018
+  - SC1045
+  - SC1065
+  - SC1066
+  - SC1077
+  - SC1078
+  - SC1079
+  - SC1081
+  - SC1083
+  - SC1086
+  - SC1087
+  - SC1097
+  - SC1098
+  - SC2002
+  - SC2026
+  - SC2028
+  - SC2035
+  - SC2046
+  - SC2086
+  - SC2140
+  - SC2154
+  - SC2155
+  - SC2164
+
