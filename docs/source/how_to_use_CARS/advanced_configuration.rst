@@ -1444,7 +1444,7 @@ The structure follows this organization:
 
                     "image": {
                       "loader": "pivot",
-                      "main_file": "img1.tif"
+                      "main_file": "img1.tif",
                       "bands": {
                         "b0": {
                           "path": "img1.tif",
