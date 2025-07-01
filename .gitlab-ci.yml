@@ -158,4 +158,4 @@ github-sync:
 
   variables:
     BRANCH: "master"
-    GITHUB_URL: https://github.com/CNES/cars.git
+    GITHUB_URL: github.com/CNES/cars.git
