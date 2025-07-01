@@ -136,6 +136,7 @@ def test_auxiliary_filling_paca(
             sensor_inputs=sensor_inputs,
             pairing=pairing,
             geom_plugin=geo_plugin,
+            texture_bands=["b0"],
         )
         # Uncomment the 2 following instructions to update reference data
         # shutil.copy2(

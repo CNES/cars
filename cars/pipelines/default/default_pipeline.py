@@ -2761,6 +2761,7 @@ class DefaultPipeline(PipelineTemplate):
             sensor_inputs=self.used_conf[INPUTS].get("sensors"),
             pairing=self.used_conf[INPUTS].get("pairing"),
             geom_plugin=self.geom_plugin_with_dem_and_geoid,
+            texture_bands=self.texture_bands,
             orchestrator=self.cars_orchestrator,
         )
 

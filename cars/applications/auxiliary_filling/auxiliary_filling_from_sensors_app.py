@@ -134,6 +134,7 @@ class AuxiliaryFillingFromSensors(
         sensor_inputs,
         pairing,
         geom_plugin,
+        texture_bands,
         orchestrator=None,
     ):
         """
@@ -154,6 +155,8 @@ class AuxiliaryFillingFromSensors(
         :type pairing: list
         :param geom_plugin: geometry plugin used for inverse locations
         :type geom_plugin: AbstractGeometry
+        :param texture_bands: list of band names used for output texture
+        :type texture_bands: list
         :param orchestrator: orchestrator used
         :type orchestrator: Orchestrator
         """
@@ -183,7 +186,7 @@ class AuxiliaryFillingFromSensors(
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
 
-        color_not_filled_file = os.path.join(dump_dir, "color_not_filled.tif")
+        color_not_filled_file = os.path.join(dump_dir, "texture_not_filled.tif")
         if os.path.exists(color_file):
             shutil.move(color_file, color_not_filled_file)
 
@@ -237,7 +240,7 @@ class AuxiliaryFillingFromSensors(
             aux_filled_image,
             nodata=texture_no_data_value,
             dtype=color_dtype,
-            cars_ds_name="filled_color",
+            cars_ds_name="filled_texture",
         )
 
         if classif_file is not None:
@@ -296,6 +299,7 @@ class AuxiliaryFillingFromSensors(
                     reference_epsg,
                     full_saving_info,
                     geom_plugin,
+                    texture_bands,
                     mode=self.used_config["mode"],
                     texture_interpolator=self.used_config[
                         "texture_interpolator"
@@ -323,6 +327,7 @@ def filling_from_sensor_wrapper(
     epsg,
     saving_info,
     geom_plugin,
+    texture_bands,
     mode,
     texture_interpolator,
     use_mask,
@@ -352,6 +357,8 @@ def filling_from_sensor_wrapper(
     :type saving_info: dict
     :param geom_plugin: geometry plugin used for inverse locations
     :type geom_plugin: AbstractGeometry
+    :param texture_bands: list of band names used for output texture
+    :type texture_bands: list
     :param mode: geometry plugin used for inverse locations
     :type mode: str
     :param texture_interpolator: scipy interpolator use to interpolate color
@@ -502,6 +509,7 @@ def filling_from_sensor_wrapper(
                 geom_plugin,
                 number_of_color_bands,
                 number_of_classification_bands,
+                texture_bands,
                 texture_interpolator=texture_interpolator,
                 use_mask=use_mask,
             )
