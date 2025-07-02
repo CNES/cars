@@ -953,7 +953,7 @@ class CensusMccnnSgm(
                         loc_inverse_wrapper
                     )(
                         geom_plugin_with_dem_and_geoid,
-                        sensor_image_right["image"],
+                        sensor_image_right["image"]["main_file"],
                         sensor_image_right["geomodel"],
                         lat_mean[first_elem:last_elem],
                         lon_mean[first_elem:last_elem],
