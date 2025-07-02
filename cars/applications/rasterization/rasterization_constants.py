@@ -35,4 +35,4 @@ RESOLUTION = "resolution"
 # Run infos
 EPSG_TAG = "epsg"
 DSM_NO_DATA_TAG = "dsm_no_data"
-COLOR_NO_DATA_TAG = "color_no_data"
+TEXTURE_NO_DATA_TAG = "texture_no_data"

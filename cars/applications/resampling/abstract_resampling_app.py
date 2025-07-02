@@ -112,6 +112,8 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         add_color=True,
         add_classif=True,
         epipolar_roi=None,
+        required_bands=None,
+        texture_bands=None,
     ):  # noqa: C901
         """
         Run resampling application.
@@ -120,11 +122,11 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         corresponding to sensor images resampled in epipolar geometry.
 
         :param sensor_images_left: tiled sensor left image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_left: CarsDataset
         :param sensor_images_right: tiled sensor right image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_right: CarsDataset
         :param grid_left: left epipolar grid
@@ -160,6 +162,10 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         :param epipolar_roi: Epipolar roi to use if set.
             Set None tiles outsize roi
         :type epipolar_roi: list(int), [row_min, row_max,  col_min, col_max]
+        :param required_bands: bands to resample on left and right image
+        :type required_bands: dict
+        :param texture_bands: name of bands used for output texture
+        :type texture_bands: list
 
         :return: left epipolar image, right epipolar image. \
             Each CarsDataset contains:
@@ -167,7 +173,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
             - N x M Delayed tiles. \
                 Each tile will be a future xarray Dataset containing:
 
-                - data with keys : "im", "msk", "color", "classif"
+                - data with keys : "im", "msk", "texture", "classif"
                 - attrs with keys: "margins" with "disp_min" and "disp_max"\
                     "transform", "crs", "valid_pixels", "no_data_mask",
                     "no_data_img"

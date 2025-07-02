@@ -37,6 +37,30 @@ from cars.core import inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
+def get_paths_and_bands(sensor_image, required_bands=None):
+    """
+    Reformat file paths and bands required from each file to ease reading
+
+    :param sensor_image: input configuration of an image
+    :type sensor_image: dict
+    :param required_bands: required bands for resampling
+    :type required_bands: list
+    """
+    paths = {}
+    if required_bands is None:
+        # All bands are required bands
+        required_bands = list(sensor_image["bands"].keys())
+    for band in required_bands:
+        file_path = sensor_image["bands"][band]["path"]
+        band_id = sensor_image["bands"][band]["band"] + 1
+        if file_path in paths:
+            paths[file_path]["band_id"].append(band_id)
+            paths[file_path]["band_name"].append(band)
+        else:
+            paths[file_path] = {"band_id": [band_id], "band_name": [band]}
+    return paths
+
+
 def get_sensors_bounds(sensor_image_left, sensor_image_right):
     """
     Get bounds of sensor images
@@ -53,13 +77,15 @@ def get_sensors_bounds(sensor_image_left, sensor_image_right):
 
     left_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_left[sens_cst.INPUT_IMG], apply_resolution_sign=True
+            sensor_image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE],
+            apply_resolution_sign=True,
         )
     )
 
     right_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_right[sens_cst.INPUT_IMG], apply_resolution_sign=True
+            sensor_image_right[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE],
+            apply_resolution_sign=True,
         )
     )
 

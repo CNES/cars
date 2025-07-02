@@ -124,6 +124,8 @@ class CensusMccnnSgm(
         ]
         self.use_cross_validation = self.used_config["use_cross_validation"]
         self.denoise_disparity_map = self.used_config["denoise_disparity_map"]
+        self.required_bands = self.used_config["required_bands"]
+        self.used_band = self.used_config["used_band"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -221,6 +223,8 @@ class CensusMccnnSgm(
         overloaded_conf["disp_range_propagation_filter_size"] = conf.get(
             "disp_range_propagation_filter_size", 300
         )
+        overloaded_conf["required_bands"] = conf.get("required_bands", ["b0"])
+        overloaded_conf["used_band"] = conf.get("used_band", "b0")
 
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -271,6 +275,7 @@ class CensusMccnnSgm(
             perf_eta_step=overloaded_conf["perf_eta_step"],
             use_cross_validation=overloaded_conf["use_cross_validation"],
             denoise_disparity_map=overloaded_conf["denoise_disparity_map"],
+            used_band=overloaded_conf["used_band"],
         )
         overloaded_conf["loader"] = loader
 
@@ -283,7 +288,7 @@ class CensusMccnnSgm(
         fake_dataset = xr.Dataset(
             data_vars={},
             coords={
-                "band_im": [None],
+                "band_im": [overloaded_conf["used_band"]],
                 "row": np.arange(10),
                 "col": np.arange(10),
             },
@@ -334,6 +339,8 @@ class CensusMccnnSgm(
             "disp_range_propagation_filter_size": And(
                 Or(int, float), lambda x: x >= 0
             ),
+            "required_bands": [str],
+            "used_band": str,
             "loader_conf": Or(dict, collections.OrderedDict, str, None),
             "loader": str,
         }
@@ -591,6 +598,18 @@ class CensusMccnnSgm(
             return local_opt_tile_size, opt_epipolar_tile_size, max_range
 
         return opt_epipolar_tile_size, local_tile_optimal_size_fun
+
+    def get_required_bands(self):
+        """
+        Get bands required by this application
+
+        :return: required bands for left and right image
+        :rtype: dict
+        """
+        required_bands = {}
+        required_bands["left"] = self.required_bands
+        required_bands["right"] = self.required_bands
+        return required_bands
 
     @cars_profile(name="Disp Grid Generation")
     def generate_disparity_grids(  # noqa: C901
@@ -891,7 +910,7 @@ class CensusMccnnSgm(
                     ind_rows_sensor,
                     _,
                 ) = geom_plugin_with_dem_and_geoid.inverse_loc(
-                    sensor_image_right["image"],
+                    sensor_image_right["image"]["main_file"],
                     sensor_image_right["geomodel"],
                     lat_mean,
                     lon_mean,
@@ -934,7 +953,7 @@ class CensusMccnnSgm(
                         loc_inverse_wrapper
                     )(
                         geom_plugin_with_dem_and_geoid,
-                        sensor_image_right["image"],
+                        sensor_image_right["image"]["main_file"],
                         sensor_image_right["geomodel"],
                         lat_mean[first_elem:last_elem],
                         lon_mean[first_elem:last_elem],
@@ -986,7 +1005,9 @@ class CensusMccnnSgm(
             # compute reverse matrix
             transform_sensor = rasterio.Affine(
                 *np.abs(
-                    inputs.rasterio_get_transform(sensor_image_right["image"])
+                    inputs.rasterio_get_transform(
+                        sensor_image_right["image"]["main_file"]
+                    )
                 )
             )
 
@@ -1162,6 +1183,7 @@ class CensusMccnnSgm(
         disp_range_grid=None,
         compute_disparity_masks=False,
         margins_to_keep=0,
+        texture_bands=None,
     ):
         """
         Run Matching application.
@@ -1175,7 +1197,7 @@ class CensusMccnnSgm(
                 - N x M Delayed tiles. \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"\
                         "transform", "crs", "valid_pixels", "no_data_mask",\
                         "no_data_img"
@@ -1187,7 +1209,7 @@ class CensusMccnnSgm(
                 - N x M Delayed tiles. \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"
                         "transform", "crs", "valid_pixels", "no_data_mask",
                         "no_data_img"
@@ -1195,7 +1217,7 @@ class CensusMccnnSgm(
                     "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
         :param local_tile_optimal_size_fun: function to compute local
-             optimal tile size
+            optimal tile size
         :type local_tile_optimal_size_fun: func
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
@@ -1206,6 +1228,9 @@ class CensusMccnnSgm(
         :type disp_range_grid: CarsDataset
         :param margins_to_keep: margin to keep after dense matching
         :type margins_to_keep: int
+        :param texture_bands: indices of bands from epipolar_images_left
+            used for output texture
+        :type texture_bands: list
 
         :return: disparity map: \
             The CarsDataset contains:
@@ -1264,8 +1289,8 @@ class CensusMccnnSgm(
                 )
 
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_color.tif"),
-                    cst.EPI_COLOR,
+                    os.path.join(pair_folder, "epi_disp_texture.tif"),
+                    cst.EPI_TEXTURE,
                     epipolar_disparity_map,
                     cars_ds_name="epi_disp_color",
                 )
@@ -1412,6 +1437,7 @@ class CensusMccnnSgm(
                             epipolar_images_left[row, col],
                             epipolar_images_right[row, col],
                             self.corr_config,
+                            self.used_band,
                             broadcasted_disp_range_grid,
                             saving_info=full_saving_info,
                             compute_disparity_masks=compute_disparity_masks,
@@ -1420,6 +1446,7 @@ class CensusMccnnSgm(
                                 epipolar_disparity_map.overlaps[row, col]
                             ),
                             margins_to_keep=margins_to_keep,
+                            texture_bands=texture_bands,
                         )
 
         else:
@@ -1434,12 +1461,14 @@ def compute_disparity_wrapper(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     corr_cfg: dict,
+    used_band: str,
     disp_range_grid,
     saving_info=None,
     compute_disparity_masks=False,
     crop_with_range=None,
     left_overlaps=None,
     margins_to_keep=0,
+    texture_bands=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1452,17 +1481,19 @@ def compute_disparity_wrapper(
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :type left_image_object: xr.Dataset
       - dataset with :
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :param right_image_object: tiled Right image
     :type right_image_object: xr.Dataset
     :param corr_cfg: Correlator configuration
     :type corr_cfg: dict
+    :param used_band: name of band used for correlation
+    :type used_band: str
     :param disp_range_grid: minimum and maximum disparity grid
     :type disp_range_grid: np.ndarray
     :param compute_disparity_masks: Compute all the disparity \
@@ -1488,7 +1519,7 @@ def compute_disparity_wrapper(
 
         - cst_disp.MAP
         - cst_disp.VALID
-        - cst.EPI_COLOR
+        - cst.EPI_TEXTURE
 
     """
     # Generate disparity grids
@@ -1539,11 +1570,13 @@ def compute_disparity_wrapper(
         left_image_object,
         right_image_object,
         corr_cfg,
+        used_band,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
         compute_disparity_masks=compute_disparity_masks,
         cropped_range=mask_crop,
         margins_to_keep=margins_to_keep,
+        texture_bands=texture_bands,
     )
 
     # Fill with attributes

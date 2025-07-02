@@ -46,7 +46,6 @@ from cars.applications.resampling import (
 from cars.applications.resampling.abstract_resampling_app import Resampling
 from cars.core import constants as cst
 from cars.core import inputs, tiling
-from cars.core.datasets import get_color_bands
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -78,7 +77,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         self.interpolator_image = self.used_config["interpolator_image"]
         self.interpolator_classif = self.used_config["interpolator_classif"]
-        self.interpolator_color = self.used_config["interpolator_color"]
         self.interpolator_mask = self.used_config["interpolator_mask"]
 
         # Init orchestrator
@@ -111,9 +109,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         overloaded_conf["interpolator_image"] = conf.get(
             "interpolator_image", "bicubic"
         )
-        overloaded_conf["interpolator_color"] = conf.get(
-            "interpolator_color", "bicubic"
-        )
         overloaded_conf["interpolator_classif"] = conf.get(
             "interpolator_classif", "nearest"
         )
@@ -131,7 +126,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             "method": str,
             "strip_height": And(int, lambda x: x > 0),
             "interpolator_image": str,
-            "interpolator_color": str,
             "interpolator_classif": str,
             "interpolator_mask": str,
             "step": Or(None, int),
@@ -227,9 +221,10 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         margins_fun=None,
         tile_width=None,
         tile_height=None,
-        add_color=True,
         add_classif=True,
         epipolar_roi=None,
+        required_bands=None,
+        texture_bands=None,
     ):
         """
         Run resampling application.
@@ -238,11 +233,11 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         corresponding to sensor images resampled in epipolar geometry.
 
         :param sensor_images_left: tiled sensor left image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "geomodel",
             "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_left: CarsDataset
         :param sensor_images_right: tiled sensor right image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "geomodel",
             "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_right: CarsDataset
         :param grid_left: left epipolar grid
@@ -271,13 +266,15 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :type tile_width: int
         :param tile_height: height of tile
         :type tile_height: int
-        :param add_color: add color image to dataset
-        :type add_color: bool
         :param add_classif: add classif to dataset
         :type add_classif: bool
         :param epipolar_roi: Epipolar roi to use if set.
             Set None tiles outsize roi
         :type epipolar_roi: list(int), [row_min, row_max,  col_min, col_max]
+        :param required_bands: bands to resample on left and right image
+        :type required_bands: dict
+        :param texture_bands: name of bands used for output texture
+        :type texture_bands: list
 
         :return: left epipolar image, right epipolar image. \
             Each CarsDataset contains:
@@ -285,7 +282,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             - N x M Delayed tiles. \
                 Each tile will be a future xarray Dataset containing:
 
-                - data with keys : "im", "msk", "color", "classif"
+                - data with keys : "im", "msk", "classif"
                 - attrs with keys: "margins" with "disp_min" and "disp_max"\
                     "transform", "crs", "valid_pixels", "no_data_mask",
                     "no_data_img"
@@ -340,27 +337,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             tile_height,
         )
 
-        epipolar_images_left, epipolar_images_right = None, None
-
-        # Retrieve number of bands
-        if sens_cst.INPUT_COLOR in sensor_image_left:
-            nb_bands = inputs.rasterio_get_nb_bands(
-                sensor_image_left[sens_cst.INPUT_COLOR]
-            )
-        else:
-            logging.info(
-                "No color image has been given in input, "
-                "{} will be used as the color image".format(
-                    sensor_image_left[sens_cst.INPUT_IMG]
-                )
-            )
-
-            nb_bands = inputs.rasterio_get_nb_bands(
-                sensor_image_left[sens_cst.INPUT_IMG]
-            )
-
-        logging.info("Number of bands in color image: {}".format(nb_bands))
-
         # Create CarsDataset
         # Epipolar_images
         epipolar_images_left = cars_dataset.CarsDataset(
@@ -387,15 +363,16 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         )
 
         # add image type in attributes for future checking
-        im_type = inputs.rasterio_get_image_type(
-            sensor_image_left[sens_cst.INPUT_IMG]
-        )
-        if sens_cst.INPUT_COLOR in sensor_image_left:
-            color_type = inputs.rasterio_get_image_type(
-                sensor_image_left[sens_cst.INPUT_COLOR]
+        if texture_bands is not None:
+            im_type = inputs.rasterio_get_image_type(
+                sensor_image_left[sens_cst.INPUT_IMG]["bands"][
+                    texture_bands[0]
+                ]["path"]
             )
         else:
-            color_type = im_type
+            im_type = inputs.rasterio_get_image_type(
+                sensor_image_left[sens_cst.INPUT_IMG]["main_file"]
+            )
 
         # update attributes
         epipolar_images_attributes = {
@@ -405,7 +382,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             "disp_min_tiling": used_disp_min,
             "disp_max_tiling": used_disp_max,
             "image_type": im_type,
-            "color_type": color_type,
         }
 
         epipolar_images_left.attributes.update(epipolar_images_attributes)
@@ -463,14 +439,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 optional_data=True,
             )
 
-        if self.save_intermediate_data and add_color:
-            self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_color.tif"),
-                cst.EPI_COLOR,
-                epipolar_images_left,
-                cars_ds_name="epi_color",
-            )
-
         # Get saving infos in order to save tiles when they are computed
         [
             saving_info_left,
@@ -498,20 +466,41 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         }
         self.orchestrator.update_out_info(updating_dict)
 
-        # retrieves some data
+        # retrieve data
         epipolar_size_x = grid_left["epipolar_size_x"]
         epipolar_size_y = grid_left["epipolar_size_y"]
-        img1 = sensor_image_left[sens_cst.INPUT_IMG]
-        img2 = sensor_image_right[sens_cst.INPUT_IMG]
-        color1 = sensor_image_left.get(sens_cst.INPUT_COLOR, None)
+        left_images = resampling_wrappers.get_paths_and_bands(
+            sensor_image_left[sens_cst.INPUT_IMG],
+            required_bands["left"],
+        )
+        right_images = resampling_wrappers.get_paths_and_bands(
+            sensor_image_right[sens_cst.INPUT_IMG],
+            required_bands["right"],
+        )
         grid1 = grid_left
         grid2 = grid_right
-        nodata1 = sensor_image_left.get(sens_cst.INPUT_NODATA, None)
-        nodata2 = sensor_image_right.get(sens_cst.INPUT_NODATA, None)
+        nodata1 = sensor_image_left[sens_cst.INPUT_IMG].get(
+            sens_cst.INPUT_NODATA, None
+        )
+        nodata2 = sensor_image_right[sens_cst.INPUT_IMG].get(
+            sens_cst.INPUT_NODATA, None
+        )
         mask1 = sensor_image_left.get(sens_cst.INPUT_MSK, None)
         mask2 = sensor_image_right.get(sens_cst.INPUT_MSK, None)
-        classif1 = sensor_image_left.get(sens_cst.INPUT_CLASSIFICATION, None)
-        classif2 = sensor_image_right.get(sens_cst.INPUT_CLASSIFICATION, None)
+        left_classifs = sensor_image_left.get(
+            sens_cst.INPUT_CLASSIFICATION, None
+        )
+        if left_classifs is not None:
+            left_classifs = resampling_wrappers.get_paths_and_bands(
+                left_classifs
+            )
+        right_classifs = sensor_image_right.get(
+            sens_cst.INPUT_CLASSIFICATION, None
+        )
+        if right_classifs is not None:
+            right_classifs = resampling_wrappers.get_paths_and_bands(
+                right_classifs
+            )
 
         # Set Epipolar roi
         epi_tilling_grid = epipolar_images_left.tiling_grid
@@ -600,24 +589,21 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         left_window,
                         epipolar_size_x,
                         epipolar_size_y,
-                        img1,
-                        img2,
+                        left_images,
+                        right_images,
                         broadcasted_grid1,
                         broadcasted_grid2,
                         self.interpolator_image,
-                        self.interpolator_color,
                         self.interpolator_classif,
                         self.interpolator_mask,
                         self.step,
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],
-                        add_color=add_color,
                         add_classif=add_classif,
-                        color1=color1,
                         mask1=mask1,
                         mask2=mask2,
-                        classif1=classif1,
-                        classif2=classif2,
+                        left_classifs=left_classifs,
+                        right_classifs=right_classifs,
                         nodata1=nodata1,
                         nodata2=nodata2,
                         saving_info_left=full_saving_info_left,
@@ -638,24 +624,21 @@ def generate_epipolar_images_wrapper(
     window,
     epipolar_size_x,
     epipolar_size_y,
-    img1,
-    img2,
+    left_imgs,
+    right_imgs,
     grid1,
     grid2,
     interpolator_image,
-    interpolator_color,
     interpolator_classif,
     interpolator_mask,
     step=None,
     used_disp_min=None,
     used_disp_max=None,
-    add_color=True,
     add_classif=True,
-    color1=None,
     mask1=None,
     mask2=None,
-    classif1=None,
-    classif2=None,
+    left_classifs=None,
+    right_classifs=None,
     nodata1=0,
     nodata2=0,
     saving_info_left=None,
@@ -683,7 +666,7 @@ def generate_epipolar_images_wrapper(
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     """
 
     region, margins = format_transformation.region_margins_from_window(
@@ -698,12 +681,11 @@ def generate_epipolar_images_wrapper(
     (
         left_dataset,
         right_dataset,
-        left_color_dataset,
         left_classif_dataset,
         right_classif_dataset,
     ) = resampling_algo.epipolar_rectify_images(
-        img1,
-        img2,
+        left_imgs,
+        right_imgs,
         grid1,
         grid2,
         region,
@@ -711,51 +693,17 @@ def generate_epipolar_images_wrapper(
         epipolar_size_x,
         epipolar_size_y,
         interpolator_image,
-        interpolator_color,
         interpolator_classif,
         interpolator_mask,
         step=step,
-        color1=color1,
         mask1=mask1,
         mask2=mask2,
-        classif1=classif1,
-        classif2=classif2,
+        left_classifs=left_classifs,
+        right_classifs=right_classifs,
         nodata1=nodata1,
         nodata2=nodata2,
-        add_color=add_color,
         add_classif=add_classif,
     )
-
-    if add_color:
-        # merge color in left dataset
-        if len(left_color_dataset[cst.EPI_IMAGE].values.shape) > 2:
-            band_im = get_color_bands(left_color_dataset)
-        else:
-            band_im = ["Gray"]
-
-        # if cst.BAND_IM not in left_dataset.dims:
-        left_dataset.coords[cst.BAND_IM] = band_im
-        left_dataset[cst.EPI_COLOR] = xr.DataArray(
-            left_color_dataset[cst.EPI_IMAGE].values,
-            dims=[cst.BAND_IM, cst.ROW, cst.COL],
-        )
-
-        # Add input color type
-        color_type = inputs.rasterio_get_image_type(color1)
-        # Safe cast
-        if np.issubdtype(color_type, np.floating):
-            min_value_clr = np.finfo(color_type).min
-            max_value_clr = np.finfo(color_type).max
-        else:
-            min_value_clr = np.iinfo(color_type).min
-            max_value_clr = np.iinfo(color_type).max
-        left_dataset[cst.EPI_COLOR] = np.clip(
-            left_dataset[cst.EPI_COLOR], min_value_clr, max_value_clr
-        ).astype(color_type)
-        left_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
-    else:
-        color_types = inputs.rasterio_get_image_type(img1)
-        left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_types
 
     # Add classification layers to dataset
     if add_classif:

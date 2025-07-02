@@ -49,7 +49,7 @@ conf_0 = {
     "mode": "fill_nan",
     "activated": True,
     "use_mask": False,
-    "color_interpolator": "cubic",
+    "texture_interpolator": "cubic",
 }
 
 conf_1 = {
@@ -57,7 +57,7 @@ conf_1 = {
     "mode": "full",
     "activated": True,
     "use_mask": True,
-    "color_interpolator": "linear",
+    "texture_interpolator": "linear",
 }
 
 conf_2 = {
@@ -65,7 +65,7 @@ conf_2 = {
     "mode": "fill_nan",
     "activated": True,
     "use_mask": True,
-    "color_interpolator": "nearest",
+    "texture_interpolator": "nearest",
 }
 
 
@@ -136,6 +136,7 @@ def test_auxiliary_filling_paca(
             sensor_inputs=sensor_inputs,
             pairing=pairing,
             geom_plugin=geo_plugin,
+            texture_bands=["b0"],
         )
         # Uncomment the 2 following instructions to update reference data
         # shutil.copy2(

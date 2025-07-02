@@ -139,11 +139,15 @@ class SharelocGeometry(AbstractGeometry):
         coords_list = []
         for image1, geomodel1, image2, geomodel2 in pairs_for_roi:
             # Footprint of left image
-            coords_list.extend(self.image_envelope(image1, geomodel1))
+            coords_list.extend(
+                self.image_envelope(image1["main_file"], geomodel1)
+            )
             # Footprint of right image
-            coords_list.extend(self.image_envelope(image2, geomodel2))
+            coords_list.extend(
+                self.image_envelope(image2["main_file"], geomodel2)
+            )
             # Footprint of rectification grid (with margins)
-            image1 = SharelocGeometry.load_image(image1)
+            image1 = SharelocGeometry.load_image(image1["main_file"])
             geomodel1 = self.load_geom_model(geomodel1)
             geomodel2 = self.load_geom_model(geomodel2)
             epipolar_extent = rectif.get_epipolar_extent(
@@ -249,7 +253,8 @@ class SharelocGeometry(AbstractGeometry):
         checker_geomodel.validate(overloaded_geomodel)
 
         # Try to read them using shareloc
-        SharelocGeometry.load_image(sensor)
+        for band in sensor["bands"]:
+            SharelocGeometry.load_image(sensor["bands"][band]["path"])
         SharelocGeometry.load_geom_model(overloaded_geomodel)
 
         return sensor, overloaded_geomodel

@@ -157,7 +157,7 @@ def create_point_cloud_index(cloud_sample):
         cloud_indexes_with_types[cst.POINT_CLOUD_MSK] = "uint8"
 
     # Add color indexes
-    if cst.EPI_COLOR in cloud_sample:
+    if cst.EPI_TEXTURE in cloud_sample:
         band_color = list(cloud_sample.coords[cst.BAND_IM].to_numpy())
         color_type = "float32"
         if "color_type" in cloud_sample.attrs:
@@ -238,7 +238,7 @@ def get_color_type(clouds):
     """
     color_types = []
     for cloud_id, cloud_item in enumerate(clouds):
-        if cst.EPI_COLOR in clouds[cloud_id]:
+        if cst.EPI_TEXTURE in clouds[cloud_id]:
             if "color_type" in cloud_item.attrs:
                 color_types.append(cloud_item.attrs["color_type"])
     if color_types:
@@ -265,8 +265,8 @@ def get_number_bands(cloud_list):
     nb_band_clr = 0
     for current_cloud in cloud_list:
         current_cloud_nb_bands = 0
-        if cst.EPI_COLOR in current_cloud:
-            clr_im = current_cloud[cst.EPI_COLOR].values
+        if cst.EPI_TEXTURE in current_cloud:
+            clr_im = current_cloud[cst.EPI_TEXTURE].values
             if len(clr_im.shape) == 2:
                 current_cloud_nb_bands = 1
             else:

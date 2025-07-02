@@ -127,7 +127,7 @@ def check_dsm_inputs(conf, config_json_dir=None):
         ][dsm_key].get("classification", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_COLOR] = conf[
             dsm_cst.DSMS
-        ][dsm_key].get("color", None)
+        ][dsm_key].get("texture", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_MSK] = conf[
             dsm_cst.DSMS
         ][dsm_key].get("mask", None)

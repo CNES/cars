@@ -142,20 +142,6 @@ To translate single image or multiband image with several nbits per band to 1bit
 
     gdal_translate -ot Byte -co NBITS=1 mask.tif mask_1nbit.tif
 
-.. _add_band_description_in_image:
-
-Add band name / description in TIF files metadata
---------------------------------------------------
-
-To add a band name / description ("water", "cloud", etc.) in TIF files, for classification or color files in order to be used:
-
-
-.. code-block:: python
-
-    data_in = gdal.Open(infile, gdal.GA_Update)
-    band_in = data_in.GetRasterBand(inband)
-    band_in.SetDescription(band_description)
-    data_in = None
 
 .. _download_srtm_tiles:
 

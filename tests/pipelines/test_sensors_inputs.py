@@ -44,17 +44,13 @@ def test_check_full_conf():
         "sensors": {
             "left": {
                 "image": "left_image.tif",
-                "color": "color_image.tif",
                 "geomodel": {"path": "left_image.geom"},
-                "no_data": 0,
                 "mask": None,
                 "classification": None,
             },
             "right": {
                 "image": "right_image.tif",
                 "geomodel": {"path": "right_image.geom"},
-                "color": "right_image.tif",
-                "no_data": 0,
                 "mask": None,
                 "classification": None,
             },
@@ -371,3 +367,163 @@ def test_input_dem_epsg_exit_sensors():
         sensor_inputs.sensors_check_inputs(
             input_test, config_json_dir=os.path.dirname(input_json)
         )
+
+
+@pytest.mark.unit_tests
+def test_input_basic_loader():
+    """
+    Input configuration using basic loader
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "sensors": {
+            "left": {
+                "image": {
+                    "loader": "basic",
+                    "path": "left_image.tif",
+                    "no_data": -9999,
+                },
+                "geomodel": {"path": "left_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+            "right": {
+                "image": {
+                    "loader": "basic",
+                    "path": "right_image.tif",
+                    "no_data": -9999,
+                },
+                "geomodel": {"path": "right_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+        },
+    }
+    _ = sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+
+
+@pytest.mark.unit_tests
+def test_input_pivot_loader():
+    """
+    Input configuration using pivot loader
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "sensors": {
+            "left": {
+                "image": {
+                    "loader": "pivot",
+                    "main_file": "left_image.tif",
+                    "bands": {
+                        "b0": {"path": "left_image.tif", "band": 0},
+                        "b1": {"path": "color_image.tif", "band": 0},
+                        "b2": {"path": "color_image.tif", "band": 1},
+                        "b3": {"path": "color_image.tif", "band": 2},
+                    },
+                    "texture_bands": ["b1", "b2", "b3"],
+                },
+                "geomodel": {"path": "left_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+            "right": {
+                "image": {
+                    "loader": "pivot",
+                    "main_file": "right_image.tif",
+                    "bands": {"b0": {"path": "right_image.tif", "band": 0}},
+                },
+                "geomodel": {"path": "right_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+        },
+    }
+    _ = sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+
+
+@pytest.mark.unit_tests
+def test_input_pivot_loader_fail_band_not_found():
+    """
+    Input configuration using pivot loader with non existant band
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "sensors": {
+            "left": {
+                "image": {
+                    "loader": "pivot",
+                    "main_file": "left_image.tif",
+                    "bands": {
+                        "b0": {"path": "left_image.tif", "band": 1},
+                        "b1": {"path": "color_image.tif", "band": 0},
+                        "b2": {"path": "color_image.tif", "band": 1},
+                        "b3": {"path": "color_image.tif", "band": 2},
+                    },
+                    "texture_bands": ["b1", "b2", "b3"],
+                },
+                "geomodel": {"path": "left_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+            "right": {
+                "image": {
+                    "loader": "pivot",
+                    "main_file": "right_image.tif",
+                    "bands": {"b0": {"path": "right_image.tif", "band": 0}},
+                },
+                "geomodel": {"path": "right_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+        },
+    }
+    with pytest.raises(RuntimeError):
+        sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+
+
+@pytest.mark.unit_tests
+def test_input_pivot_loader_fail_undefined_texture_band():
+    """
+    Input configuration using pivot loader with undefined texture band
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "sensors": {
+            "left": {
+                "image": {
+                    "loader": "pivot",
+                    "main_file": "left_image.tif",
+                    "bands": {
+                        "b0": {"path": "left_image.tif", "band": 1},
+                        "b1": {"path": "color_image.tif", "band": 0},
+                        "b2": {"path": "color_image.tif", "band": 1},
+                        "b3": {"path": "color_image.tif", "band": 2},
+                    },
+                    "texture_bands": ["b1", "b2", "b3", "b4"],
+                },
+                "geomodel": {"path": "left_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+            "right": {
+                "image": {
+                    "loader": "pivot",
+                    "main_file": "right_image.tif",
+                    "bands": {"b0": {"path": "right_image.tif", "band": 0}},
+                },
+                "geomodel": {"path": "right_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+        },
+    }
+    with pytest.raises(RuntimeError):
+        sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)

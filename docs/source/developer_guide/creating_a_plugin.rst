@@ -72,3 +72,25 @@ For example :
     {
         "geometry_plugin": "name_given_by_plugin"
     }
+
+Sensor loader plugin
+--------------------
+
+Sensors loader plugins can be used by setting the "loader" parameter in "image" and "classification" attributes of the input configuration.
+The loader defines several plugin-specific parameters
+
+.. code-block:: json
+
+    {
+        "inputs": {
+            "image": {
+                "loader": "name_given_by_plugin"
+                "plugin_specific_param1": "value1"
+                "plugin_specific_param2": "value2"
+            }
+        }
+    }
+
+A sensor loader plugin is a class that overrides the `SensorLoaderTemplate` class. It must define two methods : 
+ - check_conf : check the plugin-specific parameters
+ - set_pivot_format : transform the input configuration into a configuration readable by CARS using pivot format and set it in class attribute `self.pivot_format`. Specifications of pivot format can be used on :ref:`advanced configuration`

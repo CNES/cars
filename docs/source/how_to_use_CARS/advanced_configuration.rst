@@ -98,7 +98,7 @@ The structure follows this organization:
                 +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
                 | step                   | Horizontal step for resampling inside a strip          | int     | should be > 0   | 500           | No       |
                 +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-                | save_intermediate_data | Save epipolar images and color                         | boolean |                 | false         | No       |
+                | save_intermediate_data | Save epipolar images and texture                       | boolean |                 | false         | No       |
                 +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
 
                 **Example**
@@ -122,35 +122,37 @@ The structure follows this organization:
 
                 **Common parameters**
 
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | Name                                 | Description                                                                                    | Type        | Available value        | Default value | Required |
-                +======================================+================================================================================================+=============+========================+===============+==========+
-                | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                       | float       |                        | 0.02          | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0          | 10.0          | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | epipolar_error_maximum_bias          | Maximum bias for epipolar error in pixels                                                      | float       | should be >= 0         | 0.0           | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | sift_back_matching                   | Also check that right vs. left gives same match                                                | boolean     |                        | true          | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | match_filter_knn                     | Number of neighbors used to measure isolation of matches and detect isolated matches           | int         | should be > 0          | 25            | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | match_filter_constant                | Constant added to the threshold used for computing statistical outliers                        | int, float  | should be >= 0         | 0             | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | match_filter_mean_factor             | Factor of mean of isolation of matches to compute threshold of outliers                        | int, float  | should be >= 0         | 1.3           | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | match_filter_dev_factor              | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be >= 0         | 3.0           | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0          | 10            | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | None          | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | None          | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                           | int         | should be > 0          | 100           | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | Name                                 | Description                                                                                    | Type        | Available value           | Default value | Required |
+                +======================================+================================================================================================+=============+===========================+===============+==========+
+                | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                       | float       |                           | 0.02          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0             | 10.0          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | epipolar_error_maximum_bias          | Maximum bias for epipolar error in pixels                                                      | float       | should be >= 0            | 0.0           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | sift_back_matching                   | Also check that right vs. left gives same match                                                | boolean     |                           | true          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | match_filter_knn                     | Number of neighbors used to measure isolation of matches and detect isolated matches           | int         | should be > 0             | 25            | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | match_filter_constant                | Constant added to the threshold used for computing statistical outliers                        | int, float  | should be >= 0            | 0             | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | match_filter_mean_factor             | Factor of mean of isolation of matches to compute threshold of outliers                        | int, float  | should be >= 0            | 1.3           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | match_filter_dev_factor              | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be >= 0            | 3.0           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                           | false         | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0             | 10            | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                           | None          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                           | None          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                           | int         | should be > 0             | 100           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+                | used_band                            | Name of band used for correlation                                                              | int         | should be in input sensor | "b0"          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 
 
                 .. note::
@@ -541,6 +543,18 @@ The structure follows this organization:
                       -
                       - false
                       - No
+                    * - required_bands
+                      - Bands given to pandora
+                      - list
+                      - should be in input sensor
+                      - ["b0"]
+                      - No
+                    * - used_band
+                      - Band used for correlation
+                      - str
+                      - should be in input sensor
+                      - "b0"
+                      - No
 
                 See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
 
@@ -886,14 +900,14 @@ The structure follows this organization:
                       -
                       - -32768
                       -
-                    * - color_no_data
+                    * - texture_no_data
                       -
                       - int
                       -
                       - 0
                       -
-                    * - color_dtype
-                      - | By default, it's retrieved from the input color
+                    * - texture_dtype
+                      - | By default, it's retrieved from the input texture
                         | Otherwise, specify an image type
                       - string
                       - | "uint8", "uint16"
@@ -1044,34 +1058,34 @@ The structure follows this organization:
 
                 **Description**
 
-                Fill in the missing values of the color and classification by using information from sensor inputs 
-                This application replaces the existing `color.tif` and `classification.tif`.
+                Fill in the missing values of the texture and classification by using information from sensor inputs 
+                This application replaces the existing `texture.tif` and `classification.tif`.
                 
-                The application retrieves color and classification information by performing inverse location on the input sensor images. It is therefore necessary to provide the `sensors` category in `inputs` configuration in order to use this application, even when `depth_map` are provided as input. The pairing information is also required: when searching for color information, the application will always look in the first sensor of the pair and then in the second, if no information for the given pixel is found in the first sensor. The final filled value of the pixel is the average of the contribution of each pair. The classification information is a logical OR of all classifications.
+                The application retrieves texture and classification information by performing inverse location on the input sensor images. It is therefore necessary to provide the `sensors` category in `inputs` configuration in order to use this application, even when `depth_map` are provided as input. The pairing information is also required: when searching for texture information, the application will always look in the first sensor of the pair and then in the second, if no information for the given pixel is found in the first sensor. The final filled value of the pixel is the average of the contribution of each pair. The classification information is a logical OR of all classifications.
 
                 In `fill_nan` mode, only the pixels that are no-data in the auxiliary images that are valid in the reference dsm will be filled while in full mode all valid pixel from the reference dsm are filled.
 
-                If `use_mask` is set to `true`, the color data from a sensor will not be used if the corresponding sensor mask value is false. If the pixel is masked in all images, the filled color will be the average of the first sensor color of each pair
+                If `use_mask` is set to `true`, the texture data from a sensor will not be used if the corresponding sensor mask value is false. If the pixel is masked in all images, the filled texture will be the average of the first sensor texture of each pair
 
-                When ``save_intermediate_data`` is activated, the folder ``dump_dir/auxiliary_filling`` will contain the non-filled color and classification.
+                When ``save_intermediate_data`` is activated, the folder ``dump_dir/auxiliary_filling`` will contain the non-filled texture and classification.
 
                 **Configuration**
 
-                +------------------------------+-------------------------------------------+---------+----------------------------------+----------------------------------+----------+
-                | Name                         | Description                               | Type    | Available values                 | Default value                    | Required |
-                +==============================+===========================================+=========+==================================+==================================+==========+
-                | method                       | Method for filling                        | string  | "auxiliary_filling_from_sensors" | "auxiliary_filling_from_sensors" | No       |
-                +------------------------------+-------------------------------------------+---------+----------------------------------+----------------------------------+----------+
-                | activated                    | Activates the filling                     | boolean |                                  | false                            | No       |
-                +------------------------------+-------------------------------------------+---------+----------------------------------+----------------------------------+----------+
-                | mode                         | Processing mode                           | string  | "fill_nan", "full"               | false                            | No       |
-                +------------------------------+-------------------------------------------+---------+----------------------------------+----------------------------------+----------+
-                | use_mask                     | Use mask information from input sensors   | boolean |                                  | true                             | No       |
-                +------------------------------+-------------------------------------------+---------+----------------------------------+----------------------------------+----------+
-                | color_interpolator           | interpolator used for color interpolation | string  | "linear", "nearest", "cubic"     | "linear"                         | No       |
-                +------------------------------+-------------------------------------------+---------+----------------------------------+----------------------------------+----------+
-                | save_intermediate_data       | Saves the temporary data in dump_dir      | boolean |                                  | false                            | No       |
-                +------------------------------+-------------------------------------------+---------+----------------------------------+----------------------------------+----------+
+                +------------------------------+---------------------------------------------+---------+----------------------------------+----------------------------------+----------+
+                | Name                         | Description                                 | Type    | Available values                 | Default value                    | Required |
+                +==============================+=============================================+=========+==================================+==================================+==========+
+                | method                       | Method for filling                          | string  | "auxiliary_filling_from_sensors" | "auxiliary_filling_from_sensors" | No       |
+                +------------------------------+---------------------------------------------+---------+----------------------------------+----------------------------------+----------+
+                | activated                    | Activates the filling                       | boolean |                                  | false                            | No       |
+                +------------------------------+---------------------------------------------+---------+----------------------------------+----------------------------------+----------+
+                | mode                         | Processing mode                             | string  | "fill_nan", "full"               | false                            | No       |
+                +------------------------------+---------------------------------------------+---------+----------------------------------+----------------------------------+----------+
+                | use_mask                     | Use mask information from input sensors     | boolean |                                  | true                             | No       |
+                +------------------------------+---------------------------------------------+---------+----------------------------------+----------------------------------+----------+
+                | texture_interpolator         | Interpolator used for texture interpolation | string  | "linear", "nearest", "cubic"     | "linear"                         | No       |
+                +------------------------------+---------------------------------------------+---------+----------------------------------+----------------------------------+----------+
+                | save_intermediate_data       | Saves the temporary data in dump_dir        | boolean |                                  | false                            | No       |
+                +------------------------------+---------------------------------------------+---------+----------------------------------+----------------------------------+----------+
 
 
 
@@ -1147,6 +1161,11 @@ The structure follows this organization:
               - Name of the pipeline to use
               - str
               - "default"
+              - No
+            * - texture_bands
+              - Name of the bands used for output ortho image (see Sensor loaders configuration for details)
+              - list
+              - None
               - No
 
 
@@ -1242,11 +1261,11 @@ The structure follows this organization:
                                 "dsm": "path/to/ground/truth/dsm.tif",
 								"auxiliary_data":{
 									"classification": "path/to/classification.tif",
-									"color": "path/to/color.tif"
+									"texture": "path/to/texture.tif"
 								},
 								"auxiliary_data_interpolation":{
 									"classification": "nearest",
-									"color": "linear"
+									"texture": "linear"
 								}
                             }
                         }
@@ -1373,3 +1392,90 @@ The structure follows this organization:
                           "pipeline": "your_pipeline_name"
                           }
                       }
+
+    .. tab:: Sensor loaders
+
+        Sensor loaders are used to read images and classifications on sensor geometry with an advanced level on configuration. They are used inside the Inputs configuration (see :ref:`basic configuration`).
+
+        Two sensor loaders are available in CARS : "basic" and "pivot".
+
+        .. tabs::
+
+            .. tab:: Basic loader 
+
+                The basic loader is the simplest way to define an image. The basic loader is the one used by default when only a path is given. However, it is possible to use the basic loader with a dictionary : 
+
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | Name           | Description           | Type   | Default value | Available values | Required |
+                +================+=======================+========+===============+==================+==========+
+                | *loader*       | Name of sensor loader | str    | "basic"       | "basic"          | False    |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *path*         | File path             | str    |               |                  | True     |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *no_data*      | No data value of file | int    | 0             |                  | False    |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+      
+            .. tab:: Pivot loader 
+
+                The pivot loader allows the maximal level of configuration. To use the pivot loader, it is required to set the "loader" parameter in sensor loader configuration.
+
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | Name            | Description                                                                           | Type   | Default value     | Available values | Required |
+                +=================+=======================================================================================+========+===================+==================+==========+
+                | *loader*        | Name of sensor loader                                                                 | str    | "pivot"           | "pivot"          | True     |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *main_file*     | Main file path among the files given in `bands` parameter                             | str    | File of band "b0" |                  | False    |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *bands*         | Dictionary listing for every band of the image, the corresponding file and band index | int    |                   |                  | True     |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *texture_bands* | List of bands used for output ortho image                                             | list   | None              |                  | False    |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *no_data*       | No data value of file                                                                 | int    | 0                 |                  | False    |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+
+                The `bands` dictionary have keys which correspond to name of bands. The name of bands is imposed by CARS : if the image has n bands, the name of the bands must be ["b0", "b1", ..., "b{n-1}"].
+                Each key points to a dictionary with keys "path" and "band_id".
+
+                With the pivot format, an image can be composed of several files.
+
+                Full configuration example for pivot sensor loader :
+
+                .. code-block:: json
+
+                    "image": {
+                      "loader": "pivot",
+                      "main_file": "img1.tif",
+                      "bands": {
+                        "b0": {
+                          "path": "img1.tif",
+                          "band": 0
+                        },
+                        "b1": {
+                          "path": "color1.tif",
+                          "band": 0
+                        },
+                        "b2": {
+                          "path": "color1.tif",
+                          "band": 1
+                        },
+                        "b3": {
+                          "path": "color1.tif",
+                          "band": 2
+                        }
+                      },
+                      "texture_bands": ["b1", "b2", "b3"]
+                    }
+
+                .. note::
+
+                     - In the above example, the texture bands correspond to the three bands of `color1.tif` which is a RGB file, so the output `texture.tif` will be RGB.
+                     - Order matters : if the "texture_bands" parameter is set to ["b3", "b2", "b1"], the output will be BGR.
+                     - It is possible to fuse the different files in output ortho image : if the "texture_bands" parameter is set to ["b0", "b3", "b2", "b1"], the output will be PBGR (with P from panchromatic).
+                     - If "texture_bands" parameter is None (default value), all bands will be texture bands, so the output will be PRGB.
+                     - Parameter "texture_bands" must be the same as the one defined in Advanced parameters. If multiple pairs are used in the configuration, every left image must have the same texture bands in order to fuse them.
+
+                Documentation on plugin creation can be found in :ref:`creating_a_plugin`
+
+                
+
+

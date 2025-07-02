@@ -57,6 +57,8 @@ INPUT_EPSG = "epsg"
 
 PERFORMANCE_MAP_CLASSES = "performance_map_classes"
 
+TEXTURE_BANDS = "texture_bands"
+
 GEOMETRY_PLUGIN = "geometry_plugin"
 
 PIPELINE = "pipeline"

@@ -863,7 +863,7 @@ class DefaultPipeline(PipelineTemplate):
         ):
             first_image_path = next(iter(inputs_conf["sensors"].values()))[
                 "image"
-            ]
+            ]["main_file"]
             first_image_size = rasterio_get_size(first_image_path)
             first_image_nb_pixels = math.prod(first_image_size)
             dem_gen_used_mem = first_image_nb_pixels / 1e8
@@ -914,19 +914,37 @@ class DefaultPipeline(PipelineTemplate):
         for key1, key2 in inputs_conf["pairing"]:
             corr_cfg = self.dense_matching_app.loader.get_conf()
             corr_cfg_sparse = self.sparse_mtch_pandora_app.loader.get_conf()
-            img_left = inputs_conf["sensors"][key1]["image"]
-            img_right = inputs_conf["sensors"][key2]["image"]
+            img_left = inputs_conf["sensors"][key1]["image"]["main_file"]
+            img_right = inputs_conf["sensors"][key2]["image"]["main_file"]
+            bands_left = list(
+                inputs_conf["sensors"][key1]["image"]["bands"].keys()
+            )
+            bands_right = list(
+                inputs_conf["sensors"][key2]["image"]["bands"].keys()
+            )
             classif_left = None
             classif_right = None
-            if "classification" in inputs_conf["sensors"][key1]:
-                classif_left = inputs_conf["sensors"][key1]["classification"]
-            if "classification" in inputs_conf["sensors"][key2]:
-                classif_right = inputs_conf["sensors"][key2]["classification"]
+            if (
+                "classification" in inputs_conf["sensors"][key1]
+                and inputs_conf["sensors"][key1]["classification"] is not None
+            ):
+                classif_left = inputs_conf["sensors"][key1]["classification"][
+                    "main_file"
+                ]
+            if (
+                "classification" in inputs_conf["sensors"][key2]
+                and inputs_conf["sensors"][key1]["classification"] is not None
+            ):
+                classif_right = inputs_conf["sensors"][key2]["classification"][
+                    "main_file"
+                ]
             self.dense_matching_app.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
                     img_left,
                     img_right,
+                    bands_left,
+                    bands_right,
                     classif_left,
                     classif_right,
                 )
@@ -936,6 +954,8 @@ class DefaultPipeline(PipelineTemplate):
                     corr_cfg_sparse,
                     img_left,
                     img_right,
+                    bands_left,
+                    bands_right,
                     classif_left,
                     classif_right,
                 )
@@ -1099,7 +1119,10 @@ class DefaultPipeline(PipelineTemplate):
                 # Run resampling only if needed:
                 # no a priori or needs to detect holes
 
-                # Run epipolar resampling
+                # Get required bands of first resampling
+                required_bands = self.sparse_mtch_sift_app.get_required_bands()
+
+                # Run first epipolar resampling
                 (
                     self.pairs[pair_key]["epipolar_image_left"],
                     self.pairs[pair_key]["epipolar_image_right"],
@@ -1117,8 +1140,8 @@ class DefaultPipeline(PipelineTemplate):
                     margins_fun=self.sparse_mtch_sift_app.get_margins_fun(),
                     tile_width=None,
                     tile_height=None,
-                    add_color=False,
                     add_classif=add_classif,
+                    required_bands=required_bands,
                 )
 
                 if self.quit_on_app("resampling"):
@@ -1232,7 +1255,12 @@ class DefaultPipeline(PipelineTemplate):
                 if self.quit_on_app("sparse_matching.sift"):
                     continue
 
-                # Run epipolar resampling
+                # Get required bands of second resampling
+                required_bands = (
+                    self.sparse_mtch_pandora_app.get_required_bands()
+                )
+
+                # Run second epipolar resampling
                 (
                     self.pairs[pair_key]["new_epipolar_image_left"],
                     self.pairs[pair_key]["new_epipolar_image_right"],
@@ -1257,8 +1285,8 @@ class DefaultPipeline(PipelineTemplate):
                     ),
                     tile_width=None,
                     tile_height=None,
-                    add_color=False,
                     add_classif=add_classif,
+                    required_bands=required_bands,
                 )
 
                 if self.quit_on_app("resampling"):
@@ -1342,7 +1370,7 @@ class DefaultPipeline(PipelineTemplate):
                         matches,
                         self.geom_plugin_without_dem_and_geoid,
                         self.pairs[pair_key]["new_epipolar_image_left"],
-                        self.epsg,
+                        epsg=self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
                 )
@@ -1840,6 +1868,22 @@ class DefaultPipeline(PipelineTemplate):
                     "max_ram_per_worker"
                 ],
             )
+
+            # Get required bands of third resampling
+            required_bands = self.dense_matching_app.get_required_bands()
+
+            # Add left required bands for texture
+            required_bands["left"] = sorted(
+                set(required_bands["left"]).union(set(self.texture_bands))
+            )
+
+            # Find index of texture band in left_dataset
+            texture_bands_indices = [
+                required_bands["left"].index(band)
+                for band in self.texture_bands
+            ]
+
+            # Run third epipolar resampling
             (
                 new_epipolar_image_left,
                 new_epipolar_image_right,
@@ -1857,9 +1901,10 @@ class DefaultPipeline(PipelineTemplate):
                 margins_fun=dense_matching_margins_fun,
                 tile_width=optimum_tile_size,
                 tile_height=optimum_tile_size,
-                add_color=True,
                 add_classif=True,
                 epipolar_roi=epipolar_roi,
+                required_bands=required_bands,
+                texture_bands=self.texture_bands,
             )
 
             # Run ground truth dsm computation
@@ -1914,6 +1959,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pc_outlier_removal_1_app.get_epipolar_margin()
                     + self.pc_outlier_removal_2_app.get_epipolar_margin()
                 ),
+                texture_bands=texture_bands_indices,
             )
 
             if self.quit_on_app("dense_matching"):
@@ -2085,7 +2131,7 @@ class DefaultPipeline(PipelineTemplate):
                 filled_with_2_epipolar_disparity_map,
                 self.geom_plugin_without_dem_and_geoid,
                 new_epipolar_image_left,
-                self.epsg,
+                epsg=self.epsg,
                 denoising_overload_fun=denoising_overload_fun,
                 source_pc_names=self.pairs_names,
                 orchestrator=self.cars_orchestrator,
@@ -2104,7 +2150,7 @@ class DefaultPipeline(PipelineTemplate):
                 save_output_coordinates=last_depth_map_application
                 == "triangulation",
                 save_output_color=bool(depth_map_dir)
-                and self.auxiliary[out_cst.AUX_COLOR],
+                and self.auxiliary[out_cst.AUX_TEXTURE],
                 save_output_classification=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_CLASSIFICATION],
                 save_output_filling=bool(depth_map_dir)
@@ -2298,10 +2344,10 @@ class DefaultPipeline(PipelineTemplate):
             os.path.join(
                 self.out_dir,
                 out_cst.DSM_DIRECTORY,
-                "color.tif",
+                "texture.tif",
             )
             if self.save_output_dsm
-            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_COLOR]
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_TEXTURE]
             else None
         )
 
@@ -2472,10 +2518,12 @@ class DefaultPipeline(PipelineTemplate):
                 os.path.join(
                     self.out_dir,
                     out_cst.DSM_DIRECTORY,
-                    "color.tif",
+                    "texture.tif",
                 )
-                if "color" in dict_path
-                or self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_COLOR]
+                if "texture" in dict_path
+                or self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_TEXTURE
+                ]
                 else None
             )
 
@@ -2572,10 +2620,12 @@ class DefaultPipeline(PipelineTemplate):
                 os.path.join(
                     self.out_dir,
                     out_cst.DSM_DIRECTORY,
-                    "color.tif",
+                    "texture.tif",
                 )
                 if self.save_output_dsm
-                and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_COLOR]
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_TEXTURE
+                ]
                 else None
             )
 
@@ -2639,8 +2689,12 @@ class DefaultPipeline(PipelineTemplate):
                     )
 
                     inter_poly, _ = projection.ground_intersection_envelopes(
-                        sensor_image_left[sens_cst.INPUT_IMG],
-                        sensor_image_right[sens_cst.INPUT_IMG],
+                        sensor_image_left[sens_cst.INPUT_IMG][
+                            sens_cst.MAIN_FILE
+                        ],
+                        sensor_image_right[sens_cst.INPUT_IMG][
+                            sens_cst.MAIN_FILE
+                        ],
                         sensor_image_left[sens_cst.INPUT_GEO_MODEL],
                         sensor_image_right[sens_cst.INPUT_GEO_MODEL],
                         self.geom_plugin_with_dem_and_geoid,
@@ -2707,6 +2761,7 @@ class DefaultPipeline(PipelineTemplate):
             sensor_inputs=self.used_conf[INPUTS].get("sensors"),
             pairing=self.used_conf[INPUTS].get("pairing"),
             geom_plugin=self.geom_plugin_with_dem_and_geoid,
+            texture_bands=self.texture_bands,
             orchestrator=self.cars_orchestrator,
         )
 
@@ -2930,6 +2985,7 @@ class DefaultPipeline(PipelineTemplate):
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
         self.dump_dir = os.path.join(self.out_dir, "dump_dir")
         self.auxiliary = self.used_conf[OUTPUT][out_cst.AUXILIARY]
+        self.texture_bands = self.used_conf[ADVANCED][adv_cst.TEXTURE_BANDS]
 
         # Save used conf
         cars_dataset.save_dict(

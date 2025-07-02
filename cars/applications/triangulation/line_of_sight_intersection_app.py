@@ -159,7 +159,7 @@ class LineOfSightIntersection(
         :param epipolar_point_cloud: tiled epipolar left image
         :type epipolar_point_cloud: CarsDataset
         :param sensor_image_left: tiled sensor left image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_left: CarsDataset
         :param output_dir: directory to write triangulation output depth
@@ -193,15 +193,9 @@ class LineOfSightIntersection(
             safe_makedirs(dump_dir)
 
         # Propagate color type in output file
-        color_type = None
-        if sens_cst.INPUT_COLOR in sensor_image_left:
-            color_type = inputs.rasterio_get_image_type(
-                sensor_image_left[sens_cst.INPUT_COLOR]
-            )
-        else:
-            color_type = inputs.rasterio_get_image_type(
-                sensor_image_left[sens_cst.INPUT_IMG]
-            )
+        color_type = inputs.rasterio_get_image_type(
+            sensor_image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE]
+        )
 
         if output_dir is None:
             output_dir = dump_dir
@@ -237,8 +231,8 @@ class LineOfSightIntersection(
         if save_output_color or dump_dir:
             color_output_dir = output_dir if save_output_color else dump_dir
             self.orchestrator.add_to_save_lists(
-                os.path.join(color_output_dir, "color.tif"),
-                cst.EPI_COLOR,
+                os.path.join(color_output_dir, "texture.tif"),
+                cst.EPI_TEXTURE,
                 epipolar_point_cloud,
                 cars_ds_name="depth_map_color",
                 dtype=color_type,
@@ -405,7 +399,7 @@ class LineOfSightIntersection(
 
         if save_output_color:
             index[cst.INDEX_DEPTH_MAP_COLOR] = os.path.join(
-                pair_key, "color.tif"
+                pair_key, "texture.tif"
             )
 
         if save_output_mask:
@@ -508,11 +502,11 @@ class LineOfSightIntersection(
         corresponding to 3D point clouds, stored on epipolar geometry grid.
 
         :param sensor_image_left: tiled sensor left image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_left: CarsDataset
         :param sensor_image_right: tiled sensor right image
-            Dict Must contain keys : "image", "color", "geomodel",
+            Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_right: CarsDataset
         :param grid_left: left epipolar grid. Grid dict contains :
@@ -597,7 +591,7 @@ class LineOfSightIntersection(
                 Each tile will be a future xarray Dataset containing:
 
                 - data : with keys : "x", "y", "z", "corr_msk"\
-                    optional: "color", "msk", "z_inf", "z_sup"
+                    optional: "texture", "msk", "z_inf", "z_sup"
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound", \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
@@ -739,7 +733,7 @@ class LineOfSightIntersection(
                 ],
                 "source_pc_names": source_pc_names,
                 "source_pc_name": pair_key,
-                "color_type": epipolar_image.attributes["color_type"],
+                "color_type": epipolar_image.attributes["image_type"],
                 "opt_epipolar_tile_size": epipolar_image.attributes[
                     "tile_width"
                 ],
@@ -965,7 +959,7 @@ def triangulation_wrapper(
     :param disparity_object: Left disparity map dataset with :
             - cst_disp.MAP
             - cst_disp.VALID
-            - cst.EPI_COLOR
+            - cst.EPI_TEXTURE
     :type disparity_object: xr.Dataset
     :param sensor1: path to left sensor image
     :type sensor1: str
@@ -999,7 +993,7 @@ def triangulation_wrapper(
             - cst.X
             - cst.Y
             - cst.Z
-            - cst.EPI_COLOR
+            - cst.EPI_TEXTURE
             - cst.Z_INF (optional)
             - cst.Z_SUP (optional)
     """

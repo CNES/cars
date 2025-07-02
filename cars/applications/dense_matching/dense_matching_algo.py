@@ -100,11 +100,13 @@ def compute_disparity(
     left_dataset,
     right_dataset,
     corr_cfg,
+    used_band=None,
     disp_min_grid=None,
     disp_max_grid=None,
     compute_disparity_masks=False,
     cropped_range=None,
     margins_to_keep=0,
+    texture_bands=None,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will compute disparity.
@@ -115,6 +117,8 @@ def compute_disparity(
     :type right_dataset: xarray.Dataset
     :param corr_cfg: Correlator configuration
     :type corr_cfg: dict
+    :param used_band: name of band used for correlation
+    :type used_band: str
     :param disp_min_grid: Minimum disparity grid
                      (if None, value is taken from left dataset)
     :type disp_min_grid: np ndarray
@@ -189,6 +193,18 @@ def compute_disparity(
     left_dataset["disparity"] = left_disparity
     right_dataset["disparity"] = right_disparity
 
+    if used_band is not None:
+        # Remove band_im dimension from mask
+        left_msk = left_dataset[cst.EPI_MSK]
+        left_msk = left_msk.loc[used_band]
+        left_dataset = left_dataset.drop_vars([cst.EPI_MSK])
+        left_dataset[cst.EPI_MSK] = left_msk
+
+        right_msk = right_dataset[cst.EPI_MSK]
+        right_msk = right_msk.loc[used_band]
+        right_dataset = right_dataset.drop_vars([cst.EPI_MSK])
+        right_dataset[cst.EPI_MSK] = right_msk
+
     # Instantiate pandora state machine
     pandora_machine = PandoraMachine()
 
@@ -196,7 +212,6 @@ def compute_disparity(
     check_datasets(left_dataset, right_dataset)
 
     # Run the Pandora pipeline
-
     ref, _ = pandora.run(
         pandora_machine,
         left_dataset,
@@ -213,6 +228,7 @@ def compute_disparity(
         disp_max_grid=disp_max_grid,
         cropped_range=cropped_range,
         margins_to_keep=margins_to_keep,
+        texture_bands=texture_bands,
     )
 
     return disp_dataset

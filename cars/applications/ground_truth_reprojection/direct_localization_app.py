@@ -136,11 +136,11 @@ class DirectLocalization(
         Run direct localization for ground truth disparity
 
         :param sensor_left: Tiled sensor left image.
-            Dict must contain keys: "image", "color", "geomodel",
+            Dict must contain keys: "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolute.
         :type sensor_left: CarsDataset
         :param sensor_right: Tiled sensor right image.
-            Dict must contain keys: "image", "color", "geomodel",
+            Dict must contain keys: "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolute.
         :type sensor_right: CarsDataset
         :param grid_left: Grid left.
@@ -182,12 +182,14 @@ class DirectLocalization(
             safe_makedirs(pair_folder)
 
         # Get profile
-        with rio.open(sensor_left[sens_cst.INPUT_IMG]) as src_left:
+        with rio.open(sensor_left[sens_cst.INPUT_IMG]["main_file"]) as src_left:
             width_left = src_left.width
             height_left = src_left.height
             transform_left = src_left.transform
 
-        with rio.open(sensor_right[sens_cst.INPUT_IMG]) as src_right:
+        with rio.open(
+            sensor_right[sens_cst.INPUT_IMG]["main_file"]
+        ) as src_right:
             width_right = src_right.width
             height_right = src_right.height
             transform_right = src_right.transform
@@ -512,7 +514,7 @@ def maps_generation_wrapper(
     Computes ground truth epipolar disparity map and sensor geometry.
 
     :param sensor_left: sensor data
-        Dict must contain keys: "image", "color", "geomodel",
+        Dict must contain keys: "image", "texture", "geomodel",
         "no_data", "mask". Paths must be absolute.
     :type sensor_left: dict
     :param grid_left: Grid left.

@@ -211,7 +211,7 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
                     pair_folder,
                     "epi_disp_color_" + app_name + "_filled.tif",
                 ),
-                cst.EPI_COLOR,
+                cst.EPI_TEXTURE,
                 new_epipolar_disparity_map,
                 cars_ds_name="epi_disp_color_" + app_name + "_filled",
             )

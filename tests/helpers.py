@@ -354,14 +354,14 @@ def add_color(dataset, color_array, margin=None):
             ] = color_array
         # multiple bands
         if cst.BAND_IM not in new_dataset.dims:
-            if cst.EPI_COLOR in new_dataset:
+            if cst.EPI_TEXTURE in new_dataset:
                 band_im = get_color_bands(new_dataset)
             else:
                 default_band = ["R", "G", "B", "N"]
                 band_im = default_band[:nb_band]
             new_dataset.coords[cst.BAND_IM] = band_im
 
-        new_dataset[cst.EPI_COLOR] = xr.DataArray(
+        new_dataset[cst.EPI_TEXTURE] = xr.DataArray(
             new_color_array,
             dims=[cst.BAND_IM, cst.ROW, cst.COL],
         )
@@ -373,7 +373,7 @@ def add_color(dataset, color_array, margin=None):
             new_color_array[
                 margin[1] : nb_row - margin[3], margin[0] : nb_col - margin[2]
             ] = color_array
-        new_dataset[cst.EPI_COLOR] = xr.DataArray(
+        new_dataset[cst.EPI_TEXTURE] = xr.DataArray(
             new_color_array,
             dims=[cst.ROW, cst.COL],
         )
@@ -381,7 +381,7 @@ def add_color(dataset, color_array, margin=None):
     return new_dataset
 
 
-def create_corr_conf(user_cfg, left_input, right_input):
+def create_corr_conf(user_cfg, left_input, right_input, used_band="b0"):
     """
     Create correlator configuration for stereo testing
     TODO: put in CARS source code ? (external?)
@@ -397,10 +397,11 @@ def create_corr_conf(user_cfg, left_input, right_input):
 
     left_input = left_input.copy()
     right_input = right_input.copy()
-    left_input.coords[cst.BAND_IM] = [None]
-    right_input.coords[cst.BAND_IM] = [None]
     left_input.attrs["disparity_source"] = None
     right_input.attrs["disparity_source"] = None
+
+    if used_band:
+        user_cfg_pipeline["pipeline"]["matching_cost"]["band"] = used_band
 
     cfg_pipeline = check_pipeline_section(
         user_cfg_pipeline, left_input, right_input, pandora_machine

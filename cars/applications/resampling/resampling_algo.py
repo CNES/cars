@@ -41,8 +41,8 @@ from cars.core.geometry import abstract_geometry
 
 
 def epipolar_rectify_images(
-    img1,
-    img2,
+    left_imgs,
+    right_imgs,
     grid1,
     grid2,
     region,
@@ -50,22 +50,19 @@ def epipolar_rectify_images(
     epipolar_size_x,
     epipolar_size_y,
     interpolator_image="bicubic",
-    interpolator_color="bicubic",
     interpolator_classif="nearest",
     interpolator_mask="nearest",
     step=None,
-    color1=None,
     mask1=None,
     mask2=None,
-    classif1=None,
-    classif2=None,
+    left_classifs=None,
+    right_classifs=None,
     nodata1=0,
     nodata2=0,
-    add_color=True,
     add_classif=True,
 ):
     """
-    Resample left and right images, with color on left
+    Resample left and right images
     """
 
     # Force region to be float
@@ -108,16 +105,18 @@ def epipolar_rectify_images(
     right_margins[2] = right_region[2] - right_roi[2]
     right_margins[3] = right_region[3] - right_roi[3]
 
-    # Resample left image
-    left_img_transform = inputs.rasterio_get_transform(img1)
+    # Resample left images
+    left_img_transform = inputs.rasterio_get_transform(next(iter(left_imgs)))
+
     left_dataset = resample_image(
-        img1,
+        left_imgs,
         grid1,
         [epipolar_size_x, epipolar_size_y],
         step=step,
         region=left_region,
         nodata=nodata1,
         mask=mask1,
+        band_coords=cst.BAND_IM,
         interpolator_img=interpolator_image,
         interpolator_mask=interpolator_mask,
         img_transform=left_img_transform,
@@ -135,15 +134,16 @@ def epipolar_rectify_images(
         left_dataset.attrs[cst.EPI_DISP_MAX] = margins.attrs["disp_max"]
 
     # Resample right image
-    right_img_transform = inputs.rasterio_get_transform(img2)
+    right_img_transform = inputs.rasterio_get_transform(next(iter(right_imgs)))
     right_dataset = resample_image(
-        img2,
+        right_imgs,
         grid2,
         [epipolar_size_x, epipolar_size_y],
         step=step,
         region=right_region,
         nodata=nodata2,
         mask=mask2,
+        band_coords=cst.BAND_IM,
         interpolator_img=interpolator_image,
         interpolator_mask=interpolator_mask,
         img_transform=right_img_transform,
@@ -160,40 +160,13 @@ def epipolar_rectify_images(
     if "disp_max" in margins.attrs:
         right_dataset.attrs[cst.EPI_DISP_MAX] = margins.attrs["disp_max"]
 
-    left_color_dataset = None
-    if add_color:
-        # Build rectification pipeline for color image, and build datasets
-        if color1 is None:
-            color1 = img1
-
-        if inputs.rasterio_get_size(color1) == inputs.rasterio_get_size(img1):
-            left_color_dataset = resample_image(
-                color1,
-                grid1,
-                [epipolar_size_x, epipolar_size_y],
-                region=left_region,
-                band_coords=cst.BAND_IM,
-                interpolator_img=interpolator_color,
-                interpolator_mask=interpolator_mask,
-                img_transform=left_img_transform,
-            )
-        else:
-            raise RuntimeError(
-                "The image and the color "
-                "haven't the same sizes "
-                "{} != {}".format(
-                    inputs.rasterio_get_size(color1),
-                    inputs.rasterio_get_size(img1),
-                )
-            )
-
-    # resample the mask images
+    # Resample classifications
     left_classif_dataset = None
     right_classif_dataset = None
     if add_classif:
-        if classif1:
+        if left_classifs:
             left_classif_dataset = resample_image(
-                classif1,
+                left_classifs,
                 grid1,
                 [epipolar_size_x, epipolar_size_y],
                 region=left_region,
@@ -202,10 +175,9 @@ def epipolar_rectify_images(
                 interpolator_mask=interpolator_mask,
                 img_transform=left_img_transform,
             )
-
-        if classif2:
+        if right_classifs:
             right_classif_dataset = resample_image(
-                classif2,
+                right_classifs,
                 grid2,
                 [epipolar_size_x, epipolar_size_y],
                 region=right_region,
@@ -218,14 +190,13 @@ def epipolar_rectify_images(
     return (
         left_dataset,
         right_dataset,
-        left_color_dataset,
         left_classif_dataset,
         right_classif_dataset,
     )
 
 
 def resample_image(
-    img,
+    imgs,
     grid,
     largest_size,
     step=None,
@@ -261,6 +232,7 @@ def resample_image(
     :type interpolator: str ("nearest" "linear" "bco")
     :rtype: xarray.Dataset with resampled image and mask
     """
+    img_sample = next(iter(imgs))
     # Handle region is None
     if region is None:
         region = [0, 0, largest_size[0], largest_size[1]]
@@ -273,7 +245,7 @@ def resample_image(
         ]
 
     if img_transform is None:
-        img_transform = inputs.rasterio_get_transform(img)
+        img_transform = inputs.rasterio_get_transform(img_sample)
 
     # Convert largest_size to int if needed
     largest_size = [int(x) for x in largest_size]
@@ -288,192 +260,226 @@ def resample_image(
     )
     ymin = region[1]
     ymax = region[3]
-    # Initialize outputs of the entire tile
-    nb_bands = inputs.rasterio_get_nb_bands(img)
-    resamp = np.empty((nb_bands, region[3] - region[1], 0), dtype=np.float32)
-    if nodata is not None or mask is not None:
-        msk = np.empty((1, region[3] - region[1], 0), dtype=np.float32)
-    else:
-        msk = None
-
-    with rio.open(grid["path"]) as grid_reader, rio.open(img) as img_reader:
-        for xmin, xmax in zip(xmin_of_blocks, xmax_of_blocks):  # noqa: B905
-            block_region = [xmin, ymin, xmax, ymax]
-            # Build rectification pipelines for images
-            res_x, res_y = grid_reader.res
-            assert res_x == res_y
-            oversampling = int(res_x)
-            assert res_x == oversampling
-
-            grid_origin_x = grid_reader.transform[2]
-            grid_origin_y = grid_reader.transform[5]
-            assert grid_origin_x == grid_origin_y
-            grid_margin = -grid_origin_x / oversampling - 0.5
-            assert grid_margin == int(grid_margin)
-            grid_margin = int(grid_margin)
-
-            # Convert resampled region to grid region with oversampling
-            grid_region = np.array(
-                [
-                    math.floor(xmin / oversampling),
-                    math.floor(ymin / oversampling),
-                    math.ceil(xmax / oversampling),
-                    math.ceil(ymax / oversampling),
-                ]
+    resampled_images_list = []
+    resampled_masks_list = []
+    band_names = []
+    data_types = []
+    nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
+    for img in imgs:
+        bands = imgs[img]
+        nb_bands = len(bands["band_id"])
+        # Initialize outputs of the entire tile
+        resamp = np.empty(
+            (nb_bands, region[3] - region[1], 0), dtype=np.float32
+        )
+        nodata = 0
+        if nodata is not None or mask is not None:
+            msk = np.empty(
+                (nb_bands, region[3] - region[1], 0), dtype=np.float32
             )
-            # Out region of epipolar image
-            out_region = oversampling * grid_region
-            # Grid region
-            grid_region += grid_margin
+        else:
+            msk = None
 
-            grid_window = Window.from_slices(
-                (grid_region[1], grid_region[3] + 1),
-                (grid_region[0], grid_region[2] + 1),
-            )
-            grid_as_array = grid_reader.read(window=grid_window)
-            grid_as_array = grid_as_array.astype(np.float32)
-            grid_as_array = grid_as_array.astype(np.float64)
+        with rio.open(grid["path"]) as grid_reader, rio.open(img) as img_reader:
+            for xmin, xmax in zip(xmin_of_blocks, xmax_of_blocks):  # noqa: B905
+                block_region = [xmin, ymin, xmax, ymax]
+                # Build rectification pipelines for images
+                res_x, res_y = grid_reader.res
+                assert res_x == res_y
+                oversampling = int(res_x)
+                assert res_x == oversampling
 
-            # get needed source bounding box
-            left = math.floor(np.amin(grid_as_array[0, ...]))
-            right = math.ceil(np.amax(grid_as_array[0, ...]))
-            top = math.floor(np.amin(grid_as_array[1, ...]))
-            bottom = math.ceil(np.amax(grid_as_array[1, ...]))
+                grid_origin_x = grid_reader.transform[2]
+                grid_origin_y = grid_reader.transform[5]
+                assert grid_origin_x == grid_origin_y
+                grid_margin = -grid_origin_x / oversampling - 0.5
+                assert grid_margin == int(grid_margin)
+                grid_margin = int(grid_margin)
 
-            transform = rio.Affine(*np.abs(img_transform))
-            # transform xmin and xmax positions to index
-            (top, bottom, left, right) = (
-                abstract_geometry.min_max_to_index_min_max(
-                    left, right, top, bottom, transform
+                # Convert resampled region to grid region with oversampling
+                grid_region = np.array(
+                    [
+                        math.floor(xmin / oversampling),
+                        math.floor(ymin / oversampling),
+                        math.ceil(xmax / oversampling),
+                        math.ceil(ymax / oversampling),
+                    ]
                 )
-            )
+                # Out region of epipolar image
+                out_region = oversampling * grid_region
+                # Grid region
+                grid_region += grid_margin
 
-            # filter margin for bicubic = 2
-            filter_margin = 2
-            top -= filter_margin
-            bottom += filter_margin
-            left -= filter_margin
-            right += filter_margin
+                grid_window = Window.from_slices(
+                    (grid_region[1], grid_region[3] + 1),
+                    (grid_region[0], grid_region[2] + 1),
+                )
+                grid_as_array = grid_reader.read(window=grid_window)
+                grid_as_array = grid_as_array.astype(np.float32)
+                grid_as_array = grid_as_array.astype(np.float64)
 
-            left, right = list(np.clip([left, right], 0, img_reader.shape[0]))
-            top, bottom = list(np.clip([top, bottom], 0, img_reader.shape[1]))
+                # get needed source bounding box
+                left = math.floor(np.amin(grid_as_array[0, ...]))
+                right = math.ceil(np.amax(grid_as_array[0, ...]))
+                top = math.floor(np.amin(grid_as_array[1, ...]))
+                bottom = math.ceil(np.amax(grid_as_array[1, ...]))
 
-            img_window = Window.from_slices([left, right], [top, bottom])
-
-            in_sensor = True
-            if right - left == 0 or bottom - top == 0:
-                in_sensor = False
-
-            # round window
-            img_window = img_window.round_offsets()
-            img_window = img_window.round_lengths()
-
-            # Compute offset
-            res_x = float(abs(transform[0]))
-            res_y = float(abs(transform[4]))
-            tile_bounds = list(bounds(img_window, transform))
-
-            x_offset = min(tile_bounds[0], tile_bounds[2])
-            y_offset = min(tile_bounds[1], tile_bounds[3])
-
-            if in_sensor:
-                # Get sensor data
-                img_as_array = img_reader.read(window=img_window)
-
-                # shift grid regarding the img extraction
-                grid_as_array[0, ...] -= x_offset
-                grid_as_array[1, ...] -= y_offset
-
-                # apply input resolution
-                grid_as_array[0, ...] /= res_x
-                grid_as_array[1, ...] /= res_y
-
-                block_resamp = cresample.grid(
-                    img_as_array,
-                    grid_as_array,
-                    oversampling,
-                    interpolator=interpolator_img,
-                    nodata=0,
-                ).astype(np.float32)
-
-                if (
-                    interpolator_img == "bicubic"
-                    and band_coords == cst.BAND_CLASSIF
-                ):
-                    block_resamp = np.where(
-                        block_resamp >= 0.5,
-                        1,
-                        np.where(block_resamp < 0.5, 0, block_resamp),
-                    ).astype(int)
-
-                # extract exact region
-                ext_region = block_region - out_region
-                block_resamp = block_resamp[
-                    ...,
-                    ext_region[1] : ext_region[3] - 1,
-                    ext_region[0] : ext_region[2] - 1,
-                ]
-            else:
-                block_resamp = np.zeros(
-                    (
-                        img_reader.count,
-                        block_region[3] - block_region[1],
-                        block_region[2] - block_region[0],
+                transform = rio.Affine(*np.abs(img_transform))
+                # transform xmin and xmax positions to index
+                (top, bottom, left, right) = (
+                    abstract_geometry.min_max_to_index_min_max(
+                        left, right, top, bottom, transform
                     )
                 )
 
-            resamp = np.concatenate((resamp, block_resamp), axis=2)
+                # filter margin for bicubic = 2
+                filter_margin = 2
+                top -= filter_margin
+                bottom += filter_margin
+                left -= filter_margin
+                right += filter_margin
 
-            # create msk
-            if nodata is not None or mask is not None:
+                left, right = list(
+                    np.clip([left, right], 0, img_reader.shape[0])
+                )
+                top, bottom = list(
+                    np.clip([top, bottom], 0, img_reader.shape[1])
+                )
+
+                img_window = Window.from_slices([left, right], [top, bottom])
+
+                in_sensor = True
+                if right - left == 0 or bottom - top == 0:
+                    in_sensor = False
+
+                # round window
+                img_window = img_window.round_offsets()
+                img_window = img_window.round_lengths()
+
+                # Compute offset
+                res_x = float(abs(transform[0]))
+                res_y = float(abs(transform[4]))
+                tile_bounds = list(bounds(img_window, transform))
+
+                x_offset = min(tile_bounds[0], tile_bounds[2])
+                y_offset = min(tile_bounds[1], tile_bounds[3])
+
                 if in_sensor:
-                    # get mask in source geometry
-                    nodata_index = img_as_array == nodata
+                    # Get sensor data
+                    img_as_array = img_reader.read(
+                        bands["band_id"], window=img_window
+                    )
 
-                    if mask is not None:
-                        with rio.open(mask) as msk_reader:
-                            msk_as_array = msk_reader.read(window=img_window)
-                    else:
-                        msk_as_array = np.zeros(img_as_array.shape)
+                    # shift grid regarding the img extraction
+                    grid_as_array[0, ...] -= x_offset
+                    grid_as_array[1, ...] -= y_offset
 
-                    nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
-                    msk_as_array[nodata_index] = nodata_msk
+                    # apply input resolution
+                    grid_as_array[0, ...] /= res_x
+                    grid_as_array[1, ...] /= res_y
 
-                    # resample mask
-                    block_msk = cresample.grid(
-                        msk_as_array,
+                    block_resamp = cresample.grid(
+                        img_as_array,
                         grid_as_array,
                         oversampling,
-                        interpolator=interpolator_mask,
-                        nodata=nodata_msk,
-                    )
+                        interpolator=interpolator_img,
+                        nodata=0,
+                    ).astype(np.float32)
 
-                    if interpolator_mask == "bicubic":
-                        block_msk = np.where(
-                            block_msk >= 0.5,
+                    if (
+                        interpolator_img == "bicubic"
+                        and band_coords == cst.BAND_CLASSIF
+                    ):
+                        block_resamp = np.where(
+                            block_resamp >= 0.5,
                             1,
-                            np.where(block_msk < 0.5, 0, block_msk),
+                            np.where(block_resamp < 0.5, 0, block_resamp),
                         ).astype(int)
 
-                    block_msk = block_msk[
+                    # extract exact region
+                    ext_region = block_region - out_region
+                    block_resamp = block_resamp[
                         ...,
                         ext_region[1] : ext_region[3] - 1,
                         ext_region[0] : ext_region[2] - 1,
                     ]
                 else:
-                    nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
-                    block_msk = np.full(
+                    block_resamp = np.zeros(
                         (
-                            1,
+                            nb_bands,
                             block_region[3] - block_region[1],
                             block_region[2] - block_region[0],
-                        ),
-                        fill_value=nodata_msk,
+                        )
                     )
+                resamp = np.concatenate((resamp, block_resamp), axis=2)
 
-                msk = np.concatenate((msk, block_msk), axis=2)
+                # create msk
+                if nodata is not None or mask is not None:
+                    if in_sensor:
+                        # get mask in source geometry
+                        nodata_index = img_as_array == nodata
+
+                        if mask is not None:
+                            with rio.open(mask) as msk_reader:
+                                msk_as_array = msk_reader.read(
+                                    1, window=img_window
+                                )
+                            msk_as_array = np.array(
+                                [msk_as_array] * img_as_array.shape[0]
+                            )
+                        else:
+                            msk_as_array = np.zeros(img_as_array.shape)
+
+                        msk_as_array[nodata_index] = nodata_msk
+
+                        # resample mask
+                        block_msk = cresample.grid(
+                            msk_as_array,
+                            grid_as_array,
+                            oversampling,
+                            interpolator=interpolator_mask,
+                            nodata=nodata_msk,
+                        )
+
+                        if interpolator_mask == "bicubic":
+                            block_msk = np.where(
+                                block_msk >= 0.5,
+                                1,
+                                np.where(block_msk < 0.5, 0, block_msk),
+                            ).astype(int)
+
+                        block_msk = block_msk[
+                            ...,
+                            ext_region[1] : ext_region[3] - 1,
+                            ext_region[0] : ext_region[2] - 1,
+                        ]
+                    else:
+                        block_msk = np.full(
+                            (
+                                nb_bands,
+                                block_region[3] - block_region[1],
+                                block_region[2] - block_region[0],
+                            ),
+                            fill_value=nodata_msk,
+                        )
+
+                    msk = np.concatenate((msk, block_msk), axis=2)
+        band_names += bands["band_name"]
+        data_types += [inputs.rasterio_get_image_type(img)] * nb_bands
+        resampled_images_list.append(resamp)
+        resampled_masks_list.append(msk)
+
+    resamp_final = np.concatenate(resampled_images_list, axis=0)
+    msk_final = np.concatenate(resampled_masks_list, axis=0)
     dataset = datasets.create_im_dataset(
-        resamp, region, largest_size, img, band_coords, msk
+        resamp_final,
+        region,
+        largest_size,
+        img_sample,
+        band_coords,
+        band_names,
+        data_types,
+        msk_final,
     )
 
     return dataset

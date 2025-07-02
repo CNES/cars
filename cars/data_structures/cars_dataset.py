@@ -1117,7 +1117,7 @@ def save_dataset(
             overlap[2] : nb_cols - overlap[3],
         ]
 
-    if tag == cst.EPI_COLOR and "int" in descriptor.dtypes[0]:
+    if tag == cst.EPI_TEXTURE and "int" in descriptor.dtypes[0]:
         # Prepare color data for cast
         data = np.nan_to_num(data, nan=descriptor.nodata)
         data = np.round(data)
@@ -1135,7 +1135,7 @@ def save_dataset(
     bands_description = None
     if tag in (cst.EPI_CLASSIFICATION, cst.RASTER_CLASSIF, cst.DSM_CLASSIF):
         bands_description = dataset.coords[cst.BAND_CLASSIF].values
-    if tag in (cst.EPI_COLOR, cst.POINT_CLOUD_CLR_KEY_ROOT, cst.DSM_COLOR):
+    if tag in (cst.EPI_TEXTURE, cst.POINT_CLOUD_CLR_KEY_ROOT, cst.DSM_COLOR):
         bands_description = dataset.coords[cst.BAND_IM].values
     if tag in (cst.RASTER_SOURCE_PC, cst.DSM_SOURCE_PC):
         bands_description = dataset.coords[cst.BAND_SOURCE_PC].values

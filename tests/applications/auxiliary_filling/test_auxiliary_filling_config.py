@@ -42,6 +42,6 @@ def test_check_full_conf():
         "mode": "full",
         "activated": True,
         "use_mask": True,
-        "color_interpolator": "linear",
+        "texture_interpolator": "linear",
     }
     _ = auxiliary_app.AuxiliaryFillingFromSensors(conf)

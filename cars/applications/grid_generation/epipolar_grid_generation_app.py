@@ -136,10 +136,12 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         The returned dicts contain all the attributes of the grid & their path
 
         :param image_left: left image. Dict Must contain keys : \
-         "image", "color", "geomodel","no_data", "mask". Paths must be absolutes
+         "image", "texture", "geomodel","no_data", "mask". Paths must be
+         absolutes
         :type image_left: dict
         :param image_right: right image. Dict Must contain keys :\
-         "image", "color", "geomodel","no_data", "mask". Paths must be absolutes
+         "image", "texture", "geomodel","no_data", "mask". Paths must be
+         absolutes
         :type image_right: dict
         :param geometry_plugin: geometry plugin to use
         :type geometry_plugin: AbstractGeometry
@@ -169,8 +171,8 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         else:
             self.orchestrator = orchestrator
 
-        sensor1 = image_left[sens_cst.INPUT_IMG]
-        sensor2 = image_right[sens_cst.INPUT_IMG]
+        sensor1 = image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE]
+        sensor2 = image_right[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE]
         geomodel1 = image_left[sens_cst.INPUT_GEO_MODEL]
         geomodel2 = image_right[sens_cst.INPUT_GEO_MODEL]
 

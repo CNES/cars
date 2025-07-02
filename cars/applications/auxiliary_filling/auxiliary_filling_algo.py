@@ -37,7 +37,8 @@ def fill_auxiliary(
     geom_plugin,
     number_of_color_bands,
     number_of_classification_bands,
-    color_interpolator,
+    texture_bands,
+    texture_interpolator,
     use_mask=False,
 ):
     """
@@ -60,9 +61,11 @@ def fill_auxiliary(
     :type number_of_color_bands: int
     :param number_of_classification_bands: number of bands in the color image
     :type number_of_classification_bands: int
-    :param color_interpolator: scipy interpolator use to interpolate color
+    :param texture_bands: list of band names used for output texture
+    :type texture_bands: list
+    :param texture_interpolator: scipy interpolator use to interpolate color
         values
-    :type color_interpolator: str
+    :type texture_interpolator: str
     :param use_mask: use mask information from sensors in color computation
     :type use_mask: bool
 
@@ -104,7 +107,8 @@ def fill_auxiliary(
                 geom_plugin,
                 number_of_color_bands,
                 number_of_classification_bands,
-                color_interpolator,
+                texture_bands,
+                texture_interpolator,
                 not_interpolated_mask=None,
                 use_mask=use_mask,
                 return_all_points=True,
@@ -129,7 +133,8 @@ def fill_auxiliary(
                     geom_plugin,
                     number_of_color_bands,
                     number_of_classification_bands,
-                    color_interpolator,
+                    texture_bands,
+                    texture_interpolator,
                     not_interpolated_mask,
                     use_mask=use_mask,
                     return_all_points=False,
@@ -162,7 +167,8 @@ def fill_from_one_sensor(  # noqa C901
     geom_plugin,
     number_of_color_bands,
     number_of_classification_bands,
-    color_interpolator,
+    texture_bands,
+    texture_interpolator,
     not_interpolated_mask=None,
     use_mask=False,
     return_all_points=False,
@@ -191,9 +197,11 @@ def fill_from_one_sensor(  # noqa C901
     :type number_of_color_bands: int
     :param number_of_classification_bands: number of bands in the color image
     :type number_of_classification_bands: int
-    :param color_interpolator: scipy interpolator use to interpolate color
+    :param texture_bands: list of band names used for output texture
+    :type texture_bands: list
+    :param texture_interpolator: scipy interpolator use to interpolate color
         values
-    :type color_interpolator: str
+    :type texture_interpolator: str
     :param not_interpolated_mask: use mask information in color computation
     :type not_interpolated_mask: numpy.array
     :param use_mask: use mask information in color computation
@@ -204,9 +212,7 @@ def fill_from_one_sensor(  # noqa C901
     """
 
     # Check if the sensor has color or classification
-    reference_sensor_image = sensor.get(
-        "color", sensor.get("classification", None)
-    )
+    reference_sensor_image = sensor["image"]["main_file"]
 
     output_not_interpolated_mask = np.ones(len(altitudes), dtype=bool)
     all_values = np.zeros((number_of_color_bands, len(altitudes)))
@@ -248,12 +254,12 @@ def fill_from_one_sensor(  # noqa C901
     ):
         return output_not_interpolated_mask, all_values
 
-    if color_interpolator in ("linear", "nearest"):
-        color_interpolator_margin = 1
-    elif color_interpolator == "cubic":
-        color_interpolator_margin = 3
+    if texture_interpolator in ("linear", "nearest"):
+        texture_interpolator_margin = 1
+    elif texture_interpolator == "cubic":
+        texture_interpolator_margin = 3
     else:
-        raise RuntimeError(f"Invalid interpolator {color_interpolator}")
+        raise RuntimeError(f"Invalid interpolator {texture_interpolator}")
 
     # Classification interpolator is always nearest
     classif_interpolator = "nearest"
@@ -305,100 +311,112 @@ def fill_from_one_sensor(  # noqa C901
                     validity_mask, not_interpolated_mask
                 )
 
-    if sensor.get("color"):
-        with rio.open(sensor["color"]) as sensor_color_image:
-            # Only fill color if the number of bands matches. For exemple do
-            # not try to fill an output RGB image from a greyscale "color"
-            # image.
-            if sensor_color_image.count == number_of_color_bands:
+    if sensor.get("image"):
+        # Only fill color if all texture bands are present
+        if all(
+            band_name in sensor["image"]["bands"] for band_name in texture_bands
+        ):
+            with rio.open(sensor["image"]["main_file"]) as sensor_color_image:
                 first_row = np.floor(
-                    max(np.min(ind_rows_sensor) - color_interpolator_margin, 0)
+                    max(
+                        np.min(ind_rows_sensor) - texture_interpolator_margin, 0
+                    )
                 )
                 last_row = np.ceil(
                     min(
-                        np.max(ind_rows_sensor) + color_interpolator_margin,
+                        np.max(ind_rows_sensor) + texture_interpolator_margin,
                         sensor_color_image.height,
                     )
                 )
                 first_col = np.floor(
-                    max(np.min(ind_cols_sensor) - color_interpolator_margin, 0)
+                    max(
+                        np.min(ind_cols_sensor) - texture_interpolator_margin, 0
+                    )
                 )
                 last_col = np.ceil(
                     min(
-                        np.max(ind_cols_sensor) + color_interpolator_margin,
+                        np.max(ind_cols_sensor) + texture_interpolator_margin,
                         sensor_color_image.width,
                     )
                 )
 
-                rio_window = rio.windows.Window.from_slices(
-                    (first_row, last_row),
-                    (first_col, last_col),
-                )
+            rio_window = rio.windows.Window.from_slices(
+                (first_row, last_row),
+                (first_col, last_col),
+            )
 
-                sensor_points = (
-                    np.arange(first_row, last_row),
-                    np.arange(first_col, last_col),
+            sensor_points = (
+                np.arange(first_row, last_row),
+                np.arange(first_col, last_col),
+            )
+
+            if validity_mask is not None:
+                interpolated_mask = validity_mask
+            else:
+                interpolated_mask = np.ones(len(altitudes), dtype=bool)
+
+            for output_band, band_name in enumerate(texture_bands):
+                # rio band convention
+                sensor_file = rio.open(
+                    sensor["image"]["bands"][band_name]["path"]
+                )
+                input_band = sensor["image"]["bands"][band_name]["band"]
+                sensor_data = sensor_file.read(
+                    input_band + 1, window=rio_window
                 )
 
                 if validity_mask is not None:
-                    interpolated_mask = validity_mask
-                else:
-                    interpolated_mask = np.ones(len(altitudes), dtype=bool)
-
-                for band in range(sensor_color_image.count):
-                    # rio band convention
-                    sensor_data = sensor_color_image.read(
-                        band + 1, window=rio_window
-                    )
-
-                    if validity_mask is not None:
-                        if return_all_points is True:
-                            all_values[band, :] = interpolate.interpn(
-                                sensor_points,
-                                sensor_data,
-                                (ind_rows_sensor, ind_cols_sensor),
-                                bounds_error=False,
-                                method=color_interpolator,
-                            )
-                            band_values = all_values[band, validity_mask]
-                        # No need to interpolate on every points
-                        else:
-                            band_values = interpolate.interpn(
-                                sensor_points,
-                                sensor_data,
-                                (
-                                    ind_rows_sensor[validity_mask],
-                                    ind_cols_sensor[validity_mask],
-                                ),
-                                bounds_error=False,
-                                method=color_interpolator,
-                            )
-                        nan_values = np.isnan(band_values)
-                        interpolated_mask[validity_mask] = np.logical_or(
-                            interpolated_mask[validity_mask], ~nan_values
-                        )
-                        filled_color[band, interpolated_mask] += band_values
-
-                    else:
-                        band_values = interpolate.interpn(
+                    if return_all_points is True:
+                        all_values[output_band, :] = interpolate.interpn(
                             sensor_points,
                             sensor_data,
                             (ind_rows_sensor, ind_cols_sensor),
                             bounds_error=False,
-                            method=color_interpolator,
+                            method=texture_interpolator,
                         )
-                        interpolated_mask = np.logical_or(
-                            interpolated_mask, ~np.isnan(band_values)
+                        band_values = all_values[output_band, validity_mask]
+                    # No need to interpolate on every points
+                    else:
+                        band_values = interpolate.interpn(
+                            sensor_points,
+                            sensor_data,
+                            (
+                                ind_rows_sensor[validity_mask],
+                                ind_cols_sensor[validity_mask],
+                            ),
+                            bounds_error=False,
+                            method=texture_interpolator,
                         )
-                        filled_color[band, interpolated_mask] += band_values
-                output_not_interpolated_mask = ~interpolated_mask
+                    nan_values = np.isnan(band_values)
+                    interpolated_mask[validity_mask] = np.logical_or(
+                        interpolated_mask[validity_mask], ~nan_values
+                    )
+                    filled_color[output_band, interpolated_mask] += band_values
 
-                weights[interpolated_mask] += 1
+                else:
+                    band_values = interpolate.interpn(
+                        sensor_points,
+                        sensor_data,
+                        (ind_rows_sensor, ind_cols_sensor),
+                        bounds_error=False,
+                        method=texture_interpolator,
+                    )
+                    interpolated_mask = np.logical_or(
+                        interpolated_mask, ~np.isnan(band_values)
+                    )
+                    filled_color[output_band, interpolated_mask] += band_values
+            output_not_interpolated_mask = ~interpolated_mask
+
+            weights[interpolated_mask] += 1
 
     if filled_classif is not None and sensor.get("classification"):
-        with rio.open(sensor["classification"]) as sensor_classif_image:
+        if number_of_classification_bands == len(
+            sensor["classification"]["bands"]
+        ):
+            with rio.open(
+                sensor["classification"]["main_file"]
+            ) as sensor_classif_image:
 
-            if sensor_classif_image.count == number_of_classification_bands:
                 first_row = np.floor(
                     max(
                         np.min(ind_rows_sensor) - classif_interpolator_margin, 0
@@ -422,31 +440,39 @@ def fill_from_one_sensor(  # noqa C901
                     )
                 )
 
-                rio_window = rio.windows.Window.from_slices(
-                    (first_row, last_row),
-                    (first_col, last_col),
+            rio_window = rio.windows.Window.from_slices(
+                (first_row, last_row),
+                (first_col, last_col),
+            )
+
+            sensor_points = (
+                np.arange(first_row, last_row),
+                np.arange(first_col, last_col),
+            )
+
+            for output_band, band_name in enumerate(
+                sensor["classification"]["bands"]
+            ):
+                # rio band convention
+                sensor_file = rio.open(
+                    sensor["classification"]["bands"][band_name]["path"]
+                )
+                input_band = sensor["classification"]["bands"][band_name][
+                    "band"
+                ]
+                sensor_data = sensor_file.read(
+                    input_band + 1, window=rio_window
                 )
 
-                sensor_points = (
-                    np.arange(first_row, last_row),
-                    np.arange(first_col, last_col),
+                filled_classif[output_band, :] = np.logical_or(
+                    filled_classif[output_band, :],
+                    interpolate.interpn(
+                        sensor_points,
+                        sensor_data,
+                        (ind_rows_sensor, ind_cols_sensor),
+                        bounds_error=False,
+                        method=classif_interpolator,
+                    ),
                 )
-
-                for band in range(sensor_classif_image.count):
-                    # rio band convention
-                    sensor_data = sensor_classif_image.read(
-                        band + 1, window=rio_window, out_dtype=np.uint8
-                    )
-
-                    filled_classif[band, :] = np.logical_or(
-                        filled_classif[band, :],
-                        interpolate.interpn(
-                            sensor_points,
-                            sensor_data,
-                            (ind_rows_sensor, ind_cols_sensor),
-                            bounds_error=False,
-                            method=classif_interpolator,
-                        ),
-                    )
 
     return output_not_interpolated_mask, all_values

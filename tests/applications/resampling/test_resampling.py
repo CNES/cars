@@ -23,8 +23,6 @@ Test module for cars/stereo.py
 Important : Uses conftest.py for shared pytest fixtures
 """
 
-import os
-import pickle
 import tempfile
 
 # Third party imports
@@ -61,7 +59,12 @@ def test_resample_image():
     """
     region = [387, 180, 564, 340]
 
-    img = absolute_data_path("input/phr_ventoux/left_image.tif")
+    imgs = {
+        absolute_data_path("input/phr_ventoux/left_image.tif"): {
+            "band_name": ["b0"],
+            "band_id": [1],
+        }
+    }
     nodata = 0
     grid = {
         "path": absolute_data_path("input/stereo_input/left_epipolar_grid.tif")
@@ -70,11 +73,12 @@ def test_resample_image():
     epipolar_size_y = 612
 
     test_dataset = resampling_algo.resample_image(
-        img,
+        imgs,
         grid,
         [epipolar_size_x, epipolar_size_y],
         region=region,
         nodata=nodata,
+        band_coords="band_im",
     )
 
     # Uncomment to update baseline
@@ -93,6 +97,7 @@ def test_resample_image():
     ref_dataset.attrs.pop(cst.EPI_DISP_MAX, None)
     ref_dataset.attrs.pop(cst.ROI_WITH_MARGINS, None)
     ref_dataset.attrs.pop(cst.ROI_WITH_MARGINS, None)
+    ref_dataset.attrs["band_names"] = [ref_dataset.attrs["band_names"]]
 
     assert_same_datasets(test_dataset, ref_dataset)
 
@@ -104,9 +109,9 @@ def test_resample_image_tiles():
     """
     region = [387, 180, 564, 340]
 
-    img = absolute_data_path(
-        "input/phr_ventoux/left_image_modified_transform.tif"
-    )
+    img_path = absolute_data_path("input/phr_ventoux/left_image.tif")
+    imgs = {}
+    imgs[img_path] = {"band_name": ["b0"], "band_id": [1]}
     nodata = 0
     grid = {
         "path": absolute_data_path("input/stereo_input/left_epipolar_grid.tif")
@@ -115,14 +120,14 @@ def test_resample_image_tiles():
     epipolar_size_y = 612
 
     full_dataset = resampling_algo.resample_image(
-        img,
+        imgs,
         grid,
         [epipolar_size_x, epipolar_size_y],
         nodata=nodata,
     )
 
     tiled_dataset = resampling_algo.resample_image(
-        img,
+        imgs,
         grid,
         [epipolar_size_x, epipolar_size_y],
         region=region,
@@ -184,8 +189,9 @@ def test_epipolar_rectify_images_1(
         "epipolar_size_y"
     ]
     img1 = configuration["input"][in_params.IMG1_TAG]
+    left_imgs = {img1: {"band_name": ["b0"], "band_id": [1]}}
     img2 = configuration["input"][in_params.IMG2_TAG]
-    color1 = configuration["input"].get(in_params.COLOR1_TAG, None)
+    right_imgs = {img2: {"band_name": ["b0"], "band_id": [1]}}
     grid1 = {
         "path": configuration["preprocessing"]["output"]["left_epipolar_grid"]
     }
@@ -197,36 +203,35 @@ def test_epipolar_rectify_images_1(
     mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
     mask2 = configuration["input"].get(in_params.MASK2_TAG, None)
     classif1 = configuration["input"].get(in_params.CLASSIFICATION1_TAG, None)
+    left_classifs = None
+    if classif1 is not None:
+        left_classifs = {img1: {"band_name": ["b0"], "band_id": [1]}}
     classif2 = configuration["input"].get(in_params.CLASSIFICATION2_TAG, None)
+    right_classifs = None
+    if classif2 is not None:
+        right_classifs = {img1: {"band_name": ["b0"], "band_id": [1]}}
 
     (
         left,
         right,
-        clr,
         classif1,
         classif2,
     ) = resampling_algo.epipolar_rectify_images(
-        img1,
-        img2,
+        left_imgs,
+        right_imgs,
         grid1,
         grid2,
         region,
         margin,
         epipolar_size_x,
         epipolar_size_y,
-        color1=color1,
         mask1=mask1,
         mask2=mask2,
-        classif1=classif1,
-        classif2=classif2,
+        left_classifs=left_classifs,
+        right_classifs=right_classifs,
         nodata1=nodata1,
         nodata2=nodata2,
-        add_color=True,
     )
-
-    print("\nleft dataset: {}".format(left))
-    print("right dataset: {}".format(right))
-    print("clr dataset: {}".format(clr))
 
     # Uncomment to update baseline
     # left.to_netcdf(absolute_data_path("ref_output_application/resampling"
@@ -237,6 +242,10 @@ def test_epipolar_rectify_images_1(
             "ref_output_application/resampling/data1_ref_left.nc"
         )
     )
+
+    # Brackets are lost in dataset reading
+    left_ref.attrs["band_names"] = [left_ref.attrs["band_names"]]
+    left_ref.attrs["image_type"] = [left_ref.attrs["image_type"]]
     assert_same_datasets(left, left_ref)
 
     # Uncomment to update baseline
@@ -248,20 +257,9 @@ def test_epipolar_rectify_images_1(
             "ref_output_application/resampling/data1_ref_right.nc"
         )
     )
+    right_ref.attrs["band_names"] = [right_ref.attrs["band_names"]]
+    right_ref.attrs["image_type"] = [right_ref.attrs["image_type"]]
     assert_same_datasets(right, right_ref)
-
-    # Uncomment to update baseline
-    # with open(absolute_data_path("ref_output_application/resampling"
-    # "/data1_ref_color"), "wb") as file:
-    #     pickle.dump(clr, file)
-
-    with open(
-        absolute_data_path("ref_output_application/resampling/data1_ref_color"),
-        "rb",
-    ) as file2:
-        # load pickle data
-        clr_ref = pickle.load(file2)
-        assert_same_datasets(clr, clr_ref)
 
 
 @pytest.mark.unit_tests
@@ -308,8 +306,9 @@ def test_epipolar_rectify_images_3(
         "epipolar_size_y"
     ]
     img1 = configuration["input"][in_params.IMG1_TAG]
+    left_imgs = {img1: {"band_name": ["b0"], "band_id": [1]}}
     img2 = configuration["input"][in_params.IMG2_TAG]
-    color1 = configuration["input"].get(in_params.COLOR1_TAG, None)
+    right_imgs = {img2: {"band_name": ["b0"], "band_id": [1]}}
     grid1 = {
         "path": configuration["preprocessing"]["output"]["left_epipolar_grid"]
     }
@@ -321,41 +320,43 @@ def test_epipolar_rectify_images_3(
     mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
     mask2 = configuration["input"].get(in_params.MASK2_TAG, None)
     classif1 = configuration["input"].get(in_params.CLASSIFICATION1_TAG, None)
+    left_classifs = None
+    if classif1 is not None:
+        left_classifs = {img1: {"band_name": ["b0"], "band_id": [1]}}
     classif2 = configuration["input"].get(in_params.CLASSIFICATION2_TAG, None)
+    right_classifs = None
+    if classif2 is not None:
+        right_classifs = {img1: {"band_name": ["b0"], "band_id": [1]}}
     (
         left,
         right,
-        clr,
         class1,
         class2,
     ) = resampling_algo.epipolar_rectify_images(
-        img1,
-        img2,
+        left_imgs,
+        right_imgs,
         grid1,
         grid2,
         region,
         margin,
         epipolar_size_x,
         epipolar_size_y,
-        color1=color1,
         mask1=mask1,
         mask2=mask2,
-        classif1=classif1,
-        classif2=classif2,
+        left_classifs=left_classifs,
+        right_classifs=right_classifs,
         nodata1=nodata1,
         nodata2=nodata2,
-        add_color=True,
     )
-
-    print("\nleft dataset: {}".format(left))
-    print("right dataset: {}".format(right))
-    print("clr dataset: {}".format(clr))
 
     left_ref = xr.open_dataset(
         absolute_data_path(
             "ref_output_application/resampling/data1_ref_left.nc"
         )
     )
+    # Brackets are lost in dataset reading
+    left_ref.attrs["band_names"] = [left_ref.attrs["band_names"]]
+    left_ref.attrs["image_type"] = [left_ref.attrs["image_type"]]
     assert_same_datasets(left, left_ref)
 
     right_ref = xr.open_dataset(
@@ -363,26 +364,9 @@ def test_epipolar_rectify_images_3(
             "ref_output_application/resampling/data1_ref_right.nc"
         )
     )
+    right_ref.attrs["band_names"] = [right_ref.attrs["band_names"]]
+    right_ref.attrs["image_type"] = [right_ref.attrs["image_type"]]
     assert_same_datasets(right, right_ref)
-
-    # Uncomment to update baseline
-    # with open(absolute_data_path(os.path.join(
-    #           "ref_output_application/resampling",
-    #           "data3_ref_color_4bands"
-    #      )), "wb") as file:
-    #     pickle.dump(clr, file)
-
-    with open(
-        absolute_data_path(
-            os.path.join(
-                "ref_output_application/resampling", "data3_ref_color_4bands"
-            )
-        ),
-        "rb",
-    ) as file2:
-        # load pickle data
-        clr_ref = pickle.load(file2)
-        assert_same_datasets(clr, clr_ref)
 
     assert class1 is None
     assert class2 is None

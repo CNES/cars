@@ -171,32 +171,32 @@ def add_disparity_grids(
         )
 
 
-def add_color(
+def add_texture(
     output_dataset: xr.Dataset,
-    color: np.ndarray = None,
+    texture: np.ndarray = None,
     color_type=None,
     band_im: list = None,
+    texture_bands: list = None,
 ):
     """
-    Add color and color mask to dataset
+    Add image and image mask to dataset
 
     :param output_dataset: output dataset
-    :param color: color array
-    :param color_type: data type of pixels
+    :param image: image array
+    :param image_type: data type of pixels
     :param band_im: list of band names
 
     """
-    if color is not None:
-        if band_im is not None and cst.BAND_IM not in output_dataset.dims:
-            output_dataset.coords[cst.BAND_IM] = band_im
-        output_dataset[cst.EPI_COLOR] = xr.DataArray(
-            color,
+    if texture_bands:
+        output_dataset.coords[cst.BAND_IM] = band_im[texture_bands]
+        output_dataset[cst.EPI_TEXTURE] = xr.DataArray(
+            texture[texture_bands],
             dims=[cst.BAND_IM, cst.ROW, cst.COL],
         )
 
         if color_type is not None:
-            # Add input color type
-            output_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
+            # Add input image type
+            output_dataset[cst.EPI_TEXTURE].attrs["color_type"] = color_type
 
 
 def add_classification(
@@ -288,6 +288,7 @@ def create_disp_dataset(  # noqa: C901
     disp_max_grid=None,
     cropped_range=None,
     margins_to_keep=0,
+    texture_bands=None,
 ) -> xr.Dataset:
     """
     Create the disparity dataset.
@@ -343,8 +344,25 @@ def create_disp_dataset(  # noqa: C901
     # Retrieve disparity values
     disp_map = disp.disparity_map.values
 
-    # Retrive left panchromatic image
+    # Transform image to texture
     epi_image = ref_dataset[cst.EPI_IMAGE].values
+    band_im = ref_dataset.coords[cst.BAND_IM]
+    image_type = ref_dataset.attrs.get("image_type", "float32")
+    if isinstance(image_type, list):
+        if texture_bands is not None:
+            image_type = image_type[texture_bands[0]]
+        else:
+            image_type = image_type[0]
+    # Cast image
+    if np.issubdtype(image_type, np.floating):
+        min_value_clr = np.finfo(image_type).min
+        max_value_clr = np.finfo(image_type).max
+    else:
+        min_value_clr = np.iinfo(image_type).min
+        max_value_clr = np.iinfo(image_type).max
+    epi_image = np.clip(epi_image, min_value_clr, max_value_clr).astype(
+        image_type
+    )
 
     # Retrieve original mask of panchromatic image
     epi_msk = None
@@ -358,18 +376,6 @@ def create_disp_dataset(  # noqa: C901
     # Retrieve masks from pandora
     pandora_masks = get_masks_from_pandora(disp, compute_disparity_masks)
     pandora_masks[cst_disp.VALID][np.isnan(disp_map)] = 0
-
-    # Retrieve colors
-    color = None
-    color_type = None
-    band_im = None
-    if cst.EPI_COLOR in ref_dataset:
-        color = ref_dataset[cst.EPI_COLOR].values
-        color_type = ref_dataset[cst.EPI_COLOR].attrs["color_type"]
-        if ref_dataset[cst.EPI_COLOR].values.shape[0] > 1:
-            band_im = ref_dataset.coords[cst.BAND_IM]
-        else:
-            band_im = ["Gray"]
 
     # retrieve classif
     left_classif = None
@@ -439,22 +445,20 @@ def create_disp_dataset(  # noqa: C901
         coords={cst.ROW: row, cst.COL: col},
     )
 
-    # add left panchromatic image
-    disp_ds[cst.EPI_IMAGE] = xr.DataArray(epi_image, dims=[cst.ROW, cst.COL])
+    # add left texture
+    add_texture(
+        disp_ds,
+        texture=epi_image,
+        color_type=image_type,
+        band_im=band_im,
+        texture_bands=texture_bands,
+    )
 
     # add original mask
     if epi_msk is not None:
         disp_ds[cst.EPI_MSK] = xr.DataArray(
             epi_msk.astype("uint8"), dims=[cst.ROW, cst.COL]
         )
-
-    # add color
-    add_color(
-        disp_ds,
-        color=color,
-        color_type=color_type,
-        band_im=band_im,
-    )
 
     # add confidence
     if "confidence_measure" in disp:

@@ -60,6 +60,7 @@ class PandoraLoader:
         perf_eta_step=0.04,
         use_cross_validation=True,
         denoise_disparity_map=False,
+        used_band="b0",
     ):
         """
         Init function of PandoraLoader
@@ -74,7 +75,8 @@ class PandoraLoader:
         :param performance_map_conf: true if generate performance maps
         :param use_cross_validation: true to add crossvalidation
         :param denoise_disparity_map: true to add the disparity denoiser filter
-
+        :param used_band: name of band used for correlation
+        :type used_band: str
         """
 
         if method_name is None:
@@ -225,6 +227,9 @@ class PandoraLoader:
         ):
             conf["pipeline"].update(disparity_denoiser_conf)
 
+        if "band" not in conf["pipeline"]["matching_cost"]:
+            conf["pipeline"]["matching_cost"]["band"] = used_band
+
         if generate_performance_map_from_intervals:
             # To ensure the consistency between the disparity map
             # and the intervals, the median filter for intervals
@@ -258,16 +263,8 @@ class PandoraLoader:
         if "filter" in conf["pipeline"]:
             filter_conf = conf["pipeline"]["filter"]
             if filter_conf["filter_method"] == "disparity_denoiser":
-                if "band" in filter_conf:
-                    band = filter_conf["band"]
-                    if band is not None:
-                        logging.warning(
-                            "As multiband support is not "
-                            "yet implemented in CARS, "
-                            "the filter will be applied to "
-                            "the panchromatic band."
-                        )
-                        conf["pipeline"]["filter"]["band"] = None
+                if "band" not in filter_conf:
+                    conf["pipeline"]["filter"]["band"] = used_band
 
         for key in list(conf.get("pipeline")):
             if key.startswith("filter"):
@@ -308,6 +305,8 @@ class PandoraLoader:
         user_cfg,
         img_left,
         img_right,
+        bands_left,
+        bands_right,
         classif_left=None,
         classif_right=None,
     ):
@@ -330,6 +329,9 @@ class PandoraLoader:
         # check pipeline
         metadata_left = get_metadata(img_left, classif=classif_left)
         metadata_right = get_metadata(img_right, classif=classif_right)
+
+        metadata_left = metadata_left.assign_coords(band_im=bands_left)
+        metadata_right = metadata_right.assign_coords(band_im=bands_right)
 
         user_cfg_pipeline = get_config_pipeline(user_cfg)
         saved_schema = copy.deepcopy(

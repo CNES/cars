@@ -99,8 +99,8 @@ class AuxiliaryFillingFromSensors(
                 "and full"
             )
 
-        overloaded_conf["color_interpolator"] = conf.get(
-            "color_interpolator", "linear"
+        overloaded_conf["texture_interpolator"] = conf.get(
+            "texture_interpolator", "linear"
         )
         overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["use_mask"] = conf.get("use_mask", True)
@@ -115,7 +115,7 @@ class AuxiliaryFillingFromSensors(
             "activated": bool,
             "mode": str,
             "use_mask": bool,
-            "color_interpolator": str,
+            "texture_interpolator": str,
             "save_intermediate_data": bool,
         }
 
@@ -134,6 +134,7 @@ class AuxiliaryFillingFromSensors(
         sensor_inputs,
         pairing,
         geom_plugin,
+        texture_bands,
         orchestrator=None,
     ):
         """
@@ -154,6 +155,8 @@ class AuxiliaryFillingFromSensors(
         :type pairing: list
         :param geom_plugin: geometry plugin used for inverse locations
         :type geom_plugin: AbstractGeometry
+        :param texture_bands: list of band names used for output texture
+        :type texture_bands: list
         :param orchestrator: orchestrator used
         :type orchestrator: Orchestrator
         """
@@ -183,7 +186,7 @@ class AuxiliaryFillingFromSensors(
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
 
-        color_not_filled_file = os.path.join(dump_dir, "color_not_filled.tif")
+        color_not_filled_file = os.path.join(dump_dir, "texture_not_filled.tif")
         if os.path.exists(color_file):
             shutil.move(color_file, color_not_filled_file)
 
@@ -222,22 +225,22 @@ class AuxiliaryFillingFromSensors(
 
         # Initialize no data value
         classification_no_data_value = 0
-        color_no_data_value = 0
+        texture_no_data_value = 0
         color_dtype = np.float32
         classif_dtype = np.uint8
 
         if os.path.exists(color_not_filled_file):
             with rio.open(color_not_filled_file, "r") as descriptor:
-                color_no_data_value = descriptor.nodata
+                texture_no_data_value = descriptor.nodata
                 color_dtype = descriptor.profile.get("dtype", np.float32)
 
         self.orchestrator.add_to_save_lists(
             os.path.join(dump_dir, color_file),
             cst.RASTER_COLOR_IMG,
             aux_filled_image,
-            nodata=color_no_data_value,
+            nodata=texture_no_data_value,
             dtype=color_dtype,
-            cars_ds_name="filled_color",
+            cars_ds_name="filled_texture",
         )
 
         if classif_file is not None:
@@ -296,8 +299,11 @@ class AuxiliaryFillingFromSensors(
                     reference_epsg,
                     full_saving_info,
                     geom_plugin,
+                    texture_bands,
                     mode=self.used_config["mode"],
-                    color_interpolator=self.used_config["color_interpolator"],
+                    texture_interpolator=self.used_config[
+                        "texture_interpolator"
+                    ],
                     use_mask=self.used_config["use_mask"],
                 )
 
@@ -321,12 +327,13 @@ def filling_from_sensor_wrapper(
     epsg,
     saving_info,
     geom_plugin,
+    texture_bands,
     mode,
-    color_interpolator,
+    texture_interpolator,
     use_mask,
 ):
     """
-    fill color and classifcation from sensor information for a terrain tile
+    Fill color and classification from sensor information for a terrain tile
 
     :param dsm_file: path to the filled dsm file
     :type dsm_file: str
@@ -350,11 +357,13 @@ def filling_from_sensor_wrapper(
     :type saving_info: dict
     :param geom_plugin: geometry plugin used for inverse locations
     :type geom_plugin: AbstractGeometry
+    :param texture_bands: list of band names used for output texture
+    :type texture_bands: list
     :param mode: geometry plugin used for inverse locations
     :type mode: str
-    :param color_interpolator: scipy interpolator use to interpolate color
+    :param texture_interpolator: scipy interpolator use to interpolate color
         values
-    :type color_interpolator: str
+    :type texture_interpolator: str
     :param use_mask: use mask information from sensors in color computation
     :type use_mask: bool
 
@@ -435,13 +444,13 @@ def filling_from_sensor_wrapper(
     else:
         profile = dsm_profile
         number_of_color_bands = inputs.rasterio_get_nb_bands(
-            sensor_inputs[list(sensor_inputs.keys())[0]].get("color", None)
+            sensor_inputs[list(sensor_inputs.keys())[0]].get("texture", None)
         )
         color_values = np.full(
             (number_of_color_bands, *target_mask.shape), np.nan
         )
         color_band_names = inputs.get_descriptions_bands(
-            sensor_inputs[list(sensor_inputs.keys())[0]].get("color", None)
+            sensor_inputs[list(sensor_inputs.keys())[0]].get("texture", None)
         )
         # update profile
         profile.update(count=number_of_color_bands)
@@ -500,7 +509,8 @@ def filling_from_sensor_wrapper(
                 geom_plugin,
                 number_of_color_bands,
                 number_of_classification_bands,
-                color_interpolator=color_interpolator,
+                texture_bands,
+                texture_interpolator=texture_interpolator,
                 use_mask=use_mask,
             )
         )

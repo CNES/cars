@@ -196,6 +196,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         compute_disparity_masks=False,
         disp_to_alt_ratio=None,
         margins_to_keep=0,
+        texture_bands=None,
     ):
         """
         Run Matching application.
@@ -209,7 +210,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 - N x M Delayed tiles. \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"\
                         "transform", "crs", "valid_pixels", "no_data_mask",\
                         "no_data_img"
@@ -221,7 +222,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 - N x M Delayed tiles. \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"
                         "transform", "crs", "valid_pixels", "no_data_mask",
                         "no_data_img"
@@ -229,7 +230,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
                     "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
         :param local_tile_optimal_size_fun: function to compute local
-             optimal tile size
+            optimal tile size
         :type local_tile_optimal_size_fun: func
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
@@ -242,6 +243,9 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type disp_to_alt_ratio: float
         :param margins_to_keep: margin to keep after dense matching
         :type margins_to_keep: int
+        :param texture_bands: indices of bands from epipolar_images_left
+            used for output texture
+        :type texture_bands: list
 
         :return: disparity map: \
             The CarsDataset contains:

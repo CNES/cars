@@ -45,7 +45,7 @@ def test_output_full():
             "auxiliary": {
                 "performance_map": False,
                 "mask": False,
-                "color": True,
+                "texture": True,
                 "classification": False,
                 "contributing_pair": False,
             },

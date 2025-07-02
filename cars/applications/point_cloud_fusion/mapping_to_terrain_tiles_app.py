@@ -141,7 +141,7 @@ class MappingToTerrainTiles(
                 Each tile will be a future xarray Dataset containing:
 
                 - data : with keys : "x", "y", "z", "corr_msk" \
-                    optional: "color", "msk",
+                    optional: "texture", "msk",
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound" \
                 "elevation_delta_lower_bound", "elevation_delta_upper_bound"
@@ -315,7 +315,7 @@ class MappingToTerrainTiles(
                     )
                 )
                 color_file = list_epipolar_point_clouds[0].tiles[0][0]["data"][
-                    "color"
+                    "texture"
                 ]
                 if color_file is not None:
                     color_type = inputs.rasterio_get_image_type(color_file)
@@ -531,7 +531,7 @@ def compute_point_cloud_wrapper(
             - cst.X
             - cst.Y
             - cst.Z
-            - cst.EPI_COLOR
+            - cst.EPI_TEXTURE
     :type point_clouds: list((xr.Dataset, int))
     :param  epsg_code: epsg code for the CRS of the output DSM
     :type epsg_code: int
@@ -564,7 +564,7 @@ def compute_point_cloud_wrapper(
             - cst.X
             - cst.Y
             - cst.Z
-            - cst.EPI_COLOR
+            - cst.EPI_TEXTURE
             - attrs : xmin, xmax, ymin, ymax, saving_info
     :rtype: pandas.DataFrame
     """

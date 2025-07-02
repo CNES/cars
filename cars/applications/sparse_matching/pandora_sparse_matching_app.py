@@ -109,6 +109,7 @@ class PandoraSparseMatching(
         self.disparity_bounds_estimation = self.used_config[
             "disparity_bounds_estimation"
         ]
+        self.used_band = self.used_config["used_band"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -192,6 +193,8 @@ class PandoraSparseMatching(
             "match_filter_dev_factor", 3.0
         )
 
+        overloaded_conf["used_band"] = conf.get("used_band", "b0")
+
         # check loader
         loader_conf = conf.get("loader_conf", None)
 
@@ -234,6 +237,7 @@ class PandoraSparseMatching(
             "save_intermediate_data": bool,
             "confidence_filtering": dict,
             "disparity_bounds_estimation": dict,
+            "used_band": str,
         }
 
         # Check conf
@@ -341,6 +345,18 @@ class PandoraSparseMatching(
         checker_disparity_bounds_estimation_schema.validate(
             overloaded_conf["disparity_bounds_estimation"]
         )
+
+    def get_required_bands(self):
+        """
+        Get bands required by this application
+
+        :return: required bands for left and right image
+        :rtype: dict
+        """
+        required_bands = {}
+        required_bands["left"] = [self.used_band]
+        required_bands["right"] = [self.used_band]
+        return required_bands
 
     def get_save_matches(self):
         """
@@ -511,7 +527,7 @@ class PandoraSparseMatching(
                - N x M Delayed tiles. \
                    Each tile will be a future xarray Dataset containing:
 
-                   - data with keys : "im", "msk", "color"
+                   - data with keys : "im", "msk", "texture"
                    - attrs with keys: "margins" with "disp_min" and "disp_max"\
                        "transform", "crs", "valid_pixels", "no_data_mask",\
                        "no_data_img"
@@ -523,7 +539,7 @@ class PandoraSparseMatching(
                - N x M Delayed tiles. \
                    Each tile will be a future xarray Dataset containing:
 
-                   - data with keys : "im", "msk", "color"
+                   - data with keys : "im", "msk", "texture"
                    - attrs with keys: "margins" with "disp_min" and "disp_max"
                        "transform", "crs", "valid_pixels", "no_data_mask",
                        "no_data_img"
@@ -683,6 +699,7 @@ class PandoraSparseMatching(
                             epipolar_image_left[row, col],
                             epipolar_image_right[row, col],
                             self.corr_config,
+                            self.used_band,
                             self.confidence_filtering,
                             dim_max=dim_max,
                             disp_upper_bound=disp_upper_bound,
@@ -705,6 +722,7 @@ def compute_pandora_matches_wrapper(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     corr_conf,
+    used_band,
     confidence_filtering,
     dim_max,
     disp_upper_bound,
@@ -723,12 +741,12 @@ def compute_pandora_matches_wrapper(
 
            - cst.EPI_IMAGE
            - cst.EPI_MSK (if given)
-           - cst.EPI_COLOR (for left, if given)
+           - cst.EPI_TEXTURE (for left, if given)
     :type left_image_object: xr.Dataset with :
 
            - cst.EPI_IMAGE
            - cst.EPI_MSK (if given)
-           - cst.EPI_COLOR (for left, if given)
+           - cst.EPI_TEXTURE (for left, if given)
     :param right_image_object: tiled Right image
     :type right_image_object: xr.Dataset
     :param disp_upper_bound: upper bound of disparity range
@@ -758,6 +776,7 @@ def compute_pandora_matches_wrapper(
                         left_image_object,
                         right_image_object,
                         corr_conf,
+                        used_band,
                         dim_max,
                         confidence_filtering,
                         disp_upper_bound,
@@ -770,6 +789,7 @@ def compute_pandora_matches_wrapper(
                     left_image_object,
                     right_image_object,
                     corr_conf,
+                    used_band,
                     dim_max,
                     confidence_filtering,
                     disp_upper_bound,
@@ -787,6 +807,7 @@ def compute_pandora_matches_wrapper(
                 left_image_object,
                 right_image_object,
                 corr_conf,
+                used_band,
                 dim_max,
                 confidence_filtering,
                 disp_upper_bound,

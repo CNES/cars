@@ -53,7 +53,7 @@ def get_ground_truth(
     :param grid: Grid left.
     :type grid: CarsDataset
     :param sensor: sensor data
-        Dict must contain keys: "image", "color", "geomodel",
+        Dict must contain keys: "image", "texture", "geomodel",
         "no_data", "mask". Paths must be absolute.
     :type sensor: dict
     :param disp_to_alt_ratio: Disp to altitude ratio used for performance map.
@@ -68,7 +68,7 @@ def get_ground_truth(
     :type reverse: bool
     """
 
-    sensor_data_im = sensor[sens_cst.INPUT_IMG]
+    sensor_data_im = sensor[sens_cst.INPUT_IMG]["main_file"]
     geomodel = sensor[sens_cst.INPUT_GEO_MODEL]
 
     rows = np.arange(window[0], window[1])

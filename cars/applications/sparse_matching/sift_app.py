@@ -108,6 +108,7 @@ class Sift(SparseMatching, short_name=["sift"]):
             "match_filter_dev_factor"
         ]
         self.decimation_factor = self.used_config["decimation_factor"]
+        self.used_band = self.used_config["used_band"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -193,6 +194,8 @@ class Sift(SparseMatching, short_name=["sift"]):
             "match_filter_dev_factor", 3.0
         )
 
+        overloaded_conf["used_band"] = conf.get("used_band", "b0")
+
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
@@ -221,6 +224,7 @@ class Sift(SparseMatching, short_name=["sift"]):
             "match_filter_constant": Or(int, float),
             "match_filter_mean_factor": Or(int, float),
             "match_filter_dev_factor": Or(int, float),
+            "used_band": str,
             "save_intermediate_data": bool,
         }
 
@@ -246,6 +250,18 @@ class Sift(SparseMatching, short_name=["sift"]):
                 )
 
         return overloaded_conf
+
+    def get_required_bands(self):
+        """
+        Get bands required by this application
+
+        :return: required bands for left and right image
+        :rtype: dict
+        """
+        required_bands = {}
+        required_bands["left"] = [self.used_band]
+        required_bands["right"] = [self.used_band]
+        return required_bands
 
     def get_save_matches(self):
         """
@@ -385,7 +401,7 @@ class Sift(SparseMatching, short_name=["sift"]):
                 - N x M Delayed tiles \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"
                         "transform", "crs", "valid_pixels", "no_data_mask",
                         "no_data_img"
@@ -397,7 +413,7 @@ class Sift(SparseMatching, short_name=["sift"]):
                 - N x M Delayed tiles \
                     Each tile will be a future xarray Dataset containing:
 
-                    - data with keys : "im", "msk", "color"
+                    - data with keys : "im", "msk", "texture"
                     - attrs with keys: "margins" with "disp_min" and "disp_max"\
                         "transform", "crs", "valid_pixels", "no_data_mask",\
                         "no_data_img"
@@ -558,6 +574,7 @@ class Sift(SparseMatching, short_name=["sift"]):
                     )(
                         epipolar_image_left[row, 0],
                         epipolar_image_right[row, 0],
+                        used_band=self.used_band,
                         matching_threshold=self.sift_matching_threshold,
                         n_octave=self.sift_n_octave,
                         n_scale_per_octave=self.sift_n_scale_per_octave,
@@ -583,6 +600,7 @@ class Sift(SparseMatching, short_name=["sift"]):
 def compute_matches_wrapper(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
+    used_band="b0",
     matching_threshold=None,
     n_octave=None,
     n_scale_per_octave=None,
@@ -605,12 +623,12 @@ def compute_matches_wrapper(
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :type left_image_object: xr.Dataset with :
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
+            - cst.EPI_TEXTURE (for left, if given)
     :param right_image_object: tiled Right image
     :type right_image_object: xr.Dataset
 
@@ -632,6 +650,7 @@ def compute_matches_wrapper(
     matches = sparse_matching_algo.dataset_matching(
         left_image_object,
         right_image_object,
+        used_band,
         matching_threshold=matching_threshold,
         n_octave=n_octave,
         n_scale_per_octave=n_scale_per_octave,

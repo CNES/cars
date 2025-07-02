@@ -473,12 +473,19 @@ def check_json(conf, schema):
     return checked_conf
 
 
-def get_descriptions_bands(raster_file: str) -> Dict:
+def get_descriptions_bands(sensor) -> Dict:
     """
     Get the descriptions bands of an image file
 
     :param raster_file: Image file
+    :type sensor: str or dict
     :return: The descriptions list of the given image
     """
-    with rio.open(raster_file, "r") as descriptor:
-        return descriptor.descriptions
+    if isinstance(sensor, str):
+        with rio.open(sensor, "r") as descriptor:
+            return descriptor.descriptions
+    elif isinstance(sensor, dict):
+        if "bands" in sensor:
+            return list(sensor["bands"].keys())
+        raise RuntimeError("Sensor {} cannot be read".format(sensor))
+    raise TypeError("Sensor {} is not str or dict".format(sensor))

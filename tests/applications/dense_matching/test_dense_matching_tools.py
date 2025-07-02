@@ -124,9 +124,8 @@ def test_compute_disparity_1():
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
-
-    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,
@@ -134,6 +133,7 @@ def test_compute_disparity_1():
         corr_cfg,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
+        texture_bands=[0],
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -173,8 +173,8 @@ def test_compute_disparity_3():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
-    disp_min_grid = -43 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 41 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -43 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 41 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,
@@ -182,6 +182,7 @@ def test_compute_disparity_3():
         corr_cfg,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
+        texture_bands=[0],
     )
 
     # TODO add validity mask input
@@ -214,7 +215,7 @@ def test_compute_disparity_with_all_confidences():
     Test compute_disparity on ventoux dataset with pandora
     """
     left_input = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_left.nc")
+        absolute_data_path("input/intermediate_results/data1_ref_left_copy.nc")
     )
     right_input = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_right.nc")
@@ -224,8 +225,8 @@ def test_compute_disparity_with_all_confidences():
     corr_cfg = corr_conf_with_confidence()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
-    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,
@@ -233,6 +234,7 @@ def test_compute_disparity_with_all_confidences():
         corr_cfg,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
+        texture_bands=[0],
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -274,8 +276,8 @@ def test_compute_disparity_1_msk_ref():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
-    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,
@@ -284,6 +286,7 @@ def test_compute_disparity_1_msk_ref():
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
         compute_disparity_masks=True,
+        texture_bands=[0],
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -326,8 +329,8 @@ def test_compute_disparity_1_msk_sec():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
-    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape[1:])
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape[1:])
 
     output = dense_matching_algo.compute_disparity(
         left_input,
@@ -336,6 +339,7 @@ def test_compute_disparity_1_msk_sec():
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
         compute_disparity_masks=True,
+        texture_bands=[0],
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)

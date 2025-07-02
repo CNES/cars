@@ -84,10 +84,10 @@ def check_output_parameters(conf):
     )
 
     # Load auxiliary and subfields
-    overloaded_conf[output_constants.AUXILIARY][output_constants.AUX_COLOR] = (
-        overloaded_conf[output_constants.AUXILIARY].get(
-            output_constants.AUX_COLOR, True
-        )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_TEXTURE
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_TEXTURE, True
     )
     overloaded_conf[output_constants.AUXILIARY][
         output_constants.AUX_WEIGHTS
@@ -140,7 +140,7 @@ def check_output_parameters(conf):
 
     # check auxiliary keys
     auxiliary_schema = {
-        output_constants.AUX_COLOR: bool,
+        output_constants.AUX_TEXTURE: bool,
         output_constants.AUX_WEIGHTS: bool,
         output_constants.AUX_MASK: bool,
         output_constants.AUX_CLASSIFICATION: bool,

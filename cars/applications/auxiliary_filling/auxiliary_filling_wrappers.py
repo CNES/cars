@@ -48,9 +48,7 @@ def compute_sensor_bounds(sensor_inputs, geom_plugin, output_epsg):
     sensor_bounds = {}
 
     for sensor_name, sensor in sensor_inputs.items():
-        reference_sensor_image = sensor.get(
-            "color", sensor.get("classification", None)
-        )
+        reference_sensor_image = sensor["image"]["main_file"]
         # no data for this sensor, no need to compute its bounds
         if reference_sensor_image is None:
             continue

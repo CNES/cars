@@ -92,8 +92,8 @@ class SimpleGaussian(
         ]
         # get nodata values
         self.dsm_no_data = self.used_config["dsm_no_data"]
-        self.color_no_data = self.used_config["color_no_data"]
-        self.color_dtype = self.used_config["color_dtype"]
+        self.texture_no_data = self.used_config["texture_no_data"]
+        self.color_dtype = self.used_config["texture_dtype"]
         self.msk_no_data = self.used_config["msk_no_data"]
 
         # Init orchestrator
@@ -130,8 +130,8 @@ class SimpleGaussian(
 
         # get nodata values
         overloaded_conf["dsm_no_data"] = conf.get("dsm_no_data", -32768)
-        overloaded_conf["color_no_data"] = conf.get("color_no_data", 0)
-        overloaded_conf["color_dtype"] = conf.get("color_dtype", None)
+        overloaded_conf["texture_no_data"] = conf.get("texture_no_data", 0)
+        overloaded_conf["texture_dtype"] = conf.get("texture_dtype", None)
         overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 255)
 
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -145,8 +145,8 @@ class SimpleGaussian(
             "grid_points_division_factor": Or(None, int),
             "dsm_no_data": int,
             "msk_no_data": int,
-            "color_no_data": int,
-            "color_dtype": Or(None, str),
+            "texture_no_data": int,
+            "texture_dtype": Or(None, str),
             "save_intermediate_data": bool,
         }
 
@@ -237,7 +237,7 @@ class SimpleGaussian(
                 Each tile will be a future pandas DataFrame containing:
 
                 - data with keys  "x", "y", "z", "corr_msk" \
-                    optional: "color", "mask", "data_valid", "z_inf", "z_sup"\
+                    optional: "texture", "mask", "data_valid", "z_inf", "z_sup"\
                       "coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"
                 - attrs with keys "epsg", "ysize", "xsize", "xstart", "ystart"
 
@@ -250,7 +250,7 @@ class SimpleGaussian(
                 clouds:
                 list of CarsDataset of type array, with:
                 - data with keys x", "y", "z", "corr_msk", "z_inf", "z_sup"\
-                    optional: "color", "mask", "data_valid",\
+                    optional: "texture", "mask", "data_valid",\
                       "coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"
 
         :type point_clouds: CarsDataset filled with pandas.DataFrame
@@ -470,9 +470,9 @@ class SimpleGaussian(
             )
         elif save_intermediate_data:
             # File is not part of the official product, write it in dump_dir
-            out_clr_file_name = os.path.join(out_dump_dir, "color.tif")
+            out_clr_file_name = os.path.join(out_dump_dir, "texture.tif")
         if out_clr_file_name is not None:
-            list_computed_layers += ["color"]
+            list_computed_layers += ["texture"]
             if not self.color_dtype:
                 self.color_dtype = color_dtype
             self.orchestrator.add_to_save_lists(
@@ -480,8 +480,8 @@ class SimpleGaussian(
                 cst.RASTER_COLOR_IMG,
                 terrain_raster,
                 dtype=self.color_dtype,
-                nodata=self.color_no_data,
-                cars_ds_name="color",
+                nodata=self.texture_no_data,
+                cars_ds_name="texture",
             )
 
         out_classif_file_name = classif_file_name
@@ -839,7 +839,7 @@ class SimpleGaussian(
                 raster_cst.RASTERIZATION_RUN_TAG: {
                     raster_cst.EPSG_TAG: epsg,
                     raster_cst.DSM_NO_DATA_TAG: float(self.dsm_no_data),
-                    raster_cst.COLOR_NO_DATA_TAG: float(self.color_no_data),
+                    raster_cst.TEXTURE_NO_DATA_TAG: float(self.texture_no_data),
                 },
             }
         }
@@ -897,7 +897,7 @@ class SimpleGaussian(
                             radius=self.dsm_radius,
                             sigma=self.sigma,
                             dsm_no_data=self.dsm_no_data,
-                            color_no_data=self.color_no_data,
+                            texture_no_data=self.texture_no_data,
                             color_dtype=color_dtype,
                             msk_no_data=self.msk_no_data,
                             source_pc_names=source_pc_names,
@@ -935,7 +935,7 @@ class SimpleGaussian(
                                 radius=self.dsm_radius,
                                 sigma=self.sigma,
                                 dsm_no_data=self.dsm_no_data,
-                                color_no_data=self.color_no_data,
+                                texture_no_data=self.texture_no_data,
                                 color_dtype=color_dtype,
                                 msk_no_data=self.msk_no_data,
                                 source_pc_names=source_pc_names,
@@ -961,7 +961,7 @@ def rasterization_wrapper(  # noqa: C901
     sigma: float = None,
     radius: int = 1,
     dsm_no_data: int = np.nan,
-    color_no_data: int = np.nan,
+    texture_no_data: int = np.nan,
     color_dtype: str = "float32",
     msk_no_data: int = 255,
     source_pc_names=None,
@@ -995,7 +995,7 @@ def rasterization_wrapper(  # noqa: C901
         (If None, set to resolution)
     :param radius: Radius for hole filling.
     :param dsm_no_data: no data value to use in the final raster
-    :param color_no_data: no data value to use in the final colored raster
+    :param texture_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
     :param source_pc_names: list of names of point cloud before merging :
         name of sensors pair or name of point cloud file
@@ -1126,7 +1126,7 @@ def rasterization_wrapper(  # noqa: C901
         sigma=sigma,
         radius=radius,
         dsm_no_data=dsm_no_data,
-        color_no_data=color_no_data,
+        texture_no_data=texture_no_data,
         msk_no_data=msk_no_data,
         list_computed_layers=list_computed_layers,
         source_pc_names=source_pc_names,

@@ -58,7 +58,7 @@ Prerequisites
 - Each classification image is a multi-band binary file.
 
     - Binary file: Please, see the section :ref:`convert_image_to_binary_image` to make a binary image.
-    - Multi-band file: Each band should have a specific name (Please, see the section :ref:`add_band_description_in_image` to add band name / description).
+    - Multi-band file: One band for each label.
     - 1 values are considered as valid data. 0 values are considered as invalid data.
 	
 How it works 

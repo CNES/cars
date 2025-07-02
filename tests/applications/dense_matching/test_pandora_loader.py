@@ -232,7 +232,7 @@ def test_overload_pandora_conf_with_confidence():
 
 
 def test_disparity_denoiser_in_conf():
-    """ "
+    """
     Test if disparity denoiser filter is used
     """
 
@@ -264,7 +264,7 @@ def test_disparity_denoiser_in_conf():
             "filter": {
                 "filter_method": "disparity_denoiser",
                 "filter_size": 3,
-                "band": "r",
+                "band": "b0",
             },
             "validation": {"validation_method": "cross_checking"},
         },
@@ -278,6 +278,3 @@ def test_disparity_denoiser_in_conf():
         corr_config["pipeline"]["filter"]["filter_method"]
         == "disparity_denoiser"
     )
-
-    # Check that band parameter has been overrided
-    assert corr_config["pipeline"]["filter"]["band"] is None
