@@ -40,6 +40,7 @@ include:
       # do not trigger this case on master (see third case)
       - if: $CI_COMMIT_REF_NAME == "master"
         when: never
+      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   # Second case: env should be generated on a dev branch, create a temporary
   # image
   - local: '/ci/cars-docker-build.yml'
