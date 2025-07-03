@@ -593,7 +593,7 @@ The structure follows this organization:
                       - This configuration is suitable for shadow scene. It uses census11 with sgm (p1 = 20, p2 = 160)
                     * - census_sgm_mountain_and_vegetation
                       - This configuration is suitable for mountain or vegetation scene. It uses census11 with sgm (p1 = 38, p2 = 464)
-                    * - census11_sgm_homogeneous
+                    * - census_sgm_homogeneous
                       - This configuration is suitable for homogeneous scene. It uses census11 with sgm (p1 = 72, p2 = 309)
 
 

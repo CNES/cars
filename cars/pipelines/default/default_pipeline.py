@@ -1309,7 +1309,7 @@ class DefaultPipeline(PipelineTemplate):
                         sift_disp, 100 - disp_bounds_params["percentile"]
                     )
                     logging.info(
-                        "Gloabal disparity interval without margin : "
+                        "Global disparity interval without margin : "
                         f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                     )
                     disp_min -= (
@@ -1319,7 +1319,7 @@ class DefaultPipeline(PipelineTemplate):
                         disp_bounds_params["lower_margin"] / disp_to_alt_ratio
                     )
                     logging.info(
-                        "Gloabal disparity interval with margin : "
+                        "Global disparity interval with margin : "
                         f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                     )
 

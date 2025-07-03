@@ -240,12 +240,6 @@ You can enter in the docker interactive mode by using this command :
 
     docker run -it -w /data -v "$(pwd)"/data_gizeh_small:/data  --entrypoint /bin/bash cnes/cars:latest
 
-You are now in an interactive docker mode and you can launch your program as follow:
-
-.. code-block:: console
-
-    cars-extractroi /data/img1.tif -out crop_img1.tif  -bbx 20800 5100 21000 5300
-
 +--------------------------------------+------------------------------------------------------------------------------+
 | Option                               | Explication                                                                  |
 +======================================+==============================================================================+
