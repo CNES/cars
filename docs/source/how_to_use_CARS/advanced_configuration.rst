@@ -1281,7 +1281,8 @@ The structure follows this organization:
 
                 The `keep_low_res_dir` parameter flag can be used to specify that you would like the intermediate DSMs and DEMs to be saved in their respective directory.
 
-                By default, since `keep_low_res_dir` is true, you will find the intermediate DSMs and DEMs in `dump_dir/out_res{resolution_value}`.
+                By default, since `keep_low_res_dir` is true, you will find the intermediate DSMs and DEMs in `intermediate_res/out_res{resolution_value}/dsm`.
+                If `save_intermediate_data` was enabled for an application of an intermediate resolution, those results will be found in `intermediate_res/out_res{resolution_value}/dump_dir`
 
                 The following example disables the saving of all intermediate resolutions' outputs :
 

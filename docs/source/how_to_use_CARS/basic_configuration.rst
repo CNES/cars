@@ -649,10 +649,11 @@ The structure follows this organization:
 
             .. tab:: Output contents
 
-                The output directory, defined on the configuration file contains at the end of the computation:
+                The output directory, defined in the configuration file, contains at the end of the computation:
 
                 * the required product levels (`depth_map`, `dsm` and/or `point_cloud`)
                 * the dump directory (`dump_dir`) containing intermediate data for all applications
+                * the intermediate resolutions directory (`intermediate_res`) containing the results (and `dump_dir`) of all intermediate resolutions
                 * metadata json file (`metadata.json`) containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
                 * logs folder (`logs`) containing CARS log and profiling information
 
