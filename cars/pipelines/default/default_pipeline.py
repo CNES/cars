@@ -40,9 +40,11 @@ import shutil
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
+from cars.core import cars_logging
 from cars.core.inputs import get_descriptions_bands, rasterio_get_size
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
+from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.default.unit_pipeline import UnitPipeline
 from cars.pipelines.parameters import advanced_parameters
@@ -198,15 +200,6 @@ class DefaultPipeline(PipelineTemplate):
             # Copy output
             self.used_conf[key][OUTPUT] = copy.deepcopy(output)
 
-            # Override the output directory
-            new_dir = (
-                self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY]
-                + "/out_res"
-                + str(res)
-            )
-            self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY] = new_dir
-            safe_makedirs(self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY])
-
             # Get save intermediate data per res
             # If true we don't delete the resolution directory
             if isinstance(
@@ -231,6 +224,18 @@ class DefaultPipeline(PipelineTemplate):
             ]
 
             if i != len(resolutions) - 1:
+                # Change output dir for lower resolution
+                new_dir = (
+                    self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY]
+                    + "/intermediate_res/out_res"
+                    + str(res)
+                )
+                self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY] = new_dir
+                safe_makedirs(
+                    self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY]
+                )
+
+                # Put dems in auxiliary output
                 self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
                     out_cst.AUX_DEM_MAX
                 ] = True
@@ -714,7 +719,9 @@ class DefaultPipeline(PipelineTemplate):
                 self.epipolar_grid_generation_application.get_conf()
             )
 
-            used_conf["grid_generation"]["epi_step"] = res * 5
+            # Change the step regarding the resolution
+            if not last_res:
+                used_conf["grid_generation"]["epi_step"] = res * 5
 
             # image resampling
 
@@ -812,6 +819,17 @@ class DefaultPipeline(PipelineTemplate):
                     "risk",
                     "intervals",
                 ]
+
+            if res <= 16:
+                if (
+                    "dense matching" not in conf
+                    or "confidence filtering" not in conf["dense matching"]
+                    or "lower bound"
+                    not in conf["dense matching"]["confidence filtering"]
+                ):
+                    used_conf["dense_matching"]["confidence_filtering"][
+                        "lower_bound"
+                    ] = -40
 
             # Triangulation
             self.triangulation_application = Application(
@@ -1097,7 +1115,7 @@ class DefaultPipeline(PipelineTemplate):
                 print(f"The directory {out_dir} has not been deleted")
 
     @cars_profile(name="run_dense_pipeline", interval=0.5)
-    def run(self):  # noqa C901
+    def run(self, args):  # noqa C901
         """
         Run pipeline
 
@@ -1110,8 +1128,19 @@ class DefaultPipeline(PipelineTemplate):
         use_sift_a_priori = False
 
         i = 0
+        nb_res = len(list(self.used_conf.items()))
         for _, conf_res in self.used_conf.items():
             out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
+
+            # Logging configuration with args Loglevel
+            loglevel = getattr(args, "loglevel", "PROGRESS").upper()
+
+            if nb_res != 1:
+                cars_logging.setup_logging(
+                    loglevel,
+                    out_dir=os.path.join(out_dir, "logs"),
+                    pipeline="",
+                )
 
             # Get the resolution step
             if previous_out_dir is not None:
@@ -1157,13 +1186,21 @@ class DefaultPipeline(PipelineTemplate):
                 # initialize out_json
                 self.cars_orchestrator.update_out_info({"version": __version__})
 
-                UnitPipeline(conf_res).run(
+                used_pipeline = UnitPipeline(conf_res)
+
+                used_pipeline.run(
                     self.cars_orchestrator,
                     generate_dems,
                     which_resolution,
                     use_sift_a_priori,
                     first_res_out_dir,
                     final_out_dir,
+                )
+
+            if nb_res != 1:
+                # Generate summary of tasks
+                log_wrapper.generate_summary(
+                    out_dir, used_pipeline.used_conf, clean_worker_logs=True
                 )
 
             previous_out_dir = out_dir

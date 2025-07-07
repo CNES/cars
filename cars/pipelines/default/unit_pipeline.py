@@ -850,6 +850,9 @@ class UnitPipeline(PipelineTemplate):
                     "'dichotomic' method for DEM generation"
                 )
 
+        # if not initial_elevation:
+        #     self.dense_matching_app.confidence_filtering["activated"] = False
+
         # check classification application parameter compare
         # to each sensors inputs classification list
         for application_key in application_conf:
@@ -913,7 +916,6 @@ class UnitPipeline(PipelineTemplate):
         by following the CARS pipeline's steps.
         """
         # pylint:disable=too-many-return-statements
-
         inputs = self.used_conf[INPUTS]
         output = self.used_conf[OUTPUT]
 
@@ -1650,6 +1652,7 @@ class UnitPipeline(PipelineTemplate):
             else:
                 if None in (altitude_delta_min, altitude_delta_max):
                     # Generate min and max disp grids from dems
+
                     disp_range_grid = (
                         self.dense_matching_app.generate_disparity_grids(
                             self.pairs[pair_key]["sensor_image_right"],
@@ -1723,7 +1726,6 @@ class UnitPipeline(PipelineTemplate):
                             loc_inverse_orchestrator=self.cars_orchestrator,
                         )
                     )
-
             # Get margins used in dense matching,
             dense_matching_margins_fun = (
                 self.dense_matching_app.get_margins_fun(

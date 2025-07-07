@@ -502,9 +502,13 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
     """
 
     nb_workers = 1
-    first_key = next(iter(used_conf))
-    if "nb_workers" in used_conf[first_key]["orchestrator"]:
-        nb_workers = used_conf[first_key]["orchestrator"]["nb_workers"]
+    if "orchestrator" not in used_conf:
+        first_key = next(iter(used_conf))
+        if "nb_workers" in used_conf[first_key]["orchestrator"]:
+            nb_workers = used_conf[first_key]["orchestrator"]["nb_workers"]
+    else:
+        if "nb_workers" in used_conf["orchestrator"]:
+            nb_workers = used_conf["orchestrator"]["nb_workers"]
 
     workers_log_dir = os.path.join(out_dir, "logs", "workers_log")
 

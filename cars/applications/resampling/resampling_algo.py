@@ -30,8 +30,8 @@ import math
 import numpy as np
 import rasterio as rio
 import resample as cresample
-from numpy.fft import fft2, fftshift, ifft2, ifftshift
 from rasterio.windows import Window, bounds
+from scipy.fft import fft2, fftshift, ifft2, ifftshift
 
 from cars.conf import mask_cst as msk_cst
 
@@ -265,8 +265,12 @@ def resample_image(
     xmax_of_blocks = np.append(
         np.arange(region[0] + step, region[2], step), region[2]
     )
-    ymin = region[1]
-    ymax = region[3]
+
+    ymin_of_blocks = np.arange(region[1], region[3], step)
+    ymax_of_blocks = np.append(
+        np.arange(region[1] + step, region[3], step), region[3]
+    )
+
     resampled_images_list = []
     resampled_masks_list = []
     band_names = []
@@ -277,20 +281,23 @@ def resample_image(
         nb_bands = len(bands["band_id"])
         # Initialize outputs of the entire tile
         resamp = np.empty(
-            (nb_bands, region[3] - region[1], 0), dtype=np.float32
+            (nb_bands, region[3] - region[1], region[2] - region[0]), dtype=np.float32
         )
         nodata = 0
         if nodata is not None or mask is not None:
             msk = np.empty(
-                (nb_bands, region[3] - region[1], 0), dtype=np.float32
+                (nb_bands, region[3] - region[1], region[2] - region[0]), dtype=np.float32
             )
         else:
             msk = None
 
-        with rio.open(grid["path"]) as grid_reader, rio.open(img) as img_reader:
+    ystart = 0
+    with rio.open(grid["path"]) as grid_reader, rio.open(img) as img_reader:
+        for ymin, ymax in zip(ymin_of_blocks, ymax_of_blocks):  # noqa: B905
+            ysize = ymax - ymin
+            xstart = 0
             for xmin, xmax in zip(xmin_of_blocks, xmax_of_blocks):  # noqa: B905
                 block_region = [xmin, ymin, xmax, ymax]
-
                 # Build rectification pipelines for images
                 res_x, res_y = grid_reader.res
                 assert res_x == res_y
@@ -313,6 +320,7 @@ def resample_image(
                         math.ceil(ymax / oversampling),
                     ]
                 )
+
                 # Out region of epipolar image
                 out_region = oversampling * grid_region
                 # Grid region
@@ -418,22 +426,26 @@ def resample_image(
                             np.where(block_resamp < 0.5, 0, block_resamp),
                         ).astype(int)
 
-                    # extract exact region
-                    ext_region = block_region - out_region
-                    block_resamp = block_resamp[
-                        ...,
-                        ext_region[1] : ext_region[3] - 1,
-                        ext_region[0] : ext_region[2] - 1,
-                    ]
-                else:
-                    block_resamp = np.zeros(
-                        (
-                            nb_bands,
-                            block_region[3] - block_region[1],
-                            block_region[2] - block_region[0],
+                        # extract exact region
+                        ext_region = block_region - out_region
+                        block_resamp = block_resamp[
+                            ...,
+                            ext_region[1] : ext_region[3] - 1,
+                            ext_region[0] : ext_region[2] - 1,
+                        ]
+                    else:
+                        block_resamp = np.zeros(
+                            (
+                                nb_bands,
+                                block_region[3] - block_region[1],
+                                block_region[2] - block_region[0],
+                            )
                         )
+
+                    xsize = xmax - xmin
+                    resamp[:, ystart : ystart + ysize, xstart : xstart + xsize] = (
+                        block_resamp
                     )
-                resamp = np.concatenate((resamp, block_resamp), axis=2)
 
                 # create msk
                 if nodata is not None or mask is not None:
@@ -485,11 +497,17 @@ def resample_image(
                             fill_value=nodata_msk,
                         )
 
-                    msk = np.concatenate((msk, block_msk), axis=2)
+                    msk[:, ystart : ystart + ysize, xstart : xstart + xsize] = (
+                        block_msk
+                    )
+                xstart += xsize
+
+            ystart += ysize
         band_names += bands["band_name"]
         data_types += [inputs.rasterio_get_image_type(img)] * nb_bands
         resampled_images_list.append(resamp)
         resampled_masks_list.append(msk)
+
 
     resamp_final = np.concatenate(resampled_images_list, axis=0)
     msk_final = np.concatenate(resampled_masks_list, axis=0)

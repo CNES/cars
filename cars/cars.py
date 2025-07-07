@@ -116,17 +116,15 @@ def main_cli(args, dry_run=False):  # noqa: C901
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         out_dir = config["output"]["directory"]
 
-        if config.get("advanced", {}).get("epipolar_resolutions"):
-            res = config["advanced"]["epipolar_resolutions"][-1]
-            out_dir = os.path.join(out_dir, "out_res" + str(res))
-        else:
-            out_dir = os.path.join(out_dir, "out_res1")
+        if not isinstance(
+            config.get("advanced", {}).get("epipolar_resolutions"), list
+        ):
+            cars_logging.setup_logging(
+                loglevel,
+                out_dir=os.path.join(out_dir, "logs"),
+                pipeline=pipeline_name,
+            )
 
-        cars_logging.setup_logging(
-            loglevel,
-            out_dir=os.path.join(out_dir, "logs"),
-            pipeline=pipeline_name,
-        )
         logging.debug("Show argparse arguments: {}".format(args))
 
         # Generate pipeline and check conf
@@ -135,12 +133,16 @@ def main_cli(args, dry_run=False):  # noqa: C901
         cars_logging.add_progress_message("CARS pipeline is started.")
         if not dry_run:
             # run pipeline
-            used_pipeline.run()
+            used_pipeline.run(args)
 
         # Generate summary of tasks
-        log_wrapper.generate_summary(
-            out_dir, used_pipeline.used_conf, clean_worker_logs=True
-        )
+        if not isinstance(
+            config.get("advanced", {}).get("epipolar_resolutions"), list
+        ):
+            log_wrapper.generate_summary(
+                out_dir, used_pipeline.used_conf, clean_worker_logs=True
+            )
+
         cars_logging.add_progress_message(
             "CARS has successfully completed the pipeline."
         )
