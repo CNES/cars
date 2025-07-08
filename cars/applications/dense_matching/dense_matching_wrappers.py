@@ -290,6 +290,7 @@ def create_disp_dataset(  # noqa: C901
     disp_max_grid=None,
     cropped_range=None,
     margins_to_keep=0,
+    classification_fusion_margin=-1,
     texture_bands=None,
 ) -> xr.Dataset:
     """
@@ -393,6 +394,7 @@ def create_disp_dataset(  # noqa: C901
                 epi_msk_right == msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                 np.floor(disp_min_grid).astype(np.int16),
                 np.ceil(disp_max_grid).astype(np.int16),
+                classification_fusion_margin,
             )
 
     left_from_right_classif = None
@@ -407,6 +409,7 @@ def create_disp_dataset(  # noqa: C901
             pandora_masks[cst_disp.VALID],
             int(np.floor(np.min(disp_min_grid))),
             int(np.ceil(np.max(disp_max_grid))),
+            classification_fusion_margin,
         )
 
         # mask outside left sensor
@@ -511,7 +514,12 @@ def add_crop_info(disp_ds, cropped_range):
 
 
 def estimate_right_classif_on_left(
-    right_classif, disp_map, disp_mask, disp_min, disp_max
+    right_classif,
+    disp_map,
+    disp_mask,
+    disp_min,
+    disp_max,
+    classifiation_fusion_margin,
 ):
     """
     Estimate right classif on left image
@@ -531,12 +539,21 @@ def estimate_right_classif_on_left(
     :rtype: np nadarray
     """
     return dense_matching_cpp.estimate_right_classif_on_left(
-        right_classif, disp_map, disp_mask, disp_min, disp_max
+        right_classif,
+        disp_map,
+        disp_mask,
+        disp_min,
+        disp_max,
+        classifiation_fusion_margin,
     )
 
 
 def mask_left_classif_from_right_mask(
-    left_classif, right_mask, disp_min, disp_max
+    left_classif,
+    right_mask,
+    disp_min,
+    disp_max,
+    classifiation_fusion_margin,
 ):
     """
     Mask left classif with right mask.
@@ -554,7 +571,11 @@ def mask_left_classif_from_right_mask(
     :rtype: np nadarray
     """
     return dense_matching_cpp.mask_left_classif_from_right_mask(
-        left_classif, right_mask, disp_min, disp_max
+        left_classif,
+        right_mask,
+        disp_min,
+        disp_max,
+        classifiation_fusion_margin,
     )
 
 

@@ -6,7 +6,12 @@ this module contains the headers of the dense_matching_cpp module.
 
 
 def estimate_right_classif_on_left(
-    right_classif, disp_map, disp_mask, disp_min, disp_max
+    right_classif,
+    disp_map,
+    disp_mask,
+    disp_min,
+    disp_max,
+    classification_fusion_margin,
 ):
     """
     Estimate right classif on left image
@@ -29,7 +34,7 @@ def estimate_right_classif_on_left(
 
 
 def mask_left_classif_from_right_mask(
-    left_classif, right_mask, disp_min, disp_max
+    left_classif, right_mask, disp_min, disp_max, classification_fusion_margin
 ):
     """
     Mask left classif with right mask.

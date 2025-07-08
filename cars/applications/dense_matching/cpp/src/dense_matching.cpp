@@ -11,7 +11,8 @@ py::array_t<bool> estimate_right_classif_on_left(
     py::array_t<float> disp_map,
     std::optional<py::array_t<bool>> disp_mask,
     int disp_min,
-    int disp_max
+    int disp_max,
+    int classification_fusion_margin
 ) {
     auto r_right_classif = right_classif.unchecked<3>();
     auto r_disp_map = disp_map.unchecked<2>();
@@ -55,9 +56,15 @@ py::array_t<bool> estimate_right_classif_on_left(
             for (size_t band = 0; band < n_bands; band++) {
                 
                 bool found = false;
+                int margin_min = disp_min;
+                int margin_max = disp_max;
+                if (classification_fusion_margin != -1) {
+                    margin_min = classification_fusion_margin;
+                    margin_max = classification_fusion_margin;
+                }
                 for (
-                    size_t col_classif = std::max(0, static_cast<int>(col)+disp_min);
-                    col_classif < std::min(static_cast<int>(n_col), static_cast<int>(col)+disp_max);
+                    size_t col_classif = std::max(0, static_cast<int>(col)+margin_min);
+                    col_classif < std::min(static_cast<int>(n_col), static_cast<int>(col)+margin_max);
                     col_classif++
                 ) {
                     if (r_right_classif(band, row, col_classif)) {
@@ -78,7 +85,8 @@ py::array_t<bool> mask_left_classif_from_right_mask(
     py::array_t<bool> left_classif,
     py::array_t<bool> right_mask,
     py::array_t<int> disp_min,
-    py::array_t<int> disp_max
+    py::array_t<int> disp_max,
+    int classification_fusion_margin
 ) {
 
     auto rw_left_classif = left_classif.mutable_unchecked<3>();
@@ -95,10 +103,16 @@ py::array_t<bool> mask_left_classif_from_right_mask(
 
             // estimate with global range
             bool all_masked = true;
-            size_t lower_bound = std::max(0, static_cast<int>(col)+r_disp_min(row, col));
+            int margin_min = r_disp_min(row, col);
+            int margin_max = r_disp_max(row, col);
+            if (classification_fusion_margin != -1) {
+                margin_min = classification_fusion_margin;
+                margin_max = classification_fusion_margin;
+            }
+            size_t lower_bound = std::max(0, static_cast<int>(col)+margin_min);
             size_t upper_bound = std::min(
                 static_cast<int>(n_col),
-                static_cast<int>(col)+r_disp_max(row, col)
+                static_cast<int>(col)+margin_max
             );
             for (size_t col_classif = lower_bound; col_classif < upper_bound; col_classif++) {
                 if (!r_right_mask(row, col_classif)) {

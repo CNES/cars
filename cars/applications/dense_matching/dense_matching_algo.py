@@ -106,6 +106,7 @@ def compute_disparity(
     compute_disparity_masks=False,
     cropped_range=None,
     margins_to_keep=0,
+    classification_fusion_margin=-1,
     texture_bands=None,
 ) -> Dict[str, xr.Dataset]:
     """
@@ -131,6 +132,9 @@ def compute_disparity(
     :type cropped_range: numpy array
     :param margins_to_keep: margin to keep after dense matching
     :type margins_to_keep: int
+    :param classification_fusion_margin: the margin to add for the fusion
+    :type classification_fusion_margin: int
+
 
     :return: Disparity dataset
     """
@@ -228,6 +232,7 @@ def compute_disparity(
         disp_max_grid=disp_max_grid,
         cropped_range=cropped_range,
         margins_to_keep=margins_to_keep,
+        classification_fusion_margin=classification_fusion_margin,
         texture_bands=texture_bands,
     )
 
