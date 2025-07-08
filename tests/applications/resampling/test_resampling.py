@@ -23,6 +23,8 @@ Test module for cars/stereo.py
 Important : Uses conftest.py for shared pytest fixtures
 """
 
+import json
+import os
 import tempfile
 
 # Third party imports
@@ -382,7 +384,7 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
     """
     Test the low res resampling
     """
-    input_file = "grid_generation_gizeh_ROI_color.pickle"
+    input_file = "grid_generation_gizeh_ROI_no_color.json"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf = {}
@@ -412,8 +414,8 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
                 "rb",
             ) as file:
                 # load pickle data
-                data = pickle.load(file)
-                adapt_path_for_test_dir(data, input_path, input_relative_path)
+                data = json.load(file)
+                adapt_path_for_test_dir(data, input_path)
                 # Run grid generation
                 geometry_plugin = get_geometry_plugin(
                     dem=os.path.join(
