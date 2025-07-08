@@ -426,7 +426,6 @@ def new_rpcs_from_matches(
     for pair in pairing:
         matches_filename = os.path.join(
             sparse_matching_directory,
-            "out_res1",
             "dump_dir",
             "sparse_matching.sift",
             "_".join(pair),

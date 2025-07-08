@@ -25,9 +25,10 @@ Test module for cars/steps/epi_rectif/test_grids.py
 # __future__ import
 from __future__ import absolute_import
 
+import copy
+
 # Standard library
 import json
-import copy
 import os
 import pickle
 import tempfile
@@ -52,12 +53,7 @@ from cars.conf import input_parameters
 from cars.orchestrator import orchestrator
 
 # CARS test utilities
-from tests.helpers import (
-    absolute_data_path,
-    assert_same_carsdatasets,
-    get_geometry_plugin,
-    temporary_dir,
-)
+from tests.helpers import absolute_data_path, get_geometry_plugin, temporary_dir
 
 
 def generate_grid_xr_dataset(grid_np):
@@ -528,7 +524,7 @@ def test_transform_grid_func():
     """
     Test the transform grid function
     """
-    input_file = "grid_generation_gizeh_ROI_color.pickle"
+    input_file = "grid_generation_gizeh_ROI_no_color.json"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf = {}
@@ -558,8 +554,8 @@ def test_transform_grid_func():
                 "rb",
             ) as file:
                 # load pickle data
-                data = pickle.load(file)
-                adapt_path_for_test_dir(data, input_path, input_relative_path)
+                data = json.load(file)
+                adapt_path_for_test_dir(data, input_path)
                 # Run grid generation
                 geometry_plugin = get_geometry_plugin(
                     dem=os.path.join(
@@ -588,14 +584,20 @@ def test_transform_grid_func():
                     resolution,
                 )
 
-                for key, attributes in grid_left.attributes.items():
+                for key, attributes in grid_left.items():
                     if isinstance(attributes, (int, float, np.floating)):
-                        attr = grid_left_before.attributes[key]
+                        attr = grid_left_before[key]
                         assert attributes == np.floor(attr / resolution)
                     elif isinstance(attributes, list):
                         for i, val in enumerate(attributes):
-                            attr = grid_left_before.attributes[key][i]
+                            attr = grid_left_before[key][i]
                             res = np.floor(attr / resolution)
                             assert val == res
 
-                assert grid_left[0, 0].all() == grid_left_before[0, 0].all()
+                with rio.open(grid_left["path"]) as src:
+                    data_left = np.transpose(src.read(), (1, 2, 0))
+
+                with rio.open(grid_left_before["path"]) as src:
+                    data_left_before = np.transpose(src.read(), (1, 2, 0))
+
+                assert data_left.all() == data_left_before.all()

@@ -1115,7 +1115,7 @@ class DefaultPipeline(PipelineTemplate):
                 print(f"The directory {out_dir} has not been deleted")
 
     @cars_profile(name="run_dense_pipeline", interval=0.5)
-    def run(self, args):  # noqa C901
+    def run(self, args=None):  # noqa C901
         """
         Run pipeline
 
@@ -1132,10 +1132,10 @@ class DefaultPipeline(PipelineTemplate):
         for _, conf_res in self.used_conf.items():
             out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
 
-            # Logging configuration with args Loglevel
-            loglevel = getattr(args, "loglevel", "PROGRESS").upper()
-
             if nb_res != 1:
+                # Logging configuration with args Loglevel
+                loglevel = getattr(args, "loglevel", "PROGRESS").upper()
+
                 cars_logging.setup_logging(
                     loglevel,
                     out_dir=os.path.join(out_dir, "logs"),
