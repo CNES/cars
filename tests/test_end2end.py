@@ -129,9 +129,7 @@ def test_end2end_dsm_fusion():
         dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm_lr)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_dense_dsm_lr["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_dense_dsm_lr["output"]["directory"])
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -595,9 +593,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_dense_dsm["output"]["directory"])
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -867,9 +863,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -1033,9 +1027,7 @@ def test_end2end_ventoux_unique():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -1278,9 +1270,7 @@ def test_end2end_ventoux_unique():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check used_conf for dense dsm
         used_conf_path = os.path.join(out_dir, "used_conf.json")
 
@@ -1616,9 +1606,7 @@ def test_end2end_ventoux_unique():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1718,9 +1706,7 @@ def test_end2end_ventoux_unique():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -1785,9 +1771,7 @@ def test_end2end_ventoux_unique():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1834,9 +1818,7 @@ def test_end2end_ventoux_unique():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -1893,9 +1875,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
         pc_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_pc["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_pc["output"]["directory"])
         geometry_plugin_name = input_config_pc["advanced"]["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
@@ -2185,9 +2165,7 @@ def test_end2end_ventoux_unique_split():
         pc_pipeline = default.DefaultPipeline(input_config_pc)
         pc_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_pc["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_pc["output"]["directory"])
         geometry_plugin_name = input_config_pc["advanced"]["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
@@ -2848,9 +2826,7 @@ def test_end2end_use_epipolar_a_priori():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_res["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -3239,9 +3215,7 @@ def test_prepare_ventoux_bias():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_res["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -3330,7 +3304,7 @@ def test_end2end_ventoux_full_output_no_elevation():
 
         input_config["output"].update(output_config)
 
-        out_dir = os.path.join(directory, "output_dsm", "out_res1")
+        out_dir = os.path.join(directory, "output_dsm")
 
         pipeline = default.DefaultPipeline(input_config)
 
@@ -3764,9 +3738,7 @@ def test_end2end_ventoux_with_color():
 
         sparse_res_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_res["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -3852,9 +3824,7 @@ def test_end2end_ventoux_with_color():
 
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         assert (
             os.path.exists(
                 os.path.join(
@@ -4132,9 +4102,7 @@ def test_end2end_ventoux_with_classif():
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_res["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -4209,9 +4177,7 @@ def test_end2end_ventoux_with_classif():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_sparse_res["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
         pc1 = "0_0"
 
         assert (
@@ -4427,9 +4393,7 @@ def test_compute_dsm_with_roi_ventoux():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -4577,9 +4541,7 @@ def test_compute_dsm_with_snap_to_img1():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4713,9 +4675,7 @@ def test_end2end_quality_stats():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -5000,9 +4960,7 @@ def test_end2end_ventoux_egm96_geoid():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -5134,9 +5092,7 @@ def test_end2end_ventoux_egm96_geoid():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -5232,9 +5188,7 @@ def test_end2end_ventoux_egm96_geoid():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -5402,9 +5356,7 @@ def test_end2end_paca_with_mask():
 
         dense_dsm_pipeline_bulldozer.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -5709,9 +5661,7 @@ def test_end2end_disparity_filling():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -5845,9 +5795,7 @@ def test_end2end_disparity_filling_with_zeros():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res1"
-        )
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -5969,7 +5917,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
         )
         sensors_pipeline_first_run.run()
         sensors_out_dir_first_run = os.path.join(
-            sensors_input_config_first_run["output"]["directory"], "out_res1"
+            sensors_input_config_first_run["output"]["directory"]
         )
 
         # Run sensors pipeline with generated config

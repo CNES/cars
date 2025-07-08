@@ -397,8 +397,8 @@ def resample_image(  # noqa: C901
 
                             _, rows, cols = img_as_array.shape
                             crow, ccol = rows // 2, cols // 2
-                            radius = min(rows, cols) // (2 * resolution)
-
+                            radius = min(rows, cols) / (2 * resolution)
+                            print(radius)
                             row_mesh, col_mesh = np.ogrid[:rows, :cols]
                             dist = (col_mesh - ccol) ** 2 + (
                                 row_mesh - crow
