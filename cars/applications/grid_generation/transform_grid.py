@@ -24,6 +24,7 @@ contains functions used for grid transformation
 """
 
 import numpy as np
+import rasterio
 
 from cars.applications.grid_generation import grid_generation_algo
 
@@ -39,24 +40,31 @@ def transform_grid_func(grid_left, grid_right, resolution):
     :param resolution: the resolution for the resampling
     :type resolution: int
     """
-    for key, value in grid_left.attributes.items():
+    for key, value in grid_left.items():
         if isinstance(value, (int, float, np.floating)):
-            grid_left.attributes[key] = np.floor(value / resolution)
+            grid_left[key] = np.floor(value / resolution)
         elif isinstance(value, list):
             for i, _ in enumerate(value):
-                grid_left.attributes[key][i] = np.floor(value[i] / resolution)
+                grid_left[key][i] = np.floor(value[i] / resolution)
+
+    # we need to charge the data to override it
+    with rasterio.open(grid_left["path"]) as src:
+        data_left = src.read()
+
+    with rasterio.open(grid_right["path"]) as src:
+        data_right = src.read()
 
     grid_generation_algo.write_grid(
-        grid_left[0, 0],
-        grid_left.attributes["path"],
-        grid_left.attributes["grid_origin"],
-        grid_left.attributes["grid_spacing"],
+        np.transpose(data_left, (1, 2, 0)),
+        grid_left["path"],
+        grid_left["grid_origin"],
+        grid_left["grid_spacing"],
     )
     grid_generation_algo.write_grid(
-        grid_right[0, 0],
-        grid_right.attributes["path"],
-        grid_left.attributes["grid_origin"],
-        grid_left.attributes["grid_spacing"],
+        np.transpose(data_right, (1, 2, 0)),
+        grid_right["path"],
+        grid_left["grid_origin"],
+        grid_left["grid_spacing"],
     )
 
     return grid_left

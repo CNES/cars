@@ -837,7 +837,7 @@ class UnitPipeline(PipelineTemplate):
         ):
             first_image_path = next(iter(inputs_conf["sensors"].values()))[
                 "image"
-            ]
+            ]["main_file"]
             first_image_size = rasterio_get_size(first_image_path)
             first_image_nb_pixels = math.prod(first_image_size)
             dem_gen_used_mem = first_image_nb_pixels / 1e8
@@ -890,19 +890,37 @@ class UnitPipeline(PipelineTemplate):
                                 )
         for key1, key2 in inputs_conf["pairing"]:
             corr_cfg = self.dense_matching_app.loader.get_conf()
-            img_left = inputs_conf["sensors"][key1]["image"]
-            img_right = inputs_conf["sensors"][key2]["image"]
+            img_left = inputs_conf["sensors"][key1]["image"]["main_file"]
+            img_right = inputs_conf["sensors"][key2]["image"]["main_file"]
+            bands_left = list(
+                inputs_conf["sensors"][key1]["image"]["bands"].keys()
+            )
+            bands_right = list(
+                inputs_conf["sensors"][key2]["image"]["bands"].keys()
+            )
             classif_left = None
             classif_right = None
-            if "classification" in inputs_conf["sensors"][key1]:
-                classif_left = inputs_conf["sensors"][key1]["classification"]
-            if "classification" in inputs_conf["sensors"][key2]:
-                classif_right = inputs_conf["sensors"][key2]["classification"]
+            if (
+                "classification" in inputs_conf["sensors"][key1]
+                and inputs_conf["sensors"][key1]["classification"] is not None
+            ):
+                classif_left = inputs_conf["sensors"][key1]["classification"][
+                    "main_file"
+                ]
+            if (
+                "classification" in inputs_conf["sensors"][key2]
+                and inputs_conf["sensors"][key1]["classification"] is not None
+            ):
+                classif_right = inputs_conf["sensors"][key2]["classification"][
+                    "main_file"
+                ]
             self.dense_matching_app.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
                     img_left,
                     img_right,
+                    bands_left,
+                    bands_right,
                     classif_left,
                     classif_right,
                 )
@@ -1068,7 +1086,6 @@ class UnitPipeline(PipelineTemplate):
                 # Get required bands of first resampling
                 required_bands = self.sparse_mtch_sift_app.get_required_bands()
 
-
                 # Run first epipolar resampling
                 (
                     self.pairs[pair_key]["epipolar_image_left"],
@@ -1087,7 +1104,6 @@ class UnitPipeline(PipelineTemplate):
                     margins_fun=self.sparse_mtch_sift_app.get_margins_fun(),
                     tile_width=None,
                     tile_height=None,
-                    add_color=False,
                     add_classif=add_classif,
                     required_bands=required_bands,
                 )
@@ -1124,9 +1140,7 @@ class UnitPipeline(PipelineTemplate):
                 ) = self.sparse_mtch_sift_app.run(
                     self.pairs[pair_key]["epipolar_image_left"],
                     self.pairs[pair_key]["epipolar_image_right"],
-                    self.pairs[pair_key]["grid_left"][
-                        "disp_to_alt_ratio"
-                    ],
+                    self.pairs[pair_key]["grid_left"]["disp_to_alt_ratio"],
                     orchestrator=self.cars_orchestrator,
                     pair_folder=os.path.join(
                         self.dump_dir, "sparse_matching.sift", pair_key
@@ -1188,7 +1202,6 @@ class UnitPipeline(PipelineTemplate):
                     grid_correction_app.correct_grid(
                         self.pairs[pair_key]["grid_right"],
                         self.pairs[pair_key]["grid_correction_coef"],
-                        save_corrected_grid,
                         os.path.join(
                             self.dump_dir,
                             "grid_correction",
@@ -1207,9 +1220,9 @@ class UnitPipeline(PipelineTemplate):
                     continue
 
                 # Shrink disparity intervals according to SIFT disparities
-                disp_to_alt_ratio = self.pairs[pair_key][
-                    "grid_left"
-                ]["disp_to_alt_ratio"]
+                disp_to_alt_ratio = self.pairs[pair_key]["grid_left"][
+                    "disp_to_alt_ratio"
+                ]
                 disp_bounds_params = (
                     self.sparse_mtch_sift_app.disparity_bounds_estimation
                 )
@@ -1429,7 +1442,6 @@ class UnitPipeline(PipelineTemplate):
                         grid_correction_app.correct_grid(
                             self.pairs[pair_key]["new_grid_right"],
                             self.pairs[pair_key]["grid_correction_coef"],
-                            save_corrected_grid,
                             os.path.join(
                                 self.dump_dir,
                                 "grid_correction",
@@ -1556,7 +1568,6 @@ class UnitPipeline(PipelineTemplate):
                     grid_correction_app.correct_grid(
                         self.pairs[pair_key]["grid_right"],
                         self.pairs[pair_key]["grid_correction_coef"],
-                        save_corrected_grid,
                         os.path.join(
                             self.dump_dir,
                             "grid_correction",
@@ -1824,7 +1835,6 @@ class UnitPipeline(PipelineTemplate):
                 margins_fun=dense_matching_margins_fun,
                 tile_width=optimum_tile_size,
                 tile_height=optimum_tile_size,
-                add_color=True,
                 add_classif=True,
                 epipolar_roi=epipolar_roi,
                 resolution=self.res_resamp,
@@ -2543,7 +2553,9 @@ class UnitPipeline(PipelineTemplate):
                     "texture.tif",
                 )
                 if "texture" in dict_path
-                or self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_TEXTURE]
+                or self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_TEXTURE
+                ]
                 else None
             )
 
@@ -2643,7 +2655,9 @@ class UnitPipeline(PipelineTemplate):
                     "texture.tif",
                 )
                 if self.save_output_dsm
-                and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_TEXTURE]
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_TEXTURE
+                ]
                 else None
             )
 
