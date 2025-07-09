@@ -42,7 +42,7 @@ py::array_t<bool> estimate_right_classif_on_left(
             if (valid) {
                 // direct value
                 int disp = static_cast<int>(std::floor(fdisp));
-                
+
                 for (size_t band = 0; band < n_bands; band++) {
                     rw_left_from_right_classif(
                         band, row, col
@@ -54,7 +54,7 @@ py::array_t<bool> estimate_right_classif_on_left(
 
             // else: estimate with global range
             for (size_t band = 0; band < n_bands; band++) {
-                
+
                 bool found = false;
                 int margin_min = disp_min;
                 int margin_max = disp_max;
@@ -64,7 +64,10 @@ py::array_t<bool> estimate_right_classif_on_left(
                 }
                 for (
                     size_t col_classif = std::max(0, static_cast<int>(col)+margin_min);
-                    col_classif < std::min(static_cast<int>(n_col), static_cast<int>(col)+margin_max);
+                    col_classif < std::min(
+                        static_cast<int>(n_col),
+                        static_cast<int>(col)+margin_max
+                    );
                     col_classif++
                 ) {
                     if (r_right_classif(band, row, col_classif)) {
