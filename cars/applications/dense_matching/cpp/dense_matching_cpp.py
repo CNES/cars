@@ -11,7 +11,7 @@ def estimate_right_classif_on_left(
     disp_mask,
     disp_min,
     disp_max,
-    classification_fusion_margin,
+    classification_fusion_margin=-1,
 ):
     """
     Estimate right classif on left image
@@ -34,7 +34,11 @@ def estimate_right_classif_on_left(
 
 
 def mask_left_classif_from_right_mask(
-    left_classif, right_mask, disp_min, disp_max, classification_fusion_margin
+    left_classif,
+    right_mask,
+    disp_min,
+    disp_max,
+    classification_fusion_margin=-1,
 ):
     """
     Mask left classif with right mask.
