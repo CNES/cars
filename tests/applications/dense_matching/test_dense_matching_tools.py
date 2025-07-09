@@ -412,7 +412,7 @@ def test_estimate_right_classif_on_left():
 
     left_from_right_classif = (
         dense_matching_wrappers.estimate_right_classif_on_left(
-            np.expand_dims(right_classif, axis=0), disp_map, None, -10, 10
+            np.expand_dims(right_classif, axis=0), disp_map, None, -10, 10, -1
         )
     )
 
@@ -443,6 +443,7 @@ def test_estimate_right_classif_on_left():
             None,
             -10,
             10,
+            -1,
         )
     )
 
@@ -492,6 +493,7 @@ def test_merge_classif_left_right():
             None,
             -10,
             10,
+            -1,
         )
     )
 
