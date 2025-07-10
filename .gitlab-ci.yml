@@ -27,7 +27,7 @@ include:
   # Variable defintion
   - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-variables@master
   # Jobs for gitlab-github synchronisation
-  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-github@1081-libgeo-versioning
+  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-github@master
   # Docker building and image selection
   # First case: no need to update env, use latest version
   - local: '/ci/cars-no-docker-build.yml'
