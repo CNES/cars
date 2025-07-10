@@ -835,7 +835,7 @@ class DefaultPipeline(PipelineTemplate):
                 ):
                     used_conf["dense_matching"]["confidence_filtering"][
                         "lower_bound"
-                    ] = -40
+                    ] = -90
 
             # Triangulation
             self.triangulation_application = Application(
@@ -1030,6 +1030,7 @@ class DefaultPipeline(PipelineTemplate):
 
         # check classification application parameter compare
         # to each sensors inputs classification list
+
         for application_key in application_conf:
             if "classification" in application_conf[application_key]:
                 for item in inputs_conf["sensors"]:
@@ -1153,7 +1154,7 @@ class DefaultPipeline(PipelineTemplate):
         for _, conf_res in self.used_conf.items():
             out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
 
-            if nb_res != 1:
+            if nb_res != 1 and args is not None:
                 # Logging configuration with args Loglevel
                 loglevel = getattr(args, "loglevel", "PROGRESS").upper()
 
@@ -1218,7 +1219,7 @@ class DefaultPipeline(PipelineTemplate):
                     final_out_dir,
                 )
 
-            if nb_res != 1:
+            if nb_res != 1 and args is not None:
                 # Generate summary of tasks
                 log_wrapper.generate_summary(
                     out_dir, used_pipeline.used_conf, clean_worker_logs=True

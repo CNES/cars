@@ -405,7 +405,7 @@ class CensusMccnnSgm(
             overloaded_conf["confidence_filtering"].get("upper_bound", 5)
         )
         overloaded_conf["confidence_filtering"]["lower_bound"] = (
-            overloaded_conf["confidence_filtering"].get("lower_bound", -20)
+            overloaded_conf["confidence_filtering"].get("lower_bound", -30)
         )
         overloaded_conf["confidence_filtering"]["risk_max"] = overloaded_conf[
             "confidence_filtering"

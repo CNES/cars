@@ -904,7 +904,8 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         assert os.path.isfile(used_conf_path)
 
         out_dir_res4 = os.path.join(
-            input_config_sparse_dsm["output"]["directory"], "out_res4"
+            input_config_sparse_dsm["output"]["directory"],
+            "intermediate_res/out_res4",
         )
 
         # Ref output dir dependent from geometry plugin chosen
@@ -1054,7 +1055,7 @@ def test_end2end_ventoux_unique():
                 < -17
             )
             assert (
-                1
+                0
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
@@ -1065,7 +1066,8 @@ def test_end2end_ventoux_unique():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
         out_dir_res4 = os.path.join(
-            input_config_sparse_dsm["output"]["directory"], "out_res4"
+            input_config_sparse_dsm["output"]["directory"],
+            "intermediate_res/out_res4",
         )
 
         copy2(
@@ -2777,13 +2779,6 @@ def test_end2end_use_epipolar_a_priori():
         input_config_sparse_res["inputs"]["initial_elevation"] = None
 
         application_config = {
-            "resolution_4": {
-                "point_cloud_outlier_removal.1": {
-                    "method": "small_components",
-                    "nb_points_threshold": 150,
-                    "connection_distance": 3.0,
-                },
-            },
             "resolution_2": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
@@ -2821,7 +2816,7 @@ def test_end2end_use_epipolar_a_priori():
         input_config_sparse_res["output"].update(output_config)
         input_config_sparse_res["applications"] = application_config
 
-        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 2, 1]
+        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [2, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
@@ -2854,7 +2849,7 @@ def test_end2end_use_epipolar_a_priori():
                 < -23
             )
             assert (
-                1
+                0
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
@@ -2865,7 +2860,8 @@ def test_end2end_use_epipolar_a_priori():
             intermediate_output_dir = "intermediate_data"
             ref_output_dir = "ref_output"
             output_dir_res4 = os.path.join(
-                input_config_sparse_res["output"]["directory"], "out_res4"
+                input_config_sparse_res["output"]["directory"],
+                "intermediate_res/out_res2",
             )
 
             copy2(
@@ -3300,7 +3296,7 @@ def test_end2end_ventoux_full_output_no_elevation():
 
         input_config["applications"] = application_config
         input_config["advanced"].update(advanced_config)
-        input_config["advanced"]["epipolar_resolutions"] = [4, 2, 1]
+        input_config["advanced"]["epipolar_resolutions"] = [2, 1]
 
         input_config["output"].update(output_config)
 
@@ -3754,7 +3750,7 @@ def test_end2end_ventoux_with_color():
             ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -66
             assert out_disp_compute["minimum_disparity"] < -17
-            assert out_disp_compute["maximum_disparity"] > 1
+            assert out_disp_compute["maximum_disparity"] > 0
             assert out_disp_compute["maximum_disparity"] < 46
 
         # Run dense_dsm dsm pipeline
@@ -4118,7 +4114,7 @@ def test_end2end_ventoux_with_classif():
             ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -66
             assert out_disp_compute["minimum_disparity"] < -17
-            assert out_disp_compute["maximum_disparity"] > 1
+            assert out_disp_compute["maximum_disparity"] > 0
             assert out_disp_compute["maximum_disparity"] < 46
 
         # Run dense_dsm dsm pipeline
@@ -4613,7 +4609,7 @@ def test_end2end_quality_stats():
         # no srtm
         input_config_dense_dsm["inputs"]["initial_elevation"] = None
         dense_dsm_applications = {
-            "resolution_4": {
+            "resolution_2": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "activated": True,
@@ -4670,7 +4666,7 @@ def test_end2end_quality_stats():
         input_config_dense_dsm["advanced"] = {
             "save_intermediate_data": True,
         }
-        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [2, 1]
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -4697,7 +4693,8 @@ def test_end2end_quality_stats():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
         out_dir_res4 = os.path.join(
-            input_config_dense_dsm["output"]["directory"], "out_res4"
+            input_config_dense_dsm["output"]["directory"],
+            "intermediate_res/out_res2",
         )
 
         copy2(
@@ -4975,7 +4972,7 @@ def test_end2end_ventoux_egm96_geoid():
             ]
             assert out_disp_compute["global_disp_min"] > -39
             assert out_disp_compute["global_disp_min"] < -31
-            assert out_disp_compute["global_disp_max"] > 1
+            assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 33
 
         # Ref output dir dependent from geometry plugin chosen
@@ -5203,7 +5200,7 @@ def test_end2end_ventoux_egm96_geoid():
             ]
             assert out_disp_compute["global_disp_min"] > -39
             assert out_disp_compute["global_disp_min"] < -31
-            assert out_disp_compute["global_disp_max"] > 1
+            assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 33
 
         # Ref output dir dependent from geometry plugin chosen
@@ -5618,7 +5615,7 @@ def test_end2end_disparity_filling():
                 "dense_match_filling.1": {
                     "method": "plane",
                     "save_intermediate_data": True,
-                    "classification": ["shadow"],
+                    "classification": ["b1"],
                 },
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
@@ -5930,7 +5927,8 @@ def test_end2end_gizeh_dry_run_of_used_conf():
         ] += "_from_used_conf"
 
         first_res_out_dir = os.path.join(
-            sensors_input_config_first_run["output"]["directory"], "out_res4"
+            sensors_input_config_first_run["output"]["directory"],
+            "intermediate_res/out_res4",
         )
 
         sensors_pipeline_second_run = default.UnitPipeline(

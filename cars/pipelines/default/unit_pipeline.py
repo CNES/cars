@@ -850,9 +850,6 @@ class UnitPipeline(PipelineTemplate):
                     "'dichotomic' method for DEM generation"
                 )
 
-        # if not initial_elevation:
-        #     self.dense_matching_app.confidence_filtering["activated"] = False
-
         # check classification application parameter compare
         # to each sensors inputs classification list
         for application_key in application_conf:
@@ -1863,7 +1860,7 @@ class UnitPipeline(PipelineTemplate):
                     self.pairs[pair_key]["corrected_grid_right"],
                     new_geomplugin_dsm,
                     self.geom_plugin_with_dem_and_geoid,
-                    self.pairs[pair_key]["corrected_grid_left"].attributes[
+                    self.pairs[pair_key]["corrected_grid_left"][
                         "disp_to_alt_ratio"
                     ],
                     self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
