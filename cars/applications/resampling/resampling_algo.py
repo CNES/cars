@@ -302,210 +302,28 @@ def resample_image(  # noqa: C901
                     xmin_of_blocks, xmax_of_blocks
                 ):
                     block_region = [xmin, ymin, xmax, ymax]
-                    # Build rectification pipelines for images
-                    res_x, res_y = grid_reader.res
-                    assert res_x == res_y
-                    oversampling = int(res_x)
-                    assert res_x == oversampling
-
-                    grid_origin_x = grid_reader.transform[2]
-                    grid_origin_y = grid_reader.transform[5]
-                    assert grid_origin_x == grid_origin_y
-                    grid_margin = int(-grid_origin_x / oversampling - 0.5)
-
-                    grid_margin = int(grid_margin)
-
-                    # Convert resampled region to grid region with oversampling
-                    grid_region = np.array(
-                        [
-                            math.floor(xmin / oversampling),
-                            math.floor(ymin / oversampling),
-                            math.ceil(xmax / oversampling),
-                            math.ceil(ymax / oversampling),
-                        ]
-                    )
-
-                    # Out region of epipolar image
-                    out_region = oversampling * grid_region
-                    # Grid region
-                    grid_region += grid_margin
-
-                    grid_window = Window.from_slices(
-                        (grid_region[1], grid_region[3] + 1),
-                        (grid_region[0], grid_region[2] + 1),
-                    )
-                    grid_as_array = grid_reader.read(window=grid_window)
-                    grid_as_array = grid_as_array.astype(np.float32)
-                    grid_as_array = grid_as_array.astype(np.float64)
-
-                    # get needed source bounding box
-                    left = math.floor(np.amin(grid_as_array[0, ...]))
-                    right = math.ceil(np.amax(grid_as_array[0, ...]))
-                    top = math.floor(np.amin(grid_as_array[1, ...]))
-                    bottom = math.ceil(np.amax(grid_as_array[1, ...]))
-
-                    transform = rio.Affine(*np.abs(img_transform))
-                    # transform xmin and xmax positions to index
-                    (top, bottom, left, right) = (
-                        abstract_geometry.min_max_to_index_min_max(
-                            left, right, top, bottom, transform
-                        )
-                    )
-
-                    # filter margin for bicubic = 2
-                    filter_margin = 2
-                    top -= filter_margin
-                    bottom += filter_margin
-                    left -= filter_margin
-                    right += filter_margin
-
-                    left, right = list(
-                        np.clip([left, right], 0, img_reader.shape[0])
-                    )
-                    top, bottom = list(
-                        np.clip([top, bottom], 0, img_reader.shape[1])
-                    )
-
-                    img_window = Window.from_slices(
-                        [left, right], [top, bottom]
-                    )
-
-                    in_sensor = True
-                    if right - left == 0 or bottom - top == 0:
-                        in_sensor = False
-
-                    # round window
-                    img_window = img_window.round_offsets()
-                    img_window = img_window.round_lengths()
-
-                    # Compute offset
-                    res_x = float(abs(transform[0]))
-                    res_y = float(abs(transform[4]))
-                    tile_bounds = list(bounds(img_window, transform))
-
-                    x_offset = min(tile_bounds[0], tile_bounds[2])
-                    y_offset = min(tile_bounds[1], tile_bounds[3])
-
-                    if in_sensor:
-                        # Get sensor data
-                        img_as_array = img_reader.read(
-                            bands["band_id"], window=img_window
-                        )
-
-                        if resolution != 1:
-                            fourier = fftshift(fft2(img_as_array))
-
-                            _, rows, cols = img_as_array.shape
-                            crow, ccol = rows // 2, cols // 2
-                            radius = min(rows, cols) / (2 * resolution)
-                            print(radius)
-                            row_mesh, col_mesh = np.ogrid[:rows, :cols]
-                            dist = (col_mesh - ccol) ** 2 + (
-                                row_mesh - crow
-                            ) ** 2
-                            gaussian_mask = np.exp(-dist / (2 * radius**2))
-                            f_filtered = fourier * gaussian_mask
-
-                            img_as_array = np.real(ifft2(ifftshift(f_filtered)))
-
-                        # shift grid regarding the img extraction
-                        grid_as_array[0, ...] -= x_offset
-                        grid_as_array[1, ...] -= y_offset
-
-                        # apply input resolution
-                        grid_as_array[0, ...] /= res_x
-                        grid_as_array[1, ...] /= res_y
-
-                        block_resamp = cresample.grid(
-                            img_as_array,
-                            grid_as_array,
-                            oversampling,
-                            interpolator=interpolator_img,
-                            nodata=0,
-                        ).astype(np.float32)
-                        if (
-                            interpolator_img == "bicubic"
-                            and band_coords == cst.BAND_CLASSIF
-                        ):
-                            block_resamp = np.where(
-                                block_resamp >= 0.5,
-                                1,
-                                np.where(block_resamp < 0.5, 0, block_resamp),
-                            ).astype(int)
-
-                        # extract exact region
-                        ext_region = block_region - out_region
-                        block_resamp = block_resamp[
-                            ...,
-                            ext_region[1] : ext_region[3] - 1,
-                            ext_region[0] : ext_region[2] - 1,
-                        ]
-                    else:
-                        block_resamp = np.zeros(
-                            (
-                                nb_bands,
-                                block_region[3] - block_region[1],
-                                block_region[2] - block_region[0],
-                            )
-                        )
                     xsize = xmax - xmin
-                    resamp[
-                        :, ystart : ystart + ysize, xstart : xstart + xsize
-                    ] = block_resamp
-
-                    # create msk
-                    if nodata is not None or mask is not None:
-                        if in_sensor:
-                            # get mask in source geometry
-                            nodata_index = img_as_array == nodata
-
-                            if mask is not None:
-                                with rio.open(mask) as msk_reader:
-                                    msk_as_array = msk_reader.read(
-                                        1, window=img_window
-                                    )
-                                msk_as_array = np.array(
-                                    [msk_as_array] * img_as_array.shape[0]
-                                )
-                            else:
-                                msk_as_array = np.zeros(img_as_array.shape)
-
-                            msk_as_array[nodata_index] = nodata_msk
-
-                            # resample mask
-                            block_msk = cresample.grid(
-                                msk_as_array,
-                                grid_as_array,
-                                oversampling,
-                                interpolator=interpolator_mask,
-                                nodata=nodata_msk,
-                            )
-
-                            if interpolator_mask == "bicubic":
-                                block_msk = np.where(
-                                    block_msk >= 0.5,
-                                    1,
-                                    np.where(block_msk < 0.5, 0, block_msk),
-                                ).astype(int)
-
-                            block_msk = block_msk[
-                                ...,
-                                ext_region[1] : ext_region[3] - 1,
-                                ext_region[0] : ext_region[2] - 1,
-                            ]
-                        else:
-                            block_msk = np.full(
-                                (
-                                    nb_bands,
-                                    block_region[3] - block_region[1],
-                                    block_region[2] - block_region[0],
-                                ),
-                                fill_value=nodata_msk,
-                            )
-
-                        msk[
-                            :, ystart : ystart + ysize, xstart : xstart + xsize
-                        ] = block_msk
+                    oversampling_func(
+                        grid_reader,
+                        img_reader,
+                        img_transform,
+                        block_region,
+                        resolution,
+                        interpolator_img,
+                        band_coords,
+                        nb_bands,
+                        bands,
+                        resamp,
+                        nodata,
+                        msk,
+                        mask,
+                        nodata_msk,
+                        interpolator_mask,
+                        ysize,
+                        xsize,
+                        ystart,
+                        xstart,
+                    )
                     xstart += xsize
 
                 ystart += ysize
@@ -528,3 +346,218 @@ def resample_image(  # noqa: C901
     )
 
     return dataset
+
+
+def oversampling_func(
+    grid_reader,
+    img_reader,
+    img_transform,
+    block_region,
+    resolution,
+    interpolator_img,
+    band_coords,
+    nb_bands,
+    bands,
+    resamp,
+    nodata,
+    msk,
+    mask,
+    nodata_msk,
+    interpolator_mask,
+    ysize,
+    xsize,
+    ystart,
+    xstart,
+):
+    """
+    Do the resampling calculus
+    """
+
+    xmin = block_region[0]
+    ymin = block_region[1]
+    xmax = block_region[2]
+    ymax = block_region[3]
+
+    # Build rectification pipelines for images
+    res_x, res_y = grid_reader.res
+    assert res_x == res_y
+    oversampling = int(res_x)
+    assert res_x == oversampling
+
+    grid_origin_x = grid_reader.transform[2]
+    grid_origin_y = grid_reader.transform[5]
+    assert grid_origin_x == grid_origin_y
+    grid_margin = int(-grid_origin_x / oversampling - 0.5)
+
+    grid_margin = int(grid_margin)
+
+    # Convert resampled region to grid region with oversampling
+    grid_region = np.array(
+        [
+            math.floor(xmin / oversampling),
+            math.floor(ymin / oversampling),
+            math.ceil(xmax / oversampling),
+            math.ceil(ymax / oversampling),
+        ]
+    )
+
+    # Out region of epipolar image
+    out_region = oversampling * grid_region
+    # Grid region
+    grid_region += grid_margin
+
+    grid_window = Window.from_slices(
+        (grid_region[1], grid_region[3] + 1),
+        (grid_region[0], grid_region[2] + 1),
+    )
+    grid_as_array = grid_reader.read(window=grid_window)
+    grid_as_array = grid_as_array.astype(np.float32)
+    grid_as_array = grid_as_array.astype(np.float64)
+
+    # get needed source bounding box
+    left = math.floor(np.amin(grid_as_array[0, ...]))
+    right = math.ceil(np.amax(grid_as_array[0, ...]))
+    top = math.floor(np.amin(grid_as_array[1, ...]))
+    bottom = math.ceil(np.amax(grid_as_array[1, ...]))
+
+    transform = rio.Affine(*np.abs(img_transform))
+    # transform xmin and xmax positions to index
+    (top, bottom, left, right) = abstract_geometry.min_max_to_index_min_max(
+        left, right, top, bottom, transform
+    )
+
+    # filter margin for bicubic = 2
+    filter_margin = 2
+    top -= filter_margin
+    bottom += filter_margin
+    left -= filter_margin
+    right += filter_margin
+
+    left, right = list(np.clip([left, right], 0, img_reader.shape[0]))
+    top, bottom = list(np.clip([top, bottom], 0, img_reader.shape[1]))
+
+    img_window = Window.from_slices([left, right], [top, bottom])
+
+    in_sensor = True
+    if right - left == 0 or bottom - top == 0:
+        in_sensor = False
+
+    # round window
+    img_window = img_window.round_offsets()
+    img_window = img_window.round_lengths()
+
+    # Compute offset
+    res_x = float(abs(transform[0]))
+    res_y = float(abs(transform[4]))
+    tile_bounds = list(bounds(img_window, transform))
+
+    x_offset = min(tile_bounds[0], tile_bounds[2])
+    y_offset = min(tile_bounds[1], tile_bounds[3])
+
+    if in_sensor:
+        # Get sensor data
+        img_as_array = img_reader.read(bands["band_id"], window=img_window)
+
+        if resolution != 1:
+            fourier = fftshift(fft2(img_as_array))
+
+            _, rows, cols = img_as_array.shape
+            crow, ccol = rows // 2, cols // 2
+            radius = min(rows, cols) / (2 * resolution)
+            print(radius)
+            row_mesh, col_mesh = np.ogrid[:rows, :cols]
+            dist = (col_mesh - ccol) ** 2 + (row_mesh - crow) ** 2
+            gaussian_mask = np.exp(-dist / (2 * radius**2))
+            f_filtered = fourier * gaussian_mask
+
+            img_as_array = np.real(ifft2(ifftshift(f_filtered)))
+
+        # shift grid regarding the img extraction
+        grid_as_array[0, ...] -= x_offset
+        grid_as_array[1, ...] -= y_offset
+
+        # apply input resolution
+        grid_as_array[0, ...] /= res_x
+        grid_as_array[1, ...] /= res_y
+
+        block_resamp = cresample.grid(
+            img_as_array,
+            grid_as_array,
+            oversampling,
+            interpolator=interpolator_img,
+            nodata=0,
+        ).astype(np.float32)
+        if interpolator_img == "bicubic" and band_coords == cst.BAND_CLASSIF:
+            block_resamp = np.where(
+                block_resamp >= 0.5,
+                1,
+                np.where(block_resamp < 0.5, 0, block_resamp),
+            ).astype(int)
+
+        # extract exact region
+        ext_region = block_region - out_region
+        block_resamp = block_resamp[
+            ...,
+            ext_region[1] : ext_region[3] - 1,
+            ext_region[0] : ext_region[2] - 1,
+        ]
+    else:
+        block_resamp = np.zeros(
+            (
+                nb_bands,
+                block_region[3] - block_region[1],
+                block_region[2] - block_region[0],
+            )
+        )
+
+    resamp[:, ystart : ystart + ysize, xstart : xstart + xsize] = block_resamp
+
+    # create msk
+    if nodata is not None or mask is not None:
+        if in_sensor:
+            # get mask in source geometry
+            nodata_index = img_as_array == nodata
+
+            if mask is not None:
+                with rio.open(mask) as msk_reader:
+                    msk_as_array = msk_reader.read(1, window=img_window)
+                msk_as_array = np.array([msk_as_array] * img_as_array.shape[0])
+            else:
+                msk_as_array = np.zeros(img_as_array.shape)
+
+            msk_as_array[nodata_index] = nodata_msk
+
+            # resample mask
+            block_msk = cresample.grid(
+                msk_as_array,
+                grid_as_array,
+                oversampling,
+                interpolator=interpolator_mask,
+                nodata=nodata_msk,
+            )
+
+            if interpolator_mask == "bicubic":
+                block_msk = np.where(
+                    block_msk >= 0.5,
+                    1,
+                    np.where(block_msk < 0.5, 0, block_msk),
+                ).astype(int)
+
+            block_msk = block_msk[
+                ...,
+                ext_region[1] : ext_region[3] - 1,
+                ext_region[0] : ext_region[2] - 1,
+            ]
+        else:
+            block_msk = np.full(
+                (
+                    nb_bands,
+                    block_region[3] - block_region[1],
+                    block_region[2] - block_region[0],
+                ),
+                fill_value=nodata_msk,
+            )
+
+        msk[:, ystart : ystart + ysize, xstart : xstart + xsize] = block_msk
+
+    return resamp, msk
