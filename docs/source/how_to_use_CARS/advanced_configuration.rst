@@ -432,6 +432,7 @@ The structure follows this organization:
                 **Description**
 
                 Generates epipolar and sensor ground truth from input dsm using direct localization.
+                
                 * Sensor ground truth contains altitude in sensor geometry.
                 * Epipolar ground truth contains disparity map in epipolar geometry.
 
