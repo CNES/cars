@@ -303,7 +303,7 @@ def resample_image(  # noqa: C901
                 ):
                     block_region = [xmin, ymin, xmax, ymax]
                     xsize = xmax - xmin
-                    oversampling_func(
+                    resamp, msk = oversampling_func(
                         grid_reader,
                         img_reader,
                         img_transform,
