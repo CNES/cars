@@ -46,7 +46,6 @@ from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
-from cars.pipelines.default.unit_pipeline import UnitPipeline
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import depth_map_inputs
@@ -68,6 +67,7 @@ from cars.pipelines.pipeline_template import (
     PipelineTemplate,
     _merge_resolution_conf_rec,
 )
+from cars.pipelines.unit.unit_pipeline import UnitPipeline
 
 
 @Pipeline.register(
@@ -256,15 +256,15 @@ class DefaultPipeline(PipelineTemplate):
                     self.used_conf[key][ADVANCED][adv_cst.MERGING] = False
                     self.used_conf[key][ADVANCED][adv_cst.PHASING] = None
                     self.used_conf[key][OUTPUT][out_cst.SAVE_BY_PAIR] = False
-                    self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                        out_cst.AUX_PERFORMANCE_MAP
-                    ] = False
-                    self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                        out_cst.AUX_AMBIGUITY
-                    ] = False
-                    self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                        out_cst.AUX_CONTRIBUTING_PAIR
-                    ] = False
+
+                    aux_items = self.used_conf[key][OUTPUT][
+                        out_cst.AUXILIARY
+                    ].items()
+                    for aux_key, _ in aux_items:
+                        if aux_key not in ("dem_min", "dem_max", "dem_median"):
+                            self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
+                                aux_key
+                            ] = False
                 else:
                     # If save_intermediate_data is true,
                     # we save the depth_maps also to debug
@@ -1151,8 +1151,17 @@ class DefaultPipeline(PipelineTemplate):
 
         i = 0
         nb_res = len(list(self.used_conf.items()))
-        for _, conf_res in self.used_conf.items():
+        for key, conf_res in self.used_conf.items():
             out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
+
+            if int(key.split("_")[-1]) != 1:
+                cars_logging.add_progress_message(
+                    "Starting pipeline for resolution 1/" + key.split("_")[-1]
+                )
+            else:
+                cars_logging.add_progress_message(
+                    "Starting pipeline for resolution 1"
+                )
 
             if nb_res != 1 and args is not None:
                 # Logging configuration with args Loglevel

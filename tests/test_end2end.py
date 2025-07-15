@@ -44,6 +44,7 @@ from shapely.ops import transform
 # CARS imports
 from cars.core import inputs, roi_tools
 from cars.pipelines.default import default_pipeline as default
+from cars.pipelines.unit import unit_pipeline as unit
 
 # CARS Tests imports
 from .helpers import (
@@ -413,7 +414,7 @@ def test_end2end_dsm_fusion():
         input_dsm_config_base["advanced"] = {}
         input_dsm_config_base["advanced"]["epipolar_resolutions"] = 1
 
-        dsm_merging_pipeline = default.UnitPipeline(input_dsm_config_base)
+        dsm_merging_pipeline = unit.UnitPipeline(input_dsm_config_base)
         dsm_merging_pipeline.run()
 
         assert_same_images(
@@ -496,7 +497,7 @@ def test_end2end_color_after_dsm_reentrance():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        dsm_merging_pipeline = default.UnitPipeline(input_dsm_config)
+        dsm_merging_pipeline = unit.UnitPipeline(input_dsm_config)
         dsm_merging_pipeline.run()
 
         copy2(
@@ -1163,7 +1164,7 @@ def test_end2end_ventoux_unique():
             )
 
             # check used_conf reentry
-            _ = default.UnitPipeline(used_conf)
+            _ = unit.UnitPipeline(used_conf)
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1295,7 +1296,7 @@ def test_end2end_ventoux_unique():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = default.UnitPipeline(used_conf)
+            _ = unit.UnitPipeline(used_conf)
 
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -1967,7 +1968,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
             input_dsm_config["advanced"]["epipolar_resolutions"] = 1
 
-            dsm_pipeline = default.UnitPipeline(input_dsm_config)
+            dsm_pipeline = unit.UnitPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -2252,7 +2253,7 @@ def test_end2end_ventoux_unique_split():
 
             input_dsm_config["advanced"]["epipolar_resolutions"] = 1
 
-            dsm_pipeline = default.UnitPipeline(input_dsm_config)
+            dsm_pipeline = unit.UnitPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -2518,7 +2519,7 @@ def test_end2end_ventoux_unique_split():
             input_dsm_config["advanced"]["merging"] = False
 
             # launch
-            dsm_pipeline = default.UnitPipeline(input_dsm_config)
+            dsm_pipeline = unit.UnitPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -2989,7 +2990,7 @@ def test_end2end_use_epipolar_a_priori():
             assert "dem_max" in used_conf["advanced"]["terrain_a_priori"]
 
             # check used_conf reentry (without epipolar a priori activated)
-            _ = default.UnitPipeline(used_conf)
+            _ = unit.UnitPipeline(used_conf)
 
         # dense dsm pipeline
         input_config_dense_dsm = used_conf.copy()
@@ -3028,7 +3029,7 @@ def test_end2end_use_epipolar_a_priori():
         # Update outdir, write new dir
         input_config_dense_dsm["output"]["directory"] += "dense"
 
-        dense_dsm_pipeline = default.UnitPipeline(input_config_dense_dsm)
+        dense_dsm_pipeline = unit.UnitPipeline(input_config_dense_dsm)
 
         dense_dsm_pipeline.run(
             use_sift_a_priori=True, first_res_out_dir=output_dir_res4
@@ -3058,7 +3059,7 @@ def test_end2end_use_epipolar_a_priori():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = default.UnitPipeline(used_conf)
+            _ = unit.UnitPipeline(used_conf)
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -5931,7 +5932,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             "intermediate_res/out_res4",
         )
 
-        sensors_pipeline_second_run = default.UnitPipeline(
+        sensors_pipeline_second_run = unit.UnitPipeline(
             sensors_input_config_second_run
         )
         sensors_pipeline_second_run.run(
@@ -5975,9 +5976,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             pc_input_config_first_run["advanced"] = {}
             pc_input_config_first_run["advanced"]["epipolar_resolutions"] = 1
 
-            pc_pipeline_first_run = default.UnitPipeline(
-                pc_input_config_first_run
-            )
+            pc_pipeline_first_run = unit.UnitPipeline(pc_input_config_first_run)
             pc_pipeline_first_run.run()
             pc_out_dir_first_run = pc_input_config_first_run["output"][
                 "directory"
@@ -5992,7 +5991,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "directory"
             ] += "_from_used_conf"
 
-            pc_pipeline_second_run = default.UnitPipeline(
+            pc_pipeline_second_run = unit.UnitPipeline(
                 pc_input_config_second_run
             )
             pc_pipeline_second_run.run()
