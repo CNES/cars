@@ -383,15 +383,22 @@ def generate_geometry_plugin_with_dem(
         pairs_for_roi = None
 
     # Initialize a second geometry plugin with elevation information
-    geom_plugin_with_dem_and_geoid = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            conf_geom_plugin,
-            dem=dem_path,
-            geoid=conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
-            default_alt=sens_cst.CARS_DEFAULT_ALT,
-            pairs_for_roi=pairs_for_roi,
+
+    try:
+        geom_plugin_with_dem_and_geoid = (
+            AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+                conf_geom_plugin,
+                dem=dem_path,
+                geoid=conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
+                default_alt=sens_cst.CARS_DEFAULT_ALT,
+                pairs_for_roi=pairs_for_roi,
+            )
         )
-    )
+    except ValueError as err:
+        raise RuntimeError(
+            "The extent of the output DEM lies outside "
+            "the extent of the initial DEM"
+        ) from err
 
     return geom_plugin_with_dem_and_geoid
 
