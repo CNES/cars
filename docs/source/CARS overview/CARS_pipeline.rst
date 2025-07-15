@@ -26,7 +26,7 @@ The pipeline will perform the following steps |cars_isprs| |cars_igarss|:
     - For each stereo pair:
         
         5. Resample the stereo pair in epipolar geometry, at the right resolution, by using either the input :term:`DTM` (such as an SRTM) if the current resolution is the first one, or the previous resolution's `DEM Median`.
-        6. Compute the disparity map in epipolar geometry, by using the `DEM Min` and `DEM Max` as disparity intervals.
+        6. Compute the disparity map in epipolar geometry, by using the `DEM Min` and `DEM Max` as disparity intervals. For the first resolution, the sift are used to reduce the disparity intervals.
         7. Triangulate the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
 
     - Then
