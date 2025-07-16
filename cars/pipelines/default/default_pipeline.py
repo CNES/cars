@@ -149,6 +149,7 @@ class DefaultPipeline(PipelineTemplate):
         i = 0
         last_res = False
         for res in resolutions:
+
             if not isinstance(res, int) or res < 0:
                 raise RuntimeError("The resolution has to be an int > 0")
 
@@ -1154,15 +1155,6 @@ class DefaultPipeline(PipelineTemplate):
         for key, conf_res in self.used_conf.items():
             out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
 
-            if int(key.split("_")[-1]) != 1:
-                cars_logging.add_progress_message(
-                    "Starting pipeline for resolution 1/" + key.split("_")[-1]
-                )
-            else:
-                cars_logging.add_progress_message(
-                    "Starting pipeline for resolution 1"
-                )
-
             if nb_res != 1 and args is not None:
                 # Logging configuration with args Loglevel
                 loglevel = getattr(args, "loglevel", "PROGRESS").upper()
@@ -1171,6 +1163,15 @@ class DefaultPipeline(PipelineTemplate):
                     loglevel,
                     out_dir=os.path.join(out_dir, "logs"),
                     pipeline="",
+                )
+
+            if int(key.split("_")[-1]) != 1:
+                cars_logging.add_progress_message(
+                    "Starting pipeline for resolution 1/" + key.split("_")[-1]
+                )
+            else:
+                cars_logging.add_progress_message(
+                    "Starting pipeline for resolution 1"
                 )
 
             # Get the resolution step

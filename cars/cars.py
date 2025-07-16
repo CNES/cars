@@ -116,14 +116,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         out_dir = config["output"]["directory"]
 
-        if not isinstance(
-            config.get("advanced", {}).get("epipolar_resolutions"), list
-        ):
-            cars_logging.setup_logging(
-                loglevel,
-                out_dir=os.path.join(out_dir, "logs"),
-                pipeline=pipeline_name,
-            )
+        cars_logging.setup_logging(
+            loglevel,
+            out_dir=os.path.join(out_dir, "logs"),
+            pipeline=pipeline_name,
+        )
 
         logging.debug("Show argparse arguments: {}".format(args))
 

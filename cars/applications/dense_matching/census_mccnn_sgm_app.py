@@ -269,6 +269,11 @@ class CensusMccnnSgm(
             overloaded_conf["use_cross_validation"] = "fast"
 
         # TODO modify, use loader directly
+        logger = logging.getLogger("transitions.core")
+        logger.addFilter(
+            lambda record: "to model due to model override policy"
+            not in record.getMessage()
+        )
         pandora_loader = PandoraLoader(
             conf=loader_conf,
             method_name=overloaded_conf["method"],
@@ -283,6 +288,7 @@ class CensusMccnnSgm(
             denoise_disparity_map=overloaded_conf["denoise_disparity_map"],
             used_band=overloaded_conf["used_band"],
         )
+
         overloaded_conf["loader"] = loader
 
         # Get params from loader
