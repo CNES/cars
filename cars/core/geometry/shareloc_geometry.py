@@ -115,7 +115,7 @@ class SharelocGeometry(AbstractGeometry):
                     fill_nodata="mean",
                     fill_value=0.0,
                 )
-            except ValueError as err:
+            except RuntimeError as err:
                 mss = "The roi bounds are"
                 if mss in str(err):
                     new_except_mss = (
