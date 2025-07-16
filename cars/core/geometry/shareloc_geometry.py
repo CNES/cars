@@ -116,12 +116,13 @@ class SharelocGeometry(AbstractGeometry):
                     fill_value=0.0,
                 )
             except ValueError as err:
-                mss = "Number of columns or rows must be non-negative"
-                if str(err) == mss:
-                    raise RuntimeError(
-                        "The extent of the output DEM lies outside "
-                        "the extent of the initial DEM"
-                    ) from err
+                mss = "The roi bounds are"
+                if mss in str(err):
+                    new_except_mss = (
+                        f"The extent of the output DEM lies outside "
+                        f"the extent of the initial DEM : {err}"
+                    )
+                    raise RuntimeError(new_except_mss) from err
                 raise
 
             self.elevation = (
