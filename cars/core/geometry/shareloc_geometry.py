@@ -105,14 +105,25 @@ class SharelocGeometry(AbstractGeometry):
 
             # fill_nodata option should be set when dealing with void in DTM
             # see shareloc DTM limitations in sphinx doc for further details
-            dtm_image = dtm_reader(
-                dem,
-                geoid,
-                roi=self.roi_shareloc,
-                roi_is_in_physical_space=True,
-                fill_nodata="mean",
-                fill_value=0.0,
-            )
+
+            try:
+                dtm_image = dtm_reader(
+                    dem,
+                    geoid,
+                    roi=self.roi_shareloc,
+                    roi_is_in_physical_space=True,
+                    fill_nodata="mean",
+                    fill_value=0.0,
+                )
+            except ValueError as err:
+                mss = "Number of columns or rows must be non-negative"
+                if str(err) == mss:
+                    raise RuntimeError(
+                        "The extent of the output DEM lies outside "
+                        "the extent of the initial DEM"
+                    ) from err
+                raise
+
             self.elevation = (
                 bindings_cpp.DTMIntersection(  # pylint: disable=I1101
                     dtm_image.epsg,
