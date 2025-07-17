@@ -479,9 +479,8 @@ class SimpleGaussian(
             if self.color_dtype == "uint8":
                 self.texture_no_data = cst.TEXTURE_NO_DATA_UINT8
             elif self.color_dtype == "uint16":
-                print("laaaaaaaaa")
                 self.texture_no_data = cst.TEXTURE_NO_DATA_UINT16
-            if self.color_dtype == "uint32":
+            elif self.color_dtype == "uint32":
                 self.texture_no_data = cst.TEXTURE_NO_DATA_UINT32
             elif self.color_dtype == "uint64":
                 self.texture_no_data = cst.TEXTURE_NO_DATA_UINT64
