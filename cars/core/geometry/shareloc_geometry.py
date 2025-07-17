@@ -119,8 +119,8 @@ class SharelocGeometry(AbstractGeometry):
                 mss = "the roi bounds are"
                 if mss in str(err):
                     new_except_mss = (
-                        f"The extent of the output DEM lies outside "
-                        f"the extent of the initial DEM : {err}"
+                        f"The extent of the roi lies outside "
+                        f"the extent of the initial elevation : {err}"
                     )
                     raise RuntimeError(new_except_mss) from err
                 raise
