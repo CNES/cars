@@ -148,7 +148,7 @@ max-line-length = 80
 select = ["E", "F", "W", "C", "B9", "C4", "B"]
 
 [tool.setuptools.package-data]
-cars = ["orchestrator/cluster/dask_config/*.yaml", "conf/geoid/*.grd", "conf/geoid/*.hdr", "applications/dense_matching/loaders/*.json", "applications/dsm_filling/bulldozer_config/*.yaml", "pipelines/conf_resolution/*.json ]
+cars = ["orchestrator/cluster/dask_config/*.yaml", "conf/geoid/*.grd", "conf/geoid/*.hdr", "applications/dense_matching/loaders/*.json", "applications/dsm_filling/bulldozer_config/*.yaml", "pipelines/conf_resolution/*.json"]
 
 # Specify no universal wheel supported (only Python3)
 [tool.wheel]
