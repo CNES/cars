@@ -476,13 +476,14 @@ class SimpleGaussian(
             if not self.color_dtype:
                 self.color_dtype = color_dtype
 
-            if self.color_dtype == np.uint8:
+            if self.color_dtype == "uint8":
                 self.texture_no_data = cst.TEXTURE_NO_DATA_UINT8
-            elif self.color_dtype == np.uint16:
+            elif self.color_dtype == "uint16":
+                print("laaaaaaaaa")
                 self.texture_no_data = cst.TEXTURE_NO_DATA_UINT16
-            if self.color_dtype == np.uint32:
+            if self.color_dtype == "uint32":
                 self.texture_no_data = cst.TEXTURE_NO_DATA_UINT32
-            elif self.color_dtype == np.uint64:
+            elif self.color_dtype == "uint64":
                 self.texture_no_data = cst.TEXTURE_NO_DATA_UINT64
 
             self.orchestrator.add_to_save_lists(
