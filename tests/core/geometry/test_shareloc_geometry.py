@@ -26,6 +26,7 @@ import numpy as np
 
 # Third party imports
 import pytest
+from shareloc.dtm_reader import dtm_reader
 
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 
@@ -162,3 +163,46 @@ def test_get_roi():
     # Returned ROI is the footprint of the rectification
     # It takes into account the 5 pixels margin
     np.testing.assert_allclose(roi, ref_roi)
+
+
+def test_exception_roi_outside_dtm():
+    """
+    Test when the roi is outside the dtm
+    """
+    dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
+    geoid = get_geoid_path()
+
+    roi = [
+        np.float64(29.96045991664652),
+        np.float64(31.113871413749465),
+        np.float64(29.994903455285336),
+        np.float64(31.150561092164736),
+    ]
+
+    with pytest.raises(RuntimeError) as excinfo:
+        try:
+            _ = dtm_reader(
+                dem,
+                geoid,
+                roi=roi,
+                roi_is_in_physical_space=True,
+                fill_nodata="mean",
+            )
+        except RuntimeError as err:
+            mss = "the roi bounds are"
+            if mss in str(err):
+                new_except_mss = (
+                    f"The extent of the output DEM lies outside "
+                    f"the extent of the initial DEM : {err}"
+                )
+                raise RuntimeError(new_except_mss) from err
+            raise
+
+    assert str(excinfo.value) == (
+        "The extent of the output DEM lies outside "
+        "the extent of the initial DEM : "
+        "the roi bounds are [31.113871413749465, "
+        "29.96045991664652, 31.150561092164736, 29.994903455285336] "
+        "while the dtm bounds are [4.999583333333334, 43.999583333333334, "
+        "6.000416666666667, 45.000416666666666]"
+    )
