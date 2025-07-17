@@ -130,7 +130,7 @@ class SimpleGaussian(
 
         # get nodata values
         overloaded_conf["dsm_no_data"] = conf.get("dsm_no_data", -32768)
-        overloaded_conf["texture_no_data"] = conf.get("texture_no_data", 0)
+        overloaded_conf["texture_no_data"] = conf.get("texture_no_data", None)
         overloaded_conf["texture_dtype"] = conf.get("texture_dtype", None)
         overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 255)
 
@@ -145,7 +145,7 @@ class SimpleGaussian(
             "grid_points_division_factor": Or(None, int),
             "dsm_no_data": int,
             "msk_no_data": int,
-            "texture_no_data": int,
+            "texture_no_data": Or(None, int),
             "texture_dtype": Or(None, str),
             "save_intermediate_data": bool,
         }
@@ -317,6 +317,13 @@ class SimpleGaussian(
         # Get if color, mask and stats are saved
         save_intermediate_data = self.used_config["save_intermediate_data"]
 
+        if not self.color_dtype:
+            self.color_dtype = color_dtype
+
+        if self.texture_no_data is None:
+            if self.color_dtype is not None:
+                self.texture_no_data = np.iinfo(self.color_dtype).max
+
         # Setup dump directory
         if dump_dir is not None:
             out_dump_dir = dump_dir
@@ -473,17 +480,6 @@ class SimpleGaussian(
             out_clr_file_name = os.path.join(out_dump_dir, "texture.tif")
         if out_clr_file_name is not None:
             list_computed_layers += ["texture"]
-            if not self.color_dtype:
-                self.color_dtype = color_dtype
-
-            if self.color_dtype == "uint8":
-                self.texture_no_data = cst.TEXTURE_NO_DATA_UINT8
-            elif self.color_dtype == "uint16":
-                self.texture_no_data = cst.TEXTURE_NO_DATA_UINT16
-            elif self.color_dtype == "uint32":
-                self.texture_no_data = cst.TEXTURE_NO_DATA_UINT32
-            elif self.color_dtype == "uint64":
-                self.texture_no_data = cst.TEXTURE_NO_DATA_UINT64
 
             self.orchestrator.add_to_save_lists(
                 out_clr_file_name,
@@ -849,10 +845,14 @@ class SimpleGaussian(
                 raster_cst.RASTERIZATION_RUN_TAG: {
                     raster_cst.EPSG_TAG: epsg,
                     raster_cst.DSM_NO_DATA_TAG: float(self.dsm_no_data),
-                    raster_cst.TEXTURE_NO_DATA_TAG: float(self.texture_no_data),
                 },
             }
         }
+        if self.texture_no_data is not None:
+            updating_dict[application_constants.APPLICATION_TAG][
+                raster_cst.RASTERIZATION_RUN_TAG
+            ][raster_cst.TEXTURE_NO_DATA_TAG] = float(self.texture_no_data)
+
         self.orchestrator.update_out_info(updating_dict)
 
         # Generate rasters
