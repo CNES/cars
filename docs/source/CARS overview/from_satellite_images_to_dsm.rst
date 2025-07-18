@@ -142,6 +142,12 @@ This reduces computation time greatly while providing better results than a brut
 | |multires_res4|     | |multires_res2|     | |multires_res1|     |
 +---------------------+---------------------+---------------------+
 
+With :
+
+	- resolution 4 corresponding to 4 times the original resolution (e.g., 4m if the original resolution is 1m).
+	- Resolution 2 corresponding to 2 times the original resolution (e.g., 2m if the original resolution is 1m).
+	- Resolution 1 corresponding to the original resolution (e.g., 1m).
+
 Geometric inaccuracies
 ----------------------
 

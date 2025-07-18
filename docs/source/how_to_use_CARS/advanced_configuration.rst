@@ -49,9 +49,13 @@ The structure follows this organization:
 
             .. tab:: Overriding a single resolution
 
-                To override a configuration at a specific resolution, you first need to identify which resolution you want to modify. By default, CARS uses the resolutions 16, 4, and 1.
+                To override a configuration at a specific resolution, you first need to identify which resolution you want to modify. By default, CARS uses the resolutions 16, 4, and 1 :
+                
+			- Resolution 16 corresponds to 16 times the original resolution (e.g., 16m if the original resolution is 1m).
+			- Resolution 4 corresponds to 4 times the original resolution (e.g., 4m if the original resolution is 1m).
+			- Resolution 1 corresponds to the original resolution (e.g., 1m).
 
-                Once you have chosen the resolution value, you can override the configuration by adding an entry to the `applications` dictionary with the key `resolution_{resolution_value}`.
+                Once you have chosen the resolution value, you can override the configuration by adding an entry to the `applications` dictionary with the key `resolution_{resolution_value}` with resolution value an integer.
 
                 The following example overrides the configuration for `application_name` at resolutions 4 and 1, using different parameters for each. Resolution 16 will retain its default configuration.
 
@@ -1355,15 +1359,15 @@ The structure follows this organization:
             .. tab:: Epipolar resolutions
 
                 The `epipolar_resolutions` parameter is used to specify the number and resolution of Unit Pipeline runs.
-                Resolutions are set from the lowest to the highest, with 1 being the heighest possible.
+                Resolutions are set from the lowest to the highest, with 1 being the highest possible.
                 A resolution of n means that one pixel from the downsampled image will be calculated using n² pixels from the full-res image.
                 
-                For example, epipolar_resolutions = [16, 4, 2, 1] with an image of 2048x3072 will run the Unit Pipeline four times :
+                For example, epipolar_resolutions = [16, 4, 2, 1] with an image of 2048x3072 and a pixel size of 1 m will run the Unit Pipeline four times :
 
-                - First with a size of 128x192
-                - Then with a resolution of 512x768
-                - Then with a resolution of 1024x1536
-                - And a last time with a resolution of 2048x3072
+                - First (16), with a size of 128x192 and a pixel size of 16 m
+                - Then (4), with a resolution of 512x768 and a pixel size of 4 m
+                - Then (2), with a resolution of 1024x1536 and a pixel size of 2 m
+                - Then (1), with a resolution of 2048x3072 and the original pixel size of 1 m
 
                 Each run will provide an apriori on the height of the terrain at each position for the next run, resulting in a low computation time.
 
