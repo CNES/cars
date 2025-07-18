@@ -1412,6 +1412,10 @@ class UnitPipeline(PipelineTemplate):
                         )
                     )
 
+                    minimum_nb_matches = (
+                        self.sparse_mtch_sift_app.get_minimum_nb_matches()
+                    )
+
                     # Estimate grid_correction
                     (
                         self.pairs[pair_key]["grid_correction_coef"],
@@ -1423,6 +1427,7 @@ class UnitPipeline(PipelineTemplate):
                         new_grid_matches_array,
                         self.pairs[pair_key]["new_grid_right"],
                         save_matches=save_matches,
+                        minimum_nb_matches=minimum_nb_matches,
                         initial_cars_ds=self.pairs[pair_key][
                             "epipolar_matches_left"
                         ],
