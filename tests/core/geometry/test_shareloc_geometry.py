@@ -26,7 +26,6 @@ import numpy as np
 
 # Third party imports
 import pytest
-from shareloc.dtm_reader import dtm_reader
 
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 
@@ -169,40 +168,36 @@ def test_exception_roi_outside_dtm():
     """
     Test when the roi is outside the dtm
     """
-    dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
+
+    sensor1_path = absolute_data_path("input/phr_ventoux/left_image.tif")
+    sensor1 = {"main_file": sensor1_path}
+    geomodel1_path = absolute_data_path("input/phr_ventoux/left_image.geom")
+    geomodel1 = {"path": geomodel1_path, "model_type": RPC_TYPE}
+
+    sensor2_path = absolute_data_path("input/phr_ventoux/right_image.tif")
+    sensor2 = {"main_file": sensor2_path}
+    geomodel2_path = absolute_data_path("input/phr_ventoux/right_image.geom")
+    geomodel2 = {"path": geomodel2_path, "model_type": RPC_TYPE}
+
+    pairs_for_roi = [(sensor1, geomodel1, sensor2, geomodel2)]
+
+    dem = absolute_data_path("input/phr_gizeh/srtm_dir/N29E031_KHEOPS.tif")
     geoid = get_geoid_path()
 
-    roi = [
-        np.float64(29.96045991664652),
-        np.float64(31.113871413749465),
-        np.float64(29.994903455285336),
-        np.float64(31.150561092164736),
-    ]
-
     with pytest.raises(RuntimeError) as excinfo:
-        try:
-            _ = dtm_reader(
-                dem,
-                geoid,
-                roi=roi,
-                roi_is_in_physical_space=True,
-                fill_nodata="mean",
-            )
-        except RuntimeError as err:
-            mss = "the roi bounds are"
-            if mss in str(err):
-                new_except_mss = (
-                    f"The extent of the output DEM lies outside "
-                    f"the extent of the initial DEM : {err}"
-                )
-                raise RuntimeError(new_except_mss) from err
-            raise
+        _ = AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "SharelocGeometry",
+            dem=dem,
+            geoid=geoid,
+            default_alt=0,
+            pairs_for_roi=pairs_for_roi,
+        )
 
     assert str(excinfo.value) == (
-        "The extent of the output DEM lies outside "
-        "the extent of the initial DEM : "
-        "the roi bounds are [31.113871413749465, "
-        "29.96045991664652, 31.150561092164736, 29.994903455285336] "
-        "while the dtm bounds are [4.999583333333334, 43.999583333333334, "
-        "6.000416666666667, 45.000416666666666]"
+        "The extent of the roi lies outside "
+        "the extent of the initial elevation : the roi bounds are "
+        "[5.17895428589603, 44.191651375558834, 5.210201491359669, "
+        "44.22082030288275] while the dtm bounds are "
+        "[31.099861111111114, 29.950138888888887, "
+        "31.149861111111115, 30.000138888888888]"
     )
