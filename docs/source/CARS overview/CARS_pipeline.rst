@@ -4,7 +4,7 @@
 CARS pipeline
 =============
 
-To summarize, CARS's default pipeline is organized into sequential steps, starting from input pairs (and metadata) and producing output data. Each step is performed tile-wise and distributed among workers. Part of the pipeline operates at multiple resolutions to reach the final results while minimizing computation time. It is possible to run CARS at a single resolution, but this may be very inefficient for large or medium size images.
+To summarize, CARS's default pipeline is organized into sequential steps, starting from input pairs (and metadata) and producing output data. Each step is performed tile-wise and distributed among workers. Part of the pipeline operates at multiple spatial resolutions to reach the final results while minimizing computation time. It is possible to run CARS at a single resolution, but this may be very inefficient for large or medium size images.
 
 
 .. figure:: ../images/cars_pipeline_multi_pair.png
@@ -21,12 +21,15 @@ The pipeline will perform the following steps |cars_isprs| |cars_igarss|:
     3. Compute sift matches between left and right views in epipolar geometry.
     4. Create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
 
-- For each resolution
+- For each resolution (first_resolution, intermediate_resolution, last_resolution)
     
     - For each stereo pair:
         
-        5. Resample the stereo pair in epipolar geometry, at the right resolution, by using either the input :term:`DTM` (such as an SRTM) if the current resolution is the first one, or the previous resolution's `DEM Median`.
-        6. Compute the disparity map in epipolar geometry, by using the `DEM Min` and `DEM Max` as disparity intervals. For the first resolution, the sift are used to reduce the disparity intervals.
+        5. Resample the stereo pair in epipolar geometry, at the specified resolution using:
+        
+        	- The input :term:`DTM` (such as an SRTM) for the first resolution.
+        	- The DEM Median from the previous resolution for intermediate_resolution or last_resolution.
+        6. Compute the disparity map in epipolar geometry, by using the `DEM Min` and `DEM Max` as disparity intervals. For the first resolution, sift features are used to refine the disparity intervals.
         7. Triangulate the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
 
     - Then
