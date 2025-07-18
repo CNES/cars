@@ -25,6 +25,7 @@ This module is responsible for the dense matching algorithms:
 
 # Standard imports
 import logging
+import warnings
 from typing import Dict
 
 import numpy as np
@@ -32,6 +33,7 @@ import xarray as xr
 
 # Third party imports
 from pandora import constants as p_cst
+from scipy.ndimage import generic_filter
 
 from cars.applications.dense_match_filling import fill_disp_wrappers
 
@@ -824,3 +826,67 @@ def get_max_disp_from_opt_tile_size(
     max_range = int(disp_tot / (2 * cv_ + nan_ + cv_uint) + 1)
 
     return max_range
+
+
+def nan_ratio_func(window):
+    """ "
+    Calculate the number of nan in the window
+
+    :param window: the window in the image
+    """
+
+    total_pixels = window.size
+    nan_count = np.isnan(window).sum()
+    return nan_count / total_pixels
+
+
+def confidence_filtering(
+    dataset,
+    disp_map,
+    requested_confidence,
+    conf_filtering,
+):
+    """
+    Filter the disparity map by using the confidence
+
+    :param dataset: the epipolar disparity map dataset
+    :type dataset: cars dataset
+    :param disp_map: the disparity map
+    :type disp_map: numpy darray
+    :param requested_confidence: the confidence to use
+    :type requested_confidence: list
+    :param conf_filtering: the confidence_filtering parameters
+    :type conf_filtering: dict
+    """
+
+    data_risk = dataset[requested_confidence[0]].values
+    data_bounds_sup = dataset[requested_confidence[1]].values
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        nan_ratio = generic_filter(
+            disp_map, nan_ratio_func, size=conf_filtering["win_nanratio"]
+        )
+        var_map = generic_filter(
+            data_risk, np.nanmean, size=conf_filtering["win_mean_risk_max"]
+        )
+
+    mask = (
+        (data_bounds_sup > conf_filtering["upper_bound"])
+        | (data_bounds_sup <= conf_filtering["lower_bound"])
+    ) | (
+        (var_map > conf_filtering["risk_max"])
+        & (nan_ratio > conf_filtering["nan_threshold"])
+    )
+
+    dataset["disp"].values[mask] = np.nan
+    dataset["disp_msk"].values[mask] = 0
+
+    dims = list(dataset.sizes.keys())[:2]
+
+    var_mean_risk = xr.DataArray(var_map, dims=dims)
+    var_nan_ratio = xr.DataArray(nan_ratio, dims=dims)
+
+    # We add the new variables to the dataset
+    dataset["confidence_from_mean_risk_max"] = var_mean_risk
+    dataset["confidence_from_nanratio"] = var_nan_ratio

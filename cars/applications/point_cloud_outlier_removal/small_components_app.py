@@ -296,6 +296,7 @@ class SmallComponents(
         :param epsg: cartographic reference for the point cloud (array input)
         :type epsg: int
 
+
         :return: filtered merged point cloud. CarsDataset contains:
 
             - Z x W Delayed tiles.\
@@ -336,7 +337,6 @@ class SmallComponents(
                 dump_dir,
                 app_name="small_components",
             )
-
             # Generate rasters
             for col in range(filtered_point_cloud.shape[1]):
                 for row in range(filtered_point_cloud.shape[0]):
@@ -433,7 +433,6 @@ class SmallComponents(
                             self.half_epipolar_size,
                             window,
                             overlap,
-                            epsg=epsg,
                             point_cloud_csv_file_name=csv_pc_file_name,
                             point_cloud_laz_file_name=laz_pc_file_name,
                             saving_info_epipolar=full_saving_info_epipolar,
@@ -572,7 +571,6 @@ def epipolar_small_component_removal_wrapper(
     half_epipolar_size,
     window,
     overlap,
-    epsg,
     point_cloud_csv_file_name=None,
     point_cloud_laz_file_name=None,
     saving_info_epipolar=None,
@@ -596,8 +594,6 @@ def epipolar_small_component_removal_wrapper(
     :type window: list
     :param overlap: overlap [row min, row max, col min col max]
     :type overlap: list
-    :param epsg: epsg code of the CRS used to compute distances
-    :type epsg: int
 
     :return: filtered dataset
     :rtype:  xr.Dataset
@@ -607,9 +603,29 @@ def epipolar_small_component_removal_wrapper(
     # Copy input cloud
     filtered_cloud = copy.copy(cloud)
 
+    # Get current epsg
+    cloud_epsg = filtered_cloud.attrs["epsg"]
+    current_epsg = cloud_epsg
+
+    # Check if can be used to filter
+    spatial_ref = CRS.from_epsg(cloud_epsg)
+    if spatial_ref.is_geographic:
+        logging.debug(
+            "The points cloud to filter is not in a cartographic system. "
+            "The filter's default parameters might not be adapted "
+            "to this referential. Please, convert the points "
+            "cloud to ECEF to ensure a proper point_cloud."
+        )
+        # Convert to epsg = 4978
+        cartographic_epsg = 4978
+
+        projection.point_cloud_conversion_dataset(
+            filtered_cloud, cartographic_epsg
+        )
+        current_epsg = cartographic_epsg
+
     outlier_removal_algo.epipolar_small_components(
         filtered_cloud,
-        epsg,
         min_cluster_size=nb_points_threshold,
         radius=connection_distance,
         half_window_size=half_epipolar_size,
@@ -631,14 +647,16 @@ def epipolar_small_component_removal_wrapper(
     if point_cloud_csv_file_name or point_cloud_laz_file_name:
         # Convert epipolar array into point cloud
         flatten_filtered_cloud, cloud_epsg = (
-            pc_fusion_algo.create_combined_cloud([filtered_cloud], ["0"], epsg)
+            pc_fusion_algo.create_combined_cloud(
+                [filtered_cloud], ["0"], current_epsg
+            )
         )
         # Convert to UTM
-        if epsg is not None and cloud_epsg != epsg:
+        if current_epsg is not None and cloud_epsg != current_epsg:
             projection.point_cloud_conversion_dataframe(
-                flatten_filtered_cloud, cloud_epsg, epsg
+                flatten_filtered_cloud, cloud_epsg, current_epsg
             )
-            cloud_epsg = epsg
+            cloud_epsg = current_epsg
 
         # Fill attributes for LAZ saving
         color_type = pc_fusion_wrappers.get_color_type([filtered_cloud])

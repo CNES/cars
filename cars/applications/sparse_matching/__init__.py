@@ -27,4 +27,4 @@ from cars.applications.sparse_matching.abstract_sparse_matching_app import (
     SparseMatching,
 )
 
-from . import pandora_sparse_matching_app, sift_app
+from . import sift_app

@@ -904,7 +904,6 @@ class SimpleGaussian(
                             performance_map_classes=performance_map_classes,
                         )
         else:
-
             # Add final function to apply
             terrain_raster.final_function = raster_final_function
             ind_tile = 0

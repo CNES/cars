@@ -23,14 +23,19 @@ Test module for cars/stereo.py
 Important : Uses conftest.py for shared pytest fixtures
 """
 
+import json
+import os
 import tempfile
 
 # Third party imports
 import numpy as np
 import pytest
+import rasterio
 import xarray as xr
 
+from cars import __version__
 from cars.applications.application import Application
+from cars.applications.grid_generation.transform_grid import transform_grid_func
 
 # CARS imports
 from cars.applications.resampling import resampling_algo, resampling_wrappers
@@ -41,6 +46,9 @@ from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.orchestrator import orchestrator
 from cars.pipelines.parameters import sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
+from tests.applications.grid_generation.test_grids import (
+    adapt_path_for_test_dir,
+)
 
 # CARS Tests imports
 from ...helpers import (
@@ -370,6 +378,106 @@ def test_epipolar_rectify_images_3(
 
     assert class1 is None
     assert class2 is None
+
+
+def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
+    """
+    Test the low res resampling
+    """
+    input_file = "grid_generation_gizeh_ROI_no_color.json"
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {}
+        conf["out_dir"] = directory
+        input_relative_path = os.path.join("input", "test_application")
+        input_path = absolute_data_path(input_relative_path)
+        # Triangulation
+        epipolar_grid_generation_application = Application(
+            "grid_generation", cfg=conf.get("grid_generation", {})
+        )
+        orchestrator_conf = {
+            "mode": "sequential",
+            "max_ram_per_worker": 40,
+            "profiling": {"mode": "cars_profiling"},
+        }
+
+        with orchestrator.Orchestrator(
+            orchestrator_conf=orchestrator_conf
+        ) as cars_orchestrator:
+            # initialize out_json
+            cars_orchestrator.update_out_info({"version": __version__})
+            # load dictionary of cardatasets
+            with open(
+                absolute_data_path(
+                    os.path.join(input_relative_path, input_file)
+                ),
+                "rb",
+            ) as file:
+                # load pickle data
+                data = json.load(file)
+                adapt_path_for_test_dir(data, input_path)
+                # Run grid generation
+                geometry_plugin = get_geometry_plugin(
+                    dem=os.path.join(
+                        input_path, "srtm_dir", "N29E031_KHEOPS.tif"
+                    ),
+                    default_alt=0,
+                )
+                (
+                    grid_left,
+                    grid_right,
+                ) = epipolar_grid_generation_application.run(
+                    data["sensor_image_left"],
+                    data["sensor_image_right"],
+                    geometry_plugin,
+                    orchestrator=cars_orchestrator,
+                    pair_folder=os.path.join(directory, "pair_0"),
+                )
+
+                res = 4
+
+                grid_left = transform_grid_func(
+                    grid_left,
+                    grid_right,
+                    res,
+                )
+
+                resampling_application = Application("resampling", {})
+
+                (
+                    img1,
+                    img2,
+                ) = resampling_application.run(
+                    data["sensor_image_left"],
+                    data["sensor_image_right"],
+                    grid_left,
+                    grid_right,
+                    geometry_plugin,
+                    orchestrator=cars_orchestrator,
+                    pair_folder=os.path.join(directory, "pair_0"),
+                    add_color=False,
+                    resolution=res,
+                )
+
+                with rasterio.open(data["sensor_image_left"]["image"]) as src:
+                    data1 = src.read(1)
+
+                with rasterio.open(data["sensor_image_right"]["image"]) as src:
+                    data2 = src.read(1)
+
+                size1 = img1[0, 0].sizes
+                size2 = img2[0, 0].sizes
+
+                assert np.allclose(
+                    (size1["row"], size1["col"]),
+                    (data1.shape[0] / res, data1.shape[1] / res),
+                    0.05,
+                )
+                assert np.allclose(
+                    (size2["row"], size2["col"]),
+                    (data2.shape[0] / res, data2.shape[1] / res),
+                    0.05,
+                )
 
 
 @pytest.mark.unit_tests

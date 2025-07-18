@@ -26,6 +26,7 @@ import logging
 import os
 
 import numpy as np
+import pyproj
 import rasterio as rio
 import xdem
 
@@ -33,7 +34,9 @@ import xdem
 from affine import Affine
 from rasterio.coords import BoundingBox
 from rasterio.enums import Resampling
-from rasterio.warp import reproject
+from rasterio.warp import calculate_default_transform, reproject
+
+from cars.core import preprocessing
 
 
 def fit_initial_elevation_on_dem_median(
@@ -276,3 +279,98 @@ def downsample_dem(input_dem, scale):
 
     with rio.open(input_dem, "w", **metadata) as dst:
         dst.write(output, 1)
+
+
+def modify_terrain_bounds(dem_roi_to_use, epsg, margin):
+    """
+    Modify the terrain bounds
+
+    :param dem_roi_to_use: the dem roi
+    :type dem_roi_to_use: polygon
+    :param epsg: the epsg code
+    :type epsg: int
+    :param margin: the margin
+    :type margin: int
+    """
+    # Get bounds
+    bounds_poly = dem_roi_to_use.bounds
+    xmin = min(bounds_poly[0], bounds_poly[2])
+    xmax = max(bounds_poly[0], bounds_poly[2])
+    ymin = min(bounds_poly[1], bounds_poly[3])
+    ymax = max(bounds_poly[1], bounds_poly[3])
+
+    bounds_cloud = [xmin, ymin, xmax, ymax]
+
+    # Convert resolution and margin to degrees
+    utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+    conversion_factor = preprocessing.get_conversion_factor(
+        bounds_cloud, 4326, utm_epsg
+    )
+    margin_in_degrees = margin * conversion_factor
+
+    # Get borders, adding margin
+    xmin = xmin - margin_in_degrees
+    ymin = ymin - margin_in_degrees
+    xmax = xmax + margin_in_degrees
+    ymax = ymax + margin_in_degrees
+
+    terrain_bounds = [xmin, ymin, xmax, ymax]
+
+    if epsg != 4326:
+        crs_in = pyproj.CRS.from_epsg(4326)
+        crs_out = pyproj.CRS.from_epsg(epsg)
+
+        transformer = pyproj.Transformer.from_crs(
+            crs_in, crs_out, always_xy=True
+        )
+
+        xymin = transformer.transform(terrain_bounds[0], terrain_bounds[1])
+        xymax = transformer.transform(terrain_bounds[2], terrain_bounds[3])
+
+        xmin, ymin = xymin if isinstance(xymin, tuple) else (None, None)
+        xmax, ymax = xymax if isinstance(xymax, tuple) else (None, None)
+
+        if None in (xmin, ymin, xmax, ymax):
+            raise RuntimeError("An error occured during the projection")
+
+    new_terrain_bounds = [xmin, ymin, xmax, ymax]
+
+    return new_terrain_bounds
+
+
+def reproject_dem(dsm_file_name, epsg_out, out_file_name):
+    """
+    Reproject the dem
+
+    :param dsm_file_name: the path to dsm
+    :type dsm_file_name: str
+    :param epsg_out: the epsg code
+    :type epsg_out: int
+    :param out_file_name: the out path file
+    :type out_file_name: str
+    """
+    with rio.open(dsm_file_name) as src:
+        transform, width, height = calculate_default_transform(
+            src.crs, epsg_out, src.width, src.height, *src.bounds
+        )
+        kwargs = src.meta.copy()
+        kwargs.update(
+            {
+                "crs": epsg_out,
+                "transform": transform,
+                "width": width,
+                "height": height,
+            }
+        )
+
+        with rio.open(out_file_name, "w", **kwargs) as dst:
+            for i in range(1, src.count + 1):
+                reproject(
+                    source=rio.band(src, i),
+                    destination=rio.band(dst, i),
+                    src_transform=src.transform,
+                    src_crs=src.crs,
+                    dst_transform=transform,
+                    dst_crs=epsg_out,
+                    resampling=Resampling.nearest,
+                )

@@ -152,6 +152,10 @@ INDEX_DSM_PERFORMANCE_MAP = "performance_map"
 INDEX_DSM_AMBIGUITY = "ambiguity"
 INDEX_DSM_CONTRIBUTING_PAIR = "contributing_pair"
 INDEX_DSM_FILLING = "filling"
+INDEX_DEM_MIN = "dem_min"
+INDEX_DEM_MAX = "dem_max"
+INDEX_DEM_MEDIAN = "dem_median"
+
 
 # depth map index
 INDEX_DEPTH_MAP_X = "x"

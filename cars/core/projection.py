@@ -344,6 +344,7 @@ def point_cloud_conversion(
     # Project point cloud between CRS (keep always_xy for compatibility)
     cloud_in = np.array(cloud_in).T
     transformer = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)
+
     cloud_in = transformer.transform(*cloud_in)
     cloud_in = np.array(cloud_in).T
 

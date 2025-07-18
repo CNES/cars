@@ -31,7 +31,7 @@ import cars.pipelines.pipeline_template as pipeline_temp
 
 
 @pytest.mark.unit_tests
-def test_merge_pipeline_conf():
+def test_merge_resolution_conf_rec():
     """ "
     Test merge_pipeline_conf
 
@@ -43,10 +43,10 @@ def test_merge_pipeline_conf():
 
     updated_conf = conf1.copy()
 
-    pipeline_temp._merge_pipeline_conf_rec(  # pylint: disable=W0212
+    pipeline_temp._merge_resolution_conf_rec(  # pylint: disable=W0212
         updated_conf, conf2
     )
 
-    vt_conf = {"a": "toto", "b": {"c": {"d": "titi"}, "e": "tota"}, "g": "tato"}
+    vt_conf = {"a": "toto", "b": {"c": {"d": "titi"}, "e": "tutu"}, "g": "tato"}
 
     assert updated_conf == vt_conf

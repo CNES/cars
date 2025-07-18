@@ -24,16 +24,20 @@ This module contains the advanced parameter definitions
 """
 
 SAVE_INTERMEDIATE_DATA = "save_intermediate_data"
+KEEP_LOW_RES_DIR = "keep_low_res_dir"
 PHASING = "phasing"
 DEBUG_WITH_ROI = "debug_with_roi"
 
 USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
 EPIPOLAR_A_PRIORI = "epipolar_a_priori"
+RESOLUTION_A_PRIORI = "resolution_a_priori"
 GROUND_TRUTH_DSM = "ground_truth_dsm"
 
+EPIPOLAR_RESOLUTIONS = "epipolar_resolutions"
 
 MERGING = "merging"
 DSM_MERGING_TILE_SIZE = "dsm_merging_tile_size"
+
 
 # inner epipolar a priori constants
 GRID_CORRECTION = "grid_correction"

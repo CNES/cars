@@ -21,26 +21,21 @@
 """
 this module contains the dichotomic dem generation application class.
 """
+# Standard library
 import logging
 import os
 import shutil
 
 # Third-party imports
 import numpy as np
-import pandas
 import rasterio as rio
 import skimage
-import xarray as xr
 from json_checker import And, Checker, Or
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
 
-import cars.orchestrator.orchestrator as ocht
+# CARS imports - Applications
 from cars.applications import application_constants
-from cars.applications.application import Application
-from cars.applications.dem_generation import (
-    dem_generation_constants as dem_gen_cst,
-)
 from cars.applications.dem_generation.abstract_dem_generation_app import (
     DemGeneration,
 )
@@ -52,12 +47,12 @@ from cars.applications.dem_generation.dem_generation_wrappers import (
     downsample_dem,
     edit_transform,
     fit_initial_elevation_on_dem_median,
+    reproject_dem,
     reverse_dem,
 )
 
-# CARS imports
-from cars.core import preprocessing, projection, tiling
-from cars.data_structures import cars_dataset
+# CARS imports - Core
+from cars.core import inputs
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
@@ -191,21 +186,28 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
     @cars_profile(name="DEM Generation")
     def run(
         self,
-        triangulated_matches_list,
+        dsm_file_name,
         output_dir,
+        dem_min_file_name,
+        dem_max_file_name,
+        dem_median_file_name,
         geoid_path,
-        dem_roi_to_use=None,
         initial_elevation=None,
         cars_orchestrator=None,
     ):
         """
         Run dichotomic dem generation using matches
 
-        :param triangulated_matches_list: list of triangulated matches
-            positions must be in a metric system
-        :type triangulated_matches_list: list(pandas.Dataframe)
+        :param dsm_file_name: The dsm path
+        :type dsm_file_name: CarsDataset
         :param output_dir: directory to save dem
         :type output_dir: str
+        :param dem_min_file_name: path of dem_min
+        :type dem_min_file_name: str
+        :param dem_max_file_name: path of dem_max
+        :type dem_max_file_name: str
+        :param dem_median_file_name: path of dem_median
+        :type dem_median_file_name: str
         :param geoid_path: geoid path
         :param dem_roi_to_use: dem roi polygon to use as roi
 
@@ -215,96 +217,45 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         :rtype: CarsDataset
         """
 
-        # Create sequential orchestrator for savings
-        self.orchestrator = ocht.Orchestrator(
-            orchestrator_conf={"mode": "sequential"}
-        )
-
         # Generate point cloud
         epsg = 4326
 
-        for pair_pc in triangulated_matches_list:
-            # convert to degrees for geoid offset
-            if pair_pc.attrs["epsg"] != epsg:
-                projection.point_cloud_conversion_dataset(pair_pc, epsg)
-
-        merged_point_cloud = pandas.concat(
-            triangulated_matches_list,
-            ignore_index=True,
-            sort=False,
-        )
-        merged_point_cloud.attrs["epsg"] = epsg
-
-        # Get bounds
-        if dem_roi_to_use is not None:
-            bounds_poly = dem_roi_to_use.bounds
-            xmin = min(bounds_poly[0], bounds_poly[2])
-            xmax = max(bounds_poly[0], bounds_poly[2])
-            ymin = min(bounds_poly[1], bounds_poly[3])
-            ymax = max(bounds_poly[1], bounds_poly[3])
-        else:
-            # Get min max with margin
-            mins = merged_point_cloud.min(skipna=True)
-            maxs = merged_point_cloud.max(skipna=True)
-            xmin = mins["x"]
-            ymin = mins["y"]
-            xmax = maxs["x"]
-            ymax = maxs["y"]
-
-        bounds_cloud = [xmin, ymin, xmax, ymax]
-
-        # Convert resolution and margin to degrees
-        utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
-        conversion_factor = preprocessing.get_conversion_factor(
-            bounds_cloud, epsg, utm_epsg
-        )
-        margin_in_degrees = self.margin * conversion_factor
         resolution_in_meters = self.resolution
-        resolution_in_degrees = self.resolution * conversion_factor
-
-        # Get borders, adding margin
-        xmin = xmin - margin_in_degrees
-        ymin = ymin - margin_in_degrees
-        xmax = xmax + margin_in_degrees
-        ymax = ymax + margin_in_degrees
 
         # rasterize point cloud
-        dem_min_path = os.path.join(output_dir, "dem_min.tif")
-        dem_median_path = os.path.join(output_dir, "dem_median.tif")
-        dem_max_path = os.path.join(output_dir, "dem_max.tif")
+        dem_min_path = dem_min_file_name
+        if dem_min_path is None:
+            # File is not part of the official product, write it in dump_dir
+            dem_min_path = os.path.join(output_dir, "dem_min.tif")
 
-        point_clouds = cars_dataset.CarsDataset("points")
-        terrain_tiling_grid = tiling.generate_tiling_grid(
-            xmin,
-            ymin,
-            xmax,
-            ymax,
-            xmax - xmin,
-            ymax - ymin,
-        )
-        point_clouds.tiling_grid = terrain_tiling_grid
-        point_clouds.tiles[0][0] = merged_point_cloud
-        point_clouds.attributes["bounds"] = [xmin, ymin, xmax, ymax]
+        dem_max_path = dem_max_file_name
+        if dem_max_path is None:
+            # File is not part of the official product, write it in dump_dir
+            dem_max_path = os.path.join(output_dir, "dem_max.tif")
 
-        # Init rasterization app
-        rasterization_application = Application("point_cloud_rasterization")
+        dem_median_path_out = dem_median_file_name
+        if dem_median_path_out is None:
+            # File is not part of the official product, write it in dump_dir
+            dem_median_path_out = os.path.join(output_dir, "dem_median.tif")
 
-        dem = rasterization_application.run(
-            point_clouds,
-            epsg,
-            resolution=resolution_in_degrees,
-            orchestrator=self.orchestrator,
-            dsm_file_name=dem_median_path,
-        )
+        dem_median_path_in = dsm_file_name
 
-        self.orchestrator.breakpoint()
+        dem_epsg = inputs.rasterio_get_epsg(dsm_file_name)
+
+        if dem_epsg != epsg:
+            dem_median_path_in = os.path.join(output_dir, "dem_median.tif")
+            reproject_dem(dsm_file_name, "EPSG:4326", dem_median_path_in)
+
+        with rio.open(dem_median_path_in) as src:
+            dem = src.read(1)
+            profile = src.profile
+            nodata = src.nodata
 
         if self.save_intermediate_data:
             raw_dsm_path = os.path.join(output_dir, "raw_dsm.tif")
-            shutil.copy2(dem_median_path, raw_dsm_path)
+            shutil.copy2(dem_median_path_in, raw_dsm_path)
 
-        dem_data = dem[0, 0]["hgt"].data
-        nodata = rasterization_application.dsm_no_data
+        dem_data = dem
         mask = dem_data == nodata
 
         # fill nodata
@@ -337,8 +288,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
                 destination=input_geoid_data,
                 src_transform=in_geoid.transform,
                 src_crs=in_geoid.crs,
-                dst_transform=dem[0, 0].profile["transform"],
-                dst_crs=dem[0, 0].profile["crs"],
+                dst_transform=profile["transform"],
+                dst_crs=profile["crs"],
                 resampling=Resampling.bilinear,
             )
         dem_data -= input_geoid_data
@@ -391,71 +342,13 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             dem_max,
         )
 
-        # saving infos
-        # dem mean
-        dem_median_path = os.path.join(output_dir, "dem_median.tif")
-        self.orchestrator.add_to_save_lists(
-            dem_median_path,
-            dem_gen_cst.DEM_MEDIAN,
-            dem,
-            dtype=np.float32,
-            nodata=-32768,
-            cars_ds_name="dem_median",
-        )
-        dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH] = dem_median_path
-        # dem min
-        dem_min_path = os.path.join(output_dir, "dem_min.tif")
-        self.orchestrator.add_to_save_lists(
-            dem_min_path,
-            dem_gen_cst.DEM_MIN,
-            dem,
-            dtype=np.float32,
-            nodata=-32768,
-            cars_ds_name="dem_min",
-        )
-        dem.attributes[dem_gen_cst.DEM_MIN_PATH] = dem_min_path
-        # dem max
-        dem_max_path = os.path.join(output_dir, "dem_max.tif")
-        self.orchestrator.add_to_save_lists(
-            dem_max_path,
-            dem_gen_cst.DEM_MAX,
-            dem,
-            dtype=np.float32,
-            nodata=-32768,
-            cars_ds_name="dem_max",
-        )
-        dem.attributes[dem_gen_cst.DEM_MAX_PATH] = dem_max_path
-
-        # Generate dataset
-        dem_min_xr = dem[0, 0]["hgt"].copy()
-        dem_min_xr.data = dem_min
-        dem_median_xr = dem[0, 0]["hgt"].copy()
-        dem_median_xr.data = dem_median
-        dem_max_xr = dem[0, 0]["hgt"].copy()
-        dem_max_xr.data = dem_max
-        dem_tile = xr.Dataset(
-            data_vars={
-                "dem_min": dem_min_xr,
-                "dem_median": dem_median_xr,
-                "dem_max": dem_max_xr,
-            }
-        )
-
-        cars_dataset.fill_dataset(
-            dem_tile,
-            saving_info=dem[0, 0].saving_info,
-            window=dem[0, 0].window,
-            profile=dem[0, 0].profile,
-            attributes=None,
-            overlaps=None,
-        )
-
-        dem[0, 0] = dem_tile
-
-        # Save
-        self.orchestrator.breakpoint()
-        # cleanup
-        self.orchestrator.cleanup()
+        # save
+        with rio.open(dem_min_path, "w", **profile) as out_dem:
+            out_dem.write(dem_min, 1)
+        with rio.open(dem_median_path_out, "w", **profile) as out_dem:
+            out_dem.write(dem_min, 1)
+        with rio.open(dem_max_path, "w", **profile) as out_dem:
+            out_dem.write(dem_min, 1)
 
         if self.save_intermediate_data:
             intermediate_dem_min_path = os.path.join(
@@ -470,11 +363,11 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             intermediate_dem_median_path = os.path.join(
                 output_dir, "dem_median_before_downsampling.tif"
             )
-            shutil.copy2(dem_median_path, intermediate_dem_median_path)
+            shutil.copy2(dem_median_path_out, intermediate_dem_median_path)
 
         # Downsample median dem
         downsample_dem(
-            dem_median_path,
+            dem_median_path_out,
             scale=self.dem_median_output_resolution / resolution_in_meters,
         )
 
@@ -559,6 +452,12 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         with rio.open(dem_max_path, "w", **dem_max_metadata) as out_dem:
             out_dem.write(dem_max)
 
+        paths = {
+            "dem_median": dem_median_path_out,
+            "dem_min": dem_min_path,
+            "dem_max": dem_max_path,
+        }
+
         # after saving, fit initial elevation if required
         if initial_elevation is not None and self.coregistration:
             initial_elevation_out_path = os.path.join(
@@ -566,7 +465,9 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             )
 
             coreg_offsets = fit_initial_elevation_on_dem_median(
-                initial_elevation, dem_median_path, initial_elevation_out_path
+                initial_elevation,
+                dem_median_path_out,
+                initial_elevation_out_path,
             )
 
             coreg_info = {
@@ -587,8 +488,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
                     "The initial elevation will be used as-is because "
                     "coregistration failed or gave inconsistent results"
                 )
-                return dem, None
+                return dem, paths, None
 
-            return dem, initial_elevation_out_path
+            return dem, paths, initial_elevation_out_path
 
-        return dem, None
+        return dem, paths, None
