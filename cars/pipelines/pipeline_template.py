@@ -75,26 +75,6 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         checker_inputs = Checker(global_schema)
         checker_inputs.validate(conf)
 
-    def merge_pipeline_conf(self, config1, config2):
-        """
-        Merge two pipeline dict, generating a new configuration
-
-        :param conf1: configuration
-        :type conf1: dict
-        :param conf2: configuration
-        :type conf2: dict
-
-        :return: merged conf
-        :rtype: dict
-
-        """
-
-        merged_dict = config1.copy()
-
-        _merge_pipeline_conf_rec(merged_dict, config2)
-
-        return merged_dict
-
     @abstractmethod
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -125,7 +105,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         """
 
     @abstractmethod
-    def check_applications(self, conf):
+    def check_applications(self, conf, key=None, res=None, last_res=False):
         """
         Check the given configuration for applications
 
@@ -140,7 +120,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         """
 
 
-def _merge_pipeline_conf_rec(conf1, conf2):
+def _merge_resolution_conf_rec(conf1, conf2):
     """
     Merge secondary configuration on primary one
 
@@ -153,13 +133,9 @@ def _merge_pipeline_conf_rec(conf1, conf2):
     :rtype: dict
 
     """
-
     for key in conf2.keys():
         if key in conf1:
             if isinstance(conf1[key], dict) and isinstance(conf2[key], dict):
-                _merge_pipeline_conf_rec(conf1[key], conf2[key])
-            else:
-                conf1[key] = conf2[key]
-
+                _merge_resolution_conf_rec(conf1[key], conf2[key])
         else:
             conf1[key] = conf2[key]

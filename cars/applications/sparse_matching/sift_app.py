@@ -113,6 +113,10 @@ class Sift(SparseMatching, short_name=["sift"]):
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
+        self.disparity_bounds_estimation = self.used_config[
+            "disparity_bounds_estimation"
+        ]
+
         # Init orchestrator
         self.orchestrator = None
 
@@ -172,6 +176,7 @@ class Sift(SparseMatching, short_name=["sift"]):
         overloaded_conf["sift_edge_threshold"] = conf.get(
             "sift_edge_threshold", 10.0
         )
+
         overloaded_conf["sift_magnification"] = conf.get(
             "sift_magnification", 7.0
         )
@@ -202,6 +207,11 @@ class Sift(SparseMatching, short_name=["sift"]):
         )
         self.save_intermediate_data = overloaded_conf["save_intermediate_data"]
 
+        # confidence filtering parameters
+        overloaded_conf["disparity_bounds_estimation"] = conf.get(
+            "disparity_bounds_estimation", {}
+        )
+
         sparse_matching_schema = {
             "method": str,
             "disparity_margin": float,
@@ -226,11 +236,14 @@ class Sift(SparseMatching, short_name=["sift"]):
             "match_filter_dev_factor": Or(int, float),
             "used_band": str,
             "save_intermediate_data": bool,
+            "disparity_bounds_estimation": dict,
         }
 
         # Check conf
         checker = Checker(sparse_matching_schema)
         checker.validate(overloaded_conf)
+
+        self.check_conf_disparity_bounds_estimation(overloaded_conf)
 
         # Check consistency between bounds for elevation delta
         elevation_delta_lower_bound = overloaded_conf[
@@ -262,6 +275,43 @@ class Sift(SparseMatching, short_name=["sift"]):
         required_bands["left"] = [self.used_band]
         required_bands["right"] = [self.used_band]
         return required_bands
+
+    def check_conf_disparity_bounds_estimation(self, overloaded_conf):
+        """
+        Check the disparity bounds estimation conf
+        """
+        overloaded_conf["disparity_bounds_estimation"]["activated"] = (
+            overloaded_conf["disparity_bounds_estimation"].get(
+                "activated", True
+            )
+        )
+        overloaded_conf["disparity_bounds_estimation"]["percentile"] = (
+            overloaded_conf["disparity_bounds_estimation"].get("percentile", 1)
+        )
+        overloaded_conf["disparity_bounds_estimation"]["lower_margin"] = (
+            overloaded_conf["disparity_bounds_estimation"].get(
+                "lower_margin", 500
+            )
+        )
+        overloaded_conf["disparity_bounds_estimation"]["upper_margin"] = (
+            overloaded_conf["disparity_bounds_estimation"].get(
+                "upper_margin", 1000
+            )
+        )
+
+        disparity_bounds_estimation_schema = {
+            "activated": bool,
+            "percentile": Or(int, float),
+            "upper_margin": int,
+            "lower_margin": int,
+        }
+
+        checker_disparity_bounds_estimation_schema = Checker(
+            disparity_bounds_estimation_schema
+        )
+        checker_disparity_bounds_estimation_schema.validate(
+            overloaded_conf["disparity_bounds_estimation"]
+        )
 
     def get_save_matches(self):
         """

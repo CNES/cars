@@ -114,6 +114,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_roi=None,
         required_bands=None,
         texture_bands=None,
+        resolution=1,
     ):  # noqa: C901
         """
         Run resampling application.
@@ -166,6 +167,8 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         :type required_bands: dict
         :param texture_bands: name of bands used for output texture
         :type texture_bands: list
+        :param resolution: resolution for downsampling
+        :type resolution: int
 
         :return: left epipolar image, right epipolar image. \
             Each CarsDataset contains:

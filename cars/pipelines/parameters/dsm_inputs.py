@@ -201,11 +201,12 @@ def check_dsm_inputs(conf, config_json_dir=None):
         )
 
         if cst.DSM_CONFIDENCE in conf[dsm_cst.DSMS][dsm_key]:
-            for _, conf_value in conf[dsm_cst.DSMS][dsm_key][
-                cst.DSM_CONFIDENCE
-            ].items():
-                if not os.path.exists(conf_value):
-                    raise RuntimeError("The path doesn't exist")
+            if conf[dsm_cst.DSMS][dsm_key][cst.DSM_CONFIDENCE] is not None:
+                for _, conf_value in conf[dsm_cst.DSMS][dsm_key][
+                    cst.DSM_CONFIDENCE
+                ].items():
+                    if not os.path.exists(conf_value):
+                        raise RuntimeError("The path doesn't exist")
 
     # Check srtm dir
     sens_inp.check_srtm(

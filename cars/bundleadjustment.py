@@ -576,6 +576,7 @@ def cars_bundle_adjustment(conf, no_run_sparse):
     ]
     sparse_matching_config["output"]["directory"] = sparse_matching
     sparse_matching_config["output"]["product_level"] = []
+    sparse_matching_config["advanced"]["epipolar_resolutions"] = [1]
     if "sparse_matching.sift" not in sparse_matching_config["applications"]:
         sparse_matching_config["applications"]["sparse_matching.sift"] = {}
     sparse_matching_config["applications"]["sparse_matching.sift"][

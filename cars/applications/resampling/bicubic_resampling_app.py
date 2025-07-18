@@ -225,6 +225,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         epipolar_roi=None,
         required_bands=None,
         texture_bands=None,
+        resolution=1,
     ):
         """
         Run resampling application.
@@ -275,6 +276,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :type required_bands: dict
         :param texture_bands: name of bands used for output texture
         :type texture_bands: list
+        :param resolution: resolution for downsampling
+        :type resolution: int
 
         :return: left epipolar image, right epipolar image. \
             Each CarsDataset contains:
@@ -306,6 +309,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
+
+        step = int(self.step / resolution)
 
         # Create zeros margins if not provided
         if margins_fun is None:
@@ -596,7 +601,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         self.interpolator_image,
                         self.interpolator_classif,
                         self.interpolator_mask,
-                        self.step,
+                        step,
+                        resolution,
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],
                         add_classif=add_classif,
@@ -632,6 +638,7 @@ def generate_epipolar_images_wrapper(
     interpolator_classif,
     interpolator_mask,
     step=None,
+    resolution=1,
     used_disp_min=None,
     used_disp_max=None,
     add_classif=True,
@@ -676,7 +683,6 @@ def generate_epipolar_images_wrapper(
         used_disp_min=used_disp_min,
         used_disp_max=used_disp_max,
     )
-
     # Rectify images
     (
         left_dataset,
@@ -696,6 +702,7 @@ def generate_epipolar_images_wrapper(
         interpolator_classif,
         interpolator_mask,
         step=step,
+        resolution=resolution,
         mask1=mask1,
         mask2=mask2,
         left_classifs=left_classifs,

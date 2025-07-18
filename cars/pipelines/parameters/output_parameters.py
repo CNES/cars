@@ -90,6 +90,21 @@ def check_output_parameters(conf):
         output_constants.AUX_TEXTURE, True
     )
     overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_DEM_MIN
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_DEM_MIN, False
+    )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_DEM_MAX
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_DEM_MAX, False
+    )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_DEM_MEDIAN
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_DEM_MEDIAN, False
+    )
+    overloaded_conf[output_constants.AUXILIARY][
         output_constants.AUX_WEIGHTS
     ] = overloaded_conf[output_constants.AUXILIARY].get(
         output_constants.AUX_WEIGHTS, False
@@ -148,6 +163,9 @@ def check_output_parameters(conf):
         output_constants.AUX_CONTRIBUTING_PAIR: bool,
         output_constants.AUX_FILLING: bool,
         output_constants.AUX_AMBIGUITY: bool,
+        output_constants.AUX_DEM_MIN: bool,
+        output_constants.AUX_DEM_MAX: bool,
+        output_constants.AUX_DEM_MEDIAN: bool,
     }
 
     checker_auxiliary = Checker(auxiliary_schema)

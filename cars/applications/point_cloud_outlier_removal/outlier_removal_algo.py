@@ -297,7 +297,6 @@ def detect_statistical_outliers(
 
 def epipolar_small_components(
     cloud,
-    epsg,
     min_cluster_size=15,
     radius=1.0,
     half_window_size=5,
@@ -308,8 +307,6 @@ def epipolar_small_components(
 
     :param epipolar_ds: epipolar dataset to filter
     :type epipolar_ds: xr.Dataset
-    :param epsg: epsg code of the CRS used to compute distances
-    :type epsg: int
     :param statistical_k: k
     :type statistical_k: int
     :param std_dev_factor: std factor
@@ -323,8 +320,6 @@ def epipolar_small_components(
     :rtype:  xr.Dataset
 
     """
-
-    projection.point_cloud_conversion_dataset(cloud, epsg)
 
     if clusters_distance_threshold is None:
         clusters_distance_threshold = np.nan

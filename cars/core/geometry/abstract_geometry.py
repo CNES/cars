@@ -23,6 +23,7 @@ this module contains the abstract geometry class to use in the
 geometry plugins
 """
 import logging
+import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Union
 
@@ -38,6 +39,7 @@ from shareloc.geofunctions.rectification_grid import RectificationGrid
 
 from cars.core import constants as cst
 from cars.core import inputs, outputs
+from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
@@ -483,30 +485,19 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     def transform_matches_from_grids(
         self,
-        matches_array,
-        grid_left,
-        grid_right,
+        sensor_matches_left,
+        sensor_matches_right,
         new_grid_left,
         new_grid_right,
     ):
         """
         Transform epipolar matches with grid transformation
 
-        :param grid_left: path to epipolar grid of image 1
-        :param grid_left: path to epipolar grid of image 2
         :param new_grid_left: path to epipolar grid of image 1
         :param new_grid_right: path to epipolar grid of image 2
         :param matches: cars disparity dataset or matches as numpy array
 
         """
-
-        # Transform to sensors
-        sensor_matches_left = self.sensor_position_from_grid(
-            grid_left, matches_array[:, 0:2]
-        )
-        sensor_matches_right = self.sensor_position_from_grid(
-            grid_right, matches_array[:, 2:4]
-        )
 
         # Transform to new grids
         new_grid_matches_left = self.epipolar_position_from_grid(
@@ -527,6 +518,47 @@ class AbstractGeometry(metaclass=ABCMeta):
         ]
 
         return new_matches_array
+
+    def get_sensor_matches(
+        self,
+        matches_array,
+        grid_left,
+        grid_right,
+        pair_folder,
+        save_matches,
+    ):
+        """
+        get sensor matches
+
+        :param grid_left: path to epipolar grid of image 1
+        :param grid_left: path to epipolar grid of image 2
+        """
+        # Transform to sensors
+        sensor_matches_left = self.sensor_position_from_grid(
+            grid_left, matches_array[:, 0:2]
+        )
+        sensor_matches_right = self.sensor_position_from_grid(
+            grid_right, matches_array[:, 2:4]
+        )
+
+        current_out_dir = None
+        if save_matches:
+            logging.info("Writing matches file")
+            if pair_folder is None:
+                logging.error("Pair folder not provided")
+            else:
+                safe_makedirs(pair_folder)
+                current_out_dir = pair_folder
+            matches_sensor_left_path = os.path.join(
+                current_out_dir, "sensor_matches_left.npy"
+            )
+            matches_sensor_right_path = os.path.join(
+                current_out_dir, "sensor_matches_right.npy"
+            )
+            np.save(matches_sensor_left_path, sensor_matches_left)
+            np.save(matches_sensor_right_path, sensor_matches_right)
+
+        return sensor_matches_left, sensor_matches_right
 
     @abstractmethod
     def direct_loc(

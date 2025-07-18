@@ -60,11 +60,19 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.SAVE_INTERMEDIATE_DATA, False
     )
 
+    overloaded_conf[adv_cst.KEEP_LOW_RES_DIR] = conf.get(
+        adv_cst.KEEP_LOW_RES_DIR, True
+    )
+
     overloaded_conf[adv_cst.DEBUG_WITH_ROI] = conf.get(
         adv_cst.DEBUG_WITH_ROI, False
     )
 
     overloaded_conf[adv_cst.PHASING] = conf.get(adv_cst.PHASING, None)
+
+    overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS] = conf.get(
+        adv_cst.EPIPOLAR_RESOLUTIONS, [16, 4, 1]
+    )
 
     overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, False)
     overloaded_conf[adv_cst.DSM_MERGING_TILE_SIZE] = conf.get(
@@ -164,7 +172,8 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     schema = {
         adv_cst.DEBUG_WITH_ROI: bool,
         adv_cst.MERGING: bool,
-        adv_cst.SAVE_INTERMEDIATE_DATA: bool,
+        adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
+        adv_cst.KEEP_LOW_RES_DIR: bool,
         adv_cst.GROUND_TRUTH_DSM: Or(dict, str),
         adv_cst.PHASING: Or(dict, None),
         adv_cst.PERFORMANCE_MAP_CLASSES: Or(None, list),
@@ -172,6 +181,7 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.PIPELINE: str,
         adv_cst.DSM_MERGING_TILE_SIZE: And(int, lambda x: x > 0),
         adv_cst.TEXTURE_BANDS: list,
+        adv_cst.EPIPOLAR_RESOLUTIONS: Or(int, list),
     }
     if check_epipolar_a_priori:
         schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool

@@ -44,6 +44,7 @@ from shapely.ops import transform
 # CARS imports
 from cars.core import inputs, roi_tools
 from cars.pipelines.default import default_pipeline as default
+from cars.pipelines.unit import unit_pipeline as unit
 
 # CARS Tests imports
 from .helpers import (
@@ -80,31 +81,34 @@ def test_end2end_dsm_fusion():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
-                "msk_no_data": 254,
-                "save_intermediate_data": True,
-            },
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                    "msk_no_data": 254,
+                    "save_intermediate_data": True,
+                },
+            }
         }
-        input_dense_dsm_lr["applications"].update(dense_dsm_applications)
+
+        input_dense_dsm_lr["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
@@ -121,10 +125,12 @@ def test_end2end_dsm_fusion():
             "classification": True,
         }
 
+        input_dense_dsm_lr["advanced"]["epipolar_resolutions"] = [4, 1]
+
         dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm_lr)
         dense_dsm_pipeline.run()
 
-        out_dir = input_dense_dsm_lr["output"]["directory"]
+        out_dir = os.path.join(input_dense_dsm_lr["output"]["directory"])
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -224,6 +230,7 @@ def test_end2end_dsm_fusion():
 
         input_dsm_config["advanced"] = {}
         input_dsm_config["advanced"]["dsm_merging_tile_size"] = 100
+        input_dsm_config["advanced"]["epipolar_resolutions"] = 1
 
         input_dsm_config["output"] = {}
         input_dsm_config["output"]["directory"] = directory
@@ -404,8 +411,10 @@ def test_end2end_dsm_fusion():
             directory, "other"
         )
         os.makedirs(input_dsm_config_base["output"]["directory"], exist_ok=True)
+        input_dsm_config_base["advanced"] = {}
+        input_dsm_config_base["advanced"]["epipolar_resolutions"] = 1
 
-        dsm_merging_pipeline = default.DefaultPipeline(input_dsm_config_base)
+        dsm_merging_pipeline = unit.UnitPipeline(input_dsm_config_base)
         dsm_merging_pipeline.run()
 
         assert_same_images(
@@ -482,10 +491,13 @@ def test_end2end_color_after_dsm_reentrance():
 
         out_dir = input_dsm_config["output"]["directory"]
 
+        input_dsm_config["advanced"] = {}
+        input_dsm_config["advanced"]["epipolar_resolutions"] = 1
+
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        dsm_merging_pipeline = default.DefaultPipeline(input_dsm_config)
+        dsm_merging_pipeline = unit.UnitPipeline(input_dsm_config)
         dsm_merging_pipeline.run()
 
         copy2(
@@ -535,38 +547,33 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "dem_generation": {"resolution": 30},
-            "sparse_matching.sift": {
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "save_intermediate_data": True,
-                "connection_val": 3.0,
-                "nb_pts_threshold": 100,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-                "use_global_disp_range": True,
-            },
-            "ground_truth_reprojection": {
-                "method": "direct_loc",
-                "target": "all",
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
-                "msk_no_data": 254,
-            },
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "dem_generation": {"resolution": 30},
+                "sparse_matching.sift": {
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                    "use_global_disp_range": True,
+                },
+                "ground_truth_reprojection": {
+                    "method": "direct_loc",
+                    "target": "all",
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                    "msk_no_data": 254,
+                },
+            }
         }
-        input_dense_dsm["applications"].update(dense_dsm_applications)
+
+        input_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
@@ -582,11 +589,12 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         dsm_gt = input_dense_dsm["inputs"]["initial_elevation"]["dem"]
 
         input_dense_dsm["advanced"]["ground_truth_dsm"] = {"dsm": dsm_gt}
+        input_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_dense_dsm["output"]["directory"]
+        out_dir = os.path.join(input_dense_dsm["output"]["directory"])
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -807,35 +815,39 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         )
 
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
-            "sparse_matching.sift": {
-                "method": "sift",
-                # Uncomment the following line to update dsm reference data
-                # "sift_peak_threshold":1,
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "save_intermediate_data": False,
-                "decimation_factor": 80,
+            "resolution_4": {
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    # Uncomment the following line to update dsm reference data
+                    # "sift_peak_threshold":1,
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "save_intermediate_data": False,
+                    "decimation_factor": 100,
+                },
             },
-            "sparse_matching.pandora": {
-                "save_intermediate_data": True,
-                "connection_val": 3.0,
-                "nb_pts_threshold": 100,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                # run disp min disp max in the global pipeline
-                "use_global_disp_range": True
-            },
-            "dem_generation": {
-                # save the dems in the global pipeline
-                "save_intermediate_data": True
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic"},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    # Uncomment the following line to update dsm reference data
+                    # "sift_peak_threshold":1,
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "save_intermediate_data": False,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    # run disp min disp max in the global pipeline
+                    "use_global_disp_range": True
+                },
+                "dem_generation": {
+                    # save the dems in the global pipeline
+                    "save_intermediate_data": True
+                },
             },
         }
 
@@ -844,13 +856,15 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             "product_level": ["depth_map"]
         }
 
-        input_config_sparse_dsm["applications"].update(application_config)
+        input_config_sparse_dsm["applications"] = application_config
         input_config_sparse_dsm["output"].update(output_config)
+
+        input_config_sparse_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -878,7 +892,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 < -11
             )
             assert (
-                7
+                0
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
@@ -890,14 +904,17 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         # check used_conf file exists
         assert os.path.isfile(used_conf_path)
 
+        out_dir_res4 = os.path.join(
+            input_config_sparse_dsm["output"]["directory"],
+            "intermediate_res/out_res4",
+        )
+
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
         copy2(
-            os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-            ),
+            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -906,7 +923,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_min_end2end_ventoux_8bit.tif"
@@ -914,7 +931,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_max_end2end_ventoux_8bit.tif"
@@ -923,9 +940,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         )
 
         assert_same_images(
-            os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-            ),
+            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
@@ -935,21 +950,17 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
             absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir, "dem_min_end2end_ventoux_8bit.tif"
-                )
+                os.path.join(ref_output_dir, "dem_min_end2end_ventoux_8bit.tif")
             ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
             absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir, "dem_max_end2end_ventoux_8bit.tif"
-                )
+                os.path.join(ref_output_dir, "dem_max_end2end_ventoux_8bit.tif")
             ),
             atol=0.0001,
             rtol=1e-6,
@@ -978,38 +989,31 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
-            "grid_generation": {
-                "method": "epipolar",
-                "epi_step": 30,
-            },
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                # run disp min disp max in the global pipeline
-                "use_global_disp_range": True,
-                "use_cross_validation": False,
-                "save_intermediate_data": True,
-            },
-            "dem_generation": {
-                # save the dems in the global pipeline
-                "save_intermediate_data": True
+            "resolution_1": {
+                "grid_generation": {
+                    "method": "epipolar",
+                    "epi_step": 30,
+                },
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    # run disp min disp max in the global pipeline
+                    "use_global_disp_range": True,
+                    "use_cross_validation": False,
+                    "save_intermediate_data": True,
+                },
+                "dem_generation": {
+                    # save the dems in the global pipeline
+                    "save_intermediate_data": True
+                },
             },
         }
         output_config = {
@@ -1017,14 +1021,15 @@ def test_end2end_ventoux_unique():
             "product_level": ["depth_map"]
         }
 
-        input_config_sparse_dsm["applications"].update(application_config)
+        input_config_sparse_dsm["applications"] = application_config
         input_config_sparse_dsm["output"].update(output_config)
+
+        input_config_sparse_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -1051,7 +1056,7 @@ def test_end2end_ventoux_unique():
                 < -17
             )
             assert (
-                12
+                0
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
@@ -1061,11 +1066,13 @@ def test_end2end_ventoux_unique():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
+        out_dir_res4 = os.path.join(
+            input_config_sparse_dsm["output"]["directory"],
+            "intermediate_res/out_res4",
+        )
 
         copy2(
-            os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-            ),
+            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_median_end2end_ventoux.tif"
@@ -1073,7 +1080,7 @@ def test_end2end_ventoux_unique():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_min_end2end_ventoux.tif"
@@ -1081,7 +1088,7 @@ def test_end2end_ventoux_unique():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_max_end2end_ventoux.tif"
@@ -1090,9 +1097,7 @@ def test_end2end_ventoux_unique():
         )
 
         assert_same_images(
-            os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-            ),
+            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
             ),
@@ -1100,7 +1105,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
             ),
@@ -1108,7 +1113,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
             ),
@@ -1159,7 +1164,7 @@ def test_end2end_ventoux_unique():
             )
 
             # check used_conf reentry
-            _ = default.DefaultPipeline(used_conf)
+            _ = unit.UnitPipeline(used_conf)
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1251,7 +1256,9 @@ def test_end2end_ventoux_unique():
                 "save_intermediate_data": True,
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"]["resolution_1"].update(
+            dense_dsm_applications
+        )
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
         # update output product
@@ -1261,11 +1268,12 @@ def test_end2end_ventoux_unique():
         # resolution
         input_config_dense_dsm["output"]["resolution"] = 0.5
 
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
+
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check used_conf for dense dsm
         used_conf_path = os.path.join(out_dir, "used_conf.json")
 
@@ -1288,7 +1296,7 @@ def test_end2end_ventoux_unique():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = default.DefaultPipeline(used_conf)
+            _ = unit.UnitPipeline(used_conf)
 
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -1570,34 +1578,38 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "dense_matching": {
-                # run disp min disp max in the global pipeline
-                "use_global_disp_range": True,
-                "use_cross_validation": False,
-            },
-            "dem_generation": {
-                # save the dems in the global pipeline
-                "save_intermediate_data": True
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    # run disp min disp max in the global pipeline
+                    "use_global_disp_range": True,
+                    "use_cross_validation": False,
+                },
+                "dem_generation": {
+                    # save the dems in the global pipeline
+                    "save_intermediate_data": True
+                },
             },
         }
 
-        input_config_sparse_dsm["applications"].update(application_config)
+        input_config_sparse_dsm["applications"] = application_config
+
+        input_config_sparse_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1606,15 +1618,6 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
         dense_dsm_applications = {
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
             "dense_matching": {
                 "method": "census_sgm_default",
                 "use_global_disp_range": False,
@@ -1693,16 +1696,20 @@ def test_end2end_ventoux_unique():
                 "texture_no_data": 0,
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"]["resolution_1"].update(
+            dense_dsm_applications
+        )
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
         # resolution
         input_config_dense_dsm["output"]["resolution"] = 0.5
 
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
+
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -1736,43 +1743,38 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                # run disp min disp max in the global pipeline
-                "use_global_disp_range": True,
-                "use_cross_validation": False,
-            },
-            "dem_generation": {
-                # save the dems in the global pipeline
-                "save_intermediate_data": True
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    # run disp min disp max in the global pipeline
+                    "use_global_disp_range": True,
+                    "use_cross_validation": False,
+                },
+                "dem_generation": {
+                    # save the dems in the global pipeline
+                    "save_intermediate_data": True
+                },
             },
         }
 
-        input_config_sparse_dsm["applications"].update(application_config)
+        input_config_sparse_dsm["applications"] = application_config
+
+        input_config_sparse_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1806,16 +1808,20 @@ def test_end2end_ventoux_unique():
                 "texture_no_data": 0,
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"]["resolution_1"].update(
+            dense_dsm_applications
+        )
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
         # resolution
         input_config_dense_dsm["output"]["resolution"] = 0.5
 
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
+
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["directory"]
+        out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -1856,23 +1862,23 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             },
         )
         input_config_pc["applications"] = {
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-            },
             "dense_matching": {
                 "method": "census_sgm_default",
                 "use_cross_validation": True,
             },
         }
+
         input_config_pc["output"]["product_level"] = ["depth_map"]
+
+        input_config_pc["advanced"]["epipolar_resolutions"] = [4, 1]
+
         pc_pipeline = default.DefaultPipeline(input_config_pc)
 
         input_config_pc["output"]["epsg"] = 4326
 
         pc_pipeline.run()
 
-        out_dir = input_config_pc["output"]["directory"]
+        out_dir = os.path.join(input_config_pc["output"]["directory"])
         geometry_plugin_name = input_config_pc["advanced"]["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
@@ -1960,7 +1966,9 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 },
             }
 
-            dsm_pipeline = default.DefaultPipeline(input_dsm_config)
+            input_dsm_config["advanced"]["epipolar_resolutions"] = 1
+
+            dsm_pipeline = unit.UnitPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -2057,101 +2065,94 @@ def test_end2end_ventoux_unique_split():
             },
         )
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 200},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": False,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-                "use_global_disp_range": False,
-                "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "cost_volume_confidence.before": {
-                            "confidence_method": "ambiguity",
-                            "eta_max": 0.7,
-                            "eta_step": 0.01,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "p2_method": "constant",
-                                "penalty_method": "sgm_penalty",
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic", "strip_height": 200},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": False,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                    "use_global_disp_range": False,
+                    "save_intermediate_data": True,
+                    "loader_conf": {
+                        "input": {},
+                        "pipeline": {
+                            "matching_cost": {
+                                "matching_cost_method": "census",
+                                "window_size": 5,
+                                "subpix": 1,
                             },
-                            "overcounting": False,
-                            "min_cost_paths": False,
-                        },
-                        "cost_volume_confidence": {
-                            "confidence_method": "ambiguity",
-                            "eta_max": 0.7,
-                            "eta_step": 0.01,
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {
-                            "filter_method": "disparity_denoiser",
-                            "filter_size": 3,
-                        },
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
+                            "cost_volume_confidence.before": {
+                                "confidence_method": "ambiguity",
+                                "eta_max": 0.7,
+                                "eta_step": 0.01,
+                            },
+                            "optimization": {
+                                "optimization_method": "sgm",
+                                "penalty": {
+                                    "P1": 8,
+                                    "P2": 32,
+                                    "p2_method": "constant",
+                                    "penalty_method": "sgm_penalty",
+                                },
+                                "overcounting": False,
+                                "min_cost_paths": False,
+                            },
+                            "cost_volume_confidence": {
+                                "confidence_method": "ambiguity",
+                                "eta_max": 0.7,
+                                "eta_step": 0.01,
+                            },
+                            "disparity": {
+                                "disparity_method": "wta",
+                                "invalid_disparity": "NaN",
+                            },
+                            "refinement": {"refinement_method": "vfit"},
+                            "filter": {
+                                "filter_method": "disparity_denoiser",
+                                "filter_size": 3,
+                            },
+                            "validation": {
+                                "validation_method": "cross_checking_accurate",
+                                "cross_checking_threshold": 1.0,
+                            },
                         },
                     },
                 },
-            },
-            "dense_match_filling.1": {
-                "method": "plane",
-                "classification": ["b0"],
-            },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "save_intermediate_data": True,
-            },
-            "point_cloud_outlier_removal.1": {
-                "method": "small_components",
-                "activated": True,
-                "save_intermediate_data": True,
-            },
-            "point_cloud_outlier_removal.2": {
-                "method": "statistical",
-                "filtering_constant": 0,
-                "mean_factor": 1.0,
-                "std_dev_factor": 5.0,
-                "activated": True,
-                "save_intermediate_data": True,
-                "use_median": False,
+                "dense_match_filling.1": {
+                    "method": "plane",
+                    "classification": ["b0"],
+                },
+                "triangulation": {
+                    "method": "line_of_sight_intersection",
+                    "save_intermediate_data": True,
+                },
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                    "save_intermediate_data": True,
+                },
+                "point_cloud_outlier_removal.2": {
+                    "method": "statistical",
+                    "filtering_constant": 0,
+                    "mean_factor": 1.0,
+                    "std_dev_factor": 5.0,
+                    "activated": True,
+                    "save_intermediate_data": True,
+                    "use_median": False,
+                },
             },
         }
 
-        input_config_pc["applications"].update(application_config)
+        input_config_pc["applications"] = application_config
 
         input_config_pc["output"]["product_level"] = ["depth_map"]
         input_config_pc["output"]["auxiliary"] = {
@@ -2162,10 +2163,12 @@ def test_end2end_ventoux_unique_split():
             "ambiguity": True,
         }
 
+        input_config_pc["advanced"]["epipolar_resolutions"] = [4, 1]
+
         pc_pipeline = default.DefaultPipeline(input_config_pc)
         pc_pipeline.run()
 
-        out_dir = input_config_pc["output"]["directory"]
+        out_dir = os.path.join(input_config_pc["output"]["directory"])
         geometry_plugin_name = input_config_pc["advanced"]["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
@@ -2248,7 +2251,9 @@ def test_end2end_ventoux_unique_split():
                 },
             }
 
-            dsm_pipeline = default.DefaultPipeline(input_dsm_config)
+            input_dsm_config["advanced"]["epipolar_resolutions"] = 1
+
+            dsm_pipeline = unit.UnitPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -2514,7 +2519,7 @@ def test_end2end_ventoux_unique_split():
             input_dsm_config["advanced"]["merging"] = False
 
             # launch
-            dsm_pipeline = default.DefaultPipeline(input_dsm_config)
+            dsm_pipeline = unit.UnitPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -2775,33 +2780,33 @@ def test_end2end_use_epipolar_a_priori():
         input_config_sparse_res["inputs"]["initial_elevation"] = None
 
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 200},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
+            "resolution_2": {
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "nb_points_threshold": 150,
+                    "connection_distance": 3.0,
+                },
             },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "nb_pts_threshold": 150,
-                "connection_val": 3.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                # run disp min disp max in the global pipeline
-                "denoise_disparity_map": True,
-                "use_cross_validation": False,
-                "use_global_disp_range": True,
-            },
-            "dem_generation": {
-                # save the dems in the global pipeline
-                "save_intermediate_data": True
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic", "strip_height": 200},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 100,
+                },
+                "dense_matching": {
+                    # run disp min disp max in the global pipeline
+                    "denoise_disparity_map": True,
+                    "use_cross_validation": False,
+                    "use_global_disp_range": True,
+                },
+                "dem_generation": {
+                    # save the dems in the global pipeline
+                    "save_intermediate_data": True
+                },
             },
         }
         output_config = {
@@ -2810,11 +2815,14 @@ def test_end2end_use_epipolar_a_priori():
         }
 
         input_config_sparse_res["output"].update(output_config)
-        input_config_sparse_res["applications"].update(application_config)
+        input_config_sparse_res["applications"] = application_config
+
+        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [2, 1]
+
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -2842,7 +2850,7 @@ def test_end2end_use_epipolar_a_priori():
                 < -23
             )
             assert (
-                22
+                0
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
@@ -2852,10 +2860,16 @@ def test_end2end_use_epipolar_a_priori():
             # Ref output dir dependent from geometry plugin chosen
             intermediate_output_dir = "intermediate_data"
             ref_output_dir = "ref_output"
+            output_dir_res4 = os.path.join(
+                input_config_sparse_res["output"]["directory"],
+                "intermediate_res/out_res2",
+            )
 
             copy2(
                 os.path.join(
-                    out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+                    output_dir_res4,
+                    "dsm",
+                    "dem_median.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -2865,9 +2879,7 @@ def test_end2end_use_epipolar_a_priori():
                 ),
             )
             copy2(
-                os.path.join(
-                    out_dir, "dump_dir", "dem_generation", "dem_min.tif"
-                ),
+                os.path.join(output_dir_res4, "dsm", "dem_min.tif"),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
@@ -2876,9 +2888,7 @@ def test_end2end_use_epipolar_a_priori():
                 ),
             )
             copy2(
-                os.path.join(
-                    out_dir, "dump_dir", "dem_generation", "dem_max.tif"
-                ),
+                os.path.join(output_dir_res4, "dsm", "dem_max.tif"),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
@@ -2889,7 +2899,9 @@ def test_end2end_use_epipolar_a_priori():
 
             assert_same_images(
                 os.path.join(
-                    out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+                    output_dir_res4,
+                    "dsm",
+                    "dem_median.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -2900,9 +2912,7 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(
-                    out_dir, "dump_dir", "dem_generation", "dem_min.tif"
-                ),
+                os.path.join(output_dir_res4, "dsm", "dem_min.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_min_end2end_ventoux_no_srtm.tif"
@@ -2912,9 +2922,7 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(
-                    out_dir, "dump_dir", "dem_generation", "dem_max.tif"
-                ),
+                os.path.join(output_dir_res4, "dsm", "dem_max.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_max_end2end_ventoux_no_srtm.tif"
@@ -2972,7 +2980,6 @@ def test_end2end_use_epipolar_a_priori():
             assert "use_epipolar_a_priori" in used_conf["advanced"]
 
             # use_epipolar_a_priori should be false in used_conf
-            assert used_conf["advanced"]["use_epipolar_a_priori"] is False
             assert "epipolar_a_priori" in used_conf["advanced"]
             assert (
                 "grid_correction"
@@ -2983,7 +2990,7 @@ def test_end2end_use_epipolar_a_priori():
             assert "dem_max" in used_conf["advanced"]["terrain_a_priori"]
 
             # check used_conf reentry (without epipolar a priori activated)
-            _ = default.DefaultPipeline(used_conf)
+            _ = unit.UnitPipeline(used_conf)
 
         # dense dsm pipeline
         input_config_dense_dsm = used_conf.copy()
@@ -2994,7 +3001,7 @@ def test_end2end_use_epipolar_a_priori():
         # update applications
         input_config_dense_dsm["applications"] = input_config_sparse_res[
             "applications"
-        ]
+        ]["resolution_1"]
         dense_dsm_applications = {
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -3022,9 +3029,11 @@ def test_end2end_use_epipolar_a_priori():
         # Update outdir, write new dir
         input_config_dense_dsm["output"]["directory"] += "dense"
 
-        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
+        dense_dsm_pipeline = unit.UnitPipeline(input_config_dense_dsm)
 
-        dense_dsm_pipeline.run()
+        dense_dsm_pipeline.run(
+            use_sift_a_priori=True, first_res_out_dir=output_dir_res4
+        )
 
         out_dir = input_config_dense_dsm["output"]["directory"]
 
@@ -3050,7 +3059,7 @@ def test_end2end_use_epipolar_a_priori():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = default.DefaultPipeline(used_conf)
+            _ = unit.UnitPipeline(used_conf)
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -3140,38 +3149,53 @@ def test_prepare_ventoux_bias():
             },
         )
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 100},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "epipolar_error_maximum_bias": 50.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 120.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
+            "resolution_4": {
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "epipolar_error_maximum_bias": 50.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 120.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 100,
+                },
             },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "nb_pts_threshold": 150,
-                "connection_val": 3.0,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 120.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
+            "resolution_2": {
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "epipolar_error_maximum_bias": 50.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 120.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 100,
+                },
             },
-            "dense_matching": {
-                # run disp min disp max in the global pipeline
-                "use_global_disp_range": True,
-                "denoise_disparity_map": True,
-            },
-            "dem_generation": {
-                # save the dems in the global pipeline
-                "save_intermediate_data": True,
-                "coregistration": False,
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic", "strip_height": 100},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "epipolar_error_maximum_bias": 50.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 120.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    # run disp min disp max in the global pipeline
+                    "use_global_disp_range": True,
+                    "denoise_disparity_map": True,
+                },
+                "dem_generation": {
+                    # save the dems in the global pipeline
+                    "save_intermediate_data": True,
+                    "coregistration": False,
+                },
             },
         }
 
@@ -3180,13 +3204,15 @@ def test_prepare_ventoux_bias():
             "product_level": ["depth_map"]
         }
 
-        input_config_sparse_res["applications"].update(application_config)
+        input_config_sparse_res["applications"] = application_config
         input_config_sparse_res["output"].update(output_config)
+
+        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 2, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -3201,9 +3227,9 @@ def test_prepare_ventoux_bias():
                 "disparity_range_computation"
             ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -126
-            assert out_disp_compute["minimum_disparity"] < -83
+            assert out_disp_compute["minimum_disparity"] < -48
             assert out_disp_compute["maximum_disparity"] > -47
-            assert out_disp_compute["maximum_disparity"] < -11
+            assert out_disp_compute["maximum_disparity"] < 5
 
 
 @pytest.mark.end2end_tests
@@ -3230,34 +3256,27 @@ def test_end2end_ventoux_full_output_no_elevation():
         )
 
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {
-                "method": "bicubic",
-                "strip_height": 80,
-                "save_intermediate_data": True,
-            },
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": 400.0,
-                "elevation_delta_upper_bound": 700.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": 400.0,
-                "elevation_delta_upper_bound": 700.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dem_generation": {"method": "dichotomic"},
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {
+                    "method": "bicubic",
+                    "strip_height": 80,
+                    "save_intermediate_data": True,
+                },
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": 400.0,
+                    "elevation_delta_upper_bound": 700.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dem_generation": {"method": "dichotomic"},
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                },
             },
         }
         advanced_config = {"save_intermediate_data": True}
@@ -3276,9 +3295,13 @@ def test_end2end_ventoux_full_output_no_elevation():
             },
         }
 
-        input_config["applications"].update(application_config)
+        input_config["applications"] = application_config
         input_config["advanced"].update(advanced_config)
+        input_config["advanced"]["epipolar_resolutions"] = [2, 1]
+
         input_config["output"].update(output_config)
+
+        out_dir = os.path.join(directory, "output_dsm")
 
         pipeline = default.DefaultPipeline(input_config)
 
@@ -3632,8 +3655,10 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "left_right": {
                     "0_0": "left_right/0_0.laz",
                     "0_1": "left_right/0_1.laz",
+                    "0_2": "left_right/0_2.laz",
                     "1_0": "left_right/1_0.laz",
                     "1_1": "left_right/1_1.laz",
+                    "2_1": "left_right/2_1.laz",
                 }
             }
 
@@ -3660,38 +3685,31 @@ def test_end2end_ventoux_with_color():
             },
         )
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {
-                "method": "bicubic",
-                "strip_height": 80,
-                "save_intermediate_data": True,
-            },
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                # run disp min disp max in the global pipeline
-                "use_global_disp_range": True,
-                "use_cross_validation": False,
-            },
-            "dem_generation": {
-                # save the dems in the global pipeline
-                "save_intermediate_data": True
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {
+                    "method": "bicubic",
+                    "strip_height": 80,
+                    "save_intermediate_data": True,
+                },
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    # run disp min disp max in the global pipeline
+                    "use_global_disp_range": True,
+                    "use_cross_validation": False,
+                },
+                "dem_generation": {
+                    # save the dems in the global pipeline
+                    "save_intermediate_data": True
+                },
             },
         }
 
@@ -3700,8 +3718,10 @@ def test_end2end_ventoux_with_color():
             "product_level": ["depth_map"]
         }
 
-        input_config_sparse_res["applications"].update(application_config)
+        input_config_sparse_res["applications"] = application_config
         input_config_sparse_res["output"].update(output_config)
+
+        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
 
@@ -3715,7 +3735,7 @@ def test_end2end_ventoux_with_color():
 
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -3731,7 +3751,7 @@ def test_end2end_ventoux_with_color():
             ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -66
             assert out_disp_compute["minimum_disparity"] < -17
-            assert out_disp_compute["maximum_disparity"] > 13
+            assert out_disp_compute["maximum_disparity"] > 0
             assert out_disp_compute["maximum_disparity"] < 46
 
         # Run dense_dsm dsm pipeline
@@ -3776,7 +3796,9 @@ def test_end2end_ventoux_with_color():
                 "use_median": False,
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"]["resolution_1"].update(
+            dense_dsm_applications
+        )
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
 
@@ -3799,8 +3821,7 @@ def test_end2end_ventoux_with_color():
 
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         assert (
             os.path.exists(
                 os.path.join(
@@ -4039,37 +4060,30 @@ def test_end2end_ventoux_with_classif():
             },
         )
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {
-                "method": "bicubic",
-                "strip_height": 80,
-                "save_intermediate_data": True,
-            },
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                # run disp min disp max in the global pipeline
-                "use_global_disp_range": True
-            },
-            "dem_generation": {
-                # save the dems in the global pipeline
-                "save_intermediate_data": True
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {
+                    "method": "bicubic",
+                    "strip_height": 80,
+                    "save_intermediate_data": True,
+                },
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    # run disp min disp max in the global pipeline
+                    "use_global_disp_range": True
+                },
+                "dem_generation": {
+                    # save the dems in the global pipeline
+                    "save_intermediate_data": True
+                },
             },
         }
 
@@ -4078,13 +4092,14 @@ def test_end2end_ventoux_with_classif():
             "product_level": ["depth_map"]
         }
 
-        input_config_sparse_res["applications"].update(application_config)
+        input_config_sparse_res["applications"] = application_config
         input_config_sparse_res["output"].update(output_config)
+        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
@@ -4100,7 +4115,7 @@ def test_end2end_ventoux_with_classif():
             ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -66
             assert out_disp_compute["minimum_disparity"] < -17
-            assert out_disp_compute["maximum_disparity"] > 13
+            assert out_disp_compute["maximum_disparity"] > 0
             assert out_disp_compute["maximum_disparity"] < 46
 
         # Run dense_dsm dsm pipeline
@@ -4143,7 +4158,9 @@ def test_end2end_ventoux_with_classif():
                 "use_median": False,
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"]["resolution_1"].update(
+            dense_dsm_applications
+        )
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
 
@@ -4157,8 +4174,7 @@ def test_end2end_ventoux_with_classif():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
-
+        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
         pc1 = "0_0"
 
         assert (
@@ -4309,40 +4325,33 @@ def test_compute_dsm_with_roi_ventoux():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-                "use_global_disp_range": False,
-            },
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -1000,  # -20.0,
-                "elevation_delta_upper_bound": 1000,  # 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -1000,  # -20.0,
-                "elevation_delta_upper_bound": 1000,  # 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                    "use_global_disp_range": False,
+                },
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -1000,  # -20.0,
+                    "elevation_delta_upper_bound": 1000,  # 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                },
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
@@ -4351,6 +4360,7 @@ def test_compute_dsm_with_roi_ventoux():
         # resolution
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         # Update roi
         roi_geo_json = {
@@ -4380,8 +4390,7 @@ def test_compute_dsm_with_roi_ventoux():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -4473,56 +4482,49 @@ def test_compute_dsm_with_snap_to_img1():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-                "use_global_disp_range": False,
-            },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "snap_to_img1": True,
-            },
-            "point_cloud_outlier_removal.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outlier_removal.2": {
-                "method": "statistical",
-                "filtering_constant": 0,
-                "mean_factor": 1.0,
-                "std_dev_factor": 5.0,
-                "activated": True,
-                "use_median": False,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                    "use_global_disp_range": False,
+                },
+                "triangulation": {
+                    "method": "line_of_sight_intersection",
+                    "snap_to_img1": True,
+                },
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                },
+                "point_cloud_outlier_removal.2": {
+                    "method": "statistical",
+                    "filtering_constant": 0,
+                    "mean_factor": 1.0,
+                    "std_dev_factor": 5.0,
+                    "activated": True,
+                    "use_median": False,
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                },
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
@@ -4531,11 +4533,12 @@ def test_compute_dsm_with_snap_to_img1():
         # resolution
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4607,48 +4610,50 @@ def test_end2end_quality_stats():
         # no srtm
         input_config_dense_dsm["inputs"]["initial_elevation"] = None
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "disparity_margin": 0.25,
-                "decimation_factor": 80,
+            "resolution_2": {
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                    "nb_points_threshold": 150,
+                    "connection_distance": 3.0,
+                },
             },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "nb_pts_threshold": 100,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": "accurate",
-                "use_global_disp_range": False,
-            },
-            "point_cloud_outlier_removal.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outlier_removal.2": {
-                "method": "statistical",
-                "filtering_constant": 0,
-                "mean_factor": 1.0,
-                "std_dev_factor": 5.0,
-                "activated": True,
-                "use_median": False,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "disparity_margin": 0.25,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": "accurate",
+                    "use_global_disp_range": False,
+                },
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                },
+                "point_cloud_outlier_removal.2": {
+                    "method": "statistical",
+                    "filtering_constant": 0,
+                    "mean_factor": 1.0,
+                    "std_dev_factor": 5.0,
+                    "activated": True,
+                    "use_median": False,
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                },
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
@@ -4662,12 +4667,12 @@ def test_end2end_quality_stats():
         input_config_dense_dsm["advanced"] = {
             "save_intermediate_data": True,
         }
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [2, 1]
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -4680,19 +4685,21 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -27
+            assert out_disp_compute["global_disp_min"] > -38
             assert out_disp_compute["global_disp_min"] < -22
-            assert out_disp_compute["global_disp_max"] > 22
+            assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 24
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
+        out_dir_res4 = os.path.join(
+            input_config_dense_dsm["output"]["directory"],
+            "intermediate_res/out_res2",
+        )
 
         copy2(
-            os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-            ),
+            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -4701,7 +4708,7 @@ def test_end2end_quality_stats():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -4710,7 +4717,7 @@ def test_end2end_quality_stats():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -4776,9 +4783,7 @@ def test_end2end_quality_stats():
         )
 
         assert_same_images(
-            os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-            ),
+            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -4789,7 +4794,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_min_end2end_ventoux_quality_stats.tif"
@@ -4799,7 +4804,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_max_end2end_ventoux_quality_stats.tif"
@@ -4895,57 +4900,50 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {
-                "method": "epipolar",
-                "epi_step": 30,
-                "save_intermediate_data": True,
-            },
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-                "use_global_disp_range": False,
-            },
-            "triangulation": {"method": "line_of_sight_intersection"},
-            "point_cloud_outlier_removal.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outlier_removal.2": {
-                "method": "statistical",
-                "filtering_constant": 0,
-                "mean_factor": 1.0,
-                "std_dev_factor": 5.0,
-                "activated": True,
-                "use_median": False,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
+            "resolution_1": {
+                "grid_generation": {
+                    "method": "epipolar",
+                    "epi_step": 30,
+                    "save_intermediate_data": True,
+                },
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                    "use_global_disp_range": False,
+                },
+                "triangulation": {"method": "line_of_sight_intersection"},
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                },
+                "point_cloud_outlier_removal.2": {
+                    "method": "statistical",
+                    "filtering_constant": 0,
+                    "mean_factor": 1.0,
+                    "std_dev_factor": 5.0,
+                    "activated": True,
+                    "use_median": False,
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                },
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
@@ -4953,14 +4951,14 @@ def test_end2end_ventoux_egm96_geoid():
 
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         input_config_dense_dsm["output"]["geoid"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -4973,9 +4971,9 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -33
+            assert out_disp_compute["global_disp_min"] > -39
             assert out_disp_compute["global_disp_min"] < -31
-            assert out_disp_compute["global_disp_max"] > 30
+            assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 33
 
         # Ref output dir dependent from geometry plugin chosen
@@ -5033,57 +5031,50 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {
-                "method": "epipolar",
-                "epi_step": 30,
-                "save_intermediate_data": True,
-            },
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-                "use_global_disp_range": False,
-            },
-            "triangulation": {"method": "line_of_sight_intersection"},
-            "point_cloud_outlier_removal.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outlier_removal.2": {
-                "method": "statistical",
-                "filtering_constant": 0,
-                "mean_factor": 1.0,
-                "std_dev_factor": 5.0,
-                "activated": True,
-                "use_median": False,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
+            "resolution_1": {
+                "grid_generation": {
+                    "method": "epipolar",
+                    "epi_step": 30,
+                    "save_intermediate_data": True,
+                },
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                    "use_global_disp_range": False,
+                },
+                "triangulation": {"method": "line_of_sight_intersection"},
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                },
+                "point_cloud_outlier_removal.2": {
+                    "method": "statistical",
+                    "filtering_constant": 0,
+                    "mean_factor": 1.0,
+                    "std_dev_factor": 5.0,
+                    "activated": True,
+                    "use_median": False,
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                },
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
@@ -5094,12 +5085,12 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = True
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -5135,61 +5126,55 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {
-                "method": "epipolar",
-                "epi_step": 30,
-                "save_intermediate_data": True,
-            },
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-                "use_global_disp_range": False,
-            },
-            "triangulation": {"method": "line_of_sight_intersection"},
-            "point_cloud_outlier_removal.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outlier_removal.2": {
-                "method": "statistical",
-                "filtering_constant": 0,
-                "mean_factor": 1.0,
-                "std_dev_factor": 5.0,
-                "activated": True,
-                "use_median": False,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
+            "resolution_1": {
+                "grid_generation": {
+                    "method": "epipolar",
+                    "epi_step": 30,
+                    "save_intermediate_data": True,
+                },
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                    "use_global_disp_range": False,
+                },
+                "triangulation": {"method": "line_of_sight_intersection"},
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                },
+                "point_cloud_outlier_removal.2": {
+                    "method": "statistical",
+                    "filtering_constant": 0,
+                    "mean_factor": 1.0,
+                    "std_dev_factor": 5.0,
+                    "activated": True,
+                    "use_median": False,
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                },
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
@@ -5201,8 +5186,7 @@ def test_end2end_ventoux_egm96_geoid():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
@@ -5215,9 +5199,9 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -33
+            assert out_disp_compute["global_disp_min"] > -39
             assert out_disp_compute["global_disp_min"] < -31
-            assert out_disp_compute["global_disp_max"] > 30
+            assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 33
 
         # Ref output dir dependent from geometry plugin chosen
@@ -5287,54 +5271,59 @@ def test_end2end_paca_with_mask():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching.sift": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-                "minimum_nb_matches": 10,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_global_disp_range": False,
-                "use_cross_validation": True,
-            },
-            "point_cloud_outlier_removal.1": {
-                "method": "small_components",
-                "activated": True,
-                "nb_points_threshold": 200,
-            },
-            "point_cloud_outlier_removal.2": {
-                "method": "statistical",
-                "filtering_constant": 0.0,
-                "mean_factor": 1.0,
-                "activated": True,
-                "use_median": False,
-                "std_dev_factor": 1.0,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
-                "msk_no_data": 254,
-            },
-            "dsm_filling.1": {"method": "exogenous_filling", "activated": True},
-            "dsm_filling.2": {"method": "bulldozer", "activated": True},
-            "auxiliary_filling": {
-                "save_intermediate_data": True,
-                "mode": "full",
-                "activated": True,
-                "use_mask": True,
-                "texture_interpolator": "linear",
+            "resolution_1": {
+                "grid_generation": {"method": "epipolar", "epi_step": 30},
+                "resampling": {"method": "bicubic", "strip_height": 80},
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": -20.0,
+                    "elevation_delta_upper_bound": 20.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "minimum_nb_matches": 10,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_global_disp_range": False,
+                    "use_cross_validation": True,
+                },
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                    "nb_points_threshold": 200,
+                },
+                "point_cloud_outlier_removal.2": {
+                    "method": "statistical",
+                    "filtering_constant": 0.0,
+                    "mean_factor": 1.0,
+                    "activated": True,
+                    "use_median": False,
+                    "std_dev_factor": 1.0,
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                    "msk_no_data": 254,
+                },
+                "dsm_filling.1": {
+                    "method": "exogenous_filling",
+                    "activated": True,
+                },
+                "dsm_filling.2": {"method": "bulldozer", "activated": True},
+                "auxiliary_filling": {
+                    "save_intermediate_data": True,
+                    "mode": "full",
+                    "activated": True,
+                    "use_mask": True,
+                    "texture_interpolator": "linear",
+                },
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
@@ -5345,6 +5334,7 @@ def test_end2end_paca_with_mask():
         }
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         dense_dsm_pipeline_bulldozer = default.DefaultPipeline(
             input_config_dense_dsm
@@ -5364,8 +5354,7 @@ def test_end2end_paca_with_mask():
 
         dense_dsm_pipeline_bulldozer.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -5447,7 +5436,7 @@ def test_end2end_paca_with_mask():
         # clean out dir for second run
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        input_config_dense_dsm["applications"].update(
+        input_config_dense_dsm["applications"]["resolution_1"].update(
             {
                 "dense_match_filling.2": {
                     "method": "zero_padding",
@@ -5544,7 +5533,7 @@ def test_end2end_paca_with_mask():
         # clean out dir for second run
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        input_config_dense_dsm["applications"].update(
+        input_config_dense_dsm["applications"]["resolution_1"].update(
             {
                 "dense_match_filling.2": {
                     "method": "zero_padding",
@@ -5616,40 +5605,42 @@ def test_end2end_disparity_filling():
             },
         )
         dense_dsm_applications = {
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-                "min_epi_tile_size": 100,
-                "save_intermediate_data": True,
-                "use_global_disp_range": False,
-            },
-            "dense_match_filling.1": {
-                "method": "plane",
-                "save_intermediate_data": True,
-                "classification": ["b1"],
-            },
-            "point_cloud_outlier_removal.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outlier_removal.2": {
-                "method": "statistical",
-                "activated": True,
-                "filtering_constant": 0.0,
-                "mean_factor": 1.0,
-                "std_dev_factor": 5.0,
-                "use_median": False,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "texture_no_data": 0,
-                "msk_no_data": 254,
+            "resolution_1": {
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                    "min_epi_tile_size": 100,
+                    "save_intermediate_data": True,
+                    "use_global_disp_range": False,
+                },
+                "dense_match_filling.1": {
+                    "method": "plane",
+                    "save_intermediate_data": True,
+                    "classification": ["b1"],
+                },
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                },
+                "point_cloud_outlier_removal.2": {
+                    "method": "statistical",
+                    "activated": True,
+                    "filtering_constant": 0.0,
+                    "mean_factor": 1.0,
+                    "std_dev_factor": 5.0,
+                    "use_median": False,
+                },
+                "point_cloud_rasterization": {
+                    "method": "simple_gaussian",
+                    "dsm_radius": 3,
+                    "sigma": 0.3,
+                    "dsm_no_data": -999,
+                    "texture_no_data": 0,
+                    "msk_no_data": 254,
+                },
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
@@ -5657,6 +5648,7 @@ def test_end2end_disparity_filling():
 
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         # Save mask and filling
         input_config_dense_dsm["output"]["auxiliary"] = {
@@ -5667,8 +5659,7 @@ def test_end2end_disparity_filling():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -5757,45 +5748,41 @@ def test_end2end_disparity_filling_with_zeros():
             "multiprocessing",
         )
         dense_dsm_applications = {
-            "sparse_matching.sift": {
-                "decimation_factor": 80,
-            },
-            "sparse_matching.pandora": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "match_filter_constant": 0,
-                "match_filter_mean_factor": 1,
-                "match_filter_dev_factor": 3,
-            },
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-                "save_intermediate_data": True,
-                "use_global_disp_range": True,
-            },
-            "dense_match_filling.2": {
-                "method": "zero_padding",
-                "save_intermediate_data": True,
-                "classification": ["b0"],
-            },
-            "point_cloud_outlier_removal.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outlier_removal.2": {
-                "method": "statistical",
-                "filtering_constant": 0,
-                "mean_factor": 1.0,
-                "std_dev_factor": 5.0,
-                "activated": True,
-                "use_median": False,
+            "resolution_1": {
+                "sparse_matching.sift": {
+                    "decimation_factor": 80,
+                },
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                    "save_intermediate_data": True,
+                    "use_global_disp_range": True,
+                },
+                "dense_match_filling.2": {
+                    "method": "zero_padding",
+                    "save_intermediate_data": True,
+                    "classification": ["b0"],
+                },
+                "point_cloud_outlier_removal.1": {
+                    "method": "small_components",
+                    "activated": True,
+                },
+                "point_cloud_outlier_removal.2": {
+                    "method": "statistical",
+                    "filtering_constant": 0,
+                    "mean_factor": 1.0,
+                    "std_dev_factor": 5.0,
+                    "activated": True,
+                    "use_median": False,
+                },
             },
         }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        input_config_dense_dsm["applications"] = dense_dsm_applications
 
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         # Save mask and filling
         input_config_dense_dsm["output"]["auxiliary"] = {
@@ -5806,8 +5793,7 @@ def test_end2end_disparity_filling_with_zeros():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
@@ -5918,15 +5904,19 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             }
         }
 
-        sensors_input_config_first_run["applications"].update(applications)
+        sensors_input_config_first_run["applications"] = applications
+        sensors_input_config_first_run["advanced"]["epipolar_resolutions"] = [
+            4,
+            1,
+        ]
 
         sensors_pipeline_first_run = default.DefaultPipeline(
             sensors_input_config_first_run
         )
         sensors_pipeline_first_run.run()
-        sensors_out_dir_first_run = sensors_input_config_first_run["output"][
-            "directory"
-        ]
+        sensors_out_dir_first_run = os.path.join(
+            sensors_input_config_first_run["output"]["directory"]
+        )
 
         # Run sensors pipeline with generated config
         used_conf = os.path.join(sensors_out_dir_first_run, "used_conf.json")
@@ -5937,10 +5927,17 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             "directory"
         ] += "_from_used_conf"
 
-        sensors_pipeline_second_run = default.DefaultPipeline(
+        first_res_out_dir = os.path.join(
+            sensors_input_config_first_run["output"]["directory"],
+            "intermediate_res/out_res4",
+        )
+
+        sensors_pipeline_second_run = unit.UnitPipeline(
             sensors_input_config_second_run
         )
-        sensors_pipeline_second_run.run()
+        sensors_pipeline_second_run.run(
+            use_sift_a_priori=True, first_res_out_dir=first_res_out_dir
+        )
         sensors_out_dir_second_run = sensors_input_config_second_run["output"][
             "directory"
         ]
@@ -5976,9 +5973,10 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "output": {"directory": directory2},
             }
 
-            pc_pipeline_first_run = default.DefaultPipeline(
-                pc_input_config_first_run
-            )
+            pc_input_config_first_run["advanced"] = {}
+            pc_input_config_first_run["advanced"]["epipolar_resolutions"] = 1
+
+            pc_pipeline_first_run = unit.UnitPipeline(pc_input_config_first_run)
             pc_pipeline_first_run.run()
             pc_out_dir_first_run = pc_input_config_first_run["output"][
                 "directory"
@@ -5993,7 +5991,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "directory"
             ] += "_from_used_conf"
 
-            pc_pipeline_second_run = default.DefaultPipeline(
+            pc_pipeline_second_run = unit.UnitPipeline(
                 pc_input_config_second_run
             )
             pc_pipeline_second_run.run()
