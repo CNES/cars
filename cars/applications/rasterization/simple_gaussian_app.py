@@ -322,7 +322,10 @@ class SimpleGaussian(
 
         if self.texture_no_data is None:
             if self.color_dtype is not None:
-                self.texture_no_data = np.iinfo(self.color_dtype).max
+                if "float" in self.color_dtype:
+                    self.texture_no_data = np.finfo(self.color_dtype).max
+                else:
+                    self.texture_no_data = np.iinfo(self.color_dtype).max
 
         # Setup dump directory
         if dump_dir is not None:
