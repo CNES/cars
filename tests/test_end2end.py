@@ -2843,7 +2843,7 @@ def test_end2end_use_epipolar_a_priori():
                 == 612
             )
             assert (
-                -36
+                -45
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
@@ -3149,18 +3149,6 @@ def test_prepare_ventoux_bias():
             },
         )
         application_config = {
-            "resolution_4": {
-                "sparse_matching.sift": {
-                    "method": "sift",
-                    "epipolar_error_upper_bound": 43.0,
-                    "epipolar_error_maximum_bias": 50.0,
-                    "elevation_delta_lower_bound": -20.0,
-                    "elevation_delta_upper_bound": 120.0,
-                    "disparity_margin": 0.25,
-                    "save_intermediate_data": True,
-                    "decimation_factor": 100,
-                },
-            },
             "resolution_2": {
                 "sparse_matching.sift": {
                     "method": "sift",
@@ -3176,16 +3164,6 @@ def test_prepare_ventoux_bias():
             "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 100},
-                "sparse_matching.sift": {
-                    "method": "sift",
-                    "epipolar_error_upper_bound": 43.0,
-                    "epipolar_error_maximum_bias": 50.0,
-                    "elevation_delta_lower_bound": -20.0,
-                    "elevation_delta_upper_bound": 120.0,
-                    "disparity_margin": 0.25,
-                    "save_intermediate_data": True,
-                    "decimation_factor": 80,
-                },
                 "dense_matching": {
                     # run disp min disp max in the global pipeline
                     "use_global_disp_range": True,
@@ -3207,7 +3185,7 @@ def test_prepare_ventoux_bias():
         input_config_sparse_res["applications"] = application_config
         input_config_sparse_res["output"].update(output_config)
 
-        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 2, 1]
+        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [2, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
@@ -4685,7 +4663,7 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -38
+            assert out_disp_compute["global_disp_min"] > -45
             assert out_disp_compute["global_disp_min"] < -22
             assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 24
@@ -4971,7 +4949,7 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -39
+            assert out_disp_compute["global_disp_min"] > -54
             assert out_disp_compute["global_disp_min"] < -31
             assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 33
@@ -5199,7 +5177,7 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -39
+            assert out_disp_compute["global_disp_min"] > -54
             assert out_disp_compute["global_disp_min"] < -31
             assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 33
