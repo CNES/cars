@@ -1584,8 +1584,13 @@ class UnitPipeline(PipelineTemplate):
             # Run epipolar resampling
             self.pairs[pair_key]["corrected_grid_left"] = transform_grid_func(
                 self.pairs[pair_key]["corrected_grid_left"],
+                self.res_resamp,
+            )
+
+            self.pairs[pair_key]["corrected_grid_right"] = transform_grid_func(
                 self.pairs[pair_key]["corrected_grid_right"],
                 self.res_resamp,
+                right=True,
             )
 
             # Update used_conf configuration with epipolar a priori

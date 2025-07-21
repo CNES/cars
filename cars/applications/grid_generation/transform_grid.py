@@ -29,40 +29,37 @@ import rasterio
 from cars.applications.grid_generation import grid_generation_algo
 
 
-def transform_grid_func(grid_left, grid_right, resolution):
+def transform_grid_func(grid_left, resolution, right=False):
     """
     Transform the grid for low res resampling
 
     :param grid_left: the left grid
     :type grid_left: cars_dataset
-    :param grid_right: the right grid
-    :type grid_right: cars_dataset
     :param resolution: the resolution for the resampling
     :type resolution: int
     """
     for key, value in grid_left.items():
-        if isinstance(value, (int, float, np.floating)):
-            grid_left[key] = np.floor(value / resolution)
-        elif isinstance(value, list):
-            for i, _ in enumerate(value):
-                grid_left[key][i] = np.floor(value[i] / resolution)
+        if right:
+            if key not in ("grid_origin", "grid_spacing"):
+                if isinstance(value, (int, float, np.floating)):
+                    grid_left[key] = np.floor(value / resolution)
+                elif isinstance(value, list):
+                    for i, _ in enumerate(value):
+                        grid_left[key][i] = np.floor(value[i] / resolution)
+        else:
+            if isinstance(value, (int, float, np.floating)):
+                grid_left[key] = np.floor(value / resolution)
+            elif isinstance(value, list):
+                for i, _ in enumerate(value):
+                    grid_left[key][i] = np.floor(value[i] / resolution)
 
     # we need to charge the data to override it
     with rasterio.open(grid_left["path"]) as src:
         data_left = src.read()
 
-    with rasterio.open(grid_right["path"]) as src:
-        data_right = src.read()
-
     grid_generation_algo.write_grid(
         np.transpose(data_left, (1, 2, 0)),
         grid_left["path"],
-        grid_left["grid_origin"],
-        grid_left["grid_spacing"],
-    )
-    grid_generation_algo.write_grid(
-        np.transpose(data_right, (1, 2, 0)),
-        grid_right["path"],
         grid_left["grid_origin"],
         grid_left["grid_spacing"],
     )
