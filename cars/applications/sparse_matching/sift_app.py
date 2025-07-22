@@ -154,7 +154,7 @@ class Sift(SparseMatching, short_name=["sift"]):
             "epipolar_error_upper_bound", 10.0
         )
         overloaded_conf["epipolar_error_maximum_bias"] = conf.get(
-            "epipolar_error_maximum_bias", 0.0
+            "epipolar_error_maximum_bias", 150.0
         )
 
         # minimum number of matches to continue with
