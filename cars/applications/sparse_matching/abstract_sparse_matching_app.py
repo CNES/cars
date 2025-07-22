@@ -380,7 +380,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_median_shift = np.median(matches[:, 3] - matches[:, 1])
 
         if np.abs(epipolar_median_shift) > epipolar_error_maximum_bias:
-            epipolar_median_shift = epipolar_error_upper_bound * np.sign(
+            epipolar_median_shift = epipolar_error_maximum_bias * np.sign(
                 epipolar_median_shift
             )
 
