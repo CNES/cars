@@ -2786,6 +2786,13 @@ def test_end2end_use_epipolar_a_priori():
                     "nb_points_threshold": 150,
                     "connection_distance": 3.0,
                 },
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 100,
+                },
             },
             "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
@@ -3234,6 +3241,17 @@ def test_end2end_ventoux_full_output_no_elevation():
         )
 
         application_config = {
+            "resolution_2": {
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "elevation_delta_lower_bound": 400.0,
+                    "elevation_delta_upper_bound": 700.0,
+                    "disparity_margin": 0.25,
+                    "save_intermediate_data": True,
+                    "decimation_factor": 80,
+                },
+            },
             "resolution_1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {
@@ -4594,6 +4612,12 @@ def test_end2end_quality_stats():
                     "activated": True,
                     "nb_points_threshold": 150,
                     "connection_distance": 3.0,
+                },
+                "sparse_matching.sift": {
+                    "method": "sift",
+                    "epipolar_error_upper_bound": 43.0,
+                    "disparity_margin": 0.25,
+                    "decimation_factor": 80,
                 },
             },
             "resolution_1": {
