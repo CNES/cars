@@ -64,7 +64,6 @@ def divide(key, value, grid_left, resolution):
     Divide attributs by the resolution
     """
     if isinstance(value, (int, float, np.floating)):
-        print(key)
         if key == "disp_to_alt_ratio":
             grid_left[key] = value / resolution
         else:
