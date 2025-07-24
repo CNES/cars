@@ -164,6 +164,7 @@ def test_get_roi():
     np.testing.assert_allclose(roi, ref_roi)
 
 
+@pytest.mark.unit_tests
 def test_exception_roi_outside_dtm():
     """
     Test when the roi is outside the dtm
