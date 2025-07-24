@@ -165,6 +165,7 @@ def test_advanced_parameters_update_conf():
     )
 
 
+@pytest.mark.unit_tests
 def test_check_ground_truth_dsm_data():
     """
     Test check_ground_truth_dsm_data function

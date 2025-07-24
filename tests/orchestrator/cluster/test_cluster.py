@@ -288,6 +288,7 @@ def test_tasks_pipeline_dump_xarray(conf):
         cluster.cleanup()
 
 
+@pytest.mark.unit_tests
 @pytest.mark.parametrize("conf", [conf_mp])
 def test_factorize_tasks_mp(conf):
     """

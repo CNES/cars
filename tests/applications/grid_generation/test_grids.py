@@ -464,6 +464,7 @@ def cast_swigobj_grid(grid):
     return grid
 
 
+@pytest.mark.unit_tests
 def test_terrain_region_to_epipolar(
     images_and_grids_conf,  # pylint: disable=redefined-outer-name
     epipolar_sizes_conf,
@@ -520,6 +521,7 @@ def test_terrain_region_to_epipolar(
     assert epipolar_region == epipolar_region_ref
 
 
+@pytest.mark.unit_tests
 def test_transform_grid_func():
     """
     Test the transform grid function

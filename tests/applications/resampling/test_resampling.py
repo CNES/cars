@@ -380,6 +380,7 @@ def test_epipolar_rectify_images_3(
     assert class2 is None
 
 
+@pytest.mark.unit_tests
 def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
     """
     Test the low res resampling
