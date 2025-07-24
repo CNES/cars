@@ -1355,6 +1355,7 @@ class CensusMccnnSgm(
                     cst_disp.MAP,
                     epipolar_disparity_map,
                     cars_ds_name="epi_disp",
+                    nodata=-9999,
                 )
 
                 self.orchestrator.add_to_save_lists(
