@@ -271,26 +271,6 @@ class PandoraLoader:
                 if "band" not in filter_conf:
                     conf["pipeline"]["filter"]["band"] = used_band
 
-        for key in list(conf.get("pipeline")):
-            if key.startswith("filter"):
-                if (
-                    conf["pipeline"][key]["filter_method"]
-                    == "median_for_intervals"
-                    and "validation" in conf["pipeline"]
-                ):
-                    if (
-                        conf["pipeline"]["validation"]["validation_method"]
-                        == "cross_checking_fast"
-                    ):
-                        conf["pipeline"]["validation"][
-                            "validation_method"
-                        ] = "cross_checking_accurate"
-                        logging.warning(
-                            "You can not use median_for_intervals with "
-                            "the fast cross checking validation for now. "
-                            "It therefore has been overrided to accurate"
-                        )
-
         # Check conf
         self.pandora_config = conf
 
