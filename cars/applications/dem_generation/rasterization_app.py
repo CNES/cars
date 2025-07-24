@@ -331,7 +331,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
 
         # Rectify pixels where DEM min < DEM - min_depth
         dem_min = np.where(
-            dem_median - dem_min < self.min_dem,
+            dem_min - dem_median < self.min_dem,
             dem_median + self.min_dem,
             dem_min,
         )
@@ -346,9 +346,9 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         with rio.open(dem_min_path, "w", **profile) as out_dem:
             out_dem.write(dem_min, 1)
         with rio.open(dem_median_path_out, "w", **profile) as out_dem:
-            out_dem.write(dem_min, 1)
+            out_dem.write(dem_median, 1)
         with rio.open(dem_max_path, "w", **profile) as out_dem:
-            out_dem.write(dem_min, 1)
+            out_dem.write(dem_max, 1)
 
         if self.save_intermediate_data:
             intermediate_dem_min_path = os.path.join(

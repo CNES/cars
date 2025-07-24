@@ -91,7 +91,7 @@ class SharelocGeometry(AbstractGeometry):
                 self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
 
             self.roi_shareloc = self.get_roi(
-                pairs_for_roi, self.dem_roi_epsg, margin=0.012
+                pairs_for_roi, self.dem_roi_epsg, margin=1
             )
             # change convention
             self.dem_roi = [
@@ -108,8 +108,6 @@ class SharelocGeometry(AbstractGeometry):
             dtm_image = dtm_reader(
                 dem,
                 geoid,
-                roi=self.roi_shareloc,
-                roi_is_in_physical_space=True,
                 fill_nodata="mean",
                 fill_value=0.0,
             )
@@ -125,7 +123,9 @@ class SharelocGeometry(AbstractGeometry):
         else:
             self.elevation = default_alt
 
-    def get_roi(self, pairs_for_roi, epsg, margin=0.006):
+    def get_roi(
+        self, pairs_for_roi, epsg, z_min=-1000, z_max=9000, margin=0.006
+    ):
         """
         Compute region of interest for intersection of DEM
 
@@ -138,22 +138,52 @@ class SharelocGeometry(AbstractGeometry):
         """
         coords_list = []
         for image1, geomodel1, image2, geomodel2 in pairs_for_roi:
-            # Footprint of left image
+            # Footprint of left image with altitude z_min
             coords_list.extend(
-                self.image_envelope(image1["main_file"], geomodel1)
+                self.image_envelope(
+                    image1["main_file"], geomodel1, elevation=z_min
+                )
             )
-            # Footprint of right image
+            # Footprint of left image with altitude z_max
             coords_list.extend(
-                self.image_envelope(image2["main_file"], geomodel2)
+                self.image_envelope(
+                    image1["main_file"], geomodel1, elevation=z_max
+                )
+            )
+            # Footprint of right image with altitude z_min
+            coords_list.extend(
+                self.image_envelope(
+                    image2["main_file"], geomodel2, elevation=z_min
+                )
+            )
+            # Footprint of right image with altitude z_max
+            coords_list.extend(
+                self.image_envelope(
+                    image2["main_file"], geomodel2, elevation=z_max
+                )
             )
             # Footprint of rectification grid (with margins)
             image1 = SharelocGeometry.load_image(image1["main_file"])
             geomodel1 = self.load_geom_model(geomodel1)
             geomodel2 = self.load_geom_model(geomodel2)
+
+            # With altitude z_min
             epipolar_extent = rectif.get_epipolar_extent(
                 image1,
                 geomodel1,
                 geomodel2,
+                elevation=z_min,
+                grid_margin=self.rectification_grid_margin,
+            )
+            lat_min, lon_min, lat_max, lon_max = list(epipolar_extent)
+            coords_list.extend([(lon_min, lat_min), (lon_max, lat_max)])
+
+            # With altitude z_max
+            epipolar_extent = rectif.get_epipolar_extent(
+                image1,
+                geomodel1,
+                geomodel2,
+                elevation=z_max,
                 grid_margin=self.rectification_grid_margin,
             )
             lat_min, lon_min, lat_max, lon_max = list(epipolar_extent)

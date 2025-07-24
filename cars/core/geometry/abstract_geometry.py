@@ -607,7 +607,12 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
 
     def image_envelope(
-        self, sensor, geomodel, out_path=None, out_driver="ESRI Shapefile"
+        self,
+        sensor,
+        geomodel,
+        out_path=None,
+        out_driver="ESRI Shapefile",
+        elevation=0.0,
     ):
         """
         Export the image footprint to a vector file
@@ -629,24 +634,28 @@ class AbstractGeometry(metaclass=ABCMeta):
             geomodel,
             np.array(shift_x),
             np.array(shift_y),
+            elevation,
         )
         lat_upper_right, lon_upper_right, _ = self.direct_loc(
             sensor,
             geomodel,
             np.array(img_size_x + shift_x),
             np.array(shift_y),
+            elevation,
         )
         lat_bottom_left, lon_bottom_left, _ = self.direct_loc(
             sensor,
             geomodel,
             np.array(shift_x),
             np.array(img_size_y + shift_y),
+            elevation,
         )
         lat_bottom_right, lon_bottom_right, _ = self.direct_loc(
             sensor,
             geomodel,
             np.array(img_size_x + shift_x),
             np.array(img_size_y + shift_y),
+            elevation,
         )
 
         u_l = (lon_upper_left, lat_upper_left)

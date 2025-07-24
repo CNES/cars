@@ -173,7 +173,7 @@ def estimate_right_grid_correction(
     grid_right,
     initial_cars_ds=None,
     save_matches=False,
-    minimum_nb_matches=100,
+    minimum_nb_matches=30,
     pair_folder="",
     pair_key="pair_0",
     orchestrator=None,
@@ -210,6 +210,7 @@ def estimate_right_grid_correction(
     else:
         cars_orchestrator = orchestrator
 
+    print(matches.shape[0], minimum_nb_matches)
     if matches.shape[0] < minimum_nb_matches:
         logging.error(
             "Insufficient amount of matches found"
