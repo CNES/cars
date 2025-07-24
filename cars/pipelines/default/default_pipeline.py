@@ -1204,6 +1204,10 @@ class DefaultPipeline(PipelineTemplate):
 
                 if conf_res[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"] is None:
                     conf_res[INPUTS][sens_cst.INITIAL_ELEVATION] = dem_median
+                else:
+                    conf_res[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
+                        "dem_median"
+                    ] = conf_res[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"]
 
                 conf_res[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] = True
                 use_sift_a_priori = True
