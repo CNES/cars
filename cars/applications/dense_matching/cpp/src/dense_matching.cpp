@@ -59,7 +59,7 @@ py::array_t<bool> estimate_right_classif_on_left(
                 int margin_min = disp_min;
                 int margin_max = disp_max;
                 if (classification_fusion_margin != -1) {
-                    margin_min = classification_fusion_margin;
+                    margin_min = -classification_fusion_margin;
                     margin_max = classification_fusion_margin;
                 }
                 for (
@@ -109,7 +109,7 @@ py::array_t<bool> mask_left_classif_from_right_mask(
             int margin_min = r_disp_min(row, col);
             int margin_max = r_disp_max(row, col);
             if (classification_fusion_margin != -1) {
-                margin_min = classification_fusion_margin;
+                margin_min = -classification_fusion_margin;
                 margin_max = classification_fusion_margin;
             }
             size_t lower_bound = std::max(0, static_cast<int>(col)+margin_min);
