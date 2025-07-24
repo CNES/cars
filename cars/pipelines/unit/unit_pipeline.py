@@ -1412,10 +1412,6 @@ class UnitPipeline(PipelineTemplate):
                         )
                     )
 
-                    minimum_nb_matches = (
-                        self.sparse_mtch_sift_app.get_minimum_nb_matches()
-                    )
-
                     # Estimate grid_correction
                     (
                         self.pairs[pair_key]["grid_correction_coef"],
