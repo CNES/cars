@@ -619,7 +619,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         geomodel,
         out_path=None,
         out_driver="ESRI Shapefile",
-        elevation=0.0,
+        elevation=None,
     ):
         """
         Export the image footprint to a vector file

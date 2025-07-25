@@ -93,8 +93,8 @@ class SharelocGeometry(AbstractGeometry):
             self.roi_shareloc = self.get_roi(
                 pairs_for_roi,
                 self.dem_roi_epsg,
-                z_min=-1000,
-                z_max=9000,
+                z_min=0,
+                z_max=0,
                 margin=self.dem_roi_margin,
             )
             # change convention
@@ -112,6 +112,8 @@ class SharelocGeometry(AbstractGeometry):
             dtm_image = dtm_reader(
                 dem,
                 geoid,
+                roi=self.roi_shareloc,
+                roi_is_in_physical_space=True,
                 fill_nodata="mean",
                 fill_value=0.0,
             )
@@ -190,7 +192,6 @@ class SharelocGeometry(AbstractGeometry):
             )
             lat_min, lon_min, lat_max, lon_max = list(epipolar_extent)
             coords_list.extend([(lon_min, lat_min), (lon_max, lat_max)])
-
         lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
         roi = [
             min(lat_list) - margin,

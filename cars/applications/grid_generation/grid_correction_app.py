@@ -173,7 +173,7 @@ def estimate_right_grid_correction(
     grid_right,
     initial_cars_ds=None,
     save_matches=False,
-    minimum_nb_matches=30,
+    minimum_nb_matches=100,
     pair_folder="",
     pair_key="pair_0",
     orchestrator=None,
