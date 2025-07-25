@@ -288,6 +288,7 @@ def test_tasks_pipeline_dump_xarray(conf):
         cluster.cleanup()
 
 
+@pytest.mark.unit_tests
 @pytest.mark.parametrize("conf", [conf_mp])
 def test_factorize_tasks_mp(conf):
     """
@@ -334,3 +335,6 @@ def test_factorize_tasks_mp(conf):
         np.testing.assert_array_equal(res_2["im"].values, 101 * np.ones((3, 4)))
 
         assert not factorized_object.tasks  # attribute tasks is empty
+
+        # Close cluster
+        cluster.cleanup()
