@@ -621,7 +621,13 @@ The structure follows this organization:
                       - should be in input sensor
                       - "b0"
                       - No
-
+                    * - classification_fusion_margin
+                      - margin for the fusion 
+                      - int 
+                      - should be > 0
+                      - -1
+                      - No
+                      
                 See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
 
                 **Example**
