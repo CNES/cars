@@ -91,7 +91,11 @@ class SharelocGeometry(AbstractGeometry):
                 self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
 
             self.roi_shareloc = self.get_roi(
-                pairs_for_roi, self.dem_roi_epsg, margin=1
+                pairs_for_roi,
+                self.dem_roi_epsg,
+                z_min=-1000,
+                z_max=9000,
+                margin=self.dem_roi_margin,
             )
             # change convention
             self.dem_roi = [
@@ -123,9 +127,7 @@ class SharelocGeometry(AbstractGeometry):
         else:
             self.elevation = default_alt
 
-    def get_roi(
-        self, pairs_for_roi, epsg, z_min=-1000, z_max=9000, margin=0.006
-    ):
+    def get_roi(self, pairs_for_roi, epsg, z_min=0, z_max=0, margin=0.012):
         """
         Compute region of interest for intersection of DEM
 

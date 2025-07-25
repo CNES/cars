@@ -210,7 +210,6 @@ def estimate_right_grid_correction(
     else:
         cars_orchestrator = orchestrator
 
-    print(matches.shape[0], minimum_nb_matches)
     if matches.shape[0] < minimum_nb_matches:
         logging.error(
             "Insufficient amount of matches found"

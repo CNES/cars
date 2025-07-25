@@ -30,7 +30,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import rasterio as rio
 import xarray as xr
-from json_checker import And, Checker
+from json_checker import And, Checker, Or
 from scipy import interpolate
 from scipy.interpolate import LinearNDInterpolator
 from shapely.geometry import Polygon
@@ -65,7 +65,9 @@ class AbstractGeometry(metaclass=ABCMeta):
             if isinstance(geometry_plugin_conf, str):
                 geometry_plugin = geometry_plugin_conf
             elif isinstance(geometry_plugin_conf, dict):
-                geometry_plugin = geometry_plugin_conf.get("plugin_name", None)
+                geometry_plugin = geometry_plugin_conf.get(
+                    "plugin_name", "SharelocGeometry"
+                )
             else:
                 raise RuntimeError("Not a supported type")
 
@@ -105,6 +107,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         self.plugin_name = config["plugin_name"]
         self.interpolator = config["interpolator"]
+        self.dem_roi_margin = config["dem_roi_margin"]
 
         self.dem = dem
         self.dem_roi = None
@@ -153,12 +156,16 @@ class AbstractGeometry(metaclass=ABCMeta):
             conf = {"plugin_name": conf}
 
         # overload conf
-        overloaded_conf["plugin_name"] = conf.get("plugin_name", None)
+        overloaded_conf["plugin_name"] = conf.get(
+            "plugin_name", "SharelocGeometry"
+        )
         overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
+        overloaded_conf["dem_roi_margin"] = conf.get("dem_roi_margin", 0.012)
 
         geometry_schema = {
             "plugin_name": str,
             "interpolator": And(str, lambda x: x in ["cubic", "linear"]),
+            "dem_roi_margin": Or(float, int),
         }
 
         # Check conf
