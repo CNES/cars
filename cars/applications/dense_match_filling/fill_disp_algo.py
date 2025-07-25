@@ -175,11 +175,6 @@ def fill_central_area_using_plane(  # noqa: C901
                 roi_msk_tmp,
                 ~np.isnan(disp_mask),
             )
-            # do not use zeros
-            roi_msk_tmp = np.logical_and(
-                roi_msk_tmp,
-                disp_values != 0,
-            )
 
             # Band disp values retrieval
             # Optional filter processing n°1 : ignore invalid values in band
@@ -424,9 +419,9 @@ def fill_disp_using_zero_padding(
             disp_map[cst.EPI_MSK].values
             != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
         )
-        # set disparity value to zero where the class is
+        # set disparity value to np.nan where the class is
         # non zero value and masked region
-        disp_map["disp"].values[stack_index] = 0
+        disp_map["disp"].values[stack_index] = np.nan
         disp_map["disp_msk"].values[stack_index] = 255
         disp_map[cst.EPI_MSK].values[stack_index] = 0
         # Add a band to disparity dataset to memorize which pixels are filled
