@@ -1423,6 +1423,7 @@ class UnitPipeline(PipelineTemplate):
                         new_grid_matches_array,
                         self.pairs[pair_key]["new_grid_right"],
                         save_matches=save_matches,
+                        minimum_nb_matches=minimum_nb_matches,
                         initial_cars_ds=self.pairs[pair_key][
                             "epipolar_matches_left"
                         ],
