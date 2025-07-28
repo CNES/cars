@@ -334,7 +334,10 @@ class DefaultPipeline(PipelineTemplate):
             ):
                 # Check conf application vs inputs application
                 application_conf = self.check_applications_with_inputs(
-                    self.used_conf[key][INPUTS], application_conf, res
+                    self.used_conf[key][INPUTS],
+                    application_conf,
+                    application_all_conf,
+                    res,
                 )
 
             self.used_conf[key][APPLICATIONS] = application_conf
@@ -973,7 +976,7 @@ class DefaultPipeline(PipelineTemplate):
         return used_conf
 
     def check_applications_with_inputs(  # noqa: C901 : too complex
-        self, inputs_conf, application_conf, res
+        self, inputs_conf, application_conf, initial_conf_app, res
     ):
         """
         Check for each application the input and output configuration
@@ -1113,10 +1116,14 @@ class DefaultPipeline(PipelineTemplate):
         first_image_size = rasterio_get_size(first_image_path)
         size_low_res_img_row = first_image_size[0] // res
         size_low_res_img_col = first_image_size[1] // res
-        if size_low_res_img_row <= 900 and size_low_res_img_col <= 900:
-            application_conf["grid_generation"]["epi_step"] = res * 5
-        else:
-            application_conf["grid_generation"]["epi_step"] = res * 30
+        if (
+            "grid_generation" not in initial_conf_app
+            or "epi_step" not in application_conf["grid_generation"]
+        ):
+            if size_low_res_img_row <= 900 and size_low_res_img_col <= 900:
+                application_conf["grid_generation"]["epi_step"] = res * 5
+            else:
+                application_conf["grid_generation"]["epi_step"] = res * 30
 
         return application_conf
 
@@ -1201,7 +1208,14 @@ class DefaultPipeline(PipelineTemplate):
                     "dem_max": dem_max,
                     "dem_median": dem_median,
                 }
-                conf_res[INPUTS][sens_cst.INITIAL_ELEVATION] = dem_median
+
+                if conf_res[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"] is None:
+                    conf_res[INPUTS][sens_cst.INITIAL_ELEVATION] = dem_median
+                else:
+                    conf_res[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
+                        "dem_median"
+                    ] = conf_res[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"]
+
                 conf_res[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] = True
                 use_sift_a_priori = True
 

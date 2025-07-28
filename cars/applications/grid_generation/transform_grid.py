@@ -29,42 +29,60 @@ import rasterio
 from cars.applications.grid_generation import grid_generation_algo
 
 
-def transform_grid_func(grid_left, grid_right, resolution):
+def transform_grid_func(grid, resolution, right=False):
     """
     Transform the grid for low res resampling
 
-    :param grid_left: the left grid
-    :type grid_left: cars_dataset
-    :param grid_right: the right grid
-    :type grid_right: cars_dataset
+    :param grid: the grid
+    :type grid: cars_dataset
     :param resolution: the resolution for the resampling
     :type resolution: int
     """
-    for key, value in grid_left.items():
-        if isinstance(value, (int, float, np.floating)):
-            grid_left[key] = np.floor(value / resolution)
-        elif isinstance(value, list):
-            for i, _ in enumerate(value):
-                grid_left[key][i] = np.floor(value[i] / resolution)
+    for key, value in grid.items():
+        if right:
+            if key not in ("grid_origin", "grid_spacing"):
+                divide(key, value, grid, resolution)
+        else:
+            divide(key, value, grid, resolution)
 
     # we need to charge the data to override it
-    with rasterio.open(grid_left["path"]) as src:
+    with rasterio.open(grid["path"]) as src:
         data_left = src.read()
-
-    with rasterio.open(grid_right["path"]) as src:
-        data_right = src.read()
 
     grid_generation_algo.write_grid(
         np.transpose(data_left, (1, 2, 0)),
-        grid_left["path"],
-        grid_left["grid_origin"],
-        grid_left["grid_spacing"],
-    )
-    grid_generation_algo.write_grid(
-        np.transpose(data_right, (1, 2, 0)),
-        grid_right["path"],
-        grid_left["grid_origin"],
-        grid_left["grid_spacing"],
+        grid["path"],
+        grid["grid_origin"],
+        grid["grid_spacing"],
     )
 
-    return grid_left
+    return grid
+
+
+def divide(key, value, grid, resolution):
+    """
+    Divide attributs by the resolution
+    """
+
+    if key == "grid_origin":
+        for i, _ in enumerate(value):
+            grid[key][i] = np.floor(value[i] / resolution)
+    elif key == "grid_spacing":
+        for i, _ in enumerate(value):
+            grid[key][i] = np.floor(value[i] / resolution)
+    elif key == "disp_to_alt_ratio":
+        grid[key] = value / resolution
+    elif key == "epipolar_size_x":
+        grid[key] = np.floor(value / resolution)
+    elif key == "epipolar_size_y":
+        grid[key] = np.floor(value / resolution)
+    elif key == "epipolar_origin_x":
+        grid[key] = np.floor(value / resolution)
+    elif key == "epipolar_origin_y":
+        grid[key] = np.floor(value / resolution)
+    elif key == "epipolar_spacing_x":
+        grid[key] = np.floor(value / resolution)
+    elif key == "epipolar_spacing":
+        grid[key] = np.floor(value / resolution)
+    elif key == "epipolar_step":
+        grid[key] = np.floor(value / resolution)
