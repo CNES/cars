@@ -76,7 +76,7 @@ def add_surrounding_nodata_to_roi(
     )
 
     # Added because zero values not included in disp_mask are present
-    all_mask = np.logical_or(all_mask, disp == 0)
+    all_mask = np.logical_or(all_mask, disp == np.nan)
     labeled_msk_array, __ = label(all_mask.astype(int), structure=struct)
     label_of_interest = np.unique(labeled_msk_array[np.where(roi_mask == 1)])
     if len(label_of_interest) != 1:

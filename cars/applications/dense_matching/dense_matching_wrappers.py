@@ -433,7 +433,7 @@ def create_disp_dataset(  # noqa: C901
     )
 
     # Fill disparity array with 0 value for invalid points
-    disp_map[pandora_masks[cst_disp.VALID] == 0] = 0
+    disp_map[pandora_masks[cst_disp.VALID] == 0] = np.nan
 
     # Build output dataset
     row = np.array(range(new_roi[1], new_roi[3]))
