@@ -110,6 +110,10 @@ class CensusMccnnSgm(
         # Ambiguity
         self.generate_ambiguity = self.used_config["generate_ambiguity"]
 
+        self.classification_fusion_margin = self.used_config[
+            "classification_fusion_margin"
+        ]
+
         # Margins computation parameters
         # Use local disp
         self.use_global_disp_range = self.used_config["use_global_disp_range"]
@@ -175,6 +179,11 @@ class CensusMccnnSgm(
         overloaded_conf["epipolar_tile_margin_in_percent"] = conf.get(
             "epipolar_tile_margin_in_percent", 60
         )
+
+        overloaded_conf["classification_fusion_margin"] = conf.get(
+            "classification_fusion_margin", -1
+        )
+
         overloaded_conf["min_elevation_offset"] = conf.get(
             "min_elevation_offset", None
         )
@@ -321,6 +330,7 @@ class CensusMccnnSgm(
             "perf_eta_max_ambiguity": float,
             "perf_eta_max_risk": float,
             "perf_eta_step": float,
+            "classification_fusion_margin": int,
             "perf_ambiguity_threshold": float,
             "use_cross_validation": Or(bool, str),
             "denoise_disparity_map": bool,
@@ -1414,6 +1424,9 @@ class CensusMccnnSgm(
                                 epipolar_disparity_map.overlaps[row, col]
                             ),
                             margins_to_keep=margins_to_keep,
+                            classification_fusion_margin=(
+                                self.classification_fusion_margin
+                            ),
                         )
 
         else:
@@ -1434,6 +1447,7 @@ def compute_disparity_wrapper(
     crop_with_range=None,
     left_overlaps=None,
     margins_to_keep=0,
+    classification_fusion_margin=-1,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1475,6 +1489,8 @@ def compute_disparity_wrapper(
     :type: left_overlaps: dict
     :param margins_to_keep: margin to keep after dense matching
     :type margins_to_keep: int
+    :param classification_fusion_margin: the margin to add for the fusion
+    :type classification_fusion_margin: int
 
 
     :return: Left to right disparity dataset
@@ -1538,6 +1554,7 @@ def compute_disparity_wrapper(
         compute_disparity_masks=compute_disparity_masks,
         cropped_range=mask_crop,
         margins_to_keep=margins_to_keep,
+        classification_fusion_margin=classification_fusion_margin,
     )
 
     # Fill with attributes
