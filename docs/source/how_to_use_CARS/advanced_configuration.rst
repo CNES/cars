@@ -974,9 +974,9 @@ The structure follows this organization:
                       -
                     * - texture_no_data
                       -
-                      - int
+                      - int, None
                       -
-                      - 0
+                      - None
                       -
                     * - texture_dtype
                       - | By default, it's retrieved from the input texture
