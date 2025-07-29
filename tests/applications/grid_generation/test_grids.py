@@ -464,6 +464,7 @@ def cast_swigobj_grid(grid):
     return grid
 
 
+@pytest.mark.unit_tests
 def test_terrain_region_to_epipolar(
     images_and_grids_conf,  # pylint: disable=redefined-outer-name
     epipolar_sizes_conf,
@@ -520,6 +521,7 @@ def test_terrain_region_to_epipolar(
     assert epipolar_region == epipolar_region_ref
 
 
+@pytest.mark.unit_tests
 def test_transform_grid_func():
     """
     Test the transform grid function
@@ -565,7 +567,7 @@ def test_transform_grid_func():
                 )
                 (
                     grid_left,
-                    grid_right,
+                    _,
                 ) = epipolar_grid_generation_application.run(
                     data["sensor_image_left"],
                     data["sensor_image_right"],
@@ -580,19 +582,32 @@ def test_transform_grid_func():
 
                 grid_left = transform_grid_func(
                     grid_left,
-                    grid_right,
                     resolution,
                 )
 
-                for key, attributes in grid_left.items():
-                    if isinstance(attributes, (int, float, np.floating)):
-                        attr = grid_left_before[key]
-                        assert attributes == np.floor(attr / resolution)
-                    elif isinstance(attributes, list):
-                        for i, val in enumerate(attributes):
-                            attr = grid_left_before[key][i]
-                            res = np.floor(attr / resolution)
-                            assert val == res
+                for key, value in grid_left.items():
+                    if key == "grid_origin":
+                        for i, _ in enumerate(value):
+                            grid_left[key][i] = np.floor(value[i] / resolution)
+                    elif key == "grid_spacing":
+                        for i, _ in enumerate(value):
+                            grid_left[key][i] = np.floor(value[i] / resolution)
+                    elif key == "disp_to_alt_ratio":
+                        grid_left[key] = value / resolution
+                    elif key == "epipolar_size_x":
+                        grid_left[key] = np.floor(value / resolution)
+                    elif key == "epipolar_size_y":
+                        grid_left[key] = np.floor(value / resolution)
+                    elif key == "epipolar_origin_x":
+                        grid_left[key] = np.floor(value / resolution)
+                    elif key == "epipolar_origin_y":
+                        grid_left[key] = np.floor(value / resolution)
+                    elif key == "epipolar_spacing_x":
+                        grid_left[key] = np.floor(value / resolution)
+                    elif key == "epipolar_spacing":
+                        grid_left[key] = np.floor(value / resolution)
+                    elif key == "epipolar_step":
+                        grid_left[key] = np.floor(value / resolution)
 
                 with rio.open(grid_left["path"]) as src:
                     data_left = np.transpose(src.read(), (1, 2, 0))
