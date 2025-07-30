@@ -973,10 +973,10 @@ The structure follows this organization:
                       - -32768
                       -
                     * - texture_no_data
+                      - If texture_no_data is None, it will be automatically set to the maximum value of texture_dtype
+                      - int, None
                       -
-                      - int
-                      -
-                      - 0
+                      - None
                       -
                     * - texture_dtype
                       - | By default, it's retrieved from the input texture
