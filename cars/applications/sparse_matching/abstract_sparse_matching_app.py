@@ -377,10 +377,12 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
             np.save(raw_matches_array_path, matches)
 
         # Filter matches that are out of margin
-        if epipolar_error_maximum_bias == 0:
-            epipolar_median_shift = 0
-        else:
-            epipolar_median_shift = np.median(matches[:, 3] - matches[:, 1])
+        epipolar_median_shift = np.median(matches[:, 3] - matches[:, 1])
+
+        if np.abs(epipolar_median_shift) > epipolar_error_maximum_bias:
+            epipolar_median_shift = epipolar_error_maximum_bias * np.sign(
+                epipolar_median_shift
+            )
 
         matches = matches[
             ((matches[:, 3] - matches[:, 1]) - epipolar_median_shift)
