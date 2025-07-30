@@ -168,5 +168,5 @@ github-sync-0.12:
   variables:
     BRANCH: "cars_0_12_patches"
     GITHUB_URL: github.com/CNES/cars.git
-    rules:
-      - if: $CI_COMMIT_REF_NAME == "cars_0_12_patches"
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "cars_0_12_patches"
