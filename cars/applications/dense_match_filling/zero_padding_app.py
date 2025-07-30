@@ -67,6 +67,7 @@ class ZerosPadding(
         # get conf
         self.used_method = self.used_config["method"]
         self.classification = self.used_config["classification"]
+        self.fill_valid_pixels = self.used_config["fill_valid_pixels"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -93,6 +94,9 @@ class ZerosPadding(
         overloaded_conf["method"] = conf.get("method", "zero_padding")
 
         overloaded_conf["classification"] = conf.get("classification", None)
+        overloaded_conf["fill_valid_pixels"] = conf.get(
+            "fill_valid_pixels", True
+        )
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
@@ -102,6 +106,7 @@ class ZerosPadding(
             "method": str,
             "save_intermediate_data": bool,
             "classification": Or(None, [str]),
+            "fill_valid_pixels": bool,
         }
 
         # Check conf
@@ -229,6 +234,7 @@ class ZerosPadding(
                                 window,
                                 overlap,
                                 classif_index=self.classification,
+                                fill_valid_pixels=self.fill_valid_pixels,
                                 saving_info=full_saving_info,
                             )
 
@@ -247,6 +253,7 @@ def fill_disparity_zeros_wrapper(
     window,
     overlap,
     classif_index,
+    fill_valid_pixels,
     saving_info=None,
 ):
     """
@@ -260,6 +267,8 @@ def fill_disparity_zeros_wrapper(
     :type overlap: list
     :param class_index: class index according to the classification tag
     :type class_index: list
+    :param fill_valid_pixels: option to fill valid pixels
+    :type fill_valid_pixels: bool
     :param saving_info: saving infos
     :type saving_info: dict
 
@@ -268,7 +277,7 @@ def fill_disparity_zeros_wrapper(
     """
     # Add a band to disparity dataset to memorize which pixels are filled
     disp = fd_wrappers.add_empty_filling_band(disp, ["zeros_padding"])
-    fd_algo.fill_disp_using_zero_padding(disp, classif_index)
+    fd_algo.fill_disp_using_zero_padding(disp, classif_index, fill_valid_pixels)
     result = copy.copy(disp)
 
     # Fill with attributes

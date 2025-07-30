@@ -84,6 +84,7 @@ class PlaneFill(
         self.nb_pix = self.used_config["nb_pix"]
         self.percent_to_erode = self.used_config["percent_to_erode"]
         self.classification = self.used_config["classification"]
+        self.fill_valid_pixels = self.used_config["fill_valid_pixels"]
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
@@ -126,6 +127,9 @@ class PlaneFill(
         overloaded_conf["nb_pix"] = conf.get("nb_pix", 20)
         overloaded_conf["percent_to_erode"] = conf.get("percent_to_erode", 0.2)
         overloaded_conf["classification"] = conf.get("classification", None)
+        overloaded_conf["fill_valid_pixels"] = conf.get(
+            "fill_valid_pixels", True
+        )
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
@@ -144,6 +148,7 @@ class PlaneFill(
             "nb_pix": Or(None, int),
             "percent_to_erode": Or(None, float),
             "classification": Or(None, [str]),
+            "fill_valid_pixels": bool,
         }
 
         # Check conf
@@ -380,6 +385,7 @@ class PlaneFill(
                                     nb_pix=self.nb_pix,
                                     percent_to_erode=self.percent_to_erode,
                                     interp_options=interp_options,
+                                    fill_valid_pixels=self.fill_valid_pixels,
                                     saving_info=full_saving_info,
                                 )
 
@@ -405,6 +411,7 @@ def fill_disparity_plane_wrapper(
     nb_pix=20,
     percent_to_erode=0.3,
     interp_options=None,
+    fill_valid_pixels=True,
     saving_info=None,
 ):
     """
@@ -434,6 +441,8 @@ def fill_disparity_plane_wrapper(
     :type percent_to_erode: float
     :param interp_options: interp_options
     :type interp_options: dict
+    :param fill_valid_pixels: option to fill valid pixels
+    :type fill_valid_pixels: bool
     :param saving_info: saving infos
     :type saving_info: dict
 
@@ -469,6 +478,7 @@ def fill_disparity_plane_wrapper(
         percent_to_erode,
         interp_options,
         classification,
+        fill_valid_pixels,
     )
 
     # Find xarray Dataset corresponding to current tile
