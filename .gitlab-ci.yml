@@ -158,3 +158,15 @@ github-sync:
   variables:
     BRANCH: "master"
     GITHUB_URL: github.com/CNES/cars.git
+
+
+# Push git project from gitlab to github for the 0.12.X versions
+github-sync-0.12:
+  extends:
+    - .github-sync-base
+
+  variables:
+    BRANCH: "cars_0_12_patches"
+    GITHUB_URL: github.com/CNES/cars.git
+    rules:
+      - if: $CI_COMMIT_REF_NAME == "cars_0_12_patches"
