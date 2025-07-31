@@ -2523,7 +2523,7 @@ class UnitPipeline(PipelineTemplate):
             for key in dsm_dict.keys():
                 for path_name in dsm_dict[key].keys():
                     if dsm_dict[key][path_name] is not None:
-                        if not isinstance(dsm_dict[key][path_name], dict):
+                        if isinstance(dsm_dict[key][path_name], str):
                             if path_name not in dict_path:
                                 dict_path[path_name] = [
                                     dsm_dict[key][path_name]
@@ -2532,22 +2532,6 @@ class UnitPipeline(PipelineTemplate):
                                 dict_path[path_name].append(
                                     dsm_dict[key][path_name]
                                 )
-                        else:
-                            for confidence_path_name in dsm_dict[key][
-                                path_name
-                            ].keys():
-                                if confidence_path_name not in dict_path:
-                                    dict_path[confidence_path_name] = [
-                                        dsm_dict[key][path_name][
-                                            confidence_path_name
-                                        ]
-                                    ]
-                                else:
-                                    dict_path[confidence_path_name].append(
-                                        dsm_dict[key][path_name][
-                                            confidence_path_name
-                                        ]
-                                    )
 
             color_file_name = (
                 os.path.join(
