@@ -167,6 +167,7 @@ class UnitPipeline(PipelineTemplate):
         self.save_output_dsm = "dsm" in prod_level
         self.save_output_depth_map = "depth_map" in prod_level
         self.save_output_point_cloud = "point_cloud" in prod_level
+        self.save_output_classif_for_filling = False
 
         self.output_level_none = not (
             self.save_output_dsm
@@ -779,6 +780,13 @@ class UnitPipeline(PipelineTemplate):
                 used_conf["auxiliary_filling"] = (
                     self.auxiliary_filling_application.get_conf()
                 )
+
+            if (
+                self.dsm_filling_1_application.classification
+                or self.dsm_filling_2_application.classification
+                or self.dsm_filling_3_application.classification
+            ):
+                self.save_output_classif_for_filling = True
 
             if self.merging:
 
@@ -2264,7 +2272,9 @@ class UnitPipeline(PipelineTemplate):
         cloud created in the prior steps.
         """
 
-        rasterization_dump_dir = os.path.join(self.dump_dir, "rasterization")
+        self.rasterization_dump_dir = os.path.join(
+            self.dump_dir, "rasterization"
+        )
 
         dsm_file_name = (
             os.path.join(
@@ -2335,6 +2345,12 @@ class UnitPipeline(PipelineTemplate):
             else None
         )
 
+        if classif_file_name is None and self.save_output_classif_for_filling:
+            classif_file_name = os.path.join(
+                self.rasterization_dump_dir,
+                "classification_for_filling.tif",
+            )
+
         mask_file_name = (
             os.path.join(
                 self.out_dir,
@@ -2386,7 +2402,7 @@ class UnitPipeline(PipelineTemplate):
             contributing_pair_file_name=contributing_pair_file_name,
             filling_file_name=filling_file_name,
             color_dtype=self.color_type,
-            dump_dir=rasterization_dump_dir,
+            dump_dir=self.rasterization_dump_dir,
             performance_map_classes=self.used_conf[ADVANCED][
                 adv_cst.PERFORMANCE_MAP_CLASSES
             ],
@@ -2676,6 +2692,15 @@ class UnitPipeline(PipelineTemplate):
                 ]
                 else None
             )
+
+            if (
+                classif_file_name is None
+                and self.save_output_classif_for_filling
+            ):
+                classif_file_name = os.path.join(
+                    self.rasterization_dump_dir,
+                    "classification_for_filling.tif",
+                )
 
             filling_file_name = (
                 os.path.join(
