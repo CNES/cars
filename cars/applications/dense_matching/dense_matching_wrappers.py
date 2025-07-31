@@ -658,17 +658,32 @@ def add_confidence(
         disp.confidence_measure.indicator
     )
     for key in confidence_measure_indicator_list:
-        confidence_idx = list(disp.confidence_measure.indicator).index(key)
-        output_dataset[key] = xr.DataArray(
-            np.copy(
-                disp.confidence_measure.data[
-                    :,
-                    :,
-                    confidence_idx,
-                ]
-            ),
-            dims=[cst.ROW, cst.COL],
-        )
+        if key == "confidence_from_ambiguity.cars_1":
+            confidence_idx = list(disp.confidence_measure.indicator).index(key)
+
+            output_dataset["ambiguity"] = xr.DataArray(
+                1
+                - np.copy(
+                    disp.confidence_measure.data[
+                        :,
+                        :,
+                        confidence_idx,
+                    ]
+                ),
+                dims=[cst.ROW, cst.COL],
+            )
+        else:
+            confidence_idx = list(disp.confidence_measure.indicator).index(key)
+            output_dataset[str(key)] = xr.DataArray(
+                np.copy(
+                    disp.confidence_measure.data[
+                        :,
+                        :,
+                        confidence_idx,
+                    ]
+                ),
+                dims=[cst.ROW, cst.COL],
+            )
 
 
 def to_safe_disp_grid(grid_disp_min, grid_disp_max):

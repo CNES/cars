@@ -56,9 +56,12 @@ def generate_test_inputs():
         cst.POINT_CLOUD_CLASSIF_KEY_ROOT: os.path.join(
             path_pc, "classification.tif"
         ),
-        cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT: {
-            "confidence1": os.path.join(path_pc, "performance_map.tif")
-        },
+        cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT: os.path.join(
+            path_pc, "performance_map.tif"
+        ),
+        cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT: os.path.join(
+            path_pc, "performance_map.tif"
+        ),
         cst.POINT_CLOUD_MSK: None,
         cst.PC_EPSG: 4326,
     }

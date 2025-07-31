@@ -468,9 +468,12 @@ def create_combined_dense_cloud(  # noqa: C901
             if cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT in array_name:
                 arrays_to_add_to_point_cloud.append((array_name, array_name))
 
-        # add confidence layers
+        # add ambiguity layer, drop confidence_* layers
         for array_name in point_cloud:
-            if cst.EPI_CONFIDENCE_KEY_ROOT in array_name:
+            if (
+                cst.EPI_AMBIGUITY in array_name
+                and cst.EPI_CONFIDENCE_KEY_ROOT not in array_name
+            ):
                 arrays_to_add_to_point_cloud.append((array_name, array_name))
 
         # add denoising info layers
@@ -852,12 +855,15 @@ def generate_pc_wrapper(  # noqa: C901
             if cst.EPI_TEXTURE not in coords:
                 coords[cst.BAND_IM] = descriptions
 
-        elif key == cst.EPI_CONFIDENCE_KEY_ROOT:
-            for sub_key in cloud[key].keys():
-                data = pc_wrap.read_image_full(
-                    cloud[key][sub_key], window=window, squeeze=True
-                )
-                values[sub_key] = ([cst.ROW, cst.COL], data)
+        elif key == cst.EPI_AMBIGUITY:
+            data = pc_wrap.read_image_full(
+                cloud[key], window=window, squeeze=True
+            )
+            descriptions = list(inputs.get_descriptions_bands(cloud[key]))
+            values[cst.EPI_AMBIGUITY] = (
+                [cst.ROW, cst.COL],
+                data,
+            )
 
         elif key == cst.EPI_FILLING:
             data = pc_wrap.read_image_full(
@@ -1098,9 +1104,9 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
         data_dict[cst.POINT_CLOUD_FILLING_KEY_ROOT] = items[
             cst.POINT_CLOUD_FILLING_KEY_ROOT
         ]
-    if cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT in items:
-        data_dict[cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT] = items[
-            cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
+    if cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT in items:
+        data_dict[cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT] = items[
+            cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT
         ]
     if cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT in items:
         data_dict[cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT] = items[

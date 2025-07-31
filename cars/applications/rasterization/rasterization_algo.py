@@ -174,7 +174,7 @@ def compute_vector_raster_and_stats(
     points = cloud.loc[:, [cst.X, cst.Y]].values.T
     nb_points = points.shape[1]
     valid = np.ones((1, nb_points))
-    # create values: 1. altitudes and colors, 2. confidences, 3. masks
+    # create values: 1. altitudes and colors, 2. ambiguity, 3. masks
     # split_indexes allows to keep indexes separating values
     split_indexes = []
 
@@ -187,21 +187,16 @@ def compute_vector_raster_and_stats(
     values_bands.extend(clr_indexes)
     split_indexes.append(len(values_bands))
 
-    # 2. confidences
-    if list_computed_layers is not None:
-        if cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT not in list_computed_layers:
-            confidences_indexes = rast_wrap.find_indexes_in_point_cloud(
-                cloud, cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT, list_computed_layers
-            )
-        else:
-            confidences_indexes = rast_wrap.find_indexes_in_point_cloud(
-                cloud, cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT, list_computed_layers
-            )
-    else:
-        confidences_indexes = []
+    # 2. ambiguity
+    ambiguity_indexes = rast_wrap.find_indexes_in_point_cloud(
+        cloud, cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT, list_computed_layers
+    )
 
-    values_bands.extend(confidences_indexes)
-    split_indexes.append(len(confidences_indexes))
+    values_bands.extend(ambiguity_indexes)
+    split_indexes.append(len(ambiguity_indexes))
+
+    # sanity check
+    assert len(ambiguity_indexes) <= 1
 
     # 3. sup and inf layers interval
     layer_inf_sup_indexes = rast_wrap.find_indexes_in_point_cloud(
@@ -288,7 +283,7 @@ def compute_vector_raster_and_stats(
     # pylint: disable=unbalanced-tuple-unpacking
     (
         out,
-        confidences,
+        ambiguity,
         interval,
         msk,
         classif,
@@ -297,11 +292,9 @@ def compute_vector_raster_and_stats(
         performance_map,
     ) = np.split(out, np.cumsum(split_indexes), axis=-1)
 
-    confidences_out = None
-    if len(confidences_indexes) > 0:
-        confidences_out = {}
-        for k, key in enumerate(confidences_indexes):
-            confidences_out[key] = confidences[..., k]
+    ambiguity_out = None
+    if len(ambiguity_indexes) > 0:
+        ambiguity_out = ambiguity
 
     layers_inf_sup_out = None
     layers_inf_sup_stat_index = None
@@ -341,7 +334,7 @@ def compute_vector_raster_and_stats(
         clr_indexes,
         classif_out,
         classif_indexes,
-        confidences_out,
+        ambiguity_out,
         layers_inf_sup_out,
         layers_inf_sup_stat_index,
         layer_inf_sup_indexes,
@@ -420,7 +413,7 @@ def rasterize(
         clr_indexes,
         classif,
         classif_indexes,
-        confidences,
+        ambiguity,
         layer_inf_sup,
         layer_inf_sup_stats_indexes,
         layer_inf_sup_indexes,
@@ -463,9 +456,9 @@ def rasterize(
     else:
         msk = np.isnan(out[0, :, :])
 
-    if confidences is not None:
-        for key, value in confidences.items():
-            confidences[key] = value.reshape(shape_out)
+    if ambiguity is not None:
+        ambiguity = ambiguity.reshape(shape_out + (-1,))
+        ambiguity = np.moveaxis(ambiguity, 2, 0)
 
     if layer_inf_sup is not None:
         layer_inf_sup = layer_inf_sup.reshape(shape_out + (-1,))
@@ -512,7 +505,7 @@ def rasterize(
         clr_indexes,
         classif,
         classif_indexes,
-        confidences,
+        ambiguity,
         layer_inf_sup,
         layer_inf_sup_stats_indexes,
         layer_inf_sup_indexes,

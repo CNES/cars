@@ -174,7 +174,7 @@ def create_raster_dataset(  # noqa: C901
     band_im: List[str] = None,
     classif: np.ndarray = None,
     band_classif: List[str] = None,
-    confidences: np.ndarray = None,
+    ambiguity: np.ndarray = None,
     layers_inf_sup: np.ndarray = None,
     layers_inf_sup_stat_index: List[int] = None,
     layer_inf_sup_indexes: List[str] = None,
@@ -207,7 +207,7 @@ def create_raster_dataset(  # noqa: C901
     :param n_in_cell: number of points which contribute to a cell
     :param msk: raster msk
     :param classif: raster classif
-    :param confidences: raster containing the confidences
+    :param ambiguity: raster containing the ambiguity
     :param layers_inf_sup: raster containing intervals inf and sup
     :param layers_inf_sup_stat_index: list containing index of
         intervals in mean and stdev rasters
@@ -310,9 +310,10 @@ def create_raster_dataset(  # noqa: C901
         # update raster output with classification data
         raster_out = xr.merge((raster_out, classif_out))
 
-    if confidences is not None:  # rasterizer produced color output
-        for key in confidences:
-            raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
+    if ambiguity is not None:  # rasterizer produced color output
+        raster_out[cst.RASTER_AMBIGUITY] = xr.DataArray(
+            ambiguity[0], dims=raster_dims
+        )
 
     if layers_inf_sup is not None:
         # Get inf data

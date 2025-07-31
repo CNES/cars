@@ -1313,107 +1313,11 @@ def test_end2end_ventoux_unique():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "confidence_from_ambiguity.tif"),
+            os.path.join(out_dir, "dsm", "ambiguity.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "confidence_from_ambiguity_end2end_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_intensity_std_std_intensity.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "confidence_from_intensity_std_end2end_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_risk_min_risk.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "confidence_from_risk_min_end2end_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_risk_max_risk.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "confidence_from_risk_max_end2end_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir, "dsm", "confidence_from_ambiguity_before.tif"
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "confidence_from_ambiguity_before_end2end_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_intensity_std_std_intensity_before.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "confidence_from_intensity"
-                    + "_std_before_end2end_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_risk_min_risk_before.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "confidence_from_risk_min_before_end2end_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_risk_max_risk_before.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "confidence_from_risk_max_before_end2end_ventoux.tif",
+                    "ambiguity_end2end_ventoux.tif",
                 )
             ),
         )
@@ -1429,127 +1333,16 @@ def test_end2end_ventoux_unique():
             os.path.join(
                 out_dir,
                 "dsm",
-                "confidence_from_ambiguity.tif",
+                "ambiguity.tif",
             ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "confidence_from_ambiguity_end2end_ventoux.tif",
+                    "ambiguity_end2end_ventoux.tif",
                 )
             ),
             atol=1.0e-7,
             rtol=1.0e-7,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_intensity_std_std_intensity.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "confidence_from_intensity_std_end2end_ventoux.tif",
-                )
-            ),
-            atol=1.0e-5,
-            rtol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_risk_min_risk.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "confidence_from_risk_min_end2end_ventoux.tif",
-                )
-            ),
-            atol=1.0e-6,
-            rtol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_risk_max_risk.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "confidence_from_risk_max_end2end_ventoux.tif",
-                )
-            ),
-            atol=1.0e-6,
-            rtol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dsm",
-                "confidence_from_ambiguity_before.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "confidence_from_ambiguity_before_end2end_ventoux.tif",
-                )
-            ),
-            atol=1.0e-6,
-            rtol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_intensity_std_std_intensity_before.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "confidence_from_intensity_std_before_end2end_ventoux.tif",
-                )
-            ),
-            atol=1.0e-6,
-            rtol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_risk_min_risk_before.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "confidence_from_risk_min_before_end2end_ventoux.tif",
-                )
-            ),
-            atol=1.0e-6,
-            rtol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_from_risk_max_risk_before.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "confidence_from_risk_max_before_end2end_ventoux.tif",
-                )
-            ),
-            atol=1.0e-6,
-            rtol=1.0e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "texture.tif"),
@@ -2196,16 +1989,10 @@ def test_end2end_ventoux_unique_split():
                             "performance_map": os.path.join(
                                 depth_map_path, "performance_map.tif"
                             ),
-                            "confidence": {
-                                "confidence_from_ambiguity2": os.path.join(
-                                    depth_map_path,
-                                    "confidence_from_ambiguity.tif",
-                                ),
-                                "confidence_from_ambiguity1": os.path.join(
-                                    depth_map_path,
-                                    "confidence_from_ambiguity_before.tif",
-                                ),
-                            },
+                            "ambiguity": os.path.join(
+                                depth_map_path,
+                                "ambiguity.tif",
+                            ),
                         }
                     },
                     "roi": {
@@ -2344,26 +2131,11 @@ def test_end2end_ventoux_unique_split():
                 ),
             )
             copy2(
-                os.path.join(
-                    out_dir_dsm, "dsm", "confidence_from_ambiguity1.tif"
-                ),
+                os.path.join(out_dir_dsm, "dsm", "ambiguity.tif"),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "confidence_from_ambiguity1"
-                        + "_end2end_ventoux_split.tif",
-                    )
-                ),
-            )
-            copy2(
-                os.path.join(
-                    out_dir_dsm, "dsm", "confidence_from_ambiguity2.tif"
-                ),
-                absolute_data_path(
-                    os.path.join(
-                        intermediate_output_dir,
-                        "confidence_from_ambiguity2"
-                        + "_end2end_ventoux_split.tif",
+                        "ambiguity_end2end_ventoux_split.tif",
                     )
                 ),
             )
@@ -2460,29 +2232,12 @@ def test_end2end_ventoux_unique_split():
                 os.path.join(
                     out_dir_dsm,
                     "dsm",
-                    "confidence_from_ambiguity1.tif",
+                    "ambiguity.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "confidence_from"
-                        + "_ambiguity1_end2end_ventoux_split.tif",
-                    )
-                ),
-                rtol=1.0e-7,
-                atol=1.0e-7,
-            )
-            assert_same_images(
-                os.path.join(
-                    out_dir_dsm,
-                    "dsm",
-                    "confidence_from_ambiguity2.tif",
-                ),
-                absolute_data_path(
-                    os.path.join(
-                        ref_output_dir,
-                        "confidence_from"
-                        + "_ambiguity2_end2end_ventoux_split.tif",
+                        "ambiguity_end2end_ventoux_split.tif",
                     )
                 ),
                 rtol=1.0e-7,
@@ -2593,26 +2348,11 @@ def test_end2end_ventoux_unique_split():
                 ),
             )
             copy2(
-                os.path.join(
-                    out_dir_dsm, "dsm", "confidence_from_ambiguity1.tif"
-                ),
+                os.path.join(out_dir_dsm, "dsm", "ambiguity.tif"),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "confidence_from_ambiguity1"
-                        + "_end2end_ventoux_split_no_merging.tif",
-                    )
-                ),
-            )
-            copy2(
-                os.path.join(
-                    out_dir_dsm, "dsm", "confidence_from_ambiguity2.tif"
-                ),
-                absolute_data_path(
-                    os.path.join(
-                        intermediate_output_dir,
-                        "confidence_from_ambiguity2"
-                        + "_end2end_ventoux_split_no_merging.tif",
+                        "ambiguity_end2end_ventoux_split_no_merging.tif",
                     )
                 ),
             )
@@ -2713,29 +2453,12 @@ def test_end2end_ventoux_unique_split():
                 os.path.join(
                     out_dir_dsm,
                     "dsm",
-                    "confidence_from_ambiguity1.tif",
+                    "ambiguity.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "confidence_from"
-                        + "_ambiguity1_end2end_ventoux_split_no_merging.tif",
-                    )
-                ),
-                rtol=1.0e-7,
-                atol=1.0e-7,
-            )
-            assert_same_images(
-                os.path.join(
-                    out_dir_dsm,
-                    "dsm",
-                    "confidence_from_ambiguity2.tif",
-                ),
-                absolute_data_path(
-                    os.path.join(
-                        ref_output_dir,
-                        "confidence_from"
-                        + "_ambiguity2_end2end_ventoux_split_no_merging.tif",
+                        "ambiguity_end2end_ventoux_split_no_merging.tif",
                     )
                 ),
                 rtol=1.0e-7,
@@ -3091,13 +2814,11 @@ def test_end2end_use_epipolar_a_priori():
             ),
         )
         copy2(
-            os.path.join(
-                out_dir, "dsm", "confidence_from_ambiguity_cars_1.tif"
-            ),
+            os.path.join(out_dir, "dsm", "ambiguity.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "confidence_from_ambiguity_end2end_ventoux_no_srtm.tif",
+                    "ambiguity_end2end_ventoux_no_srtm.tif",
                 )
             ),
         )
@@ -3123,12 +2844,12 @@ def test_end2end_use_epipolar_a_priori():
             os.path.join(
                 out_dir,
                 "dsm",
-                "confidence_from_ambiguity_cars_1.tif",
+                "ambiguity.tif",
             ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "confidence_from_ambiguity_end2end_ventoux_no_srtm.tif",
+                    "ambiguity_end2end_ventoux_no_srtm.tif",
                 )
             ),
             atol=1.0e-7,
@@ -3823,7 +3544,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "dsm",
-                    "confidence_from_ambiguity_cars_1.tif",
+                    "ambiguity.tif",
                 )
             )
             is True

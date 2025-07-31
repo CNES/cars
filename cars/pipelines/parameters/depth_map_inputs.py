@@ -88,7 +88,7 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         cst.EPI_Z_INF: Or(str, None),
         cst.EPI_Z_SUP: Or(str, None),
         cst.POINT_CLOUD_CLASSIF_KEY_ROOT: Or(str, None),
-        cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT: Or(dict, None),
+        cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT: Or(str, None),
         cst.POINT_CLOUD_CLR_KEY_ROOT: str,
         cst.POINT_CLOUD_FILLING_KEY_ROOT: Or(str, None),
         cst.POINT_CLOUD_MSK: Or(str, None),
@@ -96,7 +96,6 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         cst.PC_EPSG: Or(str, int, None),
     }
     checker_pc = Checker(pc_schema)
-    confidence_conf_ref = None
     for depth_map_key in conf[depth_map_cst.DEPTH_MAPS]:
         # Get depth maps with default
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key] = {}
@@ -144,43 +143,10 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
             cst.POINT_CLOUD_FILLING_KEY_ROOT
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("filling", None)
 
-        confidence_conf = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get(
-            "confidence", None
-        )
-        if confidence_conf:
-            overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
-            ] = {}
-            if (
-                confidence_conf_ref
-                and confidence_conf.keys() != confidence_conf_ref
-            ):
-                raise KeyError(
-                    "The confidence keys are not the same: \n",
-                    confidence_conf.keys(),
-                    "\n",
-                    confidence_conf_ref,
-                )
+        overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
+            cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT
+        ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("ambiguity", None)
 
-            confidence_conf_ref = confidence_conf.keys()
-            for confidence_name in confidence_conf:
-                output_confidence_name = confidence_name
-                if (
-                    cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
-                    not in output_confidence_name
-                ):
-                    output_confidence_name = (
-                        cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
-                        + "_"
-                        + output_confidence_name
-                    )
-                overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                    cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
-                ][output_confidence_name] = confidence_conf[confidence_name]
-        else:
-            overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
-            ] = None
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
             cst.PC_EPSG
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("epsg", 4326)
@@ -217,7 +183,7 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
                 cst.POINT_CLOUD_FILLING_KEY_ROOT
             ],
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
+                cst.POINT_CLOUD_AMBIGUITY_KEY_ROOT
             ],
         )
 
@@ -264,10 +230,10 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
 
 
 def check_input_size(
-    x_path, y_path, z_path, mask, color, classif, filling, confidence
+    x_path, y_path, z_path, mask, color, classif, filling, ambiguity
 ):
     """
-    Check x, y, z, mask, color, classif and confidence given
+    Check x, y, z, mask, color, classif and ambiguity given
 
     Images must have same size
 
@@ -285,15 +251,15 @@ def check_input_size(
     :type classif: str
     :param filling: filling path
     :type filling: str
-    :param confidence: confidence dict path
-    :type confidence: dict[str]
+    :param ambiguity: ambiguity path
+    :type ambiguity: str
     """
 
     for path in [x_path, y_path, z_path]:
         if inputs.rasterio_get_nb_bands(path) != 1:
             raise RuntimeError("{} is not mono-band image".format(path))
 
-    for path in [mask, color, classif, filling]:
+    for path in [mask, color, classif, filling, ambiguity]:
         if path is not None:
             if inputs.rasterio_get_size(x_path) != inputs.rasterio_get_size(
                 path
@@ -302,17 +268,6 @@ def check_input_size(
                     "The image {} and {} "
                     "do not have the same size".format(x_path, path)
                 )
-    if confidence:
-        for key in confidence:
-            path = confidence[key]
-            if path is not None:
-                if inputs.rasterio_get_size(x_path) != inputs.rasterio_get_size(
-                    path
-                ):
-                    raise RuntimeError(
-                        "The image {} and {} "
-                        "do not have the same size".format(x_path, path)
-                    )
 
 
 def modify_to_absolute_path(config_json_dir, overloaded_conf):

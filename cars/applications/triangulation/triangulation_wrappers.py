@@ -246,7 +246,8 @@ def compute_performance_map(
     )
 
     if ambiguity_map is not None:
-        ambiguity_map = 1 - ambiguity_map.values
+        # ambiguity is already ambiguity, not confidence from ambiguity
+        ambiguity_map = ambiguity_map.values
         mask_ambi = ambiguity_map > perf_ambiguity_threshold
         w_ambi = ambiguity_map / perf_ambiguity_threshold
         w_ambi[mask_ambi] = 1
