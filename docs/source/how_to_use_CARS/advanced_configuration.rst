@@ -1451,13 +1451,15 @@ The structure follows this organization:
 
                 **geometry_plugin** allow user to specify other parameters, through a dictionary:
 
-                +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
-                | Name              | Description              | Type           | Default value           | Available values                      | Required |
-                +===================+==========================+================+=========================+=======================================+==========+
-                | *plugin_name*     | The plugin name to use   | str            | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
-                +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
-                | *interpolator*    | Interpolator to use      | str            | "cubic"                 | "cubic" , "linear"                    | False    |
-                +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
+                +-------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | Name              | Description                                                   | Type           | Default value           | Available values                      | Required |
+                +===================+===============================================================+================+=========================+=======================================+==========+
+                | *plugin_name*     | The plugin name to use                                        | str            | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
+                +-------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | *interpolator*    | Interpolator to use                                           | str            | "cubic"                 | "cubic" , "linear"                    | False    |
+                +-------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | *dem_roi_margin*  | Additional margin (in degrees) for ROI used to crop input DEM | float          | 0.012                   |                                       | False    |
+                +-------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
 
 
                 To use Shareloc geometry library, CARS input configuration should be defined as :
@@ -1499,7 +1501,8 @@ The structure follows this organization:
                         "advanced":{
                             "geometry_plugin": {
                                 "plugin_name": "SharelocGeometry",
-                                "interpolator": "cubic"
+                                "interpolator": "cubic",
+                                "dem_roi_margin": 0.1
                             }
                         }
 
