@@ -184,6 +184,7 @@ class ZerosPadding(
                     pair_folder,
                     pair_key,
                     app_name="zero_padding",
+                    nodata_epi_disp=-9999,
                 )
 
                 # Get saving infos in order to save tiles when they are computed

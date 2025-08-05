@@ -163,6 +163,7 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
         pair_folder,
         pair_key,
         app_name=None,
+        nodata_epi_disp=0,
     ):
         """
         Create dataset and registered the output in the orchestrator
@@ -177,6 +178,8 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
         :type pair_key: str
         :param app_name: application name for file names
         :type app_name: str
+        :param nodata_epi_disp: the nodata for the epi disp
+        :type nodata_epi_disp: int
 
         """
         if app_name is None:
@@ -204,6 +207,7 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
                 cst_disp.MAP,
                 new_epipolar_disparity_map,
                 cars_ds_name="epi_disp_" + app_name + "_filled",
+                nodata=nodata_epi_disp,
             )
 
             self.orchestrator.add_to_save_lists(

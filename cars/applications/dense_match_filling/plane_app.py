@@ -247,6 +247,7 @@ class PlaneFill(
                     pair_folder,
                     pair_key,
                     app_name="plane",
+                    nodata_epi_disp=-9999,
                 )
 
                 # Get saving infos in order to save tiles when they are computed
