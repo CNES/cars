@@ -66,7 +66,7 @@ def check_output_parameters(conf, scaling_coeff):
             raise RuntimeError("Unknown product level {}".format(level))
 
     overloaded_conf[output_constants.OUT_GEOID] = overloaded_conf.get(
-        output_constants.OUT_GEOID, False
+        output_constants.OUT_GEOID, True
     )
     overloaded_conf[output_constants.EPSG] = overloaded_conf.get(
         output_constants.EPSG, None
