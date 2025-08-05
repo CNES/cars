@@ -59,6 +59,7 @@ def fill_central_area_using_plane(  # noqa: C901
     nb_pix: int,
     percent_to_erode: float,
     class_index: list,
+    fill_valid_pixels: bool,
 ):
     """
     Finds central area of invalid region and estimates disparity values
@@ -91,6 +92,8 @@ def fill_central_area_using_plane(  # noqa: C901
     :type percent_to_erode: float
     :param class_index: list of tag to use
     :type class_index: list(str)
+    :param fill_valid_pixels: option to fill valid pixels
+    :type fill_valid_pixels: bool
 
     :return: mask of invalid region that hasn't been filled yet
         (original invalid region - central area)
@@ -233,11 +236,16 @@ def fill_central_area_using_plane(  # noqa: C901
                 )
 
                 # Exclude pixels outside of epipolar footprint
-                central_area = np.logical_and(
-                    central_area,
+                mask = (
                     disp_map[cst.EPI_MSK].values
-                    != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+                    != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
                 )
+                if not fill_valid_pixels:
+                    # Exclude valid pixels
+                    mask = np.logical_and(
+                        mask, disp_map["disp_msk"].values == 0
+                    )
+                central_area = np.logical_and(central_area, mask)
 
                 variable_disp = calculate_disp_plane(
                     band_disp_values,
@@ -302,7 +310,12 @@ def calculate_disp_plane(
     return val
 
 
-def fill_area_borders_using_interpolation(disp_map, masks_to_fill, options):
+def fill_area_borders_using_interpolation(
+    disp_map,
+    masks_to_fill,
+    options,
+    fill_valid_pixels,
+):
     """
     Raster interpolation command
     :param disp_map: disparity values
@@ -311,6 +324,8 @@ def fill_area_borders_using_interpolation(disp_map, masks_to_fill, options):
     :type masks_to_fill: list(2D np.array (row, col))
     :param options: parameters for interpolation methods
     :type options: dict
+    :param fill_valid_pixels: option to fill valid pixels
+    :type fill_valid_pixels: bool
     """
     # Copy input data - disparity values + mask with values to fill
     raster = np.copy(disp_map["disp"].values)
@@ -318,11 +333,14 @@ def fill_area_borders_using_interpolation(disp_map, masks_to_fill, options):
     # Interpolation step
     for mask_to_fill in masks_to_fill:
         # Exclude pixels outside of epipolar footprint
-        mask_to_fill = np.logical_and(
-            mask_to_fill,
+        mask = (
             disp_map[cst.EPI_MSK].values
-            != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+            != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
         )
+        if not fill_valid_pixels:
+            # Exclude valid pixels
+            mask = np.logical_and(mask, disp_map["disp_msk"].values == 0)
+        mask_to_fill = np.logical_and(mask_to_fill, mask)
 
         interpol_raster = fill_wrap.make_raster_interpolation(
             raster, mask_to_fill, options
@@ -346,6 +364,7 @@ def fill_disp_using_plane(
     percent_to_erode: float,
     interp_options: dict,
     classification,
+    fill_valid_pixels,
 ) -> xr.Dataset:
     """
     Fill disparity map holes
@@ -372,6 +391,8 @@ def fill_disp_using_plane(
     :type interp_options: dict
     :param classification: list of tag to use
     :type classification: list(str)
+    :param fill_valid_pixels: option to fill valid pixels
+    :type fill_valid_pixels: bool
     """
 
     border_region = fill_central_area_using_plane(
@@ -385,18 +406,21 @@ def fill_disp_using_plane(
         nb_pix,
         percent_to_erode,
         classification,
+        fill_valid_pixels,
     )
 
     fill_area_borders_using_interpolation(
         disp_map,
         border_region,
         interp_options,
+        fill_valid_pixels,
     )
 
 
 def fill_disp_using_zero_padding(
     disp_map: xr.Dataset,
     class_index,
+    fill_valid_pixels,
 ) -> xr.Dataset:
     """
     Fill disparity map holes
@@ -405,6 +429,8 @@ def fill_disp_using_zero_padding(
     :type disp_map: xr.Dataset
     :param class_index: class index according to the classification tag
     :type class_index: int
+    :param fill_valid_pixels: option to fill valid pixels
+    :type fill_valid_pixels: bool
     """
     # get index of the application class config
     # according the coords classif band
@@ -414,14 +440,17 @@ def fill_disp_using_zero_padding(
             disp_map, class_index
         )
         # Exclude pixels outside of epipolar footprint
-        stack_index = np.logical_and(
-            stack_index,
+        mask = (
             disp_map[cst.EPI_MSK].values
-            != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+            != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
         )
-        # set disparity value to np.nan where the class is
+        if not fill_valid_pixels:
+            # Exclude valid pixels
+            mask = np.logical_and(mask, disp_map["disp_msk"].values == 0)
+        stack_index = np.logical_and(stack_index, mask)
+        # set disparity value to zero where the class is
         # non zero value and masked region
-        disp_map["disp"].values[stack_index] = np.nan
+        disp_map["disp"].values[stack_index] = 0
         disp_map["disp_msk"].values[stack_index] = 255
         disp_map[cst.EPI_MSK].values[stack_index] = 0
         # Add a band to disparity dataset to memorize which pixels are filled

@@ -329,13 +329,13 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         dem_median[eroded_mask] = nodata
         dem_max[eroded_mask] = nodata
 
-        # Rectify pixels where DEM min < DEM - min_depth
+        # Rectify pixels where DEM min < DEM median + min_depth
         dem_min = np.where(
-            dem_median - dem_min < self.min_dem,
+            dem_min - dem_median < self.min_dem,
             dem_median + self.min_dem,
             dem_min,
         )
-        # Rectify pixels where DEM max > DEM + max_height
+        # Rectify pixels where DEM max > DEM median + max_height
         dem_max = np.where(
             dem_max - dem_median > self.max_dem,
             dem_median + self.max_dem,
