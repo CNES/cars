@@ -1255,6 +1255,19 @@ class UnitPipeline(PipelineTemplate):
                         "Global disparity interval with margin : "
                         f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                     )
+                else:
+                    disp_min = (
+                        -self.sparse_mtch_sift_app.elevation_delta_upper_bound
+                        / disp_to_alt_ratio
+                    )
+                    disp_max = (
+                        -self.sparse_mtch_sift_app.elevation_delta_lower_bound
+                        / disp_to_alt_ratio
+                    )
+                    logging.info(
+                        "Global disparity interval : "
+                        f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
+                    )
 
                 if self.epsg is None:
                     # compute epsg
