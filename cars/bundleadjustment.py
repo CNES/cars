@@ -560,10 +560,7 @@ def cars_bundle_adjustment(conf, no_run_sparse):
     with open(conf, encoding="utf-8") as reader:
         conf_as_dict = json.load(reader)
 
-    conf_dirname = os.path.abspath(os.path.dirname(conf))
-    conf_as_dict["inputs"] = sensor_inputs.sensors_check_inputs(
-        conf_as_dict["inputs"], config_json_dir=conf_dirname
-    )
+    conf_dirname = os.path.dirname(conf)
     out_dir = os.path.abspath(
         os.path.join(conf_dirname, conf_as_dict["output"]["directory"])
     )
@@ -600,6 +597,9 @@ def cars_bundle_adjustment(conf, no_run_sparse):
         sparse_matching_pipeline.run()
 
     # create new refined rpcs
+    conf_as_dict["inputs"] = sensor_inputs.sensors_check_inputs(
+        conf_as_dict["inputs"], config_json_dir=conf_dirname
+    )
     separate = bundle_adjustment_config.pop("separate")
     refined_rpcs = new_rpcs_from_matches(
         conf_as_dict["inputs"]["sensors"],
