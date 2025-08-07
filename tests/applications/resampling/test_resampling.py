@@ -380,6 +380,7 @@ def test_epipolar_rectify_images_3(
     assert class2 is None
 
 
+@pytest.mark.unit_tests
 def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
     """
     Test the low res resampling
@@ -416,6 +417,60 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
                 # load pickle data
                 data = json.load(file)
                 adapt_path_for_test_dir(data, input_path)
+
+                data["sensor_image_left"]["bands"] = 0
+                data["sensor_image_right"]["bands"] = 0
+
+                data["sensor_image_left"] = {
+                    "image": {
+                        "loader": "pivot",
+                        "main_file": data["sensor_image_left"]["image"][
+                            "main_file"
+                        ],
+                        "bands": {
+                            "b0": {
+                                "path": data["sensor_image_left"]["image"][
+                                    "main_file"
+                                ],
+                                "band": 0,
+                            }
+                        },
+                        "texture_bands": None,
+                        "no_data": 0,
+                    },
+                    "geomodel": {
+                        "path": data["sensor_image_left"]["geomodel"]["path"],
+                        "model_type": "RPC",
+                    },
+                    "mask": None,
+                    "classification": None,
+                }
+
+                data["sensor_image_right"] = {
+                    "image": {
+                        "loader": "pivot",
+                        "main_file": data["sensor_image_right"]["image"][
+                            "main_file"
+                        ],
+                        "bands": {
+                            "b0": {
+                                "path": data["sensor_image_right"]["image"][
+                                    "main_file"
+                                ],
+                                "band": 0,
+                            }
+                        },
+                        "texture_bands": None,
+                        "no_data": 0,
+                    },
+                    "geomodel": {
+                        "path": data["sensor_image_right"]["geomodel"]["path"],
+                        "model_type": "RPC",
+                    },
+                    "mask": None,
+                    "classification": None,
+                }
+
                 # Run grid generation
                 geometry_plugin = get_geometry_plugin(
                     dem=os.path.join(
@@ -444,6 +499,11 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
 
                 resampling_application = Application("resampling", {})
 
+                sparse_matching = Application("sparse_matching", {})
+
+                # Get required bands of third resampling
+                required_bands = sparse_matching.get_required_bands()
+
                 (
                     img1,
                     img2,
@@ -455,14 +515,18 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
                     geometry_plugin,
                     orchestrator=cars_orchestrator,
                     pair_folder=os.path.join(directory, "pair_0"),
-                    add_color=False,
                     resolution=res,
+                    required_bands=required_bands,
                 )
 
-                with rasterio.open(data["sensor_image_left"]["image"]) as src:
+                with rasterio.open(
+                    data["sensor_image_left"]["image"]["main_file"]
+                ) as src:
                     data1 = src.read(1)
 
-                with rasterio.open(data["sensor_image_right"]["image"]) as src:
+                with rasterio.open(
+                    data["sensor_image_right"]["image"]["main_file"]
+                ) as src:
                     data2 = src.read(1)
 
                 size1 = img1[0, 0].sizes

@@ -383,6 +383,7 @@ def generate_geometry_plugin_with_dem(
         pairs_for_roi = None
 
     # Initialize a second geometry plugin with elevation information
+
     geom_plugin_with_dem_and_geoid = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             conf_geom_plugin,

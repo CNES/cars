@@ -231,6 +231,7 @@ def test_overload_pandora_conf_with_confidence():
     assert " ".join(ref.keys()) == " ".join(new_conf.keys())
 
 
+@pytest.mark.unit_tests
 def test_disparity_denoiser_in_conf():
     """
     Test if disparity denoiser filter is used

@@ -155,3 +155,43 @@ def test_get_roi():
     # Returned ROI is the footprint of the rectification
     # It takes into account the 5 pixels margin
     np.testing.assert_allclose(roi, ref_roi)
+
+
+@pytest.mark.unit_tests
+def test_exception_roi_outside_dtm():
+    """
+    Test when the roi is outside the dtm
+    """
+
+    sensor1_path = absolute_data_path("input/phr_ventoux/left_image.tif")
+    sensor1 = {"main_file": sensor1_path}
+    geomodel1_path = absolute_data_path("input/phr_ventoux/left_image.geom")
+    geomodel1 = {"path": geomodel1_path, "model_type": RPC_TYPE}
+
+    sensor2_path = absolute_data_path("input/phr_ventoux/right_image.tif")
+    sensor2 = {"main_file": sensor2_path}
+    geomodel2_path = absolute_data_path("input/phr_ventoux/right_image.geom")
+    geomodel2 = {"path": geomodel2_path, "model_type": RPC_TYPE}
+
+    pairs_for_roi = [(sensor1, geomodel1, sensor2, geomodel2)]
+
+    dem = absolute_data_path("input/phr_gizeh/srtm_dir/N29E031_KHEOPS.tif")
+    geoid = get_geoid_path()
+
+    with pytest.raises(RuntimeError) as excinfo:
+        _ = AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "SharelocGeometry",
+            dem=dem,
+            geoid=geoid,
+            default_alt=0,
+            pairs_for_roi=pairs_for_roi,
+        )
+
+    assert str(excinfo.value) == (
+        "The extent of the roi lies outside "
+        "the extent of the initial elevation : the roi bounds are "
+        "[5.17895428589603, 44.191651375558834, 5.210201491359669, "
+        "44.22082030288275] while the dtm bounds are "
+        "[31.099861111111114, 29.950138888888887, "
+        "31.149861111111115, 30.000138888888888]"
+    )
