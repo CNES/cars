@@ -80,7 +80,7 @@ class DefaultPipeline(PipelineTemplate):
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, conf, config_json_dir=None):
+    def __init__(self, conf, config_json_dir=None):  # noqa: C901
         """
         Creates pipeline
 
@@ -105,6 +105,10 @@ class DefaultPipeline(PipelineTemplate):
 
         # Used conf
         self.used_conf = {}
+
+        # Transform relative path to absolute path
+        if config_json_dir is not None:
+            config_json_dir = os.path.abspath(config_json_dir)
 
         # Check global conf
         self.check_global_schema(conf)

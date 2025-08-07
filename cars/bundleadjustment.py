@@ -34,6 +34,7 @@ from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.los import LOS
 from shareloc.proj_utils import coordinates_conversion
 
+from cars.pipelines.parameters import sensor_inputs
 from cars.pipelines.pipeline import Pipeline
 
 
@@ -576,6 +577,7 @@ def cars_bundle_adjustment(conf, no_run_sparse):
     ]
     sparse_matching_config["output"]["directory"] = sparse_matching
     sparse_matching_config["output"]["product_level"] = []
+    sparse_matching_config["advanced"] = {}
     sparse_matching_config["advanced"]["epipolar_resolutions"] = [1]
     if "sparse_matching.sift" not in sparse_matching_config["applications"]:
         sparse_matching_config["applications"]["sparse_matching.sift"] = {}
@@ -595,6 +597,9 @@ def cars_bundle_adjustment(conf, no_run_sparse):
         sparse_matching_pipeline.run()
 
     # create new refined rpcs
+    conf_as_dict["inputs"] = sensor_inputs.sensors_check_inputs(
+        conf_as_dict["inputs"], config_json_dir=conf_dirname
+    )
     separate = bundle_adjustment_config.pop("separate")
     refined_rpcs = new_rpcs_from_matches(
         conf_as_dict["inputs"]["sensors"],
