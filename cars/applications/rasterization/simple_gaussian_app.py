@@ -644,7 +644,7 @@ class SimpleGaussian(
             )
         elif save_intermediate_data:
             # File is not part of the official product, write it in dump_dir
-            out_source_pc = os.path.join(out_dump_dir, "source_pc.tif")
+            out_source_pc = os.path.join(out_dump_dir, "contributing_pair.tif")
         if out_source_pc:
             list_computed_layers += ["source_pc"]
             self.orchestrator.add_to_save_lists(
@@ -653,7 +653,7 @@ class SimpleGaussian(
                 terrain_raster,
                 dtype=np.uint8,
                 nodata=self.msk_no_data,
-                cars_ds_name="source_pc",
+                cars_ds_name="contributing_pair",
                 optional_data=True,
             )
 

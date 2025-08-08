@@ -1790,12 +1790,15 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             )
             copy2(
                 os.path.join(
-                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "contributing_pair.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "source_pc_end2end" + "_ventoux_split_4326.tif",
+                        "contributing_pair_end2end" + "_ventoux_split_4326.tif",
                     )
                 ),
             )
@@ -1822,12 +1825,15 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             )
             assert_same_images(
                 os.path.join(
-                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "contributing_pair.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "source_pc_end2end_ventoux_split_4326.tif",
+                        "contributing_pair_end2end_ventoux_split_4326.tif",
                     )
                 ),
                 rtol=1.0e-7,
@@ -2141,12 +2147,15 @@ def test_end2end_ventoux_unique_split():
             )
             copy2(
                 os.path.join(
-                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "contributing_pair.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "source_pc_end2end_ventoux_split.tif",
+                        "contributing_pair_end2end_ventoux_split.tif",
                     )
                 ),
             )
@@ -2245,12 +2254,15 @@ def test_end2end_ventoux_unique_split():
             )
             assert_same_images(
                 os.path.join(
-                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "contributing_pair.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "source_pc_end2end_ventoux_split.tif",
+                        "contributing_pair_end2end_ventoux_split.tif",
                     )
                 ),
                 rtol=1.0e-7,
@@ -2358,12 +2370,16 @@ def test_end2end_ventoux_unique_split():
             )
             copy2(
                 os.path.join(
-                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "contributing_pair.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "source_pc_end2end_ventoux_split_no_merging.tif",
+                        "contributing_pair_end2end_"
+                        "ventoux_split_no_merging.tif",
                     )
                 ),
             )
@@ -2466,12 +2482,16 @@ def test_end2end_ventoux_unique_split():
             )
             assert_same_images(
                 os.path.join(
-                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "contributing_pair.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "source_pc_end2end_ventoux_split_no_merging.tif",
+                        "contributing_pair_end2end_"
+                        "ventoux_split_no_merging.tif",
                     )
                 ),
                 rtol=1.0e-7,
