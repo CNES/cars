@@ -108,7 +108,7 @@ def check_dsm_inputs(conf, config_json_dir=None):
         cst.DSM_INF_STD: Or(str, None),
         cst.DSM_SUP_MEAN: Or(str, None),
         cst.DSM_SUP_STD: Or(str, None),
-        cst.DSM_CONFIDENCE: Or(dict, None),
+        cst.DSM_AMBIGUITY: Or(str, None),
         cst.DSM_PERFORMANCE_MAP: Or(str, None),
         cst.DSM_SOURCE_PC: Or(str, None),
         cst.DSM_FILLING: Or(str, None),
@@ -164,9 +164,9 @@ def check_dsm_inputs(conf, config_json_dir=None):
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_SUP_STD] = conf[
             dsm_cst.DSMS
         ][dsm_key].get("dsm_sup_std", None)
-        overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_CONFIDENCE] = conf[
+        overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_AMBIGUITY] = conf[
             dsm_cst.DSMS
-        ][dsm_key].get("confidence", None)
+        ][dsm_key].get("ambiguity", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_PERFORMANCE_MAP] = conf[
             dsm_cst.DSMS
         ][dsm_key].get("performance_map", None)
@@ -199,14 +199,6 @@ def check_dsm_inputs(conf, config_json_dir=None):
             overloaded_conf[dsm_cst.DSMS][dsm_key][cst.INDEX_DSM_COLOR],
             overloaded_conf[dsm_cst.DSMS][dsm_key][cst.INDEX_DSM_MASK],
         )
-
-        if cst.DSM_CONFIDENCE in conf[dsm_cst.DSMS][dsm_key]:
-            if conf[dsm_cst.DSMS][dsm_key][cst.DSM_CONFIDENCE] is not None:
-                for _, conf_value in conf[dsm_cst.DSMS][dsm_key][
-                    cst.DSM_CONFIDENCE
-                ].items():
-                    if not os.path.exists(conf_value):
-                        raise RuntimeError("The path doesn't exist")
 
     # Check srtm dir
     sens_inp.check_srtm(
@@ -505,11 +497,8 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
             and performance_map_file_name is not None
         ):
             out_file_name = performance_map_file_name
-        elif (
-            cst.DSM_CONFIDENCE_AMBIGUITY in key
-            and ambiguity_file_name is not None
-        ):
-            out_file_name = os.path.join(ambiguity_file_name, key + ".tif")
+        elif key == cst.DSM_AMBIGUITY and ambiguity_file_name is not None:
+            out_file_name = ambiguity_file_name
         elif (
             key == cst.DSM_SOURCE_PC and contributing_pair_file_name is not None
         ):

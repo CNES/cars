@@ -180,10 +180,9 @@ def create_point_cloud_index(cloud_sample):
             band_index = "{}_{}".format(cst.POINT_CLOUD_FILLING_KEY_ROOT, band)
             cloud_indexes_with_types[band_index] = "uint8"
 
-    # Add confidence indexes
-    for key in cloud_sample:
-        if cst.EPI_CONFIDENCE_KEY_ROOT in key:
-            cloud_indexes_with_types[key] = "float32"
+    # Add ambiguity information index
+    if cst.EPI_AMBIGUITY in cloud_sample:
+        cloud_indexes_with_types[cst.EPI_AMBIGUITY] = "float32"
 
     return cloud_indexes_with_types
 

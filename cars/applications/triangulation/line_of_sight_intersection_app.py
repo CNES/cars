@@ -1044,7 +1044,7 @@ def triangulation_wrapper(
                 ambiguity_map = None
                 perf_ambiguity_threshold = None
                 if use_ambiguity:
-                    ambiguity_map = disp_ref["confidence_from_ambiguity.cars_1"]
+                    ambiguity_map = disp_ref["ambiguity"]
                     perf_ambiguity_threshold = performance_maps_parameters[
                         "perf_ambiguity_threshold"
                     ]

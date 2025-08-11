@@ -644,7 +644,7 @@ class SimpleGaussian(
             )
         elif save_intermediate_data:
             # File is not part of the official product, write it in dump_dir
-            out_source_pc = os.path.join(out_dump_dir, "source_pc.tif")
+            out_source_pc = os.path.join(out_dump_dir, "contributing_pair.tif")
         if out_source_pc:
             list_computed_layers += ["source_pc"]
             self.orchestrator.add_to_save_lists(
@@ -653,7 +653,7 @@ class SimpleGaussian(
                 terrain_raster,
                 dtype=np.uint8,
                 nodata=self.msk_no_data,
-                cars_ds_name="source_pc",
+                cars_ds_name="contributing_pair",
                 optional_data=True,
             )
 
@@ -680,18 +680,6 @@ class SimpleGaussian(
 
         # TODO Check that intervals indeed exist!
         if save_intermediate_data:
-            out_confidence = os.path.join(out_dump_dir, "confidence.tif")
-            list_computed_layers += ["confidence"]
-            self.orchestrator.add_to_save_lists(
-                out_confidence,
-                cst.RASTER_CONFIDENCE,
-                terrain_raster,
-                dtype=np.float32,
-                nodata=self.msk_no_data,
-                cars_ds_name="confidence",
-                optional_data=True,
-            )
-
             list_computed_layers += [cst.POINT_CLOUD_LAYER_SUP_OR_INF_ROOT]
             out_dsm_inf_file_name = os.path.join(out_dump_dir, "dsm_inf.tif")
             self.orchestrator.add_to_save_lists(
