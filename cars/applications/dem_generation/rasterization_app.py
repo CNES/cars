@@ -191,7 +191,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         dem_min_file_name,
         dem_max_file_name,
         dem_median_file_name,
-        geoid_path,
+        input_geoid,
+        output_geoid,
         initial_elevation=None,
         cars_orchestrator=None,
     ):
@@ -208,7 +209,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         :type dem_max_file_name: str
         :param dem_median_file_name: path of dem_median
         :type dem_median_file_name: str
-        :param geoid_path: geoid path
+        :param input_geoid: input geoid path
+        :param output_geoid: output geoid path
         :param dem_roi_to_use: dem roi polygon to use as roi
 
         :return: dem data computed with mean, min and max.
@@ -219,6 +221,11 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
 
         # Generate point cloud
         epsg = 4326
+
+        # Optimize the case when input and output geoid are the same
+        if output_geoid is True:
+            input_geoid = False
+            output_geoid = False
 
         resolution_in_meters = self.resolution
 
@@ -275,24 +282,45 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         not_filled_pixels = dem_data == nodata
 
         # Add geoid
-        with rio.open(geoid_path) as in_geoid:
-            # Reproject the geoid data to match the DSM
-            input_geoid_data = np.empty(
-                dem_data.shape, dtype=in_geoid.dtypes[0]
-            )
+        if input_geoid:
+            with rio.open(input_geoid) as in_geoid:
+                # Reproject the geoid data to match the DSM
+                input_geoid_data = np.empty(
+                    dem_data.shape, dtype=in_geoid.dtypes[0]
+                )
 
-            logging.info("Reprojection of geoid data")
+                logging.info("Reprojection of geoid data")
 
-            reproject(
-                source=rio.band(in_geoid, 1),
-                destination=input_geoid_data,
-                src_transform=in_geoid.transform,
-                src_crs=in_geoid.crs,
-                dst_transform=profile["transform"],
-                dst_crs=profile["crs"],
-                resampling=Resampling.bilinear,
-            )
-        dem_data -= input_geoid_data
+                reproject(
+                    source=rio.band(in_geoid, 1),
+                    destination=input_geoid_data,
+                    src_transform=in_geoid.transform,
+                    src_crs=in_geoid.crs,
+                    dst_transform=profile["transform"],
+                    dst_crs=profile["crs"],
+                    resampling=Resampling.bilinear,
+                )
+            dem_data -= input_geoid_data
+
+        if output_geoid:
+            with rio.open(input_geoid) as in_geoid:
+                # Reproject the geoid data to match the DSM
+                input_geoid_data = np.empty(
+                    dem_data.shape, dtype=in_geoid.dtypes[0]
+                )
+
+                logging.info("Reprojection of geoid data")
+
+                reproject(
+                    source=rio.band(in_geoid, 1),
+                    destination=input_geoid_data,
+                    src_transform=in_geoid.transform,
+                    src_crs=in_geoid.crs,
+                    dst_transform=profile["transform"],
+                    dst_crs=profile["crs"],
+                    resampling=Resampling.bilinear,
+                )
+            dem_data += input_geoid_data
 
         # apply morphological filters and height margin
         footprint = skimage.morphology.disk(

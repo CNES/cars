@@ -2505,9 +2505,10 @@ class UnitPipeline(PipelineTemplate):
                 dem_min_file_name,
                 dem_max_file_name,
                 dem_median_file_name,
-                self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
+                input_geoid=self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
                     sens_cst.GEOID
                 ],
+                output_geoid=self.used_conf[OUTPUT][out_cst.OUT_GEOID],
                 initial_elevation=(
                     self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
                         sens_cst.DEM_PATH
