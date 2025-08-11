@@ -493,8 +493,13 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
 
                 grid_left = transform_grid_func(
                     grid_left,
+                    res,
+                )
+
+                grid_right = transform_grid_func(
                     grid_right,
                     res,
+                    right=True,
                 )
 
                 resampling_application = Application("resampling", {})
