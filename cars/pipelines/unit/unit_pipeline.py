@@ -2261,12 +2261,15 @@ class UnitPipeline(PipelineTemplate):
                 )
 
                 if self.which_resolution not in ("final", "single"):
-                    # To get the correct size for the dem generation
-                    self.terrain_bounds = dem_wrappers.modify_terrain_bounds(
-                        self.dem_generation_roi,
-                        self.epsg,
-                        self.dem_generation_application.margin,
-                    )
+                    if self.dem_generation_roi is not None:
+                        # To get the correct size for the dem generation
+                        self.terrain_bounds = (
+                            dem_wrappers.modify_terrain_bounds(
+                                self.dem_generation_roi,
+                                self.epsg,
+                                self.dem_generation_application.margin,
+                            )
+                        )
 
         # quit if any app in the loop over the pairs was the last one
         # pylint:disable=too-many-boolean-expressions
