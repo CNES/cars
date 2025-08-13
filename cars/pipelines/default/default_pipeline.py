@@ -834,7 +834,7 @@ class DefaultPipeline(PipelineTemplate):
                     "intervals",
                 ]
 
-            if res <= 16:
+            if res >= 16:
                 if (
                     "dense matching" not in conf
                     or "confidence filtering" not in conf["dense matching"]
