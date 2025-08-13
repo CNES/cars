@@ -33,7 +33,7 @@ import xarray as xr
 
 # Third party imports
 from pandora import constants as p_cst
-from scipy.ndimage import generic_filter
+from scipy.ndimage import generic_filter, median_filter
 
 from cars.applications.dense_match_filling import fill_disp_wrappers
 
@@ -897,6 +897,11 @@ def confidence_filtering(
 
     data_risk = dataset[requested_confidence[0]].values
     data_bounds_sup = dataset[requested_confidence[1]].values
+
+    # Normalize bounds_sup with median disparity
+    disparity = dataset["disp"].values
+    median_disparity = median_filter(disparity, size=10)
+    data_bounds_sup -= median_disparity
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
