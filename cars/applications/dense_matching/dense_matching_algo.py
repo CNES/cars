@@ -47,7 +47,9 @@ from cars.core import constants as cst
 from cars.core import inputs
 
 
-def compute_disparity_grid(disp_range_grid, left_image_object):
+def compute_disparity_grid(
+    disp_range_grid, left_image_object, right_image_object, used_band
+):
     """
     Compute dense disparity grids min and max for pandora
     superposable to left image
@@ -96,6 +98,32 @@ def compute_disparity_grid(disp_range_grid, left_image_object):
 
     disp_min_grid = interp_min((row_grid, col_grid)).astype("float32")
     disp_max_grid = interp_max((row_grid, col_grid)).astype("float32")
+
+    # Compute extremums of disparity considering left image borders
+    disp_min_from_borders = np.zeros_like(disp_min_grid)
+    disp_max_from_borders = np.zeros_like(disp_max_grid)
+    right_msk = np.array(right_image_object[cst.EPI_MSK].loc[used_band]) == 0
+    index_of_first_valid_pixel = np.argmax(right_msk, axis=1)
+    index_of_last_valid_pixel = np.argmax(np.flip(right_msk, axis=1), axis=1)
+    index_of_last_valid_pixel = right_msk.shape[1] - index_of_last_valid_pixel
+    any_valid_pixel_exists = np.any(right_msk, axis=1)
+    right_msk_indices = zip(  # noqa: B905
+        index_of_first_valid_pixel,
+        index_of_last_valid_pixel,
+        any_valid_pixel_exists,
+    )
+    for row_id, (first, last, exists) in enumerate(right_msk_indices):
+        if exists:
+            disp_min_from_borders[row_id, first:last] = np.flip(
+                np.arange(first - last, 0)
+            )
+            disp_max_from_borders[row_id, first:last] = np.flip(
+                np.arange(0, last - first)
+            )
+    disp_min_from_borders = np.minimum(disp_max_grid, disp_min_from_borders)
+    disp_max_from_borders = np.maximum(disp_min_grid, disp_max_from_borders)
+    disp_min_grid = np.maximum(disp_min_from_borders, disp_min_grid)
+    disp_max_grid = np.minimum(disp_max_from_borders, disp_max_grid)
 
     # Interpolation might create min > max
     disp_min_grid, disp_max_grid = dm_wrap.to_safe_disp_grid(

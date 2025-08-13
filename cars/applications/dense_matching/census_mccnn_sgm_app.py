@@ -1341,7 +1341,9 @@ def compute_disparity_wrapper(
     (
         disp_min_grid,
         disp_max_grid,
-    ) = dm_algo.compute_disparity_grid(disp_range_grid, left_image_object)
+    ) = dm_algo.compute_disparity_grid(
+        disp_range_grid, left_image_object, right_image_object, used_band
+    )
 
     global_disp_min = disp_range_grid["global_min"]
     global_disp_max = disp_range_grid["global_max"]
