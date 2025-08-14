@@ -895,13 +895,14 @@ def confidence_filtering(
     :type conf_filtering: dict
     """
 
-    data_risk = dataset[requested_confidence[0]].values
-    data_bounds_sup = dataset[requested_confidence[1]].values
-
-    # Normalize bounds_sup with median disparity
-    disparity = dataset["disp"].values
-    median_disparity = median_filter(disparity, size=10)
-    data_bounds_sup -= median_disparity
+    data_risk_inf = dataset[requested_confidence[0]].values
+    data_risk_sup = dataset[requested_confidence[1]].values
+    data_bounds_inf = dataset[requested_confidence[2]].values
+    data_bounds_sup = dataset[requested_confidence[3]].values
+    confidence_range = data_bounds_sup - data_bounds_inf
+    disp_min = dataset["disp_min_grid"].values
+    disp_max = dataset["disp_max_grid"].values
+    confidence_ratio = confidence_range / (disp_max - disp_min)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -912,10 +913,7 @@ def confidence_filtering(
             data_risk, np.nanmean, size=conf_filtering["win_mean_risk_max"]
         )
 
-    mask = (
-        (data_bounds_sup > conf_filtering["upper_bound"])
-        | (data_bounds_sup <= conf_filtering["lower_bound"])
-    ) | (
+    mask = (confidence_range > 30) | (confidence_ratio > 0.5) | (
         (var_map > conf_filtering["risk_max"])
         & (nan_ratio > conf_filtering["nan_threshold"])
     )

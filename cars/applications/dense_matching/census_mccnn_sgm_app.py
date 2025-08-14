@@ -132,7 +132,9 @@ class CensusMccnnSgm(
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
+
         self.confidence_filtering = self.used_config["confidence_filtering"]
+        self.threshold_disp_range_to_borders = self.used_config["threshold_disp_range_to_borders"]
 
         # init orchestrator
         self.orchestrator = None
@@ -241,6 +243,9 @@ class CensusMccnnSgm(
         )
         overloaded_conf["required_bands"] = conf.get("required_bands", ["b0"])
         overloaded_conf["used_band"] = conf.get("used_band", "b0")
+        overloaded_conf["threshold_disp_range_to_borders"] = conf.get(
+            "threshold_disp_range_to_borders", False
+        )
 
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -368,6 +373,7 @@ class CensusMccnnSgm(
             "loader_conf": Or(dict, collections.OrderedDict, str, None),
             "loader": str,
             "confidence_filtering": dict,
+            "threshold_disp_range_to_borders": bool,
         }
 
         # Check conf
@@ -1258,6 +1264,9 @@ class CensusMccnnSgm(
                             ),
                             texture_bands=texture_bands,
                             conf_filtering=self.confidence_filtering,
+                            threshold_disp_range_to_borders=(
+                                self.threshold_disp_range_to_borders
+                            )
                         )
 
         else:
@@ -1282,6 +1291,7 @@ def compute_disparity_wrapper(
     classification_fusion_margin=-1,
     texture_bands=None,
     conf_filtering=None,
+    threshold_disp_range_to_borders=False,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1342,7 +1352,11 @@ def compute_disparity_wrapper(
         disp_min_grid,
         disp_max_grid,
     ) = dm_algo.compute_disparity_grid(
-        disp_range_grid, left_image_object, right_image_object, used_band
+        disp_range_grid, 
+        left_image_object, 
+        right_image_object, 
+        used_band, 
+        threshold_disp_range_to_borders
     )
 
     global_disp_min = disp_range_grid["global_min"]
@@ -1399,7 +1413,9 @@ def compute_disparity_wrapper(
 
     # Filtering by using the confidence
     requested_confidence = [
+        "confidence_from_risk_min.cars_2",
         "confidence_from_risk_max.cars_2",
+        "confidence_from_interval_bounds_inf.cars_3",
         "confidence_from_interval_bounds_sup.cars_3",
     ]
 
