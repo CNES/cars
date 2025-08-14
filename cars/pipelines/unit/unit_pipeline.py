@@ -1189,15 +1189,11 @@ class UnitPipeline(PipelineTemplate):
                 (
                     self.pairs[pair_key]["grid_correction_coef"],
                     self.pairs[pair_key]["corrected_matches_array"],
-                    self.pairs[pair_key]["corrected_matches_cars_ds"],
                     _,
                     _,
                 ) = grid_correction_app.estimate_right_grid_correction(
                     self.pairs[pair_key]["matches_array"],
                     self.pairs[pair_key]["grid_right"],
-                    initial_cars_ds=self.pairs[pair_key][
-                        "epipolar_matches_left"
-                    ],
                     save_matches=save_matches,
                     minimum_nb_matches=minimum_nb_matches,
                     pair_folder=os.path.join(
@@ -1474,14 +1470,12 @@ class UnitPipeline(PipelineTemplate):
                 (
                     self.pairs[pair_key]["grid_correction_coef"],
                     self.pairs[pair_key]["corrected_matches_array"],
-                    self.pairs[pair_key]["corrected_matches_cars_ds"],
                     _,
                     _,
                 ) = grid_correction_app.estimate_right_grid_correction(
                     new_grid_matches_array,
                     self.pairs[pair_key]["grid_right"],
                     save_matches=save_matches,
-                    initial_cars_ds=None,
                     pair_folder=os.path.join(
                         self.dump_dir, "grid_correction", "new", pair_key
                     ),
