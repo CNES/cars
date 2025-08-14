@@ -476,8 +476,8 @@ class UnitPipeline(PipelineTemplate):
         :type conf: dict
         :param scaling_coeff: scaling factor for resolution
         :type scaling_coeff: float
-        :return overloader output
-        :rtype : dict
+        :return: overloader output
+        :rtype: dict
         """
         return output_parameters.check_output_parameters(conf, scaling_coeff)
 
