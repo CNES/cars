@@ -175,7 +175,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         self,
         triangulated_matches_list,
         output_dir,
-        geoid_path,
+        input_geoid,
+        output_geoid,
         dem_roi_to_use=None,
         initial_elevation=None,
         cars_orchestrator=None,
@@ -188,7 +189,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         :type triangulated_matches_list: list(pandas.Dataframe)
         :param output_dir: directory to save dem
         :type output_dir: str
-        :param geoid_path: geoid path
+        :param input_geoid: input geoid path
+        :param output_geoid: output geoid path
         :param cars_orchrestrator: the main cars orchestrator
         :param dem_roi_to_use: dem roi polygon to use as roi
         :param initial_elevation: the path to the initial elevation file
@@ -207,6 +209,11 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # Generate point cloud
         epsg = 4326
+
+        # Optimize the case when input and output geoid are the same
+        if output_geoid is True:
+            input_geoid = False
+            output_geoid = False
 
         for pair_pc in triangulated_matches_list:
             # convert to degrees for geoid offset
@@ -312,9 +319,14 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # Transform to lon lat
         projection.point_cloud_conversion_dataset(alti_zeros_dataset, 4326)
 
-        geoid_offset = triangulation_wrappers.geoid_offset(
-            alti_zeros_dataset, geoid_path
-        )
+        if input_geoid:
+            input_geoid = triangulation_wrappers.geoid_offset(
+                alti_zeros_dataset, input_geoid
+            )
+        if output_geoid:
+            output_geoid = triangulation_wrappers.geoid_offset(
+                alti_zeros_dataset, output_geoid
+            )
 
         # fillnodata
         valid = np.isfinite(list_z_grid[0])
@@ -323,7 +335,10 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             list_z_grid[idx] = rasterio.fill.fillnodata(
                 list_z_grid[idx], mask=valid, max_search_distance=msd
             )
-            list_z_grid[idx] += geoid_offset[cst.Z].values
+            if input_geoid:
+                list_z_grid[idx] += input_geoid[cst.Z].values
+            if output_geoid:
+                list_z_grid[idx] -= output_geoid[cst.Z].values
 
         dem_median = list_z_grid[0]
         dem_min = list_z_grid[1]
