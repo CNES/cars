@@ -48,10 +48,10 @@ from cars.core import inputs
 
 
 def compute_disparity_grid(
-    disp_range_grid, 
-    left_image_object, 
-    right_image_object, 
-    used_band, 
+    disp_range_grid,
+    left_image_object,
+    right_image_object,
+    used_band,
     threshold_disp_range_to_borders,
 ):
     """
@@ -107,10 +107,16 @@ def compute_disparity_grid(
     if threshold_disp_range_to_borders:
         disp_min_from_borders = np.zeros_like(disp_min_grid)
         disp_max_from_borders = np.zeros_like(disp_max_grid)
-        right_msk = np.array(right_image_object[cst.EPI_MSK].loc[used_band]) == 0
+        right_msk = (
+            np.array(right_image_object[cst.EPI_MSK].loc[used_band]) == 0
+        )
         index_of_first_valid_pixel = np.argmax(right_msk, axis=1)
-        index_of_last_valid_pixel = np.argmax(np.flip(right_msk, axis=1), axis=1)
-        index_of_last_valid_pixel = right_msk.shape[1] - index_of_last_valid_pixel
+        index_of_last_valid_pixel = np.argmax(
+            np.flip(right_msk, axis=1), axis=1
+        )
+        index_of_last_valid_pixel = (
+            right_msk.shape[1] - index_of_last_valid_pixel
+        )
         any_valid_pixel_exists = np.any(right_msk, axis=1)
         right_msk_indices = zip(  # noqa: B905
             index_of_first_valid_pixel,

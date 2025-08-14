@@ -134,7 +134,9 @@ class CensusMccnnSgm(
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
         self.confidence_filtering = self.used_config["confidence_filtering"]
-        self.threshold_disp_range_to_borders = self.used_config["threshold_disp_range_to_borders"]
+        self.threshold_disp_range_to_borders = self.used_config[
+            "threshold_disp_range_to_borders"
+        ]
 
         # init orchestrator
         self.orchestrator = None
@@ -425,33 +427,41 @@ class CensusMccnnSgm(
         overloaded_conf["confidence_filtering"]["activated"] = overloaded_conf[
             "confidence_filtering"
         ].get("activated", True)
-        overloaded_conf["confidence_filtering"]["upper_bound"] = (
-            overloaded_conf["confidence_filtering"].get("upper_bound", 5)
+        overloaded_conf["confidence_filtering"]["bounds_ratio_threshold"] = (
+            overloaded_conf["confidence_filtering"].get(
+                "bounds_ratio_threshold", 0.3
+            )
         )
-        overloaded_conf["confidence_filtering"]["lower_bound"] = (
-            overloaded_conf["confidence_filtering"].get("lower_bound", -30)
+        overloaded_conf["confidence_filtering"]["risk_ratio_threshold"] = (
+            overloaded_conf["confidence_filtering"].get(
+                "risk_ratio_threshold", 0.6
+            )
         )
-        overloaded_conf["confidence_filtering"]["risk_max"] = overloaded_conf[
-            "confidence_filtering"
-        ].get("risk_max", 60)
+        overloaded_conf["confidence_filtering"]["bounds_range_threshold"] = (
+            overloaded_conf["confidence_filtering"].get(
+                "bounds_range_threshold", 3
+            )
+        )
+        overloaded_conf["confidence_filtering"]["risk_range_threshold"] = (
+            overloaded_conf["confidence_filtering"].get(
+                "risk_range_threshold", 6
+            )
+        )
         overloaded_conf["confidence_filtering"]["nan_threshold"] = (
-            overloaded_conf["confidence_filtering"].get("nan_threshold", 0.1)
+            overloaded_conf["confidence_filtering"].get("nan_threshold", 0.2)
         )
         overloaded_conf["confidence_filtering"]["win_nanratio"] = (
             overloaded_conf["confidence_filtering"].get("win_nanratio", 20)
         )
-        overloaded_conf["confidence_filtering"]["win_mean_risk_max"] = (
-            overloaded_conf["confidence_filtering"].get("win_mean_risk_max", 7)
-        )
 
         confidence_filtering_schema = {
             "activated": bool,
-            "upper_bound": int,
-            "lower_bound": int,
-            "risk_max": int,
+            "bounds_ratio_threshold": float,
+            "risk_ratio_threshold": float,
+            "bounds_range_threshold": int,
+            "risk_range_threshold": int,
             "nan_threshold": float,
             "win_nanratio": int,
-            "win_mean_risk_max": int,
         }
 
         checker_confidence_filtering_schema = Checker(
@@ -1266,7 +1276,7 @@ class CensusMccnnSgm(
                             conf_filtering=self.confidence_filtering,
                             threshold_disp_range_to_borders=(
                                 self.threshold_disp_range_to_borders
-                            )
+                            ),
                         )
 
         else:
@@ -1352,11 +1362,11 @@ def compute_disparity_wrapper(
         disp_min_grid,
         disp_max_grid,
     ) = dm_algo.compute_disparity_grid(
-        disp_range_grid, 
-        left_image_object, 
-        right_image_object, 
-        used_band, 
-        threshold_disp_range_to_borders
+        disp_range_grid,
+        left_image_object,
+        right_image_object,
+        used_band,
+        threshold_disp_range_to_borders,
     )
 
     global_disp_min = disp_range_grid["global_min"]

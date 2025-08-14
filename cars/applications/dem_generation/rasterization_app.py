@@ -403,6 +403,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         saved_transform = edit_transform(
             dem_min_path, resolution=resolution_in_meters
         )
+        logging.info("Launch Bulldozer on DEM min")
         temp_output_path = launch_bulldozer(
             dem_min_path,
             os.path.join(output_dir, "dem_min_bulldozer"),
@@ -418,6 +419,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             dem_max_path, resolution=resolution_in_meters
         )
         reverse_dem(dem_max_path)
+        logging.info("Launch Bulldozer on DEM max")
         temp_output_path = launch_bulldozer(
             dem_max_path,
             os.path.join(output_dir, "dem_max_bulldozer"),

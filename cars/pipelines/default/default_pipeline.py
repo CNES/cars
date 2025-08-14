@@ -834,17 +834,6 @@ class DefaultPipeline(PipelineTemplate):
                     "intervals",
                 ]
 
-            if res >= 16:
-                if (
-                    "dense matching" not in conf
-                    or "confidence filtering" not in conf["dense matching"]
-                    or "lower bound"
-                    not in conf["dense matching"]["confidence filtering"]
-                ):
-                    used_conf["dense_matching"]["confidence_filtering"][
-                        "lower_bound"
-                    ] = -90
-
             # Triangulation
             self.triangulation_application = Application(
                 "triangulation", cfg=used_conf.get("triangulation", {})
