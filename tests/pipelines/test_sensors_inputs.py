@@ -81,7 +81,7 @@ def test_check_full_conf():
             ],
         },
     }
-    _ = sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+    _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
 
 
 @pytest.mark.unit_tests
@@ -139,7 +139,7 @@ def test_input_full_sensors():
     }
 
     sensor_inputs.sensors_check_inputs(
-        input_test, config_json_dir=os.path.dirname(input_json)
+        input_test, config_dir=os.path.dirname(input_json)
     )
 
 
@@ -173,7 +173,7 @@ def test_input_geom_squeezed_sensors():
     }
 
     sensor_inputs.sensors_check_inputs(
-        input_test, config_json_dir=os.path.dirname(input_json)
+        input_test, config_dir=os.path.dirname(input_json)
     )
 
 
@@ -207,7 +207,7 @@ def test_input_geom_squezed_sensors():
     }
 
     sensor_inputs.sensors_check_inputs(
-        input_test, config_json_dir=os.path.dirname(input_json)
+        input_test, config_dir=os.path.dirname(input_json)
     )
 
 
@@ -232,7 +232,7 @@ def test_input_minimal_sensors():
     input_test = {"sensors": {"one": "img1_crop.tif", "two": "img2_crop.tif"}}
 
     sensor_inputs.sensors_check_inputs(
-        input_test, config_json_dir=os.path.dirname(input_json)
+        input_test, config_dir=os.path.dirname(input_json)
     )
 
 
@@ -267,7 +267,7 @@ def test_input_dem_with_geoid_sensors():
     }
 
     sensor_inputs.sensors_check_inputs(
-        input_test, config_json_dir=os.path.dirname(input_json)
+        input_test, config_dir=os.path.dirname(input_json)
     )
 
 
@@ -299,7 +299,7 @@ def test_input_dem_no_geoid_sensors():
     }
 
     sensor_inputs.sensors_check_inputs(
-        input_test, config_json_dir=os.path.dirname(input_json)
+        input_test, config_dir=os.path.dirname(input_json)
     )
 
 
@@ -331,7 +331,7 @@ def test_input_dem_no_geoid_squeezed_sensors():
     }
 
     sensor_inputs.sensors_check_inputs(
-        input_test, config_json_dir=os.path.dirname(input_json)
+        input_test, config_dir=os.path.dirname(input_json)
     )
 
 
@@ -365,7 +365,7 @@ def test_input_dem_epsg_exit_sensors():
     # epsg should not be defined in inputs
     with pytest.raises(MissKeyCheckerError):
         sensor_inputs.sensors_check_inputs(
-            input_test, config_json_dir=os.path.dirname(input_json)
+            input_test, config_dir=os.path.dirname(input_json)
         )
 
 
@@ -401,7 +401,7 @@ def test_input_basic_loader():
             },
         },
     }
-    _ = sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+    _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
 
 
 @pytest.mark.unit_tests
@@ -442,7 +442,7 @@ def test_input_pivot_loader():
             },
         },
     }
-    _ = sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+    _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
 
 
 @pytest.mark.unit_tests
@@ -484,7 +484,7 @@ def test_input_pivot_loader_fail_band_not_found():
         },
     }
     with pytest.raises(RuntimeError):
-        sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+        sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
 
 
 @pytest.mark.unit_tests
@@ -526,4 +526,4 @@ def test_input_pivot_loader_fail_undefined_texture_band():
         },
     }
     with pytest.raises(RuntimeError):
-        sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+        sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)

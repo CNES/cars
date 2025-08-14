@@ -80,7 +80,7 @@ class DefaultPipeline(PipelineTemplate):
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, conf, config_json_dir=None):  # noqa: C901
+    def __init__(self, conf, config_dir=None):  # noqa: C901
         """
         Creates pipeline
 
@@ -99,16 +99,16 @@ class DefaultPipeline(PipelineTemplate):
         :type pipeline_name: str
         :param cfg: configuration {'matching_cost_method': value}
         :type cfg: dictionary
-        :param config_json_dir: path to dir containing json
-        :type config_json_dir: str
+        :param config_dir: path to dir containing json or yaml file
+        :type config_dir: str
         """
 
         # Used conf
         self.used_conf = {}
 
         # Transform relative path to absolute path
-        if config_json_dir is not None:
-            config_json_dir = os.path.abspath(config_json_dir)
+        if config_dir is not None:
+            config_dir = os.path.abspath(config_dir)
 
         # Check global conf
         self.check_global_schema(conf)
@@ -118,9 +118,7 @@ class DefaultPipeline(PipelineTemplate):
         # So we do the check once
 
         # Check conf inputs
-        inputs = self.check_inputs(
-            conf[INPUTS], config_json_dir=config_json_dir
-        )
+        inputs = self.check_inputs(conf[INPUTS], config_dir=config_dir)
 
         # Check conf output
         output = self.check_output(conf[OUTPUT])
@@ -527,15 +525,15 @@ class DefaultPipeline(PipelineTemplate):
             logging.warning(log_msg)
 
     @staticmethod
-    def check_inputs(conf, config_json_dir=None):
+    def check_inputs(conf, config_dir=None):
         """
         Check the inputs given
 
         :param conf: configuration of inputs
         :type conf: dict
-        :param config_json_dir: directory of used json, if
+        :param config_dir: directory of used json, if
             user filled paths with relative paths
-        :type config_json_dir: str
+        :type config_dir: str
 
         :return: overloaded inputs
         :rtype: dict
@@ -548,21 +546,19 @@ class DefaultPipeline(PipelineTemplate):
             and dsm_cst.DSMS not in conf
         ):
             output_config = sensor_inputs.sensors_check_inputs(
-                conf, config_json_dir=config_json_dir
+                conf, config_dir=config_dir
             )
         elif depth_cst.DEPTH_MAPS in conf:
             output_config = {
                 **output_config,
                 **depth_map_inputs.check_depth_maps_inputs(
-                    conf, config_json_dir=config_json_dir
+                    conf, config_dir=config_dir
                 ),
             }
         else:
             output_config = {
                 **output_config,
-                **dsm_inputs.check_dsm_inputs(
-                    conf, config_json_dir=config_json_dir
-                ),
+                **dsm_inputs.check_dsm_inputs(conf, config_dir=config_dir),
             }
         return output_config
 

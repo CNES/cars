@@ -598,7 +598,7 @@ def cars_bundle_adjustment(conf, no_run_sparse):
 
     # create new refined rpcs
     conf_as_dict["inputs"] = sensor_inputs.sensors_check_inputs(
-        conf_as_dict["inputs"], config_json_dir=conf_dirname
+        conf_as_dict["inputs"], config_dir=conf_dirname
     )
     separate = bundle_adjustment_config.pop("separate")
     refined_rpcs = new_rpcs_from_matches(

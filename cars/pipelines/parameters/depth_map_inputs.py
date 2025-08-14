@@ -37,15 +37,15 @@ from cars.pipelines.parameters import sensor_inputs as sens_inp
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
-def check_depth_maps_inputs(conf, config_json_dir=None):
+def check_depth_maps_inputs(conf, config_dir=None):
     """
     Check the inputs given
 
     :param conf: configuration of inputs
     :type conf: dict
-    :param config_json_dir: directory of used json, if
+    :param config_dir: directory of used json, if
         user filled paths with relative paths
-    :type config_json_dir: str
+    :type config_dir: str
 
     :return: overloader inputs
     :rtype: dict
@@ -156,8 +156,8 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         )
 
     # Modify to absolute path
-    if config_json_dir is not None:
-        modify_to_absolute_path(config_json_dir, overloaded_conf)
+    if config_dir is not None:
+        modify_to_absolute_path(config_dir, overloaded_conf)
     else:
         logging.debug(
             "path of config file was not given,"
@@ -193,7 +193,7 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
     )
 
     if sens_cst.SENSORS in conf and conf[sens_cst.SENSORS] is not None:
-        sens_inp.check_sensors(conf, overloaded_conf, config_json_dir)
+        sens_inp.check_sensors(conf, overloaded_conf, config_dir)
 
     return overloaded_conf
 
@@ -270,12 +270,12 @@ def check_input_size(
                 )
 
 
-def modify_to_absolute_path(config_json_dir, overloaded_conf):
+def modify_to_absolute_path(config_dir, overloaded_conf):
     """
     Modify input file path to absolute path
 
-    :param config_json_dir: directory of the json configuration
-    :type config_json_dir: str
+    :param config_dir: directory of the json/yaml configuration
+    :type config_dir: str
     :param overloaded_conf: overloaded configuration json
     :dict overloaded_conf: dict
     """
@@ -294,7 +294,7 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             if tag != cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT:
                 if depth_map[tag] is not None:
                     depth_map[tag] = make_relative_path_absolute(
-                        depth_map[tag], config_json_dir
+                        depth_map[tag], config_dir
                     )
             else:
                 if depth_map[tag] is not None:
@@ -303,12 +303,12 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
                             depth_map[tag][confidence_name] = (
                                 make_relative_path_absolute(
                                     depth_map[tag][confidence_name],
-                                    config_json_dir,
+                                    config_dir,
                                 )
                             )
 
     if overloaded_conf[sens_cst.ROI] is not None:
         if isinstance(overloaded_conf[sens_cst.ROI], str):
             overloaded_conf[sens_cst.ROI] = make_relative_path_absolute(
-                overloaded_conf[sens_cst.ROI], config_json_dir
+                overloaded_conf[sens_cst.ROI], config_dir
             )

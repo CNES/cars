@@ -42,14 +42,14 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)
 
 
-def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
+def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
     """
     Check the inputs given
 
     :param conf: configuration of inputs
     :type conf: dict
-    :param config_json_dir: path to dir containing json
-    :type config_json_dir: str
+    :param config_dir: path to dir containing json
+    :type config_dir: str
     """
 
     overloaded_conf = conf.copy()
@@ -74,7 +74,7 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
     checker_inputs = Checker(inputs_schema)
     checker_inputs.validate(overloaded_conf)
 
-    check_sensors(conf, overloaded_conf, config_json_dir)
+    check_sensors(conf, overloaded_conf, config_dir)
 
     # Check srtm dir
     check_srtm(overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH])
@@ -82,7 +82,7 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
     return overloaded_conf
 
 
-def check_sensors(conf, overloaded_conf, config_json_dir=None):  # noqa: C901
+def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
     """
     Check sensors
 
@@ -116,9 +116,7 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):  # noqa: C901
             loader_name = image.get("loader", "basic")
         else:
             raise TypeError(f"Image {image} is not of type str or dict")
-        image_loader = SensorLoader(
-            loader_name, image, "image", config_json_dir
-        )
+        image_loader = SensorLoader(loader_name, image, "image", config_dir)
         image_as_pivot_format = (
             image_loader.get_pivot_format()  # pylint: disable=E1101
         )
@@ -153,7 +151,7 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):  # noqa: C901
             else:
                 raise TypeError(f"Classif {classif} is not of type str or dict")
             classif_loader = SensorLoader(
-                loader_name, classif, "classification", config_json_dir
+                loader_name, classif, "classification", config_dir
             )
             classif_as_pivot_format = (
                 classif_loader.get_pivot_format()  # pylint: disable=E1101
@@ -172,8 +170,8 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):  # noqa: C901
         )
 
     # Modify to absolute path
-    if config_json_dir is not None:
-        modify_to_absolute_path(config_json_dir, overloaded_conf)
+    if config_dir is not None:
+        modify_to_absolute_path(config_dir, overloaded_conf)
 
     # Check image, msk and color size compatibility
     for sensor_image_key in overloaded_conf[sens_cst.SENSORS]:
@@ -220,8 +218,8 @@ def check_sensors(conf, overloaded_conf, config_json_dir=None):  # noqa: C901
             raise RuntimeError("{} not in sensors images".format(key2))
 
     # Modify to absolute path
-    if config_json_dir is not None:
-        modify_to_absolute_path(config_json_dir, overloaded_conf)
+    if config_dir is not None:
+        modify_to_absolute_path(config_dir, overloaded_conf)
     else:
         logging.debug(
             "path of config file was not given,"
@@ -397,12 +395,12 @@ def generate_geometry_plugin_with_dem(
     return geom_plugin_with_dem_and_geoid
 
 
-def modify_to_absolute_path(config_json_dir, overloaded_conf):
+def modify_to_absolute_path(config_dir, overloaded_conf):
     """
     Modify input file path to absolute path
 
-    :param config_json_dir: directory of the json configuration
-    :type config_json_dir: str
+    :param config_dir: directory of the json configuration
+    :type config_dir: str
     :param overloaded_conf: overloaded configuration json
     :dict overloaded_conf: dict
     """
@@ -415,11 +413,11 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
         ]:
             if isinstance(sensor_image[tag], dict):
                 sensor_image[tag]["path"] = make_relative_path_absolute(
-                    sensor_image[tag]["path"], config_json_dir
+                    sensor_image[tag]["path"], config_dir
                 )
             elif sensor_image[tag] is not None:
                 sensor_image[tag] = make_relative_path_absolute(
-                    sensor_image[tag], config_json_dir
+                    sensor_image[tag], config_dir
                 )
         for tag in [
             sens_cst.INPUT_IMG,
@@ -430,14 +428,14 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
                     sensor_image[tag]["bands"][band]["path"] = (
                         make_relative_path_absolute(
                             sensor_image[tag]["bands"][band]["path"],
-                            config_json_dir,
+                            config_dir,
                         )
                     )
 
     if overloaded_conf[sens_cst.ROI] is not None:
         if isinstance(overloaded_conf[sens_cst.ROI], str):
             overloaded_conf[sens_cst.ROI] = make_relative_path_absolute(
-                overloaded_conf[sens_cst.ROI], config_json_dir
+                overloaded_conf[sens_cst.ROI], config_dir
             )
 
     for tag in [sens_cst.DEM_PATH, sens_cst.GEOID]:
@@ -448,7 +446,7 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
                 overloaded_conf[sens_cst.INITIAL_ELEVATION][tag] = (
                     make_relative_path_absolute(
                         overloaded_conf[sens_cst.INITIAL_ELEVATION][tag],
-                        config_json_dir,
+                        config_dir,
                     )
                 )
 
