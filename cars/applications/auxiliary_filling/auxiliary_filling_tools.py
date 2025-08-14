@@ -483,7 +483,7 @@ def compute_sensor_bounds(sensor_inputs, geom_plugin, output_epsg):
         if reference_sensor_image is None:
             continue
 
-        u_l, u_r, l_r, l_l = geom_plugin.image_envelope(
+        u_l, u_r, l_l, l_r = geom_plugin.image_envelope(
             reference_sensor_image, sensor["geomodel"]
         )
 

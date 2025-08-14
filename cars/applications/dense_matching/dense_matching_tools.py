@@ -296,6 +296,7 @@ def create_disp_dataset(  # noqa: C901
     disp_max_grid=None,
     cropped_range=None,
     margins_to_keep=0,
+    classification_fusion_margin=-1,
 ) -> xr.Dataset:
     """
     Create the disparity dataset.
@@ -393,6 +394,7 @@ def create_disp_dataset(  # noqa: C901
                 epi_msk_right == msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                 np.floor(disp_min_grid).astype(np.int16),
                 np.ceil(disp_max_grid).astype(np.int16),
+                classification_fusion_margin,
             )
 
     left_from_right_classif = None
@@ -407,6 +409,7 @@ def create_disp_dataset(  # noqa: C901
             pandora_masks[cst_disp.VALID],
             int(np.floor(np.min(disp_min_grid))),
             int(np.ceil(np.max(disp_max_grid))),
+            classification_fusion_margin,
         )
 
         # mask outside left sensor
@@ -511,7 +514,12 @@ def add_crop_info(disp_ds, cropped_range):
 
 
 def estimate_right_classif_on_left(
-    right_classif, disp_map, disp_mask, disp_min, disp_max
+    right_classif,
+    disp_map,
+    disp_mask,
+    disp_min,
+    disp_max,
+    classifiation_fusion_margin,
 ):
     """
     Estimate right classif on left image
@@ -531,12 +539,21 @@ def estimate_right_classif_on_left(
     :rtype: np nadarray
     """
     return dense_matching_cpp.estimate_right_classif_on_left(
-        right_classif, disp_map, disp_mask, disp_min, disp_max
+        right_classif,
+        disp_map,
+        disp_mask,
+        disp_min,
+        disp_max,
+        classifiation_fusion_margin,
     )
 
 
 def mask_left_classif_from_right_mask(
-    left_classif, right_mask, disp_min, disp_max
+    left_classif,
+    right_mask,
+    disp_min,
+    disp_max,
+    classifiation_fusion_margin,
 ):
     """
     Mask left classif with right mask.
@@ -554,7 +571,11 @@ def mask_left_classif_from_right_mask(
     :rtype: np nadarray
     """
     return dense_matching_cpp.mask_left_classif_from_right_mask(
-        left_classif, right_mask, disp_min, disp_max
+        left_classif,
+        right_mask,
+        disp_min,
+        disp_max,
+        classifiation_fusion_margin,
     )
 
 
@@ -731,6 +752,7 @@ def compute_disparity(
     compute_disparity_masks=False,
     cropped_range=None,
     margins_to_keep=0,
+    classification_fusion_margin=-1,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will compute disparity.
@@ -753,6 +775,8 @@ def compute_disparity(
     :type cropped_range: numpy array
     :param margins_to_keep: margin to keep after dense matching
     :type margins_to_keep: int
+    :param classification_fusion_margin: the margin to add for the fusion
+    :type classification_fusion_margin: int
 
     :return: Disparity dataset
     """
@@ -839,6 +863,7 @@ def compute_disparity(
         disp_max_grid=disp_max_grid,
         cropped_range=cropped_range,
         margins_to_keep=margins_to_keep,
+        classification_fusion_margin=classification_fusion_margin,
     )
 
     return disp_dataset

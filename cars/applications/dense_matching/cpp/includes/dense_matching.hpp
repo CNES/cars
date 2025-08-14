@@ -22,7 +22,8 @@ py::array_t<bool> estimate_right_classif_on_left(
     py::array_t<float> disp_map,  
     std::optional<py::array_t<bool>> disp_mask,
     int disp_min,
-    int disp_max
+    int disp_max,
+    int classification_fusion_margin
 );
 
 /**
@@ -38,7 +39,8 @@ py::array_t<bool> mask_left_classif_from_right_mask(
     py::array_t<bool> left_classif,
     py::array_t<bool> right_mask,
     py::array_t<int> disp_min,
-    py::array_t<int> disp_max
+    py::array_t<int> disp_max,
+    int classification_fusion_margin
 );
 
 /**
