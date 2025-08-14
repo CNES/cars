@@ -26,11 +26,11 @@ from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
-from cars.applications.application_template import ApplicationTemplate
+from cars.applications.application_template import ScalingApplicationTemplate
 
 
 @Application.register("dem_generation")
-class DemGeneration(ApplicationTemplate, metaclass=ABCMeta):
+class DemGeneration(ScalingApplicationTemplate, metaclass=ABCMeta):
     """
     DemGeneration
     """
@@ -38,13 +38,15 @@ class DemGeneration(ApplicationTemplate, metaclass=ABCMeta):
     available_applications: Dict = {}
     default_application = "bulldozer_on_raster"
 
-    def __new__(cls, conf=None):  # pylint: disable=W0613
+    def __new__(cls, scaling_coeff, conf=None):  # pylint: disable=W0613
         """
         Return the required application
         :raises:
          - KeyError when the required application is not registered
 
         :param orchestrator: orchestrator used
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         :param conf: configuration for resampling
         :return: an application_to_use object
         """
@@ -84,15 +86,17 @@ class DemGeneration(ApplicationTemplate, metaclass=ABCMeta):
         super().__init_subclass__(**kwargs)
         cls.available_applications[short_name] = cls
 
-    def __init__(self, conf=None):
+    def __init__(self, scaling_coeff, conf=None):
         """
         Init function of MntGeneration
 
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         :param conf: configuration
         :return: an application_to_use object
         """
 
-        super().__init__(conf=conf)
+        super().__init__(scaling_coeff, conf=conf)
 
     @abstractmethod
     def run(self, triangulated_matches_list, output_dir):

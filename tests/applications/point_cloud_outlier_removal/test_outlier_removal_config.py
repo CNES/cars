@@ -74,7 +74,7 @@ def test_check_full_conf_statistical():
         "use_median": False,
         "half_epipolar_size": 5,
     }
-    _ = Statistical(conf)
+    _ = Statistical(1, conf)
 
 
 @pytest.mark.unit_tests
@@ -88,4 +88,4 @@ def test_check_conf_with_error():
         "k": 0,  # should be > 0
     }
     with pytest.raises(json_checker.core.exceptions.DictCheckerError):
-        _ = Statistical(conf)
+        _ = Statistical(1, conf)

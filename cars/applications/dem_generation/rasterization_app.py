@@ -63,14 +63,16 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, conf=None):
+    def __init__(self, scaling_coeff, conf=None):
         """
         Init function of Rasterization
 
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         :param conf: configuration for Rasterization
         :return: an application_to_use object
         """
-        super().__init__(conf=conf)
+        super().__init__(scaling_coeff, conf=conf)
 
         # check conf
         self.used_method = self.used_config["method"]
@@ -134,8 +136,12 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer_on_raster")
-        overloaded_conf["resolution"] = conf.get("resolution", 2)
-        overloaded_conf["margin"] = conf.get("margin", 500)
+        overloaded_conf["resolution"] = conf.get(
+            "resolution", float(self.scaling_coeff * 2)
+        )
+        overloaded_conf["margin"] = conf.get(
+            "margin", float(self.scaling_coeff * 500)
+        )
         overloaded_conf["morphological_filters_size"] = conf.get(
             "morphological_filters_size", 30
         )
@@ -153,7 +159,9 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         )
         overloaded_conf["min_dem"] = conf.get("min_dem", -500)
         overloaded_conf["max_dem"] = conf.get("max_dem", 1000)
-        overloaded_conf["height_margin"] = conf.get("height_margin", 20)
+        overloaded_conf["height_margin"] = conf.get(
+            "height_margin", float(self.scaling_coeff * 20)
+        )
         overloaded_conf["bulldozer_max_object_size"] = conf.get(
             "bulldozer_max_object_size", 8
         )

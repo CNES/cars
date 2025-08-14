@@ -34,12 +34,14 @@ from cars.core.utils import safe_makedirs
 from cars.pipelines.parameters import output_constants
 
 
-def check_output_parameters(conf):
+def check_output_parameters(conf, scaling_coeff):
     """
     Check the output json configuration and fill in default values
 
     :param conf: configuration of output
     :type conf: dict
+    :param scaling_coeff: scaling factor for resolution
+    :type scaling_coeff: float
     :param pipeline_name: name of corresponding pipeline
     :type pipeline_name: str
     """
@@ -70,9 +72,28 @@ def check_output_parameters(conf):
         output_constants.EPSG, None
     )
 
-    overloaded_conf[output_constants.RESOLUTION] = overloaded_conf.get(
-        output_constants.RESOLUTION, 0.5
-    )
+    resolution = None
+    overloaded_scaling_coeff = scaling_coeff
+    if output_constants.RESOLUTION in overloaded_conf:
+        resolution = overloaded_conf[output_constants.RESOLUTION]
+        # update scaling coeff so the parameters are right for the dsm
+        # overloaded_scaling_coeff = 2*resolution
+
+        if resolution < 0.5 * scaling_coeff:
+            logging.warning(
+                "The requested DSM resolution of "
+                f"{overloaded_conf[output_constants.RESOLUTION]} seems "
+                "too low for the sensor images' resolution. "
+                "The pipeline will still continue with it."
+            )
+
+    else:
+        resolution = float(0.5 * scaling_coeff)
+        logging.warning(
+            "The resolution of the output DSM will be " f"{resolution} meters. "
+        )
+
+    overloaded_conf[output_constants.RESOLUTION] = resolution
 
     overloaded_conf[output_constants.SAVE_BY_PAIR] = overloaded_conf.get(
         output_constants.SAVE_BY_PAIR, False
@@ -181,7 +202,7 @@ def check_output_parameters(conf):
                     + "fixed according to the epsg"
                 )
 
-    return overloaded_conf
+    return overloaded_conf, overloaded_scaling_coeff
 
 
 def intialize_product_index(orchestrator, product_levels, input_pairs):

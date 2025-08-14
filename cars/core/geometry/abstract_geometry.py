@@ -50,7 +50,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     available_plugins: Dict = {}
 
-    def __new__(cls, geometry_plugin_conf=None, **kwargs):
+    def __new__(cls, geometry_plugin_conf=None, scaling_coeff=1, **kwargs):
         """
         Return the required plugin
         :raises:
@@ -59,6 +59,8 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param geometry_plugin_conf: plugin name or plugin configuration
             to instantiate
         :type geometry_plugin_conf: str or dict
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         :return: a geometry_plugin object
         """
         if geometry_plugin_conf is not None:
@@ -100,8 +102,11 @@ class AbstractGeometry(metaclass=ABCMeta):
         dem=None,
         geoid=None,
         default_alt=None,
+        scaling_coeff=1,
         **kwargs,
     ):
+
+        self.scaling_coeff = scaling_coeff
 
         config = self.check_conf(geometry_plugin_conf)
 
@@ -160,7 +165,9 @@ class AbstractGeometry(metaclass=ABCMeta):
             "plugin_name", "SharelocGeometry"
         )
         overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
-        overloaded_conf["dem_roi_margin"] = conf.get("dem_roi_margin", 0.012)
+        overloaded_conf["dem_roi_margin"] = conf.get(
+            "dem_roi_margin", float(self.scaling_coeff * 0.012)
+        )
 
         geometry_schema = {
             "plugin_name": str,

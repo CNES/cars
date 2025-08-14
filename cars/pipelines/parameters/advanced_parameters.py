@@ -144,6 +144,7 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
                     ]
                 )
 
+    scaling_coeff = None
     if inputs[sens_cst.SENSORS] is not None:
         # Check geometry plugin and overwrite geomodel in conf inputs
         (
@@ -152,10 +153,13 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
             geom_plugin_without_dem_and_geoid,
             geom_plugin_with_dem_and_geoid,
             dem_generation_roi,
+            scaling_coeff,
         ) = sensor_inputs.check_geometry_plugin(
             inputs, conf.get(adv_cst.GEOMETRY_PLUGIN, None)
         )
     elif depth_cst.DEPTH_MAPS in inputs or dsm_cst.DSMS in inputs:
+        # assume the input comes from 0.5m sensor images
+        scaling_coeff = 1
         # If there's an initial elevation with
         # point clouds as inputs, generate a plugin (used in dsm_filling)
         (
@@ -245,6 +249,7 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         geom_plugin_without_dem_and_geoid,
         geom_plugin_with_dem_and_geoid,
         dem_generation_roi,
+        scaling_coeff,
     )
 
 

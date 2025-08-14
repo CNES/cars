@@ -102,3 +102,25 @@ class ApplicationTemplate(metaclass=ABCMeta):
         """
 
         return self.used_config
+
+
+class ScalingApplicationTemplate(ApplicationTemplate, metaclass=ABCMeta):
+    """
+    Template for applications requiring resolution scaling.
+
+    Inherits from ApplicationTemplate and adds the scaling coefficient
+    as a required argument.
+    """
+
+    def __init__(self, scaling_coeff, conf=None):
+        """
+        Init function of ScalingApplicationTemplate
+
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
+
+        :param conf: configuration for application
+        :type conf: dict
+        """
+        self.scaling_coeff = scaling_coeff
+        super().__init__(conf=conf)

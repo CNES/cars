@@ -26,6 +26,8 @@ This module contains class application factory.
 # Standard imports
 import logging
 
+from cars.applications.application_template import ScalingApplicationTemplate
+
 # CARS imports
 from cars.conf.input_parameters import ConfigType
 
@@ -46,6 +48,7 @@ class Application:
         cls,
         app_name: str,
         cfg: ConfigType = None,
+        scaling_coeff: float = 1,
     ):
         """
         Return the instance of application associated with the application
@@ -55,12 +58,14 @@ class Application:
         :type app_name: str
         :param cfg: configuration {'matching_cost_method': value}
         :type cfg: dictionary
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         """
 
-        return cls.create_app(app_name, cfg)
+        return cls.create_app(app_name, cfg, scaling_coeff)
 
     @classmethod
-    def create_app(cls, name: str, cfg: ConfigType):
+    def create_app(cls, name: str, cfg: ConfigType, scaling_coeff: float = 1):
         """Factory command to create the application
         Return the instance of application associated with the application
         name given as parameter
@@ -69,16 +74,19 @@ class Application:
         :type app_name: str
         :param cfg: configuration {'matching_cost_method': value}
         :type cfg: dictionary
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         """
-        app = None
-
         try:
             app_class = cls.available_applications[name]
         except KeyError:
             logging.error("No application named {0} supported".format(name))
             return None
-        app = app_class(conf=cfg)
-        return app
+
+        if issubclass(app_class, ScalingApplicationTemplate):
+            return app_class(scaling_coeff=scaling_coeff, conf=cfg)
+
+        return app_class(conf=cfg)
 
     @classmethod
     def print_applications(cls):
