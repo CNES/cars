@@ -1373,9 +1373,6 @@ class UnitPipeline(PipelineTemplate):
         ]
 
         for cloud_id, (pair_key, _, _) in enumerate(self.list_sensor_pairs):
-            # Geometry plugin with dem will be used for the grid generation
-            geom_plugin = self.geom_plugin_with_dem_and_geoid
-
             if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is False:
                 save_matches = True
 
