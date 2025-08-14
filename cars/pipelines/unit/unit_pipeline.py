@@ -1310,7 +1310,6 @@ class UnitPipeline(PipelineTemplate):
             or self.quit_on_app("resampling")
             or self.quit_on_app("hole_detection")
             or self.quit_on_app("sparse_matching.sift")
-            or self.quit_on_app("sparse_matching.pandora")
         ):
             return True
 
@@ -1378,8 +1377,7 @@ class UnitPipeline(PipelineTemplate):
             geom_plugin = self.geom_plugin_with_dem_and_geoid
 
             if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is False:
-                if self.which_resolution in ("first", "single"):
-                    save_matches = True
+                save_matches = True
 
                 (
                     self.pairs[pair_key]["sensor_matches_left"],
@@ -1393,97 +1391,6 @@ class UnitPipeline(PipelineTemplate):
                     ),
                     save_matches=save_matches,
                 )
-
-                # saved used
-
-                if (
-                    inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-                    is None
-                    # cover the case where the geom plugin doesn't use init elev
-                    or (
-                        inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-                        != geom_plugin.dem
-                    )
-                ):
-                    # Generate grids with new MNT
-                    (
-                        self.pairs[pair_key]["new_grid_left"],
-                        self.pairs[pair_key]["new_grid_right"],
-                    ) = self.epipolar_grid_generation_application.run(
-                        self.pairs[pair_key]["sensor_image_left"],
-                        self.pairs[pair_key]["sensor_image_right"],
-                        geom_plugin,
-                        orchestrator=self.cars_orchestrator,
-                        pair_folder=os.path.join(
-                            self.dump_dir,
-                            "epipolar_grid_generation",
-                            "new_mnt",
-                            pair_key,
-                        ),
-                        pair_key=pair_key,
-                    )
-
-                    # Correct grids with former matches
-                    # Transform matches to new grids
-
-                    save_matches = self.sparse_mtch_sift_app.get_save_matches()
-
-                    new_grid_matches_array = (
-                        geom_plugin.transform_matches_from_grids(
-                            self.pairs[pair_key]["sensor_matches_left"],
-                            self.pairs[pair_key]["sensor_matches_right"],
-                            self.pairs[pair_key]["new_grid_left"],
-                            self.pairs[pair_key]["new_grid_right"],
-                        )
-                    )
-
-                    # Estimate grid_correction
-                    (
-                        self.pairs[pair_key]["grid_correction_coef"],
-                        self.pairs[pair_key]["corrected_matches_array"],
-                        self.pairs[pair_key]["corrected_matches_cars_ds"],
-                        _,
-                        _,
-                    ) = grid_correction_app.estimate_right_grid_correction(
-                        new_grid_matches_array,
-                        self.pairs[pair_key]["new_grid_right"],
-                        save_matches=save_matches,
-                        minimum_nb_matches=minimum_nb_matches,
-                        initial_cars_ds=self.pairs[pair_key][
-                            "epipolar_matches_left"
-                        ],
-                        pair_folder=os.path.join(
-                            self.dump_dir, "grid_correction", "new", pair_key
-                        ),
-                        pair_key=pair_key,
-                        orchestrator=self.cars_orchestrator,
-                    )
-
-                    # Correct grid right
-
-                    self.pairs[pair_key]["corrected_grid_right"] = (
-                        grid_correction_app.correct_grid(
-                            self.pairs[pair_key]["new_grid_right"],
-                            self.pairs[pair_key]["grid_correction_coef"],
-                            os.path.join(
-                                self.dump_dir,
-                                "grid_correction",
-                                "new",
-                                pair_key,
-                            ),
-                            save_corrected_grid,
-                        )
-                    )
-
-                    # Use the new grid as uncorrected grid
-                    self.pairs[pair_key]["grid_right"] = self.pairs[pair_key][
-                        "new_grid_right"
-                    ]
-
-                    self.pairs[pair_key]["corrected_grid_left"] = self.pairs[
-                        pair_key
-                    ]["new_grid_left"]
-
             elif (
                 self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is True
                 and not self.use_sift_a_priori
