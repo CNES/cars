@@ -1,0 +1,9 @@
+---
+output:
+  directory: outresults
+  product_level:
+  - dsm
+  - depth_map
+  auxiliary:
+    mask: true
+    classification: true

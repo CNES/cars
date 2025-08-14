@@ -1,0 +1,5 @@
+---
+applications:
+  point_cloud_denoising:
+    method: name_given_by_plugin
+    activated: true

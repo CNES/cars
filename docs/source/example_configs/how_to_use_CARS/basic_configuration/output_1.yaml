@@ -1,0 +1,7 @@
+---
+output:
+  directory: outresults
+  product_level:
+  - dsm
+  - depth_map
+  geoid: true

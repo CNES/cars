@@ -1,0 +1,5 @@
+---
+applications:
+  triangulation:
+    method: line_of_sight_intersection
+    snap_to_img1: true

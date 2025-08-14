@@ -825,7 +825,7 @@ The structure follows this organization:
                             "point_cloud_fusion": {
                                 "method": "mapping_to_terrain_tiles",
                                 "save_intermediate_data": true,
-                                "save_by_pair": true,
+                                "save_by_pair": true
                             }
                         },
 
@@ -913,12 +913,12 @@ The structure follows this organization:
                         "point_cloud_outlier_removal.1": {
                             "method": "small_components",
                             "on_ground_margin": 10,
-                            "save_intermediate_data": true,
+                            "save_intermediate_data": true
                         },
                         "point_cloud_outlier_removal.2": {
                             "method": "statistical",
                             "k": 10,
-                            "save_intermediate_data": true,
+                            "save_intermediate_data": true
                         }
                     }
 

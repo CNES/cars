@@ -1,0 +1,5 @@
+---
+applications:
+  ground_truth_reprojection:
+    method: direct_loc
+    target: all

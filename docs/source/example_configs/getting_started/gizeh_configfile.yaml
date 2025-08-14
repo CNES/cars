@@ -1,0 +1,12 @@
+---
+inputs:
+  sensors:
+    one:
+      image: img1.tif
+      geomodel: img1.geom
+      color: color1.tif
+    two:
+      image: img2.tif
+      geomodel: img2.geom
+output:
+  directory: outresults

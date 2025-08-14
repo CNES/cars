@@ -1,0 +1,6 @@
+---
+applications:
+  dense_matching:
+    method: census_sgm_default
+    loader: pandora
+    loader_conf: path_to_user_pandora_configuration

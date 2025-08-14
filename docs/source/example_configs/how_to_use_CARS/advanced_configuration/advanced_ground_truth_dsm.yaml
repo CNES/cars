@@ -1,0 +1,10 @@
+---
+advanced:
+  ground_truth_dsm:
+    dsm: path/to/ground/truth/dsm.tif
+    auxiliary_data:
+      classification: path/to/classification.tif
+      texture: path/to/texture.tif
+    auxiliary_data_interpolation:
+      classification: nearest
+      texture: linear

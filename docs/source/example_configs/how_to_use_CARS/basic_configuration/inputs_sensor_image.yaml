@@ -1,0 +1,7 @@
+---
+inputs:
+  sensors:
+    my_name_for_this_image:
+      image: path_to_image.tif
+      mask: path_to_mask.tif
+      classification: path_to_classification.tif

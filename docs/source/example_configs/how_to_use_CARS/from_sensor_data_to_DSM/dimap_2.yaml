@@ -1,0 +1,12 @@
+---
+inputs:
+  sensors:
+    one:
+      image: IMG_PHR1B_P_001/DIM_PHR1B_***.XML
+      color: color_one.tif
+    two:
+      image: IMG_PHR1B_P_002/DIM_PHR1B_***.XML
+      color: color_two.tif
+  pairing:
+  - - one
+    - two

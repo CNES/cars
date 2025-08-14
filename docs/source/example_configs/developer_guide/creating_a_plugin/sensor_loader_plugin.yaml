@@ -1,0 +1,6 @@
+---
+inputs:
+  image:
+    loader: name_given_by_plugin
+    plugin_specific_param1: value1
+    plugin_specific_param2: value2

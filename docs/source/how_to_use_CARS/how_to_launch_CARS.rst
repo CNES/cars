@@ -24,11 +24,13 @@ How to launch CARS
                             Logger level (default: PROGRESS. Should be one of (DEBUG, INFO, PROGRESS, WARNING, ERROR, CRITICAL)
       --version, -v         show program's version number and exit
 
-CARS cli takes only one ``.json`` file as command line argument:
+CARS cli takes only one ``.json`` or ``.yaml`` (or ``.yml``) file as command line argument:
 
 .. code-block:: console
 
     cars configfile.json
+    cars configfile.yaml
+    cars configfile.yml
 
 .. warning::
 

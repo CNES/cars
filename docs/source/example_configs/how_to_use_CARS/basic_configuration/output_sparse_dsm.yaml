@@ -1,0 +1,14 @@
+---
+inputs:
+  sensors:
+    one:
+      image: img1.tif
+      geomodel: img1.geom
+    two:
+      image: img2.tif
+      geomodel: img2.geom
+applications:
+  dem_generation:
+    save_intermediate_data: true
+output:
+  product_level: []
