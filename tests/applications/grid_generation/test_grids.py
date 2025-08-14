@@ -113,7 +113,6 @@ def test_correct_right_grid(tmp_path):
     (
         grid_correction_coef,
         corrected_matches,
-        _,
         in_stats,
         out_stats,
     ) = grid_correction_app.estimate_right_grid_correction(
