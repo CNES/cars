@@ -57,28 +57,4 @@ Finally, an output ``used_conf.json`` file will be created on the output directo
 
 Here is a reminder of what a basic json file configuration should look like :
 
-.. sourcecode:: text
-
-    {
-        "inputs": {
-            "sensors" : {
-                "one": {
-                    "image": "img1.tif",
-                    "geomodel": "img1.geom",
-                    "color": "color1.tif"
-                },
-                "two": {
-                    "image": "img2.tif",
-                    "geomodel": "img2.geom"
-                }
-            }
-        },
-        "orchestrator": {
-          	"mode": "multiprocessing",
-          	"nb_workers": 110,
-          	"max_ram_per_worker": 6000
-          	},
-        "output": {
-                "directory": "outresults"
-        }
-    }
+.. include-cars-config:: ../example_configs/how_to_use_CARS/how_to_launch_CARS/configfile

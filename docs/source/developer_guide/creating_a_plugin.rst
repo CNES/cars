@@ -35,11 +35,7 @@ A pipeline plugin will add a new pipeline in CARS, with existing applications or
 If the plugin installed is a pipeline plugin, it can be used by specifying the "pipeline" parameter in your CARS configuration file.
 For example :
 
-.. code-block:: json
-
-    {
-        "pipeline": "name_given_by_plugin"
-    }
+.. include-cars-config:: ../example_configs/developer_guide/creating_a_plugin/pipeline_plugin
 
 New applications can be parametrized in "applications" section of the configuration file.
 
@@ -50,16 +46,7 @@ An application plugin will overload an existing application in CARS with a new m
 If the plugin installed is an application plugin, it can be used by adding the application in your CARS configuration file.
 For example a point cloud denoising plugin can be used as follow :
 
-.. code-block:: json
-
-    {
-        "applications": {
-            "point_cloud_denoising": {
-                "method": "name_given_by_plugin"
-                "activated": true
-            }
-        }
-    }
+.. include-cars-config:: ../example_configs/developer_guide/creating_a_plugin/application_plugin
 
 Geometry plugin
 ---------------
@@ -67,11 +54,7 @@ Geometry plugin
 If the plugin installed is a pipeline plugin, it can be used by specifying the "geometry_plugin" parameter in your CARS configuration file.
 For example :
 
-.. code-block:: json
-
-    {
-        "geometry_plugin": "name_given_by_plugin"
-    }
+.. include-cars-config:: ../example_configs/developer_guide/creating_a_plugin/geometry_plugin
 
 Sensor loader plugin
 --------------------
@@ -79,17 +62,7 @@ Sensor loader plugin
 Sensors loader plugins can be used by setting the "loader" parameter in "image" and "classification" attributes of the input configuration.
 The loader defines several plugin-specific parameters
 
-.. code-block:: json
-
-    {
-        "inputs": {
-            "image": {
-                "loader": "name_given_by_plugin"
-                "plugin_specific_param1": "value1"
-                "plugin_specific_param2": "value2"
-            }
-        }
-    }
+.. include-cars-config:: ../example_configs/developer_guide/creating_a_plugin/sensor_loader_plugin
 
 A sensor loader plugin is a class that overrides the `SensorLoaderTemplate` class. It must define two methods : 
  - check_conf : check the plugin-specific parameters

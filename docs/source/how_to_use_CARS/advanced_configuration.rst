@@ -7,15 +7,7 @@ This section describes CARS main advanced configuration structure through a `jso
 
 The structure follows this organization:
 
-.. code-block:: json
-
-    {
-        "inputs": {},
-        "orchestrator": {},
-        "applications": {},
-        "output": {},
-        "advanced": {}
-    }
+.. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/organization_structure
 
 .. warning::
 
@@ -36,15 +28,7 @@ The structure follows this organization:
 
                 This example overrides the configuration of `application_name` for all resolutions at once :
 
-                .. code-block:: json
-
-                    "applications": {
-                        "application_name": {
-                            "method": "application_dependent",
-                            "parameter1": 3,
-                            "parameter2": 0.3
-                        }
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_override_all_resolutions
 
 
             .. tab:: Overriding a single resolution
@@ -59,24 +43,7 @@ The structure follows this organization:
 
                 The following example overrides the configuration for `application_name` at resolutions 4 and 1, using different parameters for each. Resolution 16 will retain its default configuration.
 
-                .. code-block:: json
-
-                    "applications": {
-                        "resolution_4": {
-                            "application_name": {
-                                "method": "first_method",
-                                "parameter1": 26,
-                                "parameter2": 0.9
-                            }
-                        },
-                        "resolution_1": {
-                            "application_name": {
-                                "method": "second_method",
-                                "parameter1": 8,
-                                "parameter2": 0.2
-                            }
-                        }
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_override_single_resolution
 
         By default, the configuration can be different for the first resolution, the intermediate resolution(s) and the last resolution. 
         The changes to the default values can be modified in the source code, in ``cars/pipelines/conf_resolution/*``.
@@ -135,14 +102,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                    "applications": {
-                        "grid_generation": {
-                            "method": "epipolar",
-                            "epi_step": 35
-                        }
-                    },
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_grid_generation
 
             .. tab:: Resampling
 
@@ -168,14 +128,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                    "applications": {
-                        "resampling": {
-                            "method": "bicubic",
-                            "epi_tile_size": 600
-                        }
-                    },
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_resampling
 
             .. tab:: Sparse matching
 
@@ -325,18 +278,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                    "applications": {
-                        "sparse_matching.sift": {
-                            "method": "sift",
-                            "disparity_margin": 0.01
-                        },
-                        "sparse_matching.pandora":{
-                            "method": "pandora",
-                            "resolution": [4, 2]
-                        }
-                    },
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_sparse_matching
 
             .. tab:: DEM Generation
 
@@ -420,14 +362,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                    "applications": {
-                        "dem_generation": {
-                            "method": "dichotomic",
-                            "min_number_matches": 20
-                        }
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dem_generation
 
             .. tab:: Ground truth reprojection
 
@@ -452,14 +387,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                    "applications": {
-                        "ground_truth_reprojection": {
-                            "method": "direct_loc",
-                            "target": "all"
-                        }
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_ground_truth_reprojection
 
                 .. figure:: ../images/cars_pipeline_advanced.png
                     :align: center
@@ -632,15 +560,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                    "applications": {
-                        "dense_matching": {
-                            "method": "census_sgm_default",
-                            "loader": "pandora",
-                            "loader_conf": "path_to_user_pandora_configuration"
-                        }
-                    },
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dense_matching
 
                 .. note::
 
@@ -747,21 +667,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                        "applications": {
-                            "dense_match_filling.1": {
-                                "method": "plane",
-                                "classification": ["water"],
-                                "save_intermediate_data": true
-                            },
-                            "dense_match_filling.2": {
-                                "method": "zero_padding",
-                                "classification": ["cloud", "snow"],
-                                "save_intermediate_data": true
-                            }
-                        },
-
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dense_match_filling
 
             .. tab:: Triangulation
 
@@ -785,14 +691,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                    "applications": {
-                        "triangulation": {
-                            "method": "line_of_sight_intersection",
-                            "snap_to_img1": true
-                        }
-                    },
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_triangulation
 
             .. tab:: Point Cloud fusion
 
@@ -819,15 +718,7 @@ The structure follows this organization:
                 **Example**
 
 
-                .. code-block:: json
-
-                        "applications": {
-                            "point_cloud_fusion": {
-                                "method": "mapping_to_terrain_tiles",
-                                "save_intermediate_data": true,
-                                "save_by_pair": true
-                            }
-                        },
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_fusion
 
                 .. note::
                     When `save_intermediate_data` is activated, multiple Laz and csv files are saved, corresponding to each processed terrain tiles.
@@ -907,20 +798,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                    "applications": {
-                        "point_cloud_outlier_removal.1": {
-                            "method": "small_components",
-                            "on_ground_margin": 10,
-                            "save_intermediate_data": true
-                        },
-                        "point_cloud_outlier_removal.2": {
-                            "method": "statistical",
-                            "k": 10,
-                            "save_intermediate_data": true
-                        }
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal
 
             .. tab:: Point Cloud Rasterization
 
@@ -1001,14 +879,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                    "applications": {
-                        "point_cloud_rasterization": {
-                            "method": "simple_gaussian",
-                            "dsm_radius": 1.5
-                        }
-                    },
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_rasterization
 
 
             .. tab:: DSM Filling
@@ -1100,29 +971,7 @@ The structure follows this organization:
 
                 **Example**
 
-                .. code-block:: json
-
-                  "applications": {
-                    "dsm_filling.1": {
-                        "method": "exogenous_filling",
-                        "activated": true,
-                        "classification": ["sea"],
-                        "fill_with_geoid": ["sea"],
-                        "save_intermediate_data": true
-                    },
-                    "dsm_filling.2": {
-                        "method": "bulldozer",
-                        "activated": true,
-                        "classification": ["cloud"],
-                        "save_intermediate_data": true
-                    },
-                    "dsm_filling.3": {
-                        "method": "border_interpolation",
-                        "activated": true,
-                        "classification": ["lake"],
-                        "save_intermediate_data": true
-                    }
-                  }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dsm_filling
 
             .. tab:: Auxiliary Filling
 
@@ -1273,11 +1122,7 @@ The structure follows this organization:
 
                 The following example enables `save_intermediate_data` for all applications at all resolutions : 
 
-                .. code-block:: json
-
-                    "advanced": {
-                        "save_intermediate_data": true
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/advanced_save_intermediate_data_1
 
                 This in turn will produce the following folder structure :
 
@@ -1296,14 +1141,7 @@ The structure follows this organization:
                 
                 The following example enables `save_intermediate_data` for all applications at resolution 16, while keeping it disabled for both resolution 4 and resolution 1 :
 
-                .. code-block:: json
-
-                    "advanced": {
-                        "save_intermediate_data": {
-                            "resolution_16": true,
-                            "resolution_1": false
-                        }
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/advanced_save_intermediate_data_2
 
 
             .. tab:: Keep low res dir
@@ -1315,11 +1153,7 @@ The structure follows this organization:
 
                 The following example disables the saving of the outputs of all intermediate resolutions:
 
-                .. code-block:: json
-
-                    "advanced": {
-                        "keep_low_res_dir": false
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/advanced_keep_low_res_dir
               
             .. tab:: Epipolar a priori
 
@@ -1402,22 +1236,7 @@ The structure follows this organization:
 
                 Example:
 
-                .. code-block:: json
-
-                    "advanced":
-                        {
-                            "ground_truth_dsm": {
-                                "dsm": "path/to/ground/truth/dsm.tif",
-								"auxiliary_data":{
-									"classification": "path/to/classification.tif",
-									"texture": "path/to/texture.tif"
-								},
-								"auxiliary_data_interpolation":{
-									"classification": "nearest",
-									"texture": "linear"
-								}
-                            }
-                        }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/advanced_ground_truth_dsm
 
             .. tab:: Phasing
 
@@ -1432,12 +1251,7 @@ The structure follows this organization:
                 | *epsg*            | Epsg of point            | int            | None                    |                                       | False    |
                 +-------------------+--------------------------+----------------+-------------------------+---------------------------------------+----------+
 
-                 .. code-block:: json
-
-                          "phasing": {
-                              "point": [32000, 30000],
-                              "epsg": 32530
-                          }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/advanced_phasing
 
             .. tab:: Geometry plugin
 
@@ -1464,47 +1278,11 @@ The structure follows this organization:
 
                 To use Shareloc geometry library, CARS input configuration should be defined as :
 
-                .. code-block:: json
-
-                    {
-                        "inputs": {
-                        "sensors": {
-                          "one": {
-                            "image": "img1.tif",
-                            "geomodel": {
-                              "path": "img1.geom",
-                              "model_type": "RPC"
-                            },
-                          },
-                          "two": {
-                            "image": "img2.tif",
-                            "geomodel": {
-                              "path": "img2.geom",
-                              "model_type": "RPC"
-                            },
-                          }
-                        },
-                        "pairing": [["one", "two"]],
-                        "initial_elevation": {
-                            "dem": "path/to/srtm_file.tif"
-                          },
-                        },
-                        "advanced":{
-                            "geometry_plugin": "SharelocGeometry"
-                        }
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/advanced_geometry_plugin_1
 
                 **geometry_plugin** specify the plugin to use, but other configuration parameters can be specified :
 
-                .. code-block:: json
-
-                        "advanced":{
-                            "geometry_plugin": {
-                                "plugin_name": "SharelocGeometry",
-                                "interpolator": "cubic",
-                                "dem_roi_margin": 0.1
-                            }
-                        }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/advanced_geometry_plugin_2
 
                 The particularities in the configuration file are:
 
@@ -1515,12 +1293,7 @@ The structure follows this organization:
                 Parameter can also be defined as a string *path* instead of a dictionary in the configuration. In this case, geomodel parameter will
                 be changed to a dictionary before launching the pipeline. The dictionary will be :
 
-                .. code-block:: json
-
-                    {
-                      "path": "img1.geom",
-                      "model_type": "RPC"
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/advanced_geometry_plugin_3
 
                 .. note::
 
@@ -1538,12 +1311,7 @@ The structure follows this organization:
                 | *pipeline*     | The pipeline to use   | str    | "default"     | "default"        | False    |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
 
-                .. code-block:: json
-
-                      "advanced": {
-                          "pipeline": "your_pipeline_name"
-                          }
-                      }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/advanced_pipeline
 
     .. tab:: Sensor loaders
 
@@ -1592,31 +1360,7 @@ The structure follows this organization:
 
                 Full configuration example for pivot sensor loader :
 
-                .. code-block:: json
-
-                    "image": {
-                      "loader": "pivot",
-                      "main_file": "img1.tif",
-                      "bands": {
-                        "b0": {
-                          "path": "img1.tif",
-                          "band": 0
-                        },
-                        "b1": {
-                          "path": "color1.tif",
-                          "band": 0
-                        },
-                        "b2": {
-                          "path": "color1.tif",
-                          "band": 1
-                        },
-                        "b3": {
-                          "path": "color1.tif",
-                          "band": 2
-                        }
-                      },
-                      "texture_bands": ["b1", "b2", "b3"]
-                    }
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/sensor_loader_pivot_loader
 
                 .. note::
 

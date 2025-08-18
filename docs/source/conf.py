@@ -16,6 +16,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
+sys.path.insert(0, os.path.abspath("."))
 
 # Extend Recursion limit for RecursionError in big files (bug astroid)
 sys.setrecursionlimit(8 * sys.getrecursionlimit())
@@ -57,6 +58,7 @@ extensions = [
     "sphinx.ext.viewcode",  # viewcode in automatic apidoc
     "sphinx_tabs.tabs",
     "sphinx_copybutton",
+    "cars_configs_extension",
 ]
 
 # Autoapi apidoc configuration

@@ -42,27 +42,7 @@ Getting Started
 
 * Configuration example for data_gizeh:
 
-.. sourcecode:: text
-
-    {
-        "inputs": {
-            "sensors" : {
-                "one": {
-                    "image": "img1.tif",
-                    "geomodel": "img1.geom",
-                    "color": "color1.tif"
-                },
-                "two": {
-                    "image": "img2.tif",
-                    "geomodel": "img2.geom"
-                }
-            }
-        },
-
-        "output": {
-                "directory": "outresults"
-        }
-    }
+.. include-cars-config:: example_configs/getting_started/gizeh_configfile
 
 * Go to the ``data_gizeh/outresults/`` output directory to get a :term:`DSM` and color image associated.
 

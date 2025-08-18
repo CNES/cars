@@ -49,6 +49,7 @@ docs/build/
 docs/_build/
 docs/source/api_reference/
 docs/source/apidoc/
+docs/source/example_configs/**/*.json
 
 # Installer logs
 pip-log.txt
