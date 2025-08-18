@@ -238,7 +238,7 @@ class CensusMccnnSgm(
             "local_disp_grid_step", 10
         )
         overloaded_conf["disp_range_propagation_filter_size"] = conf.get(
-            "disp_range_propagation_filter_size", 300
+            "disp_range_propagation_filter_size", 50
         )
         overloaded_conf["epi_disp_grid_tile_size"] = conf.get(
             "epi_disp_grid_tile_size", 800
@@ -439,12 +439,12 @@ class CensusMccnnSgm(
         )
         overloaded_conf["confidence_filtering"]["bounds_range_threshold"] = (
             overloaded_conf["confidence_filtering"].get(
-                "bounds_range_threshold", 3
+                "bounds_range_threshold", 6
             )
         )
         overloaded_conf["confidence_filtering"]["risk_range_threshold"] = (
             overloaded_conf["confidence_filtering"].get(
-                "risk_range_threshold", 6
+                "risk_range_threshold", 12
             )
         )
         overloaded_conf["confidence_filtering"]["nan_threshold"] = (

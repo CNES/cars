@@ -35,6 +35,7 @@ from affine import Affine
 from rasterio.coords import BoundingBox
 from rasterio.enums import Resampling
 from rasterio.warp import calculate_default_transform, reproject
+from scipy.ndimage import median_filter
 
 from cars.core import preprocessing
 
@@ -243,7 +244,7 @@ def reverse_dem(input_dem):
         out_dem.nodata = -nodata
 
 
-def downsample_dem(input_dem, scale):
+def downsample_dem(input_dem, scale, median_filter_size=7):
     """
     Downsample median DEM with median resampling
 
@@ -276,6 +277,9 @@ def downsample_dem(input_dem, scale):
         dst_nodata=nodata,
         resampling=Resampling.med,
     )
+
+    # Median filter as post-processing
+    output = median_filter(output, size=median_filter_size)
 
     with rio.open(input_dem, "w", **metadata) as dst:
         dst.write(output, 1)

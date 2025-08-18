@@ -86,7 +86,12 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         self.morphological_filters_size = self.used_config[
             "morphological_filters_size"
         ]
-        self.median_filter_size = self.used_config["median_filter_size"]
+        self.preprocessing_median_filter_size = self.used_config[
+            "preprocessing_median_filter_size"
+        ]
+        self.postprocessing_median_filter_size = self.used_config[
+            "postprocessing_median_filter_size"
+        ]
         self.dem_median_output_resolution = self.used_config[
             "dem_median_output_resolution"
         ]
@@ -134,8 +139,11 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         overloaded_conf["morphological_filters_size"] = conf.get(
             "morphological_filters_size", 30
         )
-        overloaded_conf["median_filter_size"] = conf.get(
-            "median_filter_size", 5
+        overloaded_conf["preprocessing_median_filter_size"] = conf.get(
+            "preprocessing_median_filter_size", 5
+        )
+        overloaded_conf["postprocessing_median_filter_size"] = conf.get(
+            "postprocessing_median_filter_size", 7
         )
         overloaded_conf["dem_median_output_resolution"] = conf.get(
             "dem_median_output_resolution", 30
@@ -164,7 +172,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
             "margin": And(Or(float, int), lambda x: x > 0),
             "morphological_filters_size": And(int, lambda x: x > 0),
-            "median_filter_size": And(int, lambda x: x > 0),
+            "preprocessing_median_filter_size": And(int, lambda x: x > 0),
+            "postprocessing_median_filter_size": And(int, lambda x: x > 0),
             "dem_median_output_resolution": And(int, lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
             "min_dem": And(Or(int, float), lambda x: x < 0),
@@ -342,7 +351,10 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         dem_median = skimage.filters.median(
             dem_data,
             footprint=np.ones(
-                (self.median_filter_size, self.median_filter_size)
+                (
+                    self.preprocessing_median_filter_size,
+                    self.preprocessing_median_filter_size,
+                )
             ),
         )
 
@@ -397,6 +409,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         downsample_dem(
             dem_median_path_out,
             scale=self.dem_median_output_resolution / resolution_in_meters,
+            median_filter_size=self.postprocessing_median_filter_size,
         )
 
         # Launch Bulldozer on dem min
