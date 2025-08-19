@@ -15,6 +15,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import rasterio as rio
+import yaml
 
 try:
     from rpcfit import rpc_fit
@@ -551,14 +552,26 @@ def new_rpcs_from_matches(
     return None
 
 
-def cars_bundle_adjustment(conf, no_run_sparse):
+def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
     """
     cars-bundleadjustement main:
     - Launch CARS to compute homologous points (run sparse matching)
     - Compute new RPCs
     """
-    with open(conf, encoding="utf-8") as reader:
-        conf_as_dict = json.load(reader)
+    _, ext = os.path.splitext(conf)
+    ext = ext.lower()
+
+    if ext == ".json":
+        with open(conf, encoding="utf-8") as reader:
+            conf_as_dict = json.load(reader)
+    elif ext in [".yaml", ".yml"]:
+        with open(conf, encoding="utf-8") as reader:
+            conf_as_dict = yaml.safe_load(reader)
+    else:
+        raise ValueError(
+            f"Unsupported configuration file format: {ext}. "
+            "Please use .json, .yaml, or .yml"
+        )
 
     conf_dirname = os.path.dirname(conf)
     out_dir = os.path.abspath(
@@ -628,9 +641,15 @@ def cars_bundle_adjustment(conf, no_run_sparse):
             raw_config["inputs"]["pairing"] = pairing
             raw_config["output"]["directory"] = raw
 
-        raw_cfg_file = raw_config["output"]["directory"] + ".json"
-        with open(raw_cfg_file, "w", encoding="utf8") as json_writer:
-            json.dump(raw_config, json_writer, indent=2)
+        # output config file
+        raw_cfg_file = raw_config["output"]["directory"] + (
+            ".yaml" if output_format == "yaml" else ".json"
+        )
+        with open(raw_cfg_file, "w", encoding="utf8") as writer:
+            if output_format == "yaml":
+                yaml.safe_dump(raw_config, writer, sort_keys=False)
+            else:
+                json.dump(raw_config, writer, indent=2)
 
         if refined_rpcs is not None:
             # create configuration file + launch cars dense matching
@@ -650,9 +669,14 @@ def cars_bundle_adjustment(conf, no_run_sparse):
                 refined_config["inputs"]["pairing"] = pairing
                 refined_config["output"]["directory"] = refined
 
-            refined_cfg_file = refined_config["output"]["directory"] + ".json"
-            with open(refined_cfg_file, "w", encoding="utf8") as json_writer:
-                json.dump(refined_config, json_writer, indent=2)
+            refined_cfg_file = refined_config["output"]["directory"] + (
+                ".yaml" if output_format == "yaml" else ".json"
+            )
+            with open(refined_cfg_file, "w", encoding="utf8") as writer:
+                if output_format == "yaml":
+                    yaml.safe_dump(refined_config, writer, sort_keys=False)
+                else:
+                    json.dump(refined_config, writer, indent=2)
 
 
 def cli():
@@ -684,8 +708,8 @@ key and its associated value:
 ```
 
 - Parameters "pairing" and "separate" are mandatory.
-- Parameters "nb_decimals" (default value: 0) and "min_matches" \
-(default value: 100) are optional.
+- Parameters "nb_decimals" (default value: 0), "min_matches" \
+(default value: 100) and "output_format" (default value: yaml) are optional.
 
 ### Generation of homologous points calculated by pair
 
@@ -709,7 +733,18 @@ number of matches per zone required to calculate these statistics."""
     )
     parser.add_argument("conf", type=str, help="Configuration File")
     parser.add_argument("--no-run-sparse", action="store_true")
+    parser.add_argument(
+        "--output-format",
+        type=str,
+        default="json",
+        choices=["json", "yaml", "JSON", "YAML"],
+        help="Output format for generated configuration files "
+        "(json or yaml, case-insensitive). Default: json",
+    )
+
     args = parser.parse_args()
+    # normalize format to lowercase
+    args.output_format = args.output_format.lower()
     cars_bundle_adjustment(**vars(args))
 
 
