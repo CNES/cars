@@ -15,3 +15,6 @@ inputs:
     - two
   - - one
     - three
+# this is not required
+#advanced:
+  #merging: true

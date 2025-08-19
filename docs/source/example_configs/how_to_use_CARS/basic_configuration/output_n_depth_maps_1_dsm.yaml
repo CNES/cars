@@ -13,4 +13,4 @@ inputs:
       performance_map: path_to_performance_map.tif
       epsg: depth_map_epsg
 advanced:
-  merging: true
+  merging: true # merge all the depth maps into a single output dsm

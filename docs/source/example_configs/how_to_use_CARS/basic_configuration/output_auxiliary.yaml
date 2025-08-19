@@ -4,6 +4,6 @@ output:
   product_level:
   - dsm
   - depth_map
-  auxiliary:
+  auxiliary: # enable mask and classification as an output of CARS
     mask: true
     classification: true

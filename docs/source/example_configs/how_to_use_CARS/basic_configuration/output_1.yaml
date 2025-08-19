@@ -1,7 +1,7 @@
 ---
 output:
-  directory: outresults
-  product_level:
+  directory: outresults # output to ./outresults
+  product_level: # ask for both a dsm and the depth maps
   - dsm
   - depth_map
-  geoid: true
+  geoid: true # a dsm height of 0 should be at the geoid level

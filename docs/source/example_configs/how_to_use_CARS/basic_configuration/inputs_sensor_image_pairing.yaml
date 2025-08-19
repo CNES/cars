@@ -10,8 +10,10 @@ inputs:
     three:
       image: img3.tif
       geomodel: img3.geom
-  pairing:
+  pairing: # define the pairs
+  # one-two
   - - one
     - two
+  # one-three
   - - one
     - three

@@ -14,8 +14,8 @@ one_three:
   "y": one_three/Y.tif
   z: one_three/Z.tif
   texture: one_three/texture.tif
-  mask: one_two/mask.tif
-  classification: one_two/classification.tif
-  performance_map: one_two/performance_map.tif
-  filling: one_two/filling.tif
+  mask: one_three/mask.tif
+  classification: one_three/classification.tif
+  performance_map: one_three/performance_map.tif
+  filling: one_three/filling.tif
   epsg: 4326
