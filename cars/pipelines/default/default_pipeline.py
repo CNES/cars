@@ -1122,7 +1122,7 @@ class DefaultPipeline(PipelineTemplate):
         size_low_res_img_col = first_image_size[1] // res
         if (
             "grid_generation" not in initial_conf_app
-            or "epi_step" not in application_conf["grid_generation"]
+            or "epi_step" not in initial_conf_app["grid_generation"]
         ):
             if size_low_res_img_row <= 900 and size_low_res_img_col <= 900:
                 application_conf["grid_generation"]["epi_step"] = res * 5

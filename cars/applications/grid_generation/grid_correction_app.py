@@ -31,7 +31,6 @@ import os
 
 # Third party imports
 import numpy as np
-import pandas
 import rasterio as rio
 from scipy.interpolate import LinearNDInterpolator
 from scipy.spatial import Delaunay  # pylint: disable=E0611
@@ -45,7 +44,6 @@ from cars.applications.grid_generation import (
 from cars.core.utils import safe_makedirs
 
 # CARS imports
-from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
@@ -171,7 +169,6 @@ def correct_grid(grid, grid_correction, pair_folder, save_grid=None):
 def estimate_right_grid_correction(
     matches,
     grid_right,
-    initial_cars_ds=None,
     save_matches=False,
     minimum_nb_matches=100,
     pair_folder="",
@@ -480,13 +477,6 @@ def estimate_right_grid_correction(
         )
         np.save(matches_array_path, corrected_matches)
 
-    # Create CarsDataset containing corrected matches, with same tiling as input
-    corrected_matches_cars_ds = None
-    if initial_cars_ds is not None:
-        corrected_matches_cars_ds = create_matches_cars_ds(
-            corrected_matches, initial_cars_ds
-        )
-
     # Update orchestrator out_json
     corrected_matches_infos = {
         application_constants.APPLICATION_TAG: {
@@ -498,49 +488,6 @@ def estimate_right_grid_correction(
     return (
         grid_correction,
         corrected_matches,
-        corrected_matches_cars_ds,
         in_stats,
         out_stats,
     )
-
-
-def create_matches_cars_ds(corrected_matches, initial_cars_ds):
-    """
-    Create CarsDataset representing matches, from numpy matches.
-    Matches are split into tiles, stored in pandas DataFrames
-
-    Right CarsDataset is filled with Nones
-
-    :param corrected_matches: matches
-    :type corrected_matches: numpy array
-    :param initial_cars_ds: cars dataset to use tiling from
-    :type initial_cars_ds: CarsDataset
-
-    :return new_matches_cars_ds
-    :rtype: CarsDataset
-    """
-
-    # initialize CarsDataset
-    new_matches_cars_ds = cars_dataset.CarsDataset("points")
-    new_matches_cars_ds.create_empty_copy(initial_cars_ds)
-    new_matches_cars_ds.attributes = initial_cars_ds.attributes
-
-    for row in range(new_matches_cars_ds.shape[0]):
-        for col in range(new_matches_cars_ds.shape[1]):
-            [
-                row_min,
-                row_max,
-                col_min,
-                col_max,
-            ] = new_matches_cars_ds.tiling_grid[row, col, :]
-
-            # Get corresponding matches
-            tile_matches = corrected_matches[corrected_matches[:, 1] > row_min]
-            tile_matches = tile_matches[tile_matches[:, 1] < row_max]
-            tile_matches = tile_matches[tile_matches[:, 0] > col_min]
-            tile_matches = tile_matches[tile_matches[:, 0] < col_max]
-
-            # Create pandas DataFrame
-            new_matches_cars_ds[row, col] = pandas.DataFrame(tile_matches)
-
-    return new_matches_cars_ds
