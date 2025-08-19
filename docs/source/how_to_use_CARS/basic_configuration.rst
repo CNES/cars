@@ -3,7 +3,7 @@
 Basic configuration
 ===================
 
-This section describes CARS main basic configuration structure through a `json <http://www.json.org/json-fr.html>`_ configuration file. See how to launch it in section :ref:`How to launch CARS`.
+This section describes CARS main advanced configuration structure through a `yaml <http://www.yaml.org>`_ or `json <http://www.json.org/json-fr.html>`_ configuration file.
 
 
 The structure follows this organization:

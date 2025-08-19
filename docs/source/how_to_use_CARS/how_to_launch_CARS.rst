@@ -55,6 +55,6 @@ Note that ``cars-starter`` script can be used to instantiate this configuration 
 
 Finally, an output ``used_conf.json`` file will be created on the output directory. This file contains all the parameters used during execution and can be used as an input configuration file to re-run cars.
 
-Here is a reminder of what a basic json file configuration should look like :
+Here is a reminder of what a basic file configuration should look like :
 
 .. include-cars-config:: ../example_configs/how_to_use_CARS/how_to_launch_CARS/configfile

@@ -3,7 +3,7 @@
 Advanced configuration
 ======================
 
-This section describes CARS main advanced configuration structure through a `json <http://www.json.org/json-fr.html>`_ configuration file.
+This section describes CARS main advanced configuration structure through a `yaml <http://www.yaml.org>`_ or `json <http://www.json.org/json-fr.html>`_ configuration file.
 
 The structure follows this organization:
 
@@ -266,7 +266,7 @@ The structure follows this organization:
 
                 .. warning::
 
-                    Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+                    Because it is not possible to define twice the *application_name* on your yaml/json configuration file, we have decided to configure
                     those two applications with :
 
                     * *sparse_matching.sift*
@@ -656,7 +656,7 @@ The structure follows this organization:
                     There is a particular case with the *dense_match_filling* application because it is called twice.
                     The eighth step consists of fill dense matches via two consecutive methods.
                     So you can configure the application twice , once for the *plane*, the other for *zero_padding* method.
-                    Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+                    Because it is not possible to define twice the *application_name* on your yaml/json configuration file, we have decided to configure
                     those two applications with :
 
                     * *dense_match_filling.1*
@@ -786,7 +786,7 @@ The structure follows this organization:
                     There is a particular case with the *Point Cloud outlier removal* application because it is called twice.
                     The ninth step consists of Filter the 3D points cloud via two consecutive filters.
                     So you can configure the application twice , once for the *small component filters*, the other for *statistical* filter.
-                    Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+                    Because it is not possible to define twice the *application_name* on your yaml/json configuration file, we have decided to configure
                     those two applications with :
 
                     * *point_cloud_outlier_removal.1*
@@ -954,7 +954,7 @@ The structure follows this organization:
                 .. warning::
 
                     There is a particular case with the *dsm_filling* application because it is called three times.
-                    Because it is not possible to define three times the *dsm_filling* on your json configuration file, we have decided to configure
+                    Because it is not possible to define three times the *dsm_filling* on your yaml/json configuration file, we have decided to configure
                     those three applications with :
 
                     * *dsm_filling.1*

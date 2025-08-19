@@ -38,7 +38,7 @@ Getting Started
 
 .. code-block:: console
 
-    cars data_gizeh/configfile.json
+    cars data_gizeh/configfile.yaml
 
 * Configuration example for data_gizeh:
 
