@@ -142,8 +142,6 @@ class DefaultPipeline(PipelineTemplate):
             self.scaling_coeff,
         ) = self.check_output(conf[OUTPUT], self.scaling_coeff)
 
-        print("default scaling coeff", self.scaling_coeff)
-
         resolutions = advanced["epipolar_resolutions"]
         if isinstance(resolutions, int):
             resolutions = [resolutions]
