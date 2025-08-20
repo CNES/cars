@@ -379,7 +379,6 @@ class AbstractGeometry(metaclass=ABCMeta):
                array of size [number of points, 2]. The last index indicates
                the 'x' coordinate (last index set to 0) or the 'y' coordinate
                (last index set to 1).
-        :param interpolator: interpolator to use
         :return: sensors positions as a numpy array of size
                  [number of points, 2]. The last index indicates the 'x'
                  coordinate (last index set to 0) or
@@ -393,6 +392,9 @@ class AbstractGeometry(metaclass=ABCMeta):
             raise RuntimeError(
                 f"Grid type {type(grid)} not a dict or RectificationGrid"
             )
+
+        # Ensure positions is a numpy array
+        positions = np.asarray(positions)
 
         # Get data
         with rio.open(grid["path"]) as grid_data:
@@ -410,17 +412,42 @@ class AbstractGeometry(metaclass=ABCMeta):
         cols = np.arange(ori_col, last_col, step_col)
         rows = np.arange(ori_row, last_row, step_row)
 
-        # create regular grid points positions
-        sensor_row_positions = row_dep
-        sensor_col_positions = col_dep
+        # Determine margin based on interpolator type
+        margin = 6 if self.interpolator == "cubic" else 3
+
+        # Find the bounds of positions to determine crop region
+        min_col = np.nanmin(positions[:, 0])
+        max_col = np.nanmax(positions[:, 0])
+        min_row = np.nanmin(positions[:, 1])
+        max_row = np.nanmax(positions[:, 1])
+
+        # Convert position bounds to grid indices with margin
+        min_col_idx = max(0, int((min_col - ori_col) / step_col) - margin)
+        max_col_idx = min(
+            len(cols) - 1, int((max_col - ori_col) / step_col) + margin
+        )
+        min_row_idx = max(0, int((min_row - ori_row) / step_row) - margin)
+        max_row_idx = min(
+            len(rows) - 1, int((max_row - ori_row) / step_row) + margin
+        )
+
+        # Crop the grids and coordinate arrays
+        cols_cropped = cols[min_col_idx : max_col_idx + 1]
+        rows_cropped = rows[min_row_idx : max_row_idx + 1]
+        sensor_row_positions_cropped = row_dep[
+            min_row_idx : max_row_idx + 1, min_col_idx : max_col_idx + 1
+        ]
+        sensor_col_positions_cropped = col_dep[
+            min_row_idx : max_row_idx + 1, min_col_idx : max_col_idx + 1
+        ]
 
         # interpolate sensor positions
         interpolator = interpolate.RegularGridInterpolator(
-            (cols, rows),
+            (cols_cropped, rows_cropped),
             np.stack(
                 (
-                    sensor_row_positions.transpose(),
-                    sensor_col_positions.transpose(),
+                    sensor_row_positions_cropped.transpose(),
+                    sensor_col_positions_cropped.transpose(),
                 ),
                 axis=2,
             ),

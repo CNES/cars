@@ -596,6 +596,12 @@ The structure follows this organization:
                       - int
                       - should be > 0
                       - 300
+                      -
+                    * - epi_disp_grid_tile_size
+                      - Tile size used for Disparity range grid generation.
+                      - int
+                      - should be > 0
+                      - 800
                       - No
                     * - use_cross_validation
                       - Add cross validation step

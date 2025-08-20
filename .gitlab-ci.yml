@@ -110,7 +110,7 @@ test-end2end:
     - .cars-python-job
   script:
     - source /app/cars/venv/bin/activate
-    - pytest -m "end2end_tests"
+    - pytest --log-cli-level=21 --log-cli-format="%(asctime)s - %(levelname)s - %(message)s" --color=yes -m "end2end_tests"
   artifacts:
     paths:
       - tests/data/intermediate_data
