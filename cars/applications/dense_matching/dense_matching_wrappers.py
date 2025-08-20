@@ -915,9 +915,13 @@ def confidence_filtering(
             disp_map, nan_ratio_func, size=conf_filtering["win_nanratio"]
         )
 
-    mask = (bounds_ratio > conf_filtering["bounds_ratio_threshold"]) | (
-        risk_ratio > conf_filtering["risk_ratio_threshold"]
+    bounds_mask = (bounds_ratio > conf_filtering["bounds_ratio_threshold"]) & (
+        bounds_range > conf_filtering["bounds_range_threshold"]
     )
+    risk_mask = (risk_ratio > conf_filtering["risk_ratio_threshold"]) & (
+        risk_range > conf_filtering["risk_range_threshold"]
+    )
+    mask = bounds_mask | risk_mask
     dataset["disp"].values[mask] = np.nan
     dataset["disp_msk"].values[mask] = 0
 

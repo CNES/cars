@@ -429,17 +429,17 @@ class CensusMccnnSgm(
         ].get("activated", True)
         overloaded_conf["confidence_filtering"]["bounds_ratio_threshold"] = (
             overloaded_conf["confidence_filtering"].get(
-                "bounds_ratio_threshold", 0.3
+                "bounds_ratio_threshold", 0.2
             )
         )
         overloaded_conf["confidence_filtering"]["risk_ratio_threshold"] = (
             overloaded_conf["confidence_filtering"].get(
-                "risk_ratio_threshold", 0.6
+                "risk_ratio_threshold", 0.8
             )
         )
         overloaded_conf["confidence_filtering"]["bounds_range_threshold"] = (
             overloaded_conf["confidence_filtering"].get(
-                "bounds_range_threshold", 6
+                "bounds_range_threshold", 4
             )
         )
         overloaded_conf["confidence_filtering"]["risk_range_threshold"] = (
