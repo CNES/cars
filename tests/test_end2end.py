@@ -2604,7 +2604,7 @@ def test_end2end_use_epipolar_a_priori():
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
-                < 24
+                < 25
             )
 
             # Ref output dir dependent from geometry plugin chosen
@@ -4431,7 +4431,7 @@ def test_end2end_quality_stats():
             assert out_disp_compute["global_disp_min"] > -45
             assert out_disp_compute["global_disp_min"] < -15
             assert out_disp_compute["global_disp_max"] > 0
-            assert out_disp_compute["global_disp_max"] < 24
+            assert out_disp_compute["global_disp_max"] < 25
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4715,9 +4715,9 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             assert out_disp_compute["global_disp_min"] > -54
-            assert out_disp_compute["global_disp_min"] < 5
-            assert out_disp_compute["global_disp_max"] > 0
-            assert out_disp_compute["global_disp_max"] < 68
+            assert out_disp_compute["global_disp_min"] < 7
+            assert out_disp_compute["global_disp_max"] > -2
+            assert out_disp_compute["global_disp_max"] < 70
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4943,7 +4943,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             assert out_disp_compute["global_disp_min"] > -54
-            assert out_disp_compute["global_disp_min"] < 19
+            assert out_disp_compute["global_disp_min"] < 21
             assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 82
 

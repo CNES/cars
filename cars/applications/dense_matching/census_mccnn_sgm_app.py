@@ -26,25 +26,21 @@ import collections
 
 # Standard imports
 import copy
-import itertools
 import logging
 import math
 import os
 from typing import Dict, Tuple
 
 # Third party imports
-import affine
 import numpy as np
-import pandas
 import pandora
-import rasterio
 import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
 from pandora.check_configuration import check_pipeline_section
 from pandora.img_tools import add_global_disparity
 from pandora.state_machine import PandoraMachine
-from scipy.ndimage import generic_filter
+from scipy.ndimage import maximum_filter, minimum_filter
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
 import cars.orchestrator.orchestrator as ocht
@@ -56,8 +52,9 @@ from cars.applications.dense_matching import (
 from cars.applications.dense_matching.abstract_dense_matching_app import (
     DenseMatching,
 )
-from cars.applications.dense_matching.dense_matching_algo import (
-    LinearInterpNearestExtrap,
+from cars.applications.dense_matching.disparity_grid_algo import (
+    generate_disp_range_const_tile_wrapper,
+    generate_disp_range_from_dem_wrapper,
 )
 from cars.applications.dense_matching.loaders.pandora_loader import (
     PandoraLoader,
@@ -66,8 +63,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 # CARS imports
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
-from cars.core import inputs, projection
-from cars.core.projection import point_cloud_conversion
+from cars.core import inputs, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -125,6 +121,9 @@ class CensusMccnnSgm(
         self.local_disp_grid_step = self.used_config["local_disp_grid_step"]
         self.disp_range_propagation_filter_size = self.used_config[
             "disp_range_propagation_filter_size"
+        ]
+        self.epi_disp_grid_tile_size = self.used_config[
+            "epi_disp_grid_tile_size"
         ]
         self.use_cross_validation = self.used_config["use_cross_validation"]
         self.denoise_disparity_map = self.used_config["denoise_disparity_map"]
@@ -232,10 +231,13 @@ class CensusMccnnSgm(
             "use_global_disp_range", False
         )
         overloaded_conf["local_disp_grid_step"] = conf.get(
-            "local_disp_grid_step", 30
+            "local_disp_grid_step", 10
         )
         overloaded_conf["disp_range_propagation_filter_size"] = conf.get(
             "disp_range_propagation_filter_size", 300
+        )
+        overloaded_conf["epi_disp_grid_tile_size"] = conf.get(
+            "epi_disp_grid_tile_size", 800
         )
         overloaded_conf["required_bands"] = conf.get("required_bands", ["b0"])
         overloaded_conf["used_band"] = conf.get("used_band", "b0")
@@ -360,6 +362,7 @@ class CensusMccnnSgm(
             "disp_range_propagation_filter_size": And(
                 Or(int, float), lambda x: x >= 0
             ),
+            "epi_disp_grid_tile_size": int,
             "required_bands": [str],
             "used_band": str,
             "loader_conf": Or(dict, collections.OrderedDict, str, None),
@@ -464,12 +467,16 @@ class CensusMccnnSgm(
 
         """
 
-        disp_min_grid_arr = disp_range_grid[0, 0]["disp_min_grid"].values
-        disp_max_grid_arr = disp_range_grid[0, 0]["disp_max_grid"].values
-        step_row = disp_range_grid.attributes["step_row"]
-        step_col = disp_range_grid.attributes["step_col"]
-        row_range = disp_range_grid.attributes["row_range"]
-        col_range = disp_range_grid.attributes["col_range"]
+        disp_min_grid_arr, _ = inputs.rasterio_read_as_array(
+            disp_range_grid["grid_min_path"]
+        )
+        disp_max_grid_arr, _ = inputs.rasterio_read_as_array(
+            disp_range_grid["grid_max_path"]
+        )
+        step_row = disp_range_grid["step_row"]
+        step_col = disp_range_grid["step_col"]
+        row_range = disp_range_grid["row_range"]
+        col_range = disp_range_grid["col_range"]
 
         # get disp_to_alt_ratio
         disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
@@ -585,19 +592,24 @@ class CensusMccnnSgm(
 
         """
 
-        disp_min_grids = disp_range_grid[0, 0][dm_cst.DISP_MIN_GRID].values
-        disp_max_grids = disp_range_grid[0, 0][dm_cst.DISP_MAX_GRID].values
+        disp_min_grids, _ = inputs.rasterio_read_as_array(
+            disp_range_grid["grid_min_path"]
+        )
+        disp_max_grids, _ = inputs.rasterio_read_as_array(
+            disp_range_grid["grid_max_path"]
+        )
 
         # use max tile size as overlap for min and max:
         # max Point to point diff is less than diff of tile
 
         # use filter of size max_epi_tile_size
         overlap = 3 * int(self.max_epi_tile_size / self.local_disp_grid_step)
-        disp_min_grids = generic_filter(
-            disp_min_grids, np.nanmin, [overlap, overlap], mode="nearest"
+
+        disp_min_grids = minimum_filter(
+            disp_min_grids, size=[overlap, overlap], mode="nearest"
         )
-        disp_max_grids = generic_filter(
-            disp_max_grids, np.nanmax, [overlap, overlap], mode="nearest"
+        disp_max_grids = maximum_filter(
+            disp_max_grids, size=[overlap, overlap], mode="nearest"
         )
 
         # Worst cases scenario:
@@ -692,7 +704,7 @@ class CensusMccnnSgm(
         dem_min=None,
         dem_max=None,
         pair_folder=None,
-        loc_inverse_orchestrator=None,
+        orchestrator=None,
     ):
         """
         Generate disparity grids min and max, with given step
@@ -724,18 +736,24 @@ class CensusMccnnSgm(
         :type dem_max: str
         :param pair_folder: folder used for current pair
         :type pair_folder: str
-        :param loc_inverse_orchestrator: orchestrator to perform inverse locs
-        :type loc_inverse_orchestrator: Orchestrator
+        :param orchestrator: orchestrator
+        :type orchestrator: Orchestrator
 
 
         :return disparity grid range, containing grid min and max
         :rtype: CarsDataset
         """
 
-        # Create sequential orchestrator for savings
-        grid_orchestrator = ocht.Orchestrator(
-            orchestrator_conf={"mode": "sequential"}
-        )
+        # Default orchestrator
+        if orchestrator is None:
+            # Create default sequential orchestrator for current application
+            # be aware, no out_json will be shared between orchestrators
+            # No files saved
+            self.orchestrator = ocht.Orchestrator(
+                orchestrator_conf={"mode": "sequential"}
+            )
+        else:
+            self.orchestrator = orchestrator
 
         epi_size_row = grid_right["epipolar_size_y"]
         epi_size_col = grid_right["epipolar_size_x"]
@@ -751,454 +769,12 @@ class CensusMccnnSgm(
             0, epi_size_col, nb_cols, retstep=True
         )
 
-        grid_min = np.empty((len(row_range), len(col_range)))
-        grid_max = np.empty((len(row_range), len(col_range)))
-
         # Create CarsDataset
         grid_disp_range = cars_dataset.CarsDataset(
             "arrays", name="grid_disp_range_unknown_pair"
         )
-        # Only one tile
-        grid_disp_range.tiling_grid = np.array(
-            [[[0, epi_size_row, 0, epi_size_col]]]
-        )
+        global_infos_cars_ds = cars_dataset.CarsDataset("dict")
 
-        grid_attributes = {
-            "step_row": step_row,
-            "step_col": step_col,
-            "row_range": row_range,
-            "col_range": col_range,
-        }
-        grid_disp_range.attributes = grid_attributes.copy()
-
-        # saving infos
-        # disp grids
-        if self.save_intermediate_data:
-            safe_makedirs(pair_folder)
-            grid_min_path = os.path.join(pair_folder, "disp_min_grid.tif")
-            grid_orchestrator.add_to_save_lists(
-                grid_min_path,
-                dm_cst.DISP_MIN_GRID,
-                grid_disp_range,
-                dtype=np.float32,
-                cars_ds_name="disp_min_grid",
-            )
-            grid_max_path = os.path.join(pair_folder, "disp_max_grid.tif")
-            grid_orchestrator.add_to_save_lists(
-                grid_max_path,
-                dm_cst.DISP_MAX_GRID,
-                grid_disp_range,
-                dtype=np.float32,
-                cars_ds_name="disp_max_grid",
-            )
-
-        if None not in (dmin, dmax):
-            # use global disparity range
-            if None not in (dem_min, dem_max) or None not in (
-                altitude_delta_min,
-                altitude_delta_max,
-            ):
-                raise RuntimeError("Mix between local and global mode")
-
-            grid_min[:, :] = dmin
-            grid_max[:, :] = dmax
-
-        elif None not in (dem_min, dem_max, dem_median) or None not in (
-            altitude_delta_min,
-            altitude_delta_max,
-        ):
-            # use local disparity
-
-            # Get associated alti mean / min / max values
-            dem_median_shape = inputs.rasterio_get_size(dem_median)
-            dem_median_width, dem_median_height = dem_median_shape
-
-            min_row = 0
-            min_col = 0
-            max_row = dem_median_height
-            max_col = dem_median_width
-
-            # get epsg
-            terrain_epsg = inputs.rasterio_get_epsg(dem_median)
-
-            # Get epipolar position of all dem mean
-            transform = inputs.rasterio_get_transform(dem_median)
-
-            if None not in (dem_min, dem_max, dem_median):
-                dem_min_shape = inputs.rasterio_get_size(dem_min)
-                dem_epsg = inputs.rasterio_get_epsg(dem_min)
-
-                if dem_median_shape != dem_min_shape:
-                    # dem min max are the same shape
-                    # dem median is not , hence we crop it
-
-                    # get terrain bounds dem min
-                    dem_min_bounds = inputs.rasterio_get_bounds(dem_min)
-
-                    # find roi in dem_mean
-                    roi_points = np.array(
-                        [
-                            [dem_min_bounds[0], dem_min_bounds[1]],
-                            [dem_min_bounds[0], dem_min_bounds[3]],
-                            [dem_min_bounds[2], dem_min_bounds[1]],
-                            [dem_min_bounds[2], dem_min_bounds[3]],
-                        ]
-                    )
-
-                    # Transform points to terrain_epsg (dem min is in 4326)
-                    roi_points_terrain = point_cloud_conversion(
-                        roi_points,
-                        dem_epsg,
-                        terrain_epsg,
-                    )
-
-                    # Get pixel roi in dem mean
-                    pixel_roi_dem_mean = inputs.rasterio_get_pixel_points(
-                        dem_median, roi_points_terrain
-                    )
-                    roi_lower_row = np.floor(np.min(pixel_roi_dem_mean[:, 0]))
-                    roi_upper_row = np.ceil(np.max(pixel_roi_dem_mean[:, 0]))
-                    roi_lower_col = np.floor(np.min(pixel_roi_dem_mean[:, 1]))
-                    roi_upper_col = np.ceil(np.max(pixel_roi_dem_mean[:, 1]))
-
-                    min_row = int(max(0, roi_lower_row))
-                    max_row = int(
-                        min(
-                            dem_median_height,  # number of rows
-                            roi_upper_row,
-                        )
-                    )
-                    min_col = int(max(0, roi_lower_col))
-                    max_col = int(
-                        min(
-                            dem_median_width,  # number of columns
-                            roi_upper_col,
-                        )
-                    )
-
-            elif (
-                None not in (altitude_delta_min, altitude_delta_max)
-                and geom_plugin_with_dem_and_geoid.plugin_name
-                == "SharelocGeometry"
-            ):
-                roi_points_terrain = np.array(
-                    [
-                        [
-                            geom_plugin_with_dem_and_geoid.roi_shareloc[1],
-                            geom_plugin_with_dem_and_geoid.roi_shareloc[0],
-                        ],
-                        [
-                            geom_plugin_with_dem_and_geoid.roi_shareloc[1],
-                            geom_plugin_with_dem_and_geoid.roi_shareloc[2],
-                        ],
-                        [
-                            geom_plugin_with_dem_and_geoid.roi_shareloc[3],
-                            geom_plugin_with_dem_and_geoid.roi_shareloc[0],
-                        ],
-                        [
-                            geom_plugin_with_dem_and_geoid.roi_shareloc[3],
-                            geom_plugin_with_dem_and_geoid.roi_shareloc[2],
-                        ],
-                    ]
-                )
-
-                pixel_roi_dem_mean = inputs.rasterio_get_pixel_points(
-                    dem_median, roi_points_terrain
-                )
-
-                roi_lower_row = np.floor(np.min(pixel_roi_dem_mean[:, 0]))
-                roi_upper_row = np.ceil(np.max(pixel_roi_dem_mean[:, 0]))
-                roi_lower_col = np.floor(np.min(pixel_roi_dem_mean[:, 1]))
-                roi_upper_col = np.ceil(np.max(pixel_roi_dem_mean[:, 1]))
-
-                min_row = int(max(0, roi_lower_row))
-                max_row = int(min(dem_median_height, roi_upper_row))
-                min_col = int(max(0, roi_lower_col))
-                max_col = int(min(dem_median_width, roi_upper_col))
-
-            # compute terrain positions to use (all dem min and max)
-            row_indexes = range(min_row, max_row)
-            col_indexes = range(min_col, max_col)
-            transformer = rasterio.transform.AffineTransformer(transform)
-
-            indexes = np.array(
-                list(itertools.product(row_indexes, col_indexes))
-            )
-
-            row = indexes[:, 0]
-            col = indexes[:, 1]
-            terrain_positions = []
-            x_mean, y_mean = transformer.xy(row, col)
-            terrain_positions = np.transpose(np.array([x_mean, y_mean]))
-
-            # dem mean in terrain_epsg
-            x_mean = terrain_positions[:, 0]
-            y_mean = terrain_positions[:, 1]
-
-            dem_median_list = inputs.rasterio_get_values(
-                dem_median, x_mean, y_mean, point_cloud_conversion
-            )
-
-            nan_mask = ~np.isnan(dem_median_list)
-
-            # transform to lon lat
-            terrain_position_lon_lat = projection.point_cloud_conversion(
-                terrain_positions, terrain_epsg, 4326
-            )
-            lon_mean = terrain_position_lon_lat[:, 0]
-            lat_mean = terrain_position_lon_lat[:, 1]
-
-            if None not in (dem_min, dem_max, dem_median):
-                # dem min and max are in 4326
-                dem_min_list = inputs.rasterio_get_values(
-                    dem_min, lon_mean, lat_mean, point_cloud_conversion
-                )
-                dem_max_list = inputs.rasterio_get_values(
-                    dem_max, lon_mean, lat_mean, point_cloud_conversion
-                )
-                nan_mask = (
-                    nan_mask & ~np.isnan(dem_min_list) & ~np.isnan(dem_max_list)
-                )
-            else:
-                dem_min_list = dem_median_list - altitude_delta_min
-                dem_max_list = dem_median_list + altitude_delta_max
-
-            # filter nan value from input points
-            lon_mean = lon_mean[nan_mask]
-            lat_mean = lat_mean[nan_mask]
-            dem_median_list = dem_median_list[nan_mask]
-            dem_min_list = dem_min_list[nan_mask]
-            dem_max_list = dem_max_list[nan_mask]
-
-            # if shareloc is used, perform inverse locs sequentially
-            if geom_plugin_with_dem_and_geoid.plugin_name == "SharelocGeometry":
-
-                # sensors physical positions
-                (
-                    ind_cols_sensor,
-                    ind_rows_sensor,
-                    _,
-                ) = geom_plugin_with_dem_and_geoid.inverse_loc(
-                    sensor_image_right["image"]["main_file"],
-                    sensor_image_right["geomodel"],
-                    lat_mean,
-                    lon_mean,
-                    z_coord=dem_median_list,
-                )
-
-            # else (if libgeo is used) perform inverse locs in parallel
-            else:
-
-                num_points = len(dem_median_list)
-
-                if loc_inverse_orchestrator is None:
-                    loc_inverse_orchestrator = grid_orchestrator
-
-                num_workers = loc_inverse_orchestrator.get_conf().get(
-                    "nb_workers", 1
-                )
-
-                loc_inverse_dataset = cars_dataset.CarsDataset(
-                    "points", name="loc_inverse"
-                )
-                step = int(np.ceil(num_points / num_workers))
-                # Create a grid with num_workers elements
-                loc_inverse_dataset.create_grid(1, num_workers, 1, 1, 0, 0)
-
-                # Get saving info in order to save tiles when they are computed
-                [saving_info] = loc_inverse_orchestrator.get_saving_infos(
-                    [loc_inverse_dataset]
-                )
-
-                for task_id in range(0, num_workers):
-                    first_elem = task_id * step
-                    last_elem = min((task_id + 1) * step, num_points)
-                    full_saving_info = ocht.update_saving_infos(
-                        saving_info, row=task_id, col=0
-                    )
-                    loc_inverse_dataset[
-                        task_id, 0
-                    ] = loc_inverse_orchestrator.cluster.create_task(
-                        loc_inverse_wrapper
-                    )(
-                        geom_plugin_with_dem_and_geoid,
-                        sensor_image_right["image"]["main_file"],
-                        sensor_image_right["geomodel"],
-                        lat_mean[first_elem:last_elem],
-                        lon_mean[first_elem:last_elem],
-                        dem_median_list[first_elem:last_elem],
-                        full_saving_info,
-                    )
-
-                loc_inverse_orchestrator.add_to_replace_lists(
-                    loc_inverse_dataset
-                )
-
-                loc_inverse_orchestrator.compute_futures(
-                    only_remaining_delayed=[
-                        tile[0] for tile in loc_inverse_dataset.tiles
-                    ]
-                )
-
-                ind_cols_sensor = []
-                ind_rows_sensor = []
-
-                for tile in loc_inverse_dataset.tiles:
-                    ind_cols_sensor += list(tile[0]["col"])
-                    ind_rows_sensor += list(tile[0]["row"])
-
-            # Generate epipolar disp grids
-            # Get epipolar positions
-            (epipolar_positions_row, epipolar_positions_col) = np.meshgrid(
-                col_range, row_range
-            )
-            epipolar_positions = np.stack(
-                [epipolar_positions_row, epipolar_positions_col], axis=2
-            )
-
-            # Get sensor position
-            sensors_positions = (
-                geom_plugin_with_dem_and_geoid.sensor_position_from_grid(
-                    grid_right,
-                    np.reshape(
-                        epipolar_positions,
-                        (
-                            epipolar_positions.shape[0]
-                            * epipolar_positions.shape[1],
-                            2,
-                        ),
-                    ),
-                )
-            )
-
-            # compute reverse matrix
-            transform_sensor = rasterio.Affine(
-                *np.abs(
-                    inputs.rasterio_get_transform(
-                        sensor_image_right["image"]["main_file"]
-                    )
-                )
-            )
-
-            trans_inv = ~transform_sensor
-            # Transform to positive values
-            trans_inv = np.array(trans_inv)
-            trans_inv = np.reshape(trans_inv, (3, 3))
-            if trans_inv[0, 0] < 0:
-                trans_inv[0, :] *= -1
-            if trans_inv[1, 1] < 0:
-                trans_inv[1, :] *= -1
-            trans_inv = affine.Affine(*list(trans_inv.flatten()))
-
-            # Transform physical position to index
-            index_positions = np.empty(sensors_positions.shape)
-            for row_point in range(index_positions.shape[0]):
-                row_geo, col_geo = sensors_positions[row_point, :]
-                col, row = trans_inv * (row_geo, col_geo)
-                index_positions[row_point, :] = (row, col)
-
-            ind_rows_sensor_grid = index_positions[:, 0] - 0.5
-            ind_cols_sensor_grid = index_positions[:, 1] - 0.5
-
-            # Interpolate disparity
-            disp_min_points = (
-                -(dem_max_list - dem_median_list) / disp_to_alt_ratio
-            )
-            disp_max_points = (
-                -(dem_min_list - dem_median_list) / disp_to_alt_ratio
-            )
-
-            interp_min_linear = LinearInterpNearestExtrap(
-                list(zip(ind_rows_sensor, ind_cols_sensor)),  # noqa: B905
-                disp_min_points,
-            )
-            interp_max_linear = LinearInterpNearestExtrap(
-                list(zip(ind_rows_sensor, ind_cols_sensor)),  # noqa: B905
-                disp_max_points,
-            )
-
-            grid_min = np.reshape(
-                interp_min_linear(ind_rows_sensor_grid, ind_cols_sensor_grid),
-                (
-                    epipolar_positions.shape[0],
-                    epipolar_positions.shape[1],
-                ),
-            )
-
-            grid_max = np.reshape(
-                interp_max_linear(ind_rows_sensor_grid, ind_cols_sensor_grid),
-                (
-                    epipolar_positions.shape[0],
-                    epipolar_positions.shape[1],
-                ),
-            )
-
-        else:
-            raise RuntimeError(
-                "Not a global or local mode for disparity range estimation"
-            )
-
-        # Add margin
-        diff = grid_max - grid_min
-        logging.info("Max grid max - grid min : {} disp ".format(np.max(diff)))
-
-        if self.disp_min_threshold is not None:
-            if np.any(grid_min < self.disp_min_threshold):
-                logging.warning(
-                    "Override disp_min  with disp_min_threshold {}".format(
-                        self.disp_min_threshold
-                    )
-                )
-                grid_min[grid_min < self.disp_min_threshold] = (
-                    self.disp_min_threshold
-                )
-        if self.disp_max_threshold is not None:
-            if np.any(grid_max > self.disp_max_threshold):
-                logging.warning(
-                    "Override disp_max with disp_max_threshold {}".format(
-                        self.disp_max_threshold
-                    )
-                )
-                grid_max[grid_max > self.disp_max_threshold] = (
-                    self.disp_max_threshold
-                )
-
-        # use filter to propagate min and max
-        overlap = (
-            2
-            * int(
-                self.disp_range_propagation_filter_size
-                / self.local_disp_grid_step
-            )
-            + 1
-        )
-
-        grid_min = generic_filter(
-            grid_min, np.min, [overlap, overlap], mode="nearest"
-        )
-        grid_max = generic_filter(
-            grid_max, np.max, [overlap, overlap], mode="nearest"
-        )
-
-        # Generate dataset
-        # min and max are reversed
-        disp_range_tile = xr.Dataset(
-            data_vars={
-                dm_cst.DISP_MIN_GRID: (["row", "col"], grid_min),
-                dm_cst.DISP_MAX_GRID: (["row", "col"], grid_max),
-            },
-            coords={
-                "row": np.arange(0, grid_min.shape[0]),
-                "col": np.arange(0, grid_min.shape[1]),
-            },
-        )
-
-        # Save
-        [saving_info] = (  # pylint: disable=unbalanced-tuple-unpacking
-            grid_orchestrator.get_saving_infos([grid_disp_range])
-        )
-        saving_info = ocht.update_saving_infos(saving_info, row=0, col=0)
-        # Generate profile
         # Generate profile
         geotransform = (
             epi_size_row,
@@ -1220,26 +796,195 @@ class CensusMccnnSgm(
                 "tiled": True,
             }
         )
-        cars_dataset.fill_dataset(
-            disp_range_tile,
-            saving_info=saving_info,
-            window=None,
-            profile=raster_profile,
-            attributes=None,
-            overlaps=None,
-        )
-        grid_disp_range[0, 0] = disp_range_tile
+
+        # saving infos
+        # disp grids
 
         if self.save_intermediate_data:
-            grid_orchestrator.breakpoint()
+            grid_min_path = os.path.join(pair_folder, "disp_min_grid.tif")
+            grid_max_path = os.path.join(pair_folder, "disp_max_grid.tif")
+            safe_makedirs(pair_folder)
+        else:
+            if pair_folder is None:
+                tmp_folder = os.path.join(self.orchestrator.out_dir, "tmp")
+            else:
+                tmp_folder = os.path.join(pair_folder, "tmp")
+            safe_makedirs(tmp_folder)
+            self.orchestrator.add_to_clean(tmp_folder)
+            grid_min_path = os.path.join(tmp_folder, "disp_min_grid.tif")
+            grid_max_path = os.path.join(tmp_folder, "disp_max_grid.tif")
 
-        if np.any(diff < 0):
-            logging.error("grid min > grid max in {}".format(pair_folder))
-            raise RuntimeError("grid min > grid max in {}".format(pair_folder))
+        if None not in (dmin, dmax):
+            # use global disparity range
+            if None not in (dem_min, dem_max) or None not in (
+                altitude_delta_min,
+                altitude_delta_max,
+            ):
+                raise RuntimeError("Mix between local and global mode")
 
-        # cleanup
-        grid_orchestrator.cleanup()
-        return grid_disp_range
+            # Only one tile
+            grid_disp_range.tiling_grid = np.array([[[0, nb_rows, 0, nb_cols]]])
+
+        elif None not in (dem_min, dem_max, dem_median) or None not in (
+            altitude_delta_min,
+            altitude_delta_max,
+        ):
+
+            # Generate multiple tiles
+            grid_tile_size = self.epi_disp_grid_tile_size
+            grid_disp_range.tiling_grid = tiling.generate_tiling_grid(
+                0,
+                0,
+                nb_rows,
+                nb_cols,
+                grid_tile_size,
+                grid_tile_size,
+            )
+
+        # add tiling of  global_infos_cars_ds
+        global_infos_cars_ds.tiling_grid = grid_disp_range.tiling_grid
+        self.orchestrator.add_to_replace_lists(
+            global_infos_cars_ds,
+            cars_ds_name="global infos",
+        )
+
+        self.orchestrator.add_to_save_lists(
+            grid_min_path,
+            dm_cst.DISP_MIN_GRID,
+            grid_disp_range,
+            dtype=np.float32,
+            nodata=0,
+            cars_ds_name="disp_min_grid",
+        )
+
+        self.orchestrator.add_to_save_lists(
+            grid_max_path,
+            dm_cst.DISP_MAX_GRID,
+            grid_disp_range,
+            dtype=np.float32,
+            nodata=0,
+            cars_ds_name="disp_max_grid",
+        )
+        [saving_info] = (  # pylint: disable=unbalanced-tuple-unpacking
+            self.orchestrator.get_saving_infos([grid_disp_range])
+        )
+        [saving_info_global_infos] = self.orchestrator.get_saving_infos(
+            [global_infos_cars_ds]
+        )
+
+        # Generate grids on dict format
+        grid_disp_range_dict = {
+            "grid_min_path": grid_min_path,
+            "grid_max_path": grid_max_path,
+            "global_min": None,
+            "global_max": None,
+            "step_row": step_row,
+            "step_col": step_col,
+            "row_range": row_range,
+            "col_range": col_range,
+        }
+
+        if None not in (dmin, dmax):
+            # use global disparity range
+            if None not in (dem_min, dem_max) or None not in (
+                altitude_delta_min,
+                altitude_delta_max,
+            ):
+                raise RuntimeError("Mix between local and global mode")
+
+            saving_info_global_infos_full = ocht.update_saving_infos(
+                saving_info_global_infos, row=0, col=0
+            )
+            saving_info_full = ocht.update_saving_infos(
+                saving_info, row=0, col=0
+            )
+
+            (
+                grid_disp_range[0, 0],
+                global_infos_cars_ds[0, 0],
+            ) = self.orchestrator.cluster.create_task(
+                generate_disp_range_const_tile_wrapper, nout=2
+            )(
+                row_range,
+                col_range,
+                dmin,
+                dmax,
+                raster_profile,
+                saving_info_full,
+                saving_info_global_infos_full,
+            )
+
+        elif None not in (dem_min, dem_max, dem_median) or None not in (
+            altitude_delta_min,
+            altitude_delta_max,
+        ):
+
+            # use filter to propagate min and max
+            filter_overlap = (
+                2
+                * int(
+                    self.disp_range_propagation_filter_size
+                    / self.local_disp_grid_step
+                )
+                + 1
+            )
+
+            for col in range(grid_disp_range.shape[1]):
+                for row in range(grid_disp_range.shape[0]):
+                    # update saving infos  for potential replacement
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=row, col=col
+                    )
+                    saving_info_global_infos_full = ocht.update_saving_infos(
+                        saving_info_global_infos, row=row, col=col
+                    )
+                    array_window = grid_disp_range.get_window_as_dict(row, col)
+                    (
+                        grid_disp_range[row, col],
+                        global_infos_cars_ds[row, col],
+                    ) = self.orchestrator.cluster.create_task(
+                        generate_disp_range_from_dem_wrapper, nout=2
+                    )(
+                        array_window,
+                        row_range,
+                        col_range,
+                        sensor_image_right,
+                        grid_right,
+                        geom_plugin_with_dem_and_geoid,
+                        dem_median,
+                        dem_min,
+                        dem_max,
+                        altitude_delta_min,
+                        altitude_delta_max,
+                        raster_profile,
+                        full_saving_info,
+                        saving_info_global_infos_full,
+                        filter_overlap,
+                        disp_to_alt_ratio,
+                        disp_min_threshold=self.disp_min_threshold,
+                        disp_max_threshold=self.disp_max_threshold,
+                    )
+
+        # Compute grid
+        self.orchestrator.breakpoint()
+
+        # Fill global infos
+        mins, maxs = [], []
+        for row in range(global_infos_cars_ds.shape[0]):
+            for col in range(global_infos_cars_ds.shape[1]):
+                try:
+                    dict_data = global_infos_cars_ds[row, col].data
+                    mins.append(dict_data["global_min"])
+                    maxs.append(dict_data["global_max"])
+                except Exception:
+                    logging.info(
+                        "Tile {} {} not computed in epi disp range"
+                        " generation".format(row, col)
+                    )
+        grid_disp_range_dict["global_min"] = np.floor(np.nanmin(mins))
+        grid_disp_range_dict["global_max"] = np.ceil(np.nanmax(maxs))
+
+        return grid_disp_range_dict
 
     def run(
         self,
@@ -1435,16 +1180,8 @@ class CensusMccnnSgm(
                 application_constants.APPLICATION_TAG: {
                     dm_cst.DENSE_MATCHING_RUN_TAG: {
                         pair_key: {
-                            "global_disp_min": np.nanmin(
-                                disp_range_grid[0, 0][
-                                    dm_cst.DISP_MIN_GRID
-                                ].values
-                            ),
-                            "global_disp_max": np.nanmax(
-                                disp_range_grid[0, 0][
-                                    dm_cst.DISP_MAX_GRID
-                                ].values
-                            ),
+                            "global_disp_min": disp_range_grid["global_min"],
+                            "global_disp_max": disp_range_grid["global_max"],
                         },
                     },
                 }
@@ -1606,12 +1343,8 @@ def compute_disparity_wrapper(
         disp_max_grid,
     ) = dm_algo.compute_disparity_grid(disp_range_grid, left_image_object)
 
-    global_disp_min = np.floor(
-        np.nanmin(disp_range_grid[0, 0]["disp_min_grid"].data)
-    )
-    global_disp_max = np.ceil(
-        np.nanmax(disp_range_grid[0, 0]["disp_max_grid"].data)
-    )
+    global_disp_min = disp_range_grid["global_min"]
+    global_disp_max = disp_range_grid["global_max"]
 
     # add global disparity in case of ambiguity normalization
     left_image_object = add_global_disparity(
@@ -1690,47 +1423,3 @@ def compute_disparity_wrapper(
     )
 
     return disp_dataset
-
-
-def loc_inverse_wrapper(
-    geom_plugin,
-    image,
-    geomodel,
-    latitudes,
-    longitudes,
-    altitudes,
-    saving_info=None,
-) -> pandas.DataFrame:
-    """
-    Perform inverse localizations on input coordinates
-    This function will be run as a delayed task.
-
-    :param geom_plugin: geometry plugin used to perform localizations
-    :type geom_plugin: SharelocGeometry
-    :param image: input image path
-    :type image: str
-    :param geomodel: input geometric model
-    :type geomodel: str
-    :param latitudes: input latitude coordinates
-    :type latitudes: np.array
-    :param longitudes: input longitudes coordinates
-    :type longitudes: np.array
-    :param altitudes: input latitude coordinates
-    :type altitudes: np.array
-    :param saving_info: saving info for cars orchestrator
-    :type saving_info: dict
-
-    """
-    col, row, _ = geom_plugin.inverse_loc(
-        image,
-        geomodel,
-        latitudes,
-        longitudes,
-        z_coord=altitudes,
-    )
-    output = pandas.DataFrame({"col": col, "row": row}, copy=False)
-    cars_dataset.fill_dataframe(
-        output, saving_info=saving_info, attributes=None
-    )
-
-    return output

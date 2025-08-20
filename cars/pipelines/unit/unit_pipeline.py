@@ -1368,7 +1368,10 @@ class UnitPipeline(PipelineTemplate):
             pair_name for pair_name, _, _ in self.list_sensor_pairs
         ]
 
-        for cloud_id, (pair_key, _, _) in enumerate(self.list_sensor_pairs):
+        for _, (pair_key, _, _) in enumerate(self.list_sensor_pairs):
+            # Geometry plugin with dem will be used for the grid generation
+            geom_plugin = self.geom_plugin_with_dem_and_geoid
+
             if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is False:
                 save_matches = True
 
@@ -1553,8 +1556,8 @@ class UnitPipeline(PipelineTemplate):
             ):
                 dmin = disp_min / self.res_resamp
                 dmax = disp_max / self.res_resamp
-
-                disp_range_grid = (
+                # generate_disparity_grids runs orchestrator.breakpoint()
+                self.pairs[pair_key]["disp_range_grid"] = (
                     self.dense_matching_app.generate_disparity_grids(
                         self.pairs[pair_key]["sensor_image_right"],
                         self.pairs[pair_key]["corrected_grid_right"],
@@ -1562,7 +1565,7 @@ class UnitPipeline(PipelineTemplate):
                         dmin=dmin,
                         dmax=dmax,
                         pair_folder=dense_matching_pair_folder,
-                        loc_inverse_orchestrator=self.cars_orchestrator,
+                        orchestrator=self.cars_orchestrator,
                     )
                 )
 
@@ -1589,8 +1592,8 @@ class UnitPipeline(PipelineTemplate):
             else:
                 if None in (altitude_delta_min, altitude_delta_max):
                     # Generate min and max disp grids from dems
-
-                    disp_range_grid = (
+                    # generate_disparity_grids runs orchestrator.breakpoint()
+                    self.pairs[pair_key]["disp_range_grid"] = (
                         self.dense_matching_app.generate_disparity_grids(
                             self.pairs[pair_key]["sensor_image_right"],
                             self.pairs[pair_key]["corrected_grid_right"],
@@ -1599,12 +1602,13 @@ class UnitPipeline(PipelineTemplate):
                             dem_max=dem_max,
                             dem_median=dem_median,
                             pair_folder=dense_matching_pair_folder,
-                            loc_inverse_orchestrator=self.cars_orchestrator,
+                            orchestrator=self.cars_orchestrator,
                         )
                     )
                 else:
                     # Generate min and max disp grids from deltas
-                    disp_range_grid = (
+                    # generate_disparity_grids runs orchestrator.breakpoint()
+                    self.pairs[pair_key]["disp_range_grid"] = (
                         self.dense_matching_app.generate_disparity_grids(
                             self.pairs[pair_key]["sensor_image_right"],
                             self.pairs[pair_key]["corrected_grid_right"],
@@ -1613,7 +1617,7 @@ class UnitPipeline(PipelineTemplate):
                             altitude_delta_max=altitude_delta_max,
                             dem_median=dem_median,
                             pair_folder=dense_matching_pair_folder,
-                            loc_inverse_orchestrator=self.cars_orchestrator,
+                            orchestrator=self.cars_orchestrator,
                         )
                     )
 
@@ -1623,12 +1627,12 @@ class UnitPipeline(PipelineTemplate):
                     # TODO remove when only local diparity range will be used
 
                     if self.use_sift_a_priori:
-                        dmin = np.nanmin(
-                            disp_range_grid[0, 0]["disp_min_grid"].values
-                        )
-                        dmax = np.nanmax(
-                            disp_range_grid[0, 0]["disp_max_grid"].values
-                        )
+                        dmin = self.pairs[pair_key]["disp_range_grid"][
+                            "global_min"
+                        ]
+                        dmax = self.pairs[pair_key]["disp_range_grid"][
+                            "global_max"
+                        ]
 
                         # update orchestrator_out_json
                         marg = self.sparse_mtch_sift_app.get_disparity_margin()
@@ -1652,7 +1656,8 @@ class UnitPipeline(PipelineTemplate):
                             pair_key=pair_key,
                         )
 
-                    disp_range_grid = (
+                    # generate_disparity_grids runs orchestrator.breakpoint()
+                    self.pairs[pair_key]["disp_range_grid"] = (
                         self.dense_matching_app.generate_disparity_grids(
                             self.pairs[pair_key]["sensor_image_right"],
                             self.pairs[pair_key]["corrected_grid_right"],
@@ -1660,34 +1665,23 @@ class UnitPipeline(PipelineTemplate):
                             dmin=dmin,
                             dmax=dmax,
                             pair_folder=dense_matching_pair_folder,
-                            loc_inverse_orchestrator=self.cars_orchestrator,
+                            orchestrator=self.cars_orchestrator,
                         )
                     )
-            # Get margins used in dense matching,
-            dense_matching_margins_fun = (
-                self.dense_matching_app.get_margins_fun(
-                    self.pairs[pair_key]["corrected_grid_left"],
-                    disp_range_grid,
-                )
-            )
 
             # TODO add in metadata.json max diff max - min
             # Update used_conf configuration with epipolar a priori
             # Add global min and max computed with grids
             advanced_parameters.update_conf(
                 self.used_conf,
-                dmin=np.min(
-                    disp_range_grid[0, 0]["disp_min_grid"].values
-                ),  # TODO compute dmin dans dmax
-                dmax=np.max(disp_range_grid[0, 0]["disp_max_grid"].values),
+                dmin=self.pairs[pair_key]["disp_range_grid"]["global_min"],
+                dmax=self.pairs[pair_key]["disp_range_grid"]["global_max"],
                 pair_key=pair_key,
             )
             advanced_parameters.update_conf(
                 self.config_full_res,
-                dmin=np.min(
-                    disp_range_grid[0, 0]["disp_min_grid"].values
-                ),  # TODO compute dmin dans dmax
-                dmax=np.max(disp_range_grid[0, 0]["disp_max_grid"].values),
+                dmin=self.pairs[pair_key]["disp_range_grid"]["global_min"],
+                dmax=self.pairs[pair_key]["disp_range_grid"]["global_max"],
                 pair_key=pair_key,
             )
 
@@ -1697,6 +1691,10 @@ class UnitPipeline(PipelineTemplate):
                 os.path.join(self.out_dir, "used_conf.json"),
                 safe_save=True,
             )
+
+            # end of for loop, to finish computing disparity range grids
+
+        for cloud_id, (pair_key, _, _) in enumerate(self.list_sensor_pairs):
 
             # Generate roi
             epipolar_roi = preprocessing.compute_epipolar_roi(
@@ -1708,10 +1706,8 @@ class UnitPipeline(PipelineTemplate):
                 self.pairs[pair_key]["corrected_grid_left"],
                 self.pairs[pair_key]["corrected_grid_right"],
                 os.path.join(self.dump_dir, "compute_epipolar_roi", pair_key),
-                disp_min=np.min(
-                    disp_range_grid[0, 0]["disp_min_grid"].values
-                ),  # TODO compute dmin dans dmax
-                disp_max=np.max(disp_range_grid[0, 0]["disp_max_grid"].values),
+                disp_min=self.pairs[pair_key]["disp_range_grid"]["global_min"],
+                disp_max=self.pairs[pair_key]["disp_range_grid"]["global_max"],
             )
 
             # Generate new epipolar images
@@ -1723,7 +1719,7 @@ class UnitPipeline(PipelineTemplate):
                 optimum_tile_size,
                 local_tile_optimal_size_fun,
             ) = self.dense_matching_app.get_optimal_tile_size(
-                disp_range_grid,
+                self.pairs[pair_key]["disp_range_grid"],
                 self.cars_orchestrator.cluster.checked_conf_cluster[
                     "max_ram_per_worker"
                 ],
@@ -1742,6 +1738,14 @@ class UnitPipeline(PipelineTemplate):
                 required_bands["left"].index(band)
                 for band in self.texture_bands
             ]
+
+            # Get margins used in dense matching,
+            dense_matching_margins_fun = (
+                self.dense_matching_app.get_margins_fun(
+                    self.pairs[pair_key]["corrected_grid_left"],
+                    self.pairs[pair_key]["disp_range_grid"],
+                )
+            )
 
             # Run third epipolar resampling
             (
@@ -1814,7 +1818,7 @@ class UnitPipeline(PipelineTemplate):
                     self.dump_dir, "dense_matching", pair_key
                 ),
                 pair_key=pair_key,
-                disp_range_grid=disp_range_grid,
+                disp_range_grid=self.pairs[pair_key]["disp_range_grid"],
                 compute_disparity_masks=False,
                 margins_to_keep=(
                     self.pc_outlier_removal_1_app.get_epipolar_margin()
@@ -1834,11 +1838,13 @@ class UnitPipeline(PipelineTemplate):
                         epipolar_disparity_map,
                         self.pairs[pair_key]["holes_bbox_left"],
                         self.pairs[pair_key]["holes_bbox_right"],
-                        disp_min=np.min(
-                            disp_range_grid[0, 0]["disp_min_grid"].values
-                        ),
+                        disp_min=self.pairs[pair_key]["disp_range_grid"][
+                            "global_min"
+                        ],
                         disp_max=np.max(
-                            disp_range_grid[0, 0]["disp_max_grid"].values
+                            self.pairs[pair_key]["disp_range_grid"][
+                                "global_max"
+                            ]
                         ),
                         orchestrator=self.cars_orchestrator,
                         pair_folder=os.path.join(
@@ -1870,11 +1876,13 @@ class UnitPipeline(PipelineTemplate):
                         filled_with_1_epipolar_disparity_map,
                         self.pairs[pair_key]["holes_bbox_left"],
                         self.pairs[pair_key]["holes_bbox_right"],
-                        disp_min=np.min(
-                            disp_range_grid[0, 0]["disp_min_grid"].values
-                        ),
+                        disp_min=self.pairs[pair_key]["disp_range_grid"][
+                            "global_min"
+                        ],
                         disp_max=np.max(
-                            disp_range_grid[0, 0]["disp_max_grid"].values
+                            self.pairs[pair_key]["disp_range_grid"][
+                                "global_max"
+                            ]
                         ),
                         orchestrator=self.cars_orchestrator,
                         pair_folder=os.path.join(
@@ -1908,12 +1916,12 @@ class UnitPipeline(PipelineTemplate):
                     self.pairs[pair_key]["corrected_grid_left"],
                     self.pairs[pair_key]["corrected_grid_right"],
                     self.geom_plugin_with_dem_and_geoid,
-                    disp_min=np.min(
-                        disp_range_grid[0, 0]["disp_min_grid"].values
-                    ),
-                    disp_max=np.max(
-                        disp_range_grid[0, 0]["disp_max_grid"].values
-                    ),
+                    disp_min=self.pairs[pair_key]["disp_range_grid"][
+                        "global_min"
+                    ],
+                    disp_max=self.pairs[pair_key]["disp_range_grid"][
+                        "global_max"
+                    ],
                 )
                 # Compute roi polygon, in input EPSG
                 self.roi_poly = preprocessing.compute_roi_poly(
@@ -2128,12 +2136,12 @@ class UnitPipeline(PipelineTemplate):
                         self.epsg,
                         self.geom_plugin_with_dem_and_geoid,
                         resolution=self.resolution,
-                        disp_min=np.min(
-                            disp_range_grid[0, 0]["disp_min_grid"].values
-                        ),
-                        disp_max=np.max(
-                            disp_range_grid[0, 0]["disp_max_grid"].values
-                        ),
+                        disp_min=self.pairs[pair_key]["disp_range_grid"][
+                            "global_min"
+                        ],
+                        disp_max=self.pairs[pair_key]["disp_range_grid"][
+                            "global_max"
+                        ],
                         roi_poly=(
                             None if self.debug_with_roi else self.roi_poly
                         ),

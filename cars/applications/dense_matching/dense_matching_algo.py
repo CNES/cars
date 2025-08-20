@@ -40,12 +40,11 @@ from scipy.interpolate import (
     RegularGridInterpolator,
 )
 
-# CARS imports
-from cars.applications.dense_matching import (
-    dense_matching_constants as dense_match_cst,
-)
 from cars.applications.dense_matching import dense_matching_wrappers as dm_wrap
+
+# CARS imports
 from cars.core import constants as cst
+from cars.core import inputs
 
 
 def compute_disparity_grid(disp_range_grid, left_image_object):
@@ -61,20 +60,30 @@ def compute_disparity_grid(disp_range_grid, left_image_object):
     :return disp min map, disp_max_map
     :rtype np.ndarray, np.ndarray
     """
+
+    disp_min_grid_arr, _ = inputs.rasterio_read_as_array(
+        disp_range_grid["grid_min_path"]
+    )
+    disp_max_grid_arr, _ = inputs.rasterio_read_as_array(
+        disp_range_grid["grid_max_path"]
+    )
+    row_range = disp_range_grid["row_range"]
+    col_range = disp_range_grid["col_range"]
+
     # Create interpolators
     interp_min = RegularGridInterpolator(
         (
-            disp_range_grid.attributes["row_range"],
-            disp_range_grid.attributes["col_range"],
+            row_range,
+            col_range,
         ),
-        disp_range_grid[0, 0][dense_match_cst.DISP_MIN_GRID].values,
+        disp_min_grid_arr,
     )
     interp_max = RegularGridInterpolator(
         (
-            disp_range_grid.attributes["row_range"],
-            disp_range_grid.attributes["col_range"],
+            row_range,
+            col_range,
         ),
-        disp_range_grid[0, 0][dense_match_cst.DISP_MAX_GRID].values,
+        disp_max_grid_arr,
     )
 
     # Interpolate disp on grid

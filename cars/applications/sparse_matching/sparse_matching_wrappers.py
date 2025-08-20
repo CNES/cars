@@ -170,55 +170,6 @@ def compute_disp_min_disp_max(
     return dmin, dmax
 
 
-@cars_profile(name="Clustering matches")
-def clustering_matches(
-    triangulated_matches,
-    connection_val=3.0,
-    nb_pts_threshold=80,
-    clusters_distance_threshold: float = None,
-    filtered_elt_pos: bool = False,
-):
-    """
-    Filter triangulated  matches
-
-    :param pd_cloud: triangulated_matches
-    :type pd_cloud: pandas Dataframe
-    :param connection_val: distance to use
-        to consider that two points are connected
-    :param nb_pts_threshold: number of points to use
-        to identify small clusters to filter
-    :param clusters_distance_threshold: distance to use
-        to consider if two points clusters are far from each other or not
-        (set to None to deactivate this level of filtering)
-    :param filtered_elt_pos: if filtered_elt_pos is set to True,
-        the removed points positions in their original
-        epipolar images are returned, otherwise it is set to None
-
-    :return: filtered_matches
-    :rtype: pandas Dataframe
-
-    """
-
-    filtered_pandora_matches, _ = (
-        outlier_removal_algo.small_component_filtering(
-            triangulated_matches,
-            connection_val=connection_val,
-            nb_pts_threshold=nb_pts_threshold,
-            clusters_distance_threshold=clusters_distance_threshold,
-            filtered_elt_pos=filtered_elt_pos,
-        )
-    )
-
-    filtered_pandora_matches_dataframe = pandas.DataFrame(
-        filtered_pandora_matches
-    )
-    filtered_pandora_matches_dataframe.attrs["epsg"] = (
-        triangulated_matches.attrs["epsg"]
-    )
-
-    return filtered_pandora_matches_dataframe
-
-
 @cars_profile(name="filter_point_cloud_matches")
 def filter_point_cloud_matches(
     pd_cloud,
