@@ -846,9 +846,17 @@ class DefaultPipeline(PipelineTemplate):
             self.dem_generation_application = Application(
                 "dem_generation", cfg=used_conf.get("dem_generation", {})
             )
+
+            height_margin = None
+            if res >= 8 and "height_margin" not in used_conf["dem_generation"]:
+                height_margin = [50, 250]
+
             used_conf["dem_generation"] = (
                 self.dem_generation_application.get_conf()
             )
+
+            if height_margin is not None:
+                used_conf["dem_generation"]["height_margin"] = height_margin
 
             # Points cloud small component outlier removal
             if "point_cloud_outlier_removal.1" in used_conf:

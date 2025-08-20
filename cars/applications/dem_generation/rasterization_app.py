@@ -178,7 +178,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
             "min_dem": And(Or(int, float), lambda x: x < 0),
             "max_dem": And(Or(int, float), lambda x: x > 0),
-            "height_margin": And(Or(float, int), lambda x: x > 0),
+            "height_margin": Or(list, float, int),
             "bulldozer_max_object_size": And(int, lambda x: x > 0),
             "compute_stats": bool,
             "coregistration": bool,

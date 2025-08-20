@@ -239,6 +239,9 @@ def generate_disp_range_from_dem_wrapper(
     epi_grid_col_max = epipolar_grid_array_window["col_max"]
 
     def clip(value, min_value, max_value):
+        """
+        Clip a value inside bounds
+        """
         return max(min_value, min(value, max_value))
 
     # Epi grid tile coordinate to use, with and without margins
