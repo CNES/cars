@@ -895,34 +895,39 @@ def confidence_filtering(
     :type conf_filtering: dict
     """
 
-    data_risk = dataset[requested_confidence[0]].values
-    data_bounds_sup = dataset[requested_confidence[1]].values
+    data_risk_inf = dataset[requested_confidence[0]].values
+    data_risk_sup = dataset[requested_confidence[1]].values
+    risk_range = data_risk_sup - data_risk_inf
+
+    data_bounds_inf = dataset[requested_confidence[2]].values
+    data_bounds_sup = dataset[requested_confidence[3]].values
+    bounds_range = data_bounds_sup - data_bounds_inf
+
+    disp_min = dataset["disp_min_grid"].values
+    disp_max = dataset["disp_max_grid"].values
+
+    risk_ratio = risk_range / (disp_max - disp_min)
+    bounds_ratio = bounds_range / (disp_max - disp_min)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
         nan_ratio = generic_filter(
             disp_map, nan_ratio_func, size=conf_filtering["win_nanratio"]
         )
-        var_map = generic_filter(
-            data_risk, np.nanmean, size=conf_filtering["win_mean_risk_max"]
-        )
 
-    mask = (
-        (data_bounds_sup > conf_filtering["upper_bound"])
-        | (data_bounds_sup <= conf_filtering["lower_bound"])
-    ) | (
-        (var_map > conf_filtering["risk_max"])
-        & (nan_ratio > conf_filtering["nan_threshold"])
+    bounds_mask = (bounds_ratio > conf_filtering["bounds_ratio_threshold"]) & (
+        bounds_range > conf_filtering["bounds_range_threshold"]
     )
-
+    risk_mask = (risk_ratio > conf_filtering["risk_ratio_threshold"]) & (
+        risk_range > conf_filtering["risk_range_threshold"]
+    )
+    mask = bounds_mask | risk_mask
     dataset["disp"].values[mask] = np.nan
     dataset["disp_msk"].values[mask] = 0
 
-    dims = list(dataset.sizes.keys())[:2]
-
-    var_mean_risk = xr.DataArray(var_map, dims=dims)
-    var_nan_ratio = xr.DataArray(nan_ratio, dims=dims)
-
-    # We add the new variables to the dataset
-    dataset["confidence_from_mean_risk_max"] = var_mean_risk
-    dataset["confidence_from_nanratio"] = var_nan_ratio
+    mask = (nan_ratio > conf_filtering["nan_threshold"]) & (
+        (bounds_range > conf_filtering["bounds_range_threshold"])
+        | (risk_range > conf_filtering["risk_range_threshold"])
+    )
+    dataset["disp"].values[mask] = np.nan
+    dataset["disp_msk"].values[mask] = 0

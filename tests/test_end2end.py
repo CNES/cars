@@ -2523,7 +2523,7 @@ def test_end2end_use_epipolar_a_priori():
         input_config_sparse_res["inputs"]["initial_elevation"] = None
 
         application_config = {
-            "resolution_2": {
+            "resolution_4": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "nb_points_threshold": 150,
@@ -2567,7 +2567,7 @@ def test_end2end_use_epipolar_a_priori():
         input_config_sparse_res["output"].update(output_config)
         input_config_sparse_res["applications"] = application_config
 
-        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [2, 1]
+        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
@@ -2612,7 +2612,7 @@ def test_end2end_use_epipolar_a_priori():
             ref_output_dir = "ref_output"
             output_dir_res4 = os.path.join(
                 input_config_sparse_res["output"]["directory"],
-                "intermediate_res/out_res2",
+                "intermediate_res/out_res4",
             )
 
             copy2(
@@ -2897,7 +2897,7 @@ def test_prepare_ventoux_bias():
             },
         )
         application_config = {
-            "resolution_2": {
+            "resolution_4": {
                 "sparse_matching.sift": {
                     "method": "sift",
                     "epipolar_error_upper_bound": 43.0,
@@ -2933,7 +2933,7 @@ def test_prepare_ventoux_bias():
         input_config_sparse_res["applications"] = application_config
         input_config_sparse_res["output"].update(output_config)
 
-        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [2, 1]
+        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
@@ -2982,7 +2982,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         )
 
         application_config = {
-            "resolution_2": {
+            "resolution_4": {
                 "sparse_matching.sift": {
                     "method": "sift",
                     "epipolar_error_upper_bound": 43.0,
@@ -3034,7 +3034,7 @@ def test_end2end_ventoux_full_output_no_elevation():
 
         input_config["applications"] = application_config
         input_config["advanced"].update(advanced_config)
-        input_config["advanced"]["epipolar_resolutions"] = [2, 1]
+        input_config["advanced"]["epipolar_resolutions"] = [4, 1]
 
         input_config["output"].update(output_config)
 
@@ -3392,10 +3392,8 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "left_right": {
                     "0_0": "left_right/0_0.laz",
                     "0_1": "left_right/0_1.laz",
-                    "0_2": "left_right/0_2.laz",
                     "1_0": "left_right/1_0.laz",
                     "1_1": "left_right/1_1.laz",
-                    "2_1": "left_right/2_1.laz",
                 }
             }
 
@@ -4347,7 +4345,7 @@ def test_end2end_quality_stats():
         # no srtm
         input_config_dense_dsm["inputs"]["initial_elevation"] = None
         dense_dsm_applications = {
-            "resolution_2": {
+            "resolution_4": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "activated": True,
@@ -4410,7 +4408,7 @@ def test_end2end_quality_stats():
         input_config_dense_dsm["advanced"] = {
             "save_intermediate_data": True,
         }
-        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [2, 1]
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -4438,7 +4436,7 @@ def test_end2end_quality_stats():
         ref_output_dir = "ref_output"
         out_dir_res4 = os.path.join(
             input_config_dense_dsm["output"]["directory"],
-            "intermediate_res/out_res2",
+            "intermediate_res/out_res4",
         )
 
         copy2(

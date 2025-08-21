@@ -41,9 +41,9 @@ def transform_grid_func(grid, resolution, right=False):
     for key, value in grid.items():
         if right:
             if key not in ("grid_origin", "grid_spacing"):
-                divide(key, value, grid, resolution)
+                scale(key, value, grid, resolution)
         else:
-            divide(key, value, grid, resolution)
+            scale(key, value, grid, resolution)
 
     # we need to charge the data to override it
     with rasterio.open(grid["path"]) as src:
@@ -59,9 +59,9 @@ def transform_grid_func(grid, resolution, right=False):
     return grid
 
 
-def divide(key, value, grid, resolution):
+def scale(key, value, grid, resolution):
     """
-    Divide attributs by the resolution
+    Scale attributes by the resolution
     """
 
     if key == "grid_origin":
@@ -71,7 +71,7 @@ def divide(key, value, grid, resolution):
         for i, _ in enumerate(value):
             grid[key][i] = np.floor(value[i] / resolution)
     elif key == "disp_to_alt_ratio":
-        grid[key] = value / resolution
+        grid[key] = value * resolution
     elif key == "epipolar_size_x":
         grid[key] = np.floor(value / resolution)
     elif key == "epipolar_size_y":
