@@ -1,0 +1,8 @@
+---
+dsm: dsm.tif
+texture: texture.tif
+mask: mask.tif
+classification: classification.tif
+performance_map: performance_map.tif
+contributing_pair: contributing_pair.tif
+filling: filling.tif

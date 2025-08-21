@@ -43,16 +43,16 @@ You can either select the upper left corner with the lower right corner (in red 
 .. code-block:: console
 
    cars-extractroi -il *.NTF -out ext_dir -bbx -58.5809 -34.4934 -58.5942 -34.4869
-   cars-starter -il ext_dir/*.tif -out out_dir > config.json
-   cars config.json
+   cars-starter -il ext_dir/*.tif -out out_dir > config.yaml
+   cars config.yaml
 
 or the lower left corner with the upper right corner (in purple in the previous image):
 
 .. code-block:: console
 
    cars-extractroi -il *.NTF -out ext_dir -bbx -58.5809 -34.4869 -58.5942 -34.4934
-   cars-starter -il ext_dir/*.tif -out out_dir > config.json
-   cars config.json
+   cars-starter -il ext_dir/*.tif -out out_dir > config.yaml
+   cars config.yaml
 
 
 N.B.: Instead of using ``cars-extractroi``, you can directly give the GeoJson dictionnary in the configuration file (Please, see :ref:`basic configuration` for details). In this case, the sparse steps (geometric corrections) are processed on the entire image and not only on the ROI.
@@ -218,7 +218,7 @@ Use CARS in docker
 
 .. code-block:: console
 
-    docker run -w /data -v "$(pwd)"/data_gizeh_small:/data cnes/cars /data/configfile.json
+    docker run -w /data -v "$(pwd)"/data_gizeh_small:/data cnes/cars /data/configfile.yaml
 
 Use OTB in docker
 -----------------

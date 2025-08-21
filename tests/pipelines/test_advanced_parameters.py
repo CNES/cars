@@ -78,7 +78,7 @@ def test_advanced_parameters_full_config():
     }
     inputs_config = sensor_inputs.sensors_check_inputs(
         inputs_config,
-        config_json_dir=absolute_data_path("input/data_gizeh_crop/"),
+        config_dir=absolute_data_path("input/data_gizeh_crop/"),
     )
 
     advanced_parameters.check_advanced_parameters(inputs_config, config)
@@ -100,7 +100,7 @@ def test_advanced_parameters_minimal():
     }
     inputs_config = sensor_inputs.sensors_check_inputs(
         inputs_config,
-        config_json_dir=absolute_data_path("input/data_gizeh_crop/"),
+        config_dir=absolute_data_path("input/data_gizeh_crop/"),
     )
 
     advanced_parameters.check_advanced_parameters(inputs_config, config)
@@ -122,7 +122,7 @@ def test_advanced_parameters_update_conf():
     }
     inputs_config = sensor_inputs.sensors_check_inputs(
         inputs_config,
-        config_json_dir=absolute_data_path("input/data_gizeh_crop/"),
+        config_dir=absolute_data_path("input/data_gizeh_crop/"),
     )
 
     # First config check without epipolar a priori

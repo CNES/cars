@@ -35,49 +35,12 @@ You should find in each folder the following data:
 
 For each product, the user must provide the path to the pancromatic data (*P*.TIF) with its geomodel, all contained in the DIMAP file (DIMAP*P*.XML):
 
-
-.. code-block:: json
-
-    {
-    "inputs": {
-        "sensors" : {
-            "one": {
-                "image": "IMG_PHR1B_P_001/DIM_PHR1B_***.XML"
-            },
-            "two": {
-                "image": "IMG_PHR1B_P_002/DIM_PHR1B_***.XML",
-            }
-        },
-        "pairing": [["one", "two"]]
-        }
-    }
-
-
+.. include-cars-config:: ../example_configs/how_to_use_CARS/from_sensor_data_to_DSM/dimap_1
 
 If you want to add the colors, a P+XS fusion must be done, to specify a color.tif with the same shape and resolution than the Pancromatic data.
 It can be performed with `otbcli_BundleToPerfectSensor` as explained in  :ref:`make_a_simple_pan_sharpening`.
 
-.. code-block:: json
-
-    {
-    "inputs": {
-        "sensors" : {
-            "one": {
-                "image": "IMG_PHR1B_P_001/DIM_PHR1B_***.XML",
-                "color": "color_one.tif"
-            },
-            "two": {
-                "image": "IMG_PHR1B_P_002/DIM_PHR1B_***.XML",
-                "color": "color_two.tif"
-
-            }
-        },
-        "pairing": [["one", "two"]]
-        }
-    }
-
-
-
+.. include-cars-config:: ../example_configs/how_to_use_CARS/from_sensor_data_to_DSM/dimap_2
 
 .. _pleiade_roi_data:
 
@@ -98,53 +61,14 @@ If you want to work with cropped image by using a region of interest for the who
 
 It generates a .tif and .geom to be used as:
 
-.. code-block:: json
-
-    {
-    "inputs": {
-        "sensors" : {
-            "one": {
-                "image": "ext_dir/***.tif",
-                "geomodel": "ext_dir/***.geom",
-                "color": "color_one.tif"
-            }
-    }
+.. include-cars-config:: ../example_configs/how_to_use_CARS/from_sensor_data_to_DSM/with_a_roi_1
 
 Then use the generated data as you would with raw data.
 
 
 If you want to compute the grid correction and compute the epipolar/terrain a priori on the whole image, keep the same input images but specify the terrain ROI to use:
 
-.. code-block:: json
-
-    {
-        "inputs":
-        {
-            "roi" : {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                    "type": "Feature",
-                    "properties": {},
-                    "geometry": {
-                        "coordinates": [
-                        [
-                            [5.194, 44.2064],
-                            [5.194, 44.2059],
-                            [5.195, 44.2059],
-                            [5.195, 44.2064],
-                            [5.194, 44.2064]
-                        ]
-                        ],
-                        "type": "Polygon"
-                    }
-                    }
-                ]
-            }
-        }
-    }
-
-
+.. include-cars-config:: ../example_configs/how_to_use_CARS/from_sensor_data_to_DSM/with_a_roi_2
 
 See  Usage Sensors Images Inputs configuration for more information.
 

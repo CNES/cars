@@ -1,0 +1,5 @@
+---
+applications:
+  point_cloud_rasterization:
+    method: simple_gaussian
+    dsm_radius: 1.5

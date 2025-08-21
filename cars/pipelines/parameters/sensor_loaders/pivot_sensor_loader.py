@@ -53,7 +53,7 @@ class PivotSensorLoader(SensorLoaderTemplate):
         for band in overloaded_conf["bands"]:
             overloaded_conf["bands"][band]["path"] = (
                 make_relative_path_absolute(
-                    overloaded_conf["bands"][band]["path"], self.json_dir
+                    overloaded_conf["bands"][band]["path"], self.config_dir
                 )
             )
         # Check consistency between files
@@ -92,7 +92,7 @@ class PivotSensorLoader(SensorLoaderTemplate):
             ]
         else:
             overloaded_conf["main_file"] = make_relative_path_absolute(
-                overloaded_conf["main_file"], self.json_dir
+                overloaded_conf["main_file"], self.config_dir
             )
         overloaded_conf["texture_bands"] = conf.get("texture_bands", None)
         if overloaded_conf["texture_bands"] is not None:

@@ -1,0 +1,5 @@
+---
+advanced:
+  save_intermediate_data:
+    resolution_16: true
+    resolution_1: false

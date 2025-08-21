@@ -1,0 +1,13 @@
+---
+applications:
+  dense_match_filling.1:
+    method: plane
+    classification:
+    - water
+    save_intermediate_data: true
+  dense_match_filling.2:
+    method: zero_padding
+    classification:
+    - cloud
+    - snow
+    save_intermediate_data: true

@@ -43,7 +43,7 @@ class Pipeline:
         cls,
         pipeline_name: str,
         cfg: Dict[str, Union[str, int]],
-        config_json_dir,
+        config_dir,
     ):
         """
         Return the instance of pipeline associated with the pipeline
@@ -53,15 +53,15 @@ class Pipeline:
         :type pipeline_name: str
         :param cfg: configuration {'matching_cost_method': value}
         :type cfg: dictionary
-        :param config_json_dir: path to dir containing json
-        :type config_json_dir: str
+        :param config_dir: path to dir containing json or yaml file
+        :type config_dir: str
         """
 
-        return cls.create_pipeline(pipeline_name, cfg, config_json_dir)
+        return cls.create_pipeline(pipeline_name, cfg, config_dir)
 
     @classmethod
     def create_pipeline(
-        cls, name: str, cfg: Dict[str, Union[str, int]], config_json_dir
+        cls, name: str, cfg: Dict[str, Union[str, int]], config_dir
     ):
         """Factory command to create the pipeline
         Return the instance of pipeline associated with the pipeline
@@ -71,8 +71,8 @@ class Pipeline:
         :type pipeline_name: str
         :param cfg: cars input configuration
         :type cfg: dictionary
-        :param config_json_dir: path to dir containing json
-        :type config_json_dir: str
+        :param config_dir: path to dir containing json
+        :type config_dir: str
         """
 
         pipeline = None
@@ -85,7 +85,7 @@ class Pipeline:
                 "No pipeline named {0} supported".format(name)
             ) from kerr
 
-        pipeline = pipeline_class(cfg, config_json_dir)
+        pipeline = pipeline_class(cfg, config_dir)
 
         return pipeline
 

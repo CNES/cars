@@ -24,11 +24,13 @@ How to launch CARS
                             Logger level (default: PROGRESS. Should be one of (DEBUG, INFO, PROGRESS, WARNING, ERROR, CRITICAL)
       --version, -v         show program's version number and exit
 
-CARS cli takes only one ``.json`` file as command line argument:
+CARS cli takes only one ``.json`` or ``.yaml`` (or ``.yml``) file as command line argument:
 
 .. code-block:: console
 
     cars configfile.json
+    cars configfile.yaml
+    cars configfile.yml
 
 .. warning::
 
@@ -53,30 +55,6 @@ Note that ``cars-starter`` script can be used to instantiate this configuration 
 
 Finally, an output ``used_conf.json`` file will be created on the output directory. This file contains all the parameters used during execution and can be used as an input configuration file to re-run cars.
 
-Here is a reminder of what a basic json file configuration should look like :
+Here is a reminder of what a basic file configuration should look like :
 
-.. sourcecode:: text
-
-    {
-        "inputs": {
-            "sensors" : {
-                "one": {
-                    "image": "img1.tif",
-                    "geomodel": "img1.geom",
-                    "color": "color1.tif"
-                },
-                "two": {
-                    "image": "img2.tif",
-                    "geomodel": "img2.geom"
-                }
-            }
-        },
-        "orchestrator": {
-          	"mode": "multiprocessing",
-          	"nb_workers": 110,
-          	"max_ram_per_worker": 6000
-          	},
-        "output": {
-                "directory": "outresults"
-        }
-    }
+.. include-cars-config:: ../example_configs/how_to_use_CARS/how_to_launch_CARS/configfile

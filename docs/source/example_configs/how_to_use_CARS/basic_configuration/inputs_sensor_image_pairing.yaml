@@ -1,0 +1,19 @@
+---
+inputs:
+  sensors:
+    one:
+      image: img1.tif
+      geomodel: img1.geom
+    two:
+      image: img2.tif
+      geomodel: img2.geom
+    three:
+      image: img3.tif
+      geomodel: img3.geom
+  pairing: # define the pairs
+  # one-two
+  - - one
+    - two
+  # one-three
+  - - one
+    - three

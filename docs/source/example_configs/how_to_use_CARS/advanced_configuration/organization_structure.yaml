@@ -1,0 +1,6 @@
+---
+inputs: {} # the parameters that define what CARS will take as input
+orchestrator: {} # the parallelization/system parameters
+applications: {} # the application-specific parameters, to fine-tune algorithms
+output: {} # the output directory and files
+advanced: {} # optional parameters for debugging / in-depth looks in the pipeline results

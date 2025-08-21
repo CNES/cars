@@ -28,6 +28,8 @@ import argparse
 import json
 import os
 
+import yaml
+
 
 def inputfilename_to_sensor(inputfilename):
     """
@@ -106,7 +108,16 @@ def cars_starter(cli_params: dict = None, **kwargs) -> None:
         if full:
             cars_config = used_pipeline.used_conf
 
-    print(json.dumps(cars_config, indent=2))
+    # output format handling
+    output_format = config.get("format", "yaml")
+    if output_format == "yaml":
+        print(yaml.safe_dump(cars_config, sort_keys=False))
+    elif output_format == "json":
+        print(json.dumps(cars_config, indent=2))
+    else:
+        raise ValueError(
+            "Invalid format: {}. Use 'json' or 'yaml'.".format(output_format)
+        )
 
 
 def cli():
@@ -138,6 +149,14 @@ def cli():
     )
 
     parser.add_argument("--check", action="store_true", help="Check inputs")
+
+    parser.add_argument(
+        "--format",
+        type=str,
+        default="yaml",
+        choices=["json", "yaml"],
+        help="Output format (json or yaml). Default: yaml",
+    )
 
     args = parser.parse_args()
     cars_starter(vars(args))

@@ -48,15 +48,15 @@ from cars.pipelines.parameters import sensor_inputs as sens_inp
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
-def check_dsm_inputs(conf, config_json_dir=None):
+def check_dsm_inputs(conf, config_dir=None):
     """
     Check the inputs given
 
     :param conf: configuration of inputs
     :type conf: dict
-    :param config_json_dir: directory of used json, if
+    :param config_dir: directory of used json/yaml, if
         user filled paths with relative paths
-    :type config_json_dir: str
+    :type config_dir: str
 
     :return: overloader inputs
     :rtype: dict
@@ -181,8 +181,8 @@ def check_dsm_inputs(conf, config_json_dir=None):
         checker_pc.validate(overloaded_conf[dsm_cst.DSMS][dsm_key])
 
     # Modify to absolute path
-    if config_json_dir is not None:
-        modify_to_absolute_path(config_json_dir, overloaded_conf)
+    if config_dir is not None:
+        modify_to_absolute_path(config_dir, overloaded_conf)
     else:
         logging.debug(
             "path of config file was not given,"
@@ -208,7 +208,7 @@ def check_dsm_inputs(conf, config_json_dir=None):
     check_phasing(conf[dsm_cst.DSMS])
 
     if sens_cst.SENSORS in conf and conf[sens_cst.SENSORS] is not None:
-        sens_inp.check_sensors(conf, overloaded_conf, config_json_dir)
+        sens_inp.check_sensors(conf, overloaded_conf, config_dir)
 
     return overloaded_conf
 
@@ -241,12 +241,12 @@ def check_input_size(dsm, classif, color, mask):
                 )
 
 
-def modify_to_absolute_path(config_json_dir, overloaded_conf):
+def modify_to_absolute_path(config_dir, overloaded_conf):
     """
     Modify input file path to absolute path
 
-    :param config_json_dir: directory of the json configuration
-    :type config_json_dir: str
+    :param config_dir: directory of the json configuration
+    :type config_dir: str
     :param overloaded_conf: overloaded configuration json
     :dict overloaded_conf: dict
     """
@@ -259,14 +259,12 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             cst.INDEX_DSM_MASK,
         ]:
             if dsms[tag] is not None:
-                dsms[tag] = make_relative_path_absolute(
-                    dsms[tag], config_json_dir
-                )
+                dsms[tag] = make_relative_path_absolute(dsms[tag], config_dir)
 
     if overloaded_conf[sens_cst.ROI] is not None:
         if isinstance(overloaded_conf[sens_cst.ROI], str):
             overloaded_conf[sens_cst.ROI] = make_relative_path_absolute(
-                overloaded_conf[sens_cst.ROI], config_json_dir
+                overloaded_conf[sens_cst.ROI], config_dir
             )
 
 

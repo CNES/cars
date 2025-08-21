@@ -33,6 +33,8 @@ import os
 import sys
 import warnings
 
+import yaml
+
 # CARS imports
 from cars import __version__
 from cars.core import cars_logging
@@ -87,9 +89,17 @@ def main_cli(args, dry_run=False):  # noqa: C901
     from cars.pipelines.pipeline import Pipeline
 
     try:
-        # Transform conf file to dict
-        with open(args.conf, "r", encoding="utf8") as fstream:
-            config = json.load(fstream)
+        # Check file extension and load configuration
+        config_path = args.conf
+        ext = os.path.splitext(config_path)[1].lower()
+        if ext == ".json":
+            with open(config_path, "r", encoding="utf8") as fstream:
+                config = json.load(fstream)
+        elif ext in [".yaml", ".yml"]:
+            with open(config_path, "r", encoding="utf8") as fstream:
+                config = yaml.safe_load(fstream)
+        else:
+            raise ValueError("Configuration file must be .json or .yaml/.yml")
 
         # Cars 0.9.0 API change, check if the configfile seems to use the old
         # API by looking for the deprecated out_dir key
@@ -109,7 +119,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
             config["output"]["directory"] = config["output"]["out_dir"]
             del config["output"]["out_dir"]
 
-        config_json_dir = os.path.abspath(os.path.dirname(args.conf))
+        config_dir = os.path.abspath(os.path.dirname(config_path))
         pipeline_name = config.get("advanced", {}).get("pipeline", "default")
 
         # Logging configuration with args Loglevel
@@ -126,7 +136,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
         # Generate pipeline and check conf
         cars_logging.add_progress_message("Check configuration...")
-        used_pipeline = Pipeline(pipeline_name, config, config_json_dir)
+        used_pipeline = Pipeline(pipeline_name, config, config_dir)
         cars_logging.add_progress_message("CARS pipeline is started.")
         if not dry_run:
             # run pipeline

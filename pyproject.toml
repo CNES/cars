@@ -46,6 +46,7 @@ dependencies = [
     "distributed>=2021.10.0",
     "dask-jobqueue>=0.7.3",
     "json-checker",
+    "pyyaml",
     "xarray",
     "tqdm",
     "netCDF4>=1.5.3",

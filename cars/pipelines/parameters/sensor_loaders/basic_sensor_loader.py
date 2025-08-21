@@ -53,7 +53,7 @@ class BasicSensorLoader(SensorLoaderTemplate):
         """
         if isinstance(conf, str):
             overloaded_conf = {}
-            image_path = make_relative_path_absolute(conf, self.json_dir)
+            image_path = make_relative_path_absolute(conf, self.config_dir)
             overloaded_conf["path"] = image_path
             overloaded_conf["loader"] = "basic"
             if self.input_type == "image":
@@ -63,7 +63,7 @@ class BasicSensorLoader(SensorLoaderTemplate):
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
-                conf["path"], self.json_dir
+                conf["path"], self.config_dir
             )
             overloaded_conf["path"] = image_path
             overloaded_conf["loader"] = conf.get("loader", "basic")
@@ -103,6 +103,6 @@ class BasicSensorLoader(SensorLoaderTemplate):
             }
         pivot_config["texture_bands"] = None
         pivot_sensor_loader = PivotSensorLoader(
-            pivot_config, self.input_type, self.json_dir
+            pivot_config, self.input_type, self.config_dir
         )
         self.pivot_format = pivot_sensor_loader.get_pivot_format()
