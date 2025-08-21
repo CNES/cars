@@ -368,8 +368,8 @@ The structure follows this organization:
                     * - method
                       - Method for dense matching
                       - string
-                      - "census_sgm_default", "mccnn_sgm", "census_sgm_urban", "census_sgm_shadow", "census_sgm_mountain_and_vegetation", "census_sgm_homogeneous"
-                      - "census_sgm_default"
+                      - "census_sgm_default", "mccnn_sgm", "census_sgm_urban", "census_sgm_shadow", "census_sgm_mountain_and_vegetation", "census_sgm_homogeneous", "auto"
+                      - "auto"
                       - No
                     * - loader
                       - external library use to compute dense matching
@@ -561,6 +561,7 @@ The structure follows this organization:
                     * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
                     * To save the confidence, the save_intermediate_data parameter should be activated.
                     * The cross-validation step supports two modes: fast and accurate. Setting the configuration to true or "fast" will use the fast method, while setting it to "accurate" will enable the accurate method.
+                    * When setting the method to auto, cars will use a global classification map to select the optimal pandora configuration for dense matching
 
                 .. list-table::
                     :widths: 19 19
@@ -1090,6 +1091,16 @@ The structure follows this organization:
               - Name of the bands used for output ortho image (see Sensor loaders configuration for details)
               - list
               - None
+              - No
+            * - land_cover_map
+              - A global classification map used to choose the optimal configuration for dense matching
+              - str
+              - "global_land_cover_map.tif"
+              - No
+            * - classification_to_configuration_mapping
+              - A JSON file that maps each class of the global classification map to a corresponding Pandora configuration
+              - str
+              - "config_mapping.json"
               - No
 
 
