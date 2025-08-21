@@ -549,7 +549,7 @@ The structure follows this organization:
                       - Filter size of local min/max disparity, to propagate local min/max
                       - int
                       - should be > 0
-                      - 300
+                      - 50
                       -
                     * - epi_disp_grid_tile_size
                       - Tile size used for Disparity range grid generation.
