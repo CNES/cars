@@ -1861,7 +1861,11 @@ class UnitPipeline(PipelineTemplate):
                     self.input_roi_poly, self.input_roi_epsg, self.epsg
                 )
 
-            if self.save_output_dsm or self.save_output_point_cloud:
+            if (
+                self.save_output_dsm
+                or self.save_output_point_cloud
+                or self.dense_matching_app.get_method() == "auto"
+            ):
                 # Compute terrain bounding box /roi related to
                 # current images
                 (current_terrain_roi_bbox, intersection_poly) = (
