@@ -242,7 +242,7 @@ def generate_disp_range_from_dem_wrapper(
         """
         Clip a value inside bounds
         """
-        return max(min_value, min(value, max_value))
+        return int(max(min_value, min(value, max_value)))
 
     # Epi grid tile coordinate to use, with and without margins
     epi_grid_row_min_with_margin = clip(
