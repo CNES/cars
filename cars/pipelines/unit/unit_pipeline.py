@@ -1875,7 +1875,7 @@ class UnitPipeline(PipelineTemplate):
                         self.geom_plugin_with_dem_and_geoid,
                         resolution=self.resolution,
                         disp_min=self.pairs[pair_key]["disp_range_grid"][
-                        "global_min"
+                            "global_min"
                         ],
                         disp_max=self.pairs[pair_key]["disp_range_grid"][
                             "global_max"
