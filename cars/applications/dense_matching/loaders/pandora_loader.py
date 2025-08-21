@@ -31,6 +31,7 @@ from typing import Dict
 
 import numpy as np
 import pandora
+import rasterio
 from json_checker import Checker, Or
 from pandora.check_configuration import (
     check_pipeline_section,
@@ -40,6 +41,10 @@ from pandora.check_configuration import (
 )
 from pandora.img_tools import get_metadata
 from pandora.state_machine import PandoraMachine
+from rasterio.mask import mask
+from shapely.geometry import mapping
+
+from cars.core.projection import polygon_projection
 
 
 class PandoraLoader:
@@ -135,7 +140,7 @@ class PandoraLoader:
                 # read conf
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
                     conf = json.load(fstream)
-            elif method_name == "census_sgm_default":
+            elif method_name in ("census_sgm_default", "auto"):
                 # Use census sgm conf
                 conf_file_path = os.path.join(
                     package_path, "config_census_sgm_default.json"
@@ -299,6 +304,69 @@ class PandoraLoader:
         """
 
         return self.pandora_config
+
+    def find_auto_conf(
+        self, intersection_poly, land_cover_map, classif_to_config_mapping, epsg
+    ):
+        """
+        Find the configuration that suits the most on the
+        land cover map based on the roi
+        """
+        package_path = os.path.dirname(__file__)
+
+        # construct the path to the land_cover_map
+        if os.path.dirname(land_cover_map) == "":
+            land_cover_map_path = os.path.join(package_path, land_cover_map)
+        else:
+            land_cover_map_path = land_cover_map
+
+        with rasterio.open(land_cover_map_path) as src:
+            # Project the polygon to the right epsg
+            if src.crs != epsg:
+                poly = polygon_projection(
+                    intersection_poly, epsg, src.crs.to_epsg()
+                )
+            else:
+                poly = intersection_poly
+
+            # Use a buffer because the land_cover_map resolution is coarse
+            buffered_poly = poly.buffer(0.05)
+            data_land_cover, _ = mask(src, [mapping(buffered_poly)], crop=True)
+
+            # Find the most common class in the roi
+            data_squeeze = data_land_cover.squeeze()
+            valid_data = data_squeeze[data_squeeze != src.nodata]
+            classes, counts = np.unique(valid_data, return_counts=True)
+            max_index = np.argmax(counts)
+            most_common_class = classes[max_index]
+
+        # Construct the path to the classification to configuration mapping
+        if os.path.dirname(classif_to_config_mapping) == "":
+            conf_file_path = os.path.join(
+                package_path, classif_to_config_mapping
+            )
+        else:
+            conf_file_path = classif_to_config_mapping
+
+        # read conf
+        with open(conf_file_path, "r", encoding="utf8") as fstream:
+            conf_mapping = json.load(fstream)
+
+        # Find the configuration that corresponds to the most common class
+        corresponding_conf_name = conf_mapping.get(str(most_common_class), None)
+
+        # If no equivalence has been found, we use the default configuration
+        if corresponding_conf_name is None:
+            corresponding_conf_name = "census_sgm_default"
+
+        # We return the corresponding configuration
+        json_conf_name = os.path.join(
+            package_path, "config_" + corresponding_conf_name + ".json"
+        )
+        with open(json_conf_name, "r", encoding="utf8") as fstream:
+            conf = json.load(fstream)
+
+        return conf
 
     def check_conf(
         self,

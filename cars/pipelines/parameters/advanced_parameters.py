@@ -60,12 +60,20 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.SAVE_INTERMEDIATE_DATA, False
     )
 
+    overloaded_conf[adv_cst.LAND_COVER_MAP] = conf.get(
+        adv_cst.LAND_COVER_MAP, "global_land_cover_map.tif"
+    )
+
     overloaded_conf[adv_cst.KEEP_LOW_RES_DIR] = conf.get(
         adv_cst.KEEP_LOW_RES_DIR, True
     )
 
     overloaded_conf[adv_cst.DEBUG_WITH_ROI] = conf.get(
         adv_cst.DEBUG_WITH_ROI, False
+    )
+
+    overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING] = conf.get(
+        adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING, "config_mapping.json"
     )
 
     overloaded_conf[adv_cst.PHASING] = conf.get(adv_cst.PHASING, None)
@@ -186,6 +194,8 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.DSM_MERGING_TILE_SIZE: And(int, lambda x: x > 0),
         adv_cst.TEXTURE_BANDS: list,
         adv_cst.EPIPOLAR_RESOLUTIONS: Or(int, list),
+        adv_cst.LAND_COVER_MAP: Or(str, None),
+        adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: Or(str, None),
     }
     if check_epipolar_a_priori:
         schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool
@@ -250,6 +260,8 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         geom_plugin_with_dem_and_geoid,
         dem_generation_roi,
         scaling_coeff,
+        overloaded_conf[adv_cst.LAND_COVER_MAP],
+        overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],
     )
 
 

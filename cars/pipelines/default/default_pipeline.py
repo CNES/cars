@@ -40,7 +40,7 @@ import shutil
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
-from cars.core import cars_logging
+from cars.core import cars_logging, roi_tools
 from cars.core.inputs import get_descriptions_bands, rasterio_get_size
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
@@ -130,6 +130,8 @@ class DefaultPipeline(PipelineTemplate):
             self.geom_plugin_with_dem_and_geoid,
             _,
             self.scaling_coeff,
+            _,
+            _,
         ) = advanced_parameters.check_advanced_parameters(
             inputs, conf.get(ADVANCED, {}), check_epipolar_a_priori=True
         )
@@ -199,6 +201,14 @@ class DefaultPipeline(PipelineTemplate):
 
             # copy inputs
             self.used_conf[key][INPUTS] = copy.deepcopy(inputs)
+
+            # Get ROI
+            (
+                self.input_roi_poly,
+                self.input_roi_epsg,
+            ) = roi_tools.generate_roi_poly_from_inputs(
+                self.used_conf[key][INPUTS][sens_cst.ROI]
+            )
 
             # Override the resolution
             self.used_conf[key][ADVANCED] = copy.deepcopy(advanced)

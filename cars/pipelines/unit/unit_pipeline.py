@@ -146,6 +146,8 @@ class UnitPipeline(PipelineTemplate):
             self.geom_plugin_with_dem_and_geoid,
             self.dem_generation_roi,
             self.scaling_coeff,
+            self.land_cover_map,
+            self.classification_to_config_mapping,
         ) = advanced_parameters.check_advanced_parameters(
             inputs, conf.get(ADVANCED, {}), check_epipolar_a_priori=True
         )
@@ -946,7 +948,7 @@ class UnitPipeline(PipelineTemplate):
                 ]
             if (
                 "classification" in inputs_conf["sensors"][key2]
-                and inputs_conf["sensors"][key1]["classification"] is not None
+                and inputs_conf["sensors"][key2]["classification"] is not None
             ):
                 classif_right = inputs_conf["sensors"][key2]["classification"][
                     "main_file"
@@ -1838,6 +1840,112 @@ class UnitPipeline(PipelineTemplate):
                     ),
                 )
 
+            if self.epsg is None:
+                # compute epsg
+                # Epsg uses global disparity min and max
+                self.epsg = preprocessing.compute_epsg(
+                    self.pairs[pair_key]["sensor_image_left"],
+                    self.pairs[pair_key]["sensor_image_right"],
+                    self.pairs[pair_key]["corrected_grid_left"],
+                    self.pairs[pair_key]["corrected_grid_right"],
+                    self.geom_plugin_with_dem_and_geoid,
+                    disp_min=self.pairs[pair_key]["disp_range_grid"][
+                        "global_min"
+                    ],
+                    disp_max=self.pairs[pair_key]["disp_range_grid"][
+                        "global_max"
+                    ],
+                )
+                # Compute roi polygon, in input EPSG
+                self.roi_poly = preprocessing.compute_roi_poly(
+                    self.input_roi_poly, self.input_roi_epsg, self.epsg
+                )
+
+            if self.save_output_dsm or self.save_output_point_cloud:
+                # Compute terrain bounding box /roi related to
+                # current images
+                (current_terrain_roi_bbox, intersection_poly) = (
+                    preprocessing.compute_terrain_bbox(
+                        self.pairs[pair_key]["sensor_image_left"],
+                        self.pairs[pair_key]["sensor_image_right"],
+                        new_epipolar_image_left,
+                        self.pairs[pair_key]["corrected_grid_left"],
+                        self.pairs[pair_key]["corrected_grid_right"],
+                        self.epsg,
+                        self.geom_plugin_with_dem_and_geoid,
+                        resolution=self.resolution,
+                        disp_min=self.pairs[pair_key]["disp_range_grid"][
+                        "global_min"
+                        ],
+                        disp_max=self.pairs[pair_key]["disp_range_grid"][
+                            "global_max"
+                        ],
+                        roi_poly=(
+                            None if self.debug_with_roi else self.roi_poly
+                        ),
+                        orchestrator=self.cars_orchestrator,
+                        pair_key=pair_key,
+                        pair_folder=os.path.join(
+                            self.dump_dir, "terrain_bbox", pair_key
+                        ),
+                        check_inputs=False,
+                    )
+                )
+                self.list_terrain_roi.append(current_terrain_roi_bbox)
+                self.list_intersection_poly.append(intersection_poly)
+
+                # compute terrain bounds for later use
+                (
+                    self.terrain_bounds,
+                    self.optimal_terrain_tile_width,
+                ) = preprocessing.compute_terrain_bounds(
+                    self.list_terrain_roi,
+                    roi_poly=(None if self.debug_with_roi else self.roi_poly),
+                    resolution=self.resolution,
+                )
+
+                if self.which_resolution not in ("final", "single"):
+                    if self.dem_generation_roi is not None:
+                        # To get the correct size for the dem generation
+                        self.terrain_bounds = (
+                            dem_wrappers.modify_terrain_bounds(
+                                self.dem_generation_roi,
+                                self.epsg,
+                                self.dem_generation_application.margin,
+                            )
+                        )
+
+            if self.dense_matching_app.get_method() == "auto":
+                # Copy the initial corr_config in order to keep
+                # the inputs that have already been checked
+                corr_cfg = self.dense_matching_app.corr_config.copy()
+
+                # Find the conf that correspond to the land cover map
+                conf = self.dense_matching_app.loader.find_auto_conf(
+                    intersection_poly,
+                    self.land_cover_map,
+                    self.classification_to_config_mapping,
+                    self.epsg,
+                )
+
+                # Update the used_conf if order to reinitialize
+                # the dense matching app
+                # Because we kept the information regarding the ambiguity,
+                # performance_map calculus..
+                self.used_conf["applications"]["dense_matching"]["loader_conf"][
+                    "pipeline"
+                ] = conf["pipeline"]
+
+                # Re initialization of the dense matching application
+                self.dense_matching_app = Application(
+                    "dense_matching",
+                    cfg=self.used_conf["applications"]["dense_matching"],
+                )
+
+                # Update the corr_config with the inputs that have
+                # already been checked
+                self.dense_matching_app.corr_config["input"] = corr_cfg["input"]
+
             # Run epipolar matching application
             epipolar_disparity_map = self.dense_matching_app.run(
                 new_epipolar_image_left,
@@ -1936,27 +2044,6 @@ class UnitPipeline(PipelineTemplate):
 
             if self.quit_on_app("dense_match_filling.2"):
                 continue  # keep iterating over pairs, but don't go further
-
-            if self.epsg is None:
-                # compute epsg
-                # Epsg uses global disparity min and max
-                self.epsg = preprocessing.compute_epsg(
-                    self.pairs[pair_key]["sensor_image_left"],
-                    self.pairs[pair_key]["sensor_image_right"],
-                    self.pairs[pair_key]["corrected_grid_left"],
-                    self.pairs[pair_key]["corrected_grid_right"],
-                    self.geom_plugin_with_dem_and_geoid,
-                    disp_min=self.pairs[pair_key]["disp_range_grid"][
-                        "global_min"
-                    ],
-                    disp_max=self.pairs[pair_key]["disp_range_grid"][
-                        "global_max"
-                    ],
-                )
-                # Compute roi polygon, in input EPSG
-                self.roi_poly = preprocessing.compute_roi_poly(
-                    self.input_roi_poly, self.input_roi_epsg, self.epsg
-                )
 
             if isinstance(output[sens_cst.GEOID], str):
                 output_geoid_path = output[sens_cst.GEOID]
@@ -2152,60 +2239,6 @@ class UnitPipeline(PipelineTemplate):
                     if self.quit_on_app("pc_denoising"):
                         # keep iterating over pairs, but don't go further
                         continue
-
-            if self.save_output_dsm or self.save_output_point_cloud:
-                # Compute terrain bounding box /roi related to
-                # current images
-                (current_terrain_roi_bbox, intersection_poly) = (
-                    preprocessing.compute_terrain_bbox(
-                        self.pairs[pair_key]["sensor_image_left"],
-                        self.pairs[pair_key]["sensor_image_right"],
-                        new_epipolar_image_left,
-                        self.pairs[pair_key]["corrected_grid_left"],
-                        self.pairs[pair_key]["corrected_grid_right"],
-                        self.epsg,
-                        self.geom_plugin_with_dem_and_geoid,
-                        resolution=self.resolution,
-                        disp_min=self.pairs[pair_key]["disp_range_grid"][
-                            "global_min"
-                        ],
-                        disp_max=self.pairs[pair_key]["disp_range_grid"][
-                            "global_max"
-                        ],
-                        roi_poly=(
-                            None if self.debug_with_roi else self.roi_poly
-                        ),
-                        orchestrator=self.cars_orchestrator,
-                        pair_key=pair_key,
-                        pair_folder=os.path.join(
-                            self.dump_dir, "terrain_bbox", pair_key
-                        ),
-                        check_inputs=False,
-                    )
-                )
-                self.list_terrain_roi.append(current_terrain_roi_bbox)
-                self.list_intersection_poly.append(intersection_poly)
-
-                # compute terrain bounds for later use
-                (
-                    self.terrain_bounds,
-                    self.optimal_terrain_tile_width,
-                ) = preprocessing.compute_terrain_bounds(
-                    self.list_terrain_roi,
-                    roi_poly=(None if self.debug_with_roi else self.roi_poly),
-                    resolution=self.resolution,
-                )
-
-                if self.which_resolution not in ("final", "single"):
-                    if self.dem_generation_roi is not None:
-                        # To get the correct size for the dem generation
-                        self.terrain_bounds = (
-                            dem_wrappers.modify_terrain_bounds(
-                                self.dem_generation_roi,
-                                self.epsg,
-                                self.dem_generation_application.margin,
-                            )
-                        )
 
         # quit if any app in the loop over the pairs was the last one
         # pylint:disable=too-many-boolean-expressions
