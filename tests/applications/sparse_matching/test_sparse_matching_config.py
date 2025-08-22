@@ -46,7 +46,7 @@ def test_check_full_conf():
         "sift_matching_threshold": 0.6,
         "sift_n_octave": 8,
         "sift_n_scale_per_octave": 3,
-        "sift_peak_threshold": None,
+        "sift_peak_threshold": 1,
         "sift_edge_threshold": 5.0,
         "sift_magnification": 2.0,
         "sift_back_matching": True,
