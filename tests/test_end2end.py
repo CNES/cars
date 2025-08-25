@@ -5356,7 +5356,7 @@ def test_end2end_disparity_filling():
         dense_dsm_applications = {
             "resolution_1": {
                 "dense_matching": {
-                    "method": "census_sgm_default",
+                    "method": "auto",
                     "use_cross_validation": True,
                     "min_epi_tile_size": 100,
                     "save_intermediate_data": True,
