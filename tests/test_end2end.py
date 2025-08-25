@@ -841,8 +841,9 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                     "decimation_factor": 80,
                 },
                 "dense_matching": {
+                    "method": "census_sgm_default",
                     # run disp min disp max in the global pipeline
-                    "use_global_disp_range": True
+                    "use_global_disp_range": True,
                 },
                 "dem_generation": {
                     # save the dems in the global pipeline
@@ -1005,6 +1006,7 @@ def test_end2end_ventoux_unique():
                     "decimation_factor": 80,
                 },
                 "dense_matching": {
+                    "method": "census_sgm_default",
                     # run disp min disp max in the global pipeline
                     "use_global_disp_range": True,
                     "use_cross_validation": False,
@@ -1384,6 +1386,7 @@ def test_end2end_ventoux_unique():
                     "decimation_factor": 80,
                 },
                 "dense_matching": {
+                    "method": "census_sgm_default",
                     # run disp min disp max in the global pipeline
                     "use_global_disp_range": True,
                     "use_cross_validation": False,
@@ -1549,6 +1552,7 @@ def test_end2end_ventoux_unique():
                     "decimation_factor": 80,
                 },
                 "dense_matching": {
+                    "method": "census_sgm_default",
                     # run disp min disp max in the global pipeline
                     "use_global_disp_range": True,
                     "use_cross_validation": False,
@@ -2548,6 +2552,7 @@ def test_end2end_use_epipolar_a_priori():
                     "decimation_factor": 100,
                 },
                 "dense_matching": {
+                    "method": "census_sgm_default",
                     # run disp min disp max in the global pipeline
                     "denoise_disparity_map": True,
                     "use_cross_validation": False,
@@ -2913,6 +2918,7 @@ def test_prepare_ventoux_bias():
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 100},
                 "dense_matching": {
+                    "method": "census_sgm_default",
                     # run disp min disp max in the global pipeline
                     "use_global_disp_range": True,
                     "denoise_disparity_map": True,
@@ -3437,6 +3443,7 @@ def test_end2end_ventoux_with_color():
                     "decimation_factor": 80,
                 },
                 "dense_matching": {
+                    "method": "census_sgm_default",
                     # run disp min disp max in the global pipeline
                     "use_global_disp_range": True,
                     "use_cross_validation": False,
@@ -3812,8 +3819,9 @@ def test_end2end_ventoux_with_classif():
                     "decimation_factor": 80,
                 },
                 "dense_matching": {
+                    "method": "census_sgm_default",
                     # run disp min disp max in the global pipeline
-                    "use_global_disp_range": True
+                    "use_global_disp_range": True,
                 },
                 "dem_generation": {
                     # save the dems in the global pipeline
