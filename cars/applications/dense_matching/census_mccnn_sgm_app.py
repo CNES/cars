@@ -35,11 +35,11 @@ from typing import Dict, Tuple
 import numpy as np
 import pandora
 import xarray as xr
-from affine import Affine
 from json_checker import And, Checker, Or
 from pandora.check_configuration import check_pipeline_section
 from pandora.img_tools import add_global_disparity
 from pandora.state_machine import PandoraMachine
+from rasterio.profiles import DefaultGTiffProfile
 from scipy.ndimage import maximum_filter, minimum_filter
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
@@ -792,26 +792,7 @@ class CensusMccnnSgm(
         global_infos_cars_ds = cars_dataset.CarsDataset("dict")
 
         # Generate profile
-        geotransform = (
-            epi_size_row,
-            step_row,
-            0.0,
-            epi_size_col,
-            0.0,
-            step_col,
-        )
-
-        transform = Affine.from_gdal(*geotransform)
-        raster_profile = collections.OrderedDict(
-            {
-                "height": nb_rows,
-                "width": nb_cols,
-                "driver": "GTiff",
-                "dtype": "float32",
-                "transform": transform,
-                "tiled": True,
-            }
-        )
+        raster_profile = DefaultGTiffProfile(count=1)
 
         # saving infos
         # disp grids
