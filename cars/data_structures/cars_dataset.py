@@ -38,6 +38,7 @@ from typing import Dict
 # Third party imports
 import numpy as np
 import pandas
+import pyproj
 import rasterio as rio
 import xarray as xr
 from rasterio.profiles import DefaultGTiffProfile
@@ -1327,12 +1328,7 @@ def dict_profile_to_rio_profile(dict_profile: Dict) -> Dict:
     crs = None
     if "crs" in dict_profile:
         if dict_profile["crs"] is not None:
-            if isinstance(dict_profile["crs"], str):
-                crs = rio.crs.CRS.from_epsg(
-                    dict_profile["crs"].replace("EPSG:", "")
-                )
-            else:
-                crs = rio.crs.CRS.from_epsg(dict_profile["crs"])
+            crs = pyproj.CRS(dict_profile["crs"])
 
     rio_profile["crs"] = crs
     rio_profile["transform"] = transform

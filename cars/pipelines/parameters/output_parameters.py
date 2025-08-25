@@ -26,12 +26,27 @@ This module contains the output definition
 import logging
 import os
 
-from json_checker import Checker, Or
+from json_checker import And, Checker, Or
 from pyproj import CRS
 
 import cars.core.constants as cst
 from cars.core.utils import safe_makedirs
 from cars.pipelines.parameters import output_constants
+
+
+def is_valid_epsg(epsg) -> bool:
+    """
+    Check if the given EPSG code is valid using pyproj.
+    """
+    if epsg is None:
+        return True
+
+    try:
+        # Try creating a CRS
+        CRS(f"EPSG:{epsg}")
+        return True
+    except Exception:
+        return False
 
 
 def check_output_parameters(conf, scaling_coeff):
@@ -166,7 +181,7 @@ def check_output_parameters(conf, scaling_coeff):
         output_constants.OUT_DIRECTORY: str,
         output_constants.PRODUCT_LEVEL: list,
         output_constants.OUT_GEOID: Or(bool, str),
-        output_constants.EPSG: Or(int, None),
+        output_constants.EPSG: And(Or(int, str, None), is_valid_epsg),
         output_constants.RESOLUTION: Or(int, float),
         output_constants.SAVE_BY_PAIR: bool,
         output_constants.AUXILIARY: dict,

@@ -208,6 +208,7 @@ class SimpleGaussian(
         self,
         point_clouds,
         epsg,
+        output_crs,
         resolution,
         orchestrator=None,
         dsm_file_name=None,
@@ -256,6 +257,8 @@ class SimpleGaussian(
         :type point_clouds: CarsDataset filled with pandas.DataFrame
         :param epsg: epsg of raster data
         :type epsg: str
+        :param output_crs: output_crs of raster data
+        :type output_crs: str
         :param resolution: resolution of raster data (in target CRS unit)
         :type resolution: float
         :param orchestrator: orchestrator used
@@ -817,7 +820,7 @@ class SimpleGaussian(
                 "driver": "GTiff",
                 "dtype": "float32",
                 "transform": transform,
-                "crs": "EPSG:{}".format(epsg),
+                "crs": output_crs.to_wkt(),
                 "tiled": True,
             }
         )

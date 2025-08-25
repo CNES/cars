@@ -1316,6 +1316,8 @@ class UnitPipeline(PipelineTemplate):
                         self.input_roi_poly, self.input_roi_epsg, self.epsg
                     )
 
+                self.vertical_crs = projection.get_output_crs(self.epsg, output)
+
         # Clean grids at the end of processing if required. Note that this will
         # also clean refined grids
         if not (save_corrected_grid or save_matches):
@@ -2383,6 +2385,7 @@ class UnitPipeline(PipelineTemplate):
         _ = self.rasterization_application.run(
             self.point_cloud_to_rasterize,
             self.epsg,
+            self.vertical_crs,
             resolution=self.resolution,
             orchestrator=self.cars_orchestrator,
             dsm_file_name=dsm_file_name,

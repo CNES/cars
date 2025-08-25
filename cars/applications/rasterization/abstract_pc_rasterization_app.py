@@ -131,6 +131,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         self,
         point_clouds,
         epsg,
+        output_crs,
         resolution,
         orchestrator=None,
         dsm_file_name=None,
