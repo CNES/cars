@@ -1156,6 +1156,10 @@ class UnitPipeline(PipelineTemplate):
             # Run cluster breakpoint to compute sifts: force computation
             self.cars_orchestrator.breakpoint()
 
+            minimum_nb_matches = (
+                self.sparse_mtch_sift_app.get_minimum_nb_matches()
+            )
+
             # Run grid correction application
             if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is False:
                 # Estimate grid correction if no epipolar a priori
@@ -1175,10 +1179,6 @@ class UnitPipeline(PipelineTemplate):
                             self.sparse_mtch_sift_app.get_save_matches()
                         ),
                     )
-                )
-
-                minimum_nb_matches = (
-                    self.sparse_mtch_sift_app.get_minimum_nb_matches()
                 )
 
                 # Compute grid correction
@@ -1475,6 +1475,7 @@ class UnitPipeline(PipelineTemplate):
                     new_grid_matches_array,
                     self.pairs[pair_key]["grid_right"],
                     save_matches=save_matches,
+                    minimum_nb_matches=minimum_nb_matches,
                     pair_folder=os.path.join(
                         self.dump_dir, "grid_correction", "new", pair_key
                     ),
