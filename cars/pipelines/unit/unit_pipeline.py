@@ -36,6 +36,7 @@ import math
 import os
 
 import numpy as np
+from pyproj import CRS
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars import __version__
@@ -56,6 +57,7 @@ from cars.core import preprocessing, projection, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import (
     get_descriptions_bands,
+    rasterio_get_crs,
     rasterio_get_epsg,
     rasterio_get_size,
     read_vector,
@@ -2623,6 +2625,7 @@ class UnitPipeline(PipelineTemplate):
             )
 
             self.epsg = rasterio_get_epsg(dict_path["dsm"][0])
+            self.vertical_crs = rasterio_get_crs(dict_path["dsm"][0])
 
             # Compute roi polygon, in input EPSG
             self.roi_poly = preprocessing.compute_roi_poly(
@@ -2752,9 +2755,9 @@ class UnitPipeline(PipelineTemplate):
                     )
 
                     # Project polygon if epsg is different
-                    if self.epsg != inter_epsg:
-                        inter_poly = projection.polygon_projection(
-                            inter_poly, inter_epsg, self.epsg
+                    if self.vertical_crs != CRS(inter_epsg):
+                        inter_poly = projection.polygon_projection_crs(
+                            inter_poly, CRS(inter_epsg), self.vertical_crs
                         )
 
                 self.list_intersection_poly.append(inter_poly)
