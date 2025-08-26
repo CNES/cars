@@ -36,6 +36,7 @@ import numpy as np
 import rasterio as rio
 import xarray as xr
 from json_checker import Checker
+from pyproj import CRS
 from rasterio.warp import Resampling, calculate_default_transform, reproject
 from rasterio.windows import Window
 from shapely.geometry import shape
@@ -376,6 +377,20 @@ def rasterio_get_epsg(raster_file: str) -> int:
         epsg = descriptor.crs.to_epsg()
 
     return epsg
+
+
+def rasterio_get_crs(raster_file: str) -> CRS:
+    """
+    Get the crs of an image file
+
+    :param raster_file: Image file
+    :return: The crs of the given image
+    """
+    crs = None
+    with rio.open(raster_file, "r") as descriptor:
+        crs = descriptor.crs
+
+    return crs
 
 
 def rasterio_transform_epsg(file_name, new_epsg):

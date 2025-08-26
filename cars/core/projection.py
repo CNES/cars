@@ -182,6 +182,22 @@ def polygon_projection(poly: Polygon, epsg_in: int, epsg_out: int) -> Polygon:
     return poly
 
 
+def polygon_projection_crs(poly: Polygon, crs_in: CRS, crs_out: CRS) -> Polygon:
+    """
+    Projects a polygon from an initial crs to another
+
+    :param poly: poly to project
+    :param crs_in: initial crs
+    :param crs_out: final crs
+    :return: The polygon in the final projection
+    """
+    # Project polygon between CRS (keep always_xy for compatibility)
+    project = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)
+    poly = transform(project.transform, poly)
+
+    return poly
+
+
 def geo_to_ecef(
     lat: np.ndarray, lon: np.ndarray, alt: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -341,6 +357,27 @@ def point_cloud_conversion(
     crs_in = pyproj.CRS.from_epsg(epsg_in)
     crs_out = pyproj.CRS.from_epsg(epsg_out)
 
+    # Project point cloud between CRS (keep always_xy for compatibility)
+    cloud_in = np.array(cloud_in).T
+    transformer = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)
+
+    cloud_in = transformer.transform(*cloud_in)
+    cloud_in = np.array(cloud_in).T
+
+    return cloud_in
+
+
+def point_cloud_conversion_crs(
+    cloud_in: np.ndarray, crs_in: int, crs_out: int
+) -> np.ndarray:
+    """
+    Convert a point cloud from a SRS to another one.
+
+    :param cloud_in: cloud to project
+    :param crs_in: crs of the input SRS
+    :param crs_out: crs of the output SRS
+    :return: Projected point cloud
+    """
     # Project point cloud between CRS (keep always_xy for compatibility)
     cloud_in = np.array(cloud_in).T
     transformer = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)

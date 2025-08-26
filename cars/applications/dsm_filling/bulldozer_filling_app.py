@@ -32,6 +32,7 @@ import rasterio as rio
 import yaml
 from bulldozer.pipeline.bulldozer_pipeline import dsm_to_dtm
 from json_checker import Checker, Or
+from pyproj import CRS
 from shapely import Polygon
 
 from cars.core import inputs, projection
@@ -162,8 +163,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             roi_polys_outepsg = []
             for poly in roi_polys:
                 if isinstance(poly, Polygon):
-                    roi_poly_outepsg = projection.polygon_projection(
-                        poly, roi_epsg, dsm_crs.to_epsg()
+                    roi_poly_outepsg = projection.polygon_projection_crs(
+                        poly, CRS(roi_epsg), dsm_crs
                     )
                     roi_polys_outepsg.append(roi_poly_outepsg)
 
@@ -171,8 +172,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 roi_polys_outepsg, out_shape=roi_raster.shape, transform=dsm_tr
             )
         elif isinstance(roi_polys, Polygon):
-            roi_poly_outepsg = projection.polygon_projection(
-                roi_polys, roi_epsg, dsm_crs.to_epsg()
+            roi_poly_outepsg = projection.polygon_projection_crs(
+                roi_polys, CRS(roi_epsg), dsm_crs
             )
             roi_raster = rio.features.rasterize(
                 [roi_poly_outepsg], out_shape=roi_raster.shape, transform=dsm_tr

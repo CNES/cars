@@ -2925,6 +2925,10 @@ class UnitPipeline(PipelineTemplate):
         if self.epsg is None:
             self.epsg = epsg_cloud
 
+        self.vertical_crs = projection.get_output_crs(
+            self.epsg, self.used_conf[OUTPUT]
+        )
+
         self.resolution = (
             self.used_conf[OUTPUT][out_cst.RESOLUTION] * self.res_resamp
         )
