@@ -315,7 +315,7 @@ The structure follows this organization:
                 +=================================+==========================================================================+============+======================================+========================+==========+
                 | method                          | Method for dem_generation                                                | string     | "dichotomic", "bulldozer_on_raster"  | "bulldozer_on_raster"  | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+------------------------+----------+
-                | height_margin [#scaled]_        | Height margin [margin min, margin max], in meter                         | int        |                                      | 20 [#scaled]_          | No       |
+                | height_margin [#scaled]_        | Height margin [margin min, margin max], in meter                         | int        |                                      | None [#scaled]_        | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+------------------------+----------+
                 | min_dem                         | Min value that has to be reached by dem_min                              | int        | should be < 0                        | -500                   | No       |
                 +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+------------------------+----------+
@@ -350,27 +350,27 @@ The structure follows this organization:
 
                 Rasterizes all matches on a regular grid and performs morphological operations and Bulldozer processing to compute DEM min and max
 
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
-                | Name                                | Description                                                                     | Type       | Available value | Default value  | Required |
-                +=====================================+=================================================================================+============+=================+================+==========+
-                | resolution [#scaled]_               | Resolution of dem, in meter                                                     | int, float | should be > 0   | 90 [#scaled]_  | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
-                | margin [#scaled]_                   | Margin to use on the border of dem, in meter                                    | int, float | should be > 0   | 500 [#scaled]_ | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
-                | fillnodata_max_search_distance      | Max search distance for rasterio fill nodata                                    | int        | should be > 0   | 50             | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
-                | morphological_filters_size          | Size (in pixels) of erosion and dilation filters used to generate DEM           | int        | should be > 0   | 30             | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
-                | preprocessing_median_filter_size    | Size (in pixels) of first median filter used to smooth median DEM               | int        | should be > 0   | 5              | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
-                | dem_median_output_resolution        | Resolution of output downsampled median DEM                                     | int        | should be > 0   | 30             | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
-                | postprocessing_median_filter_size   | Size (in pixels) of second median filter used to smooth downsampled median DEM  | int        | should be > 0   | 7              | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
-                | bulldozer_max_object_size           | Bulldozer parameter "max_object_size"                                           | int        | should be > 0   | 16             | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
-                | compute_stats                       | Compute statistics of difference between DEM min/max and original DSM           | boolean    |                 | true           | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+----------------+----------+
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | Name                                | Description                                                                     | Type       | Available value | Default value    | Required |
+                +=====================================+=================================================================================+============+=================+==================+==========+
+                | resolution [#scaled]_               | Resolution of dem, in meter                                                     | int, float | should be > 0   | None [#scaled]_  | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | margin [#scaled]_                   | Margin to use on the border of dem, in meter                                    | int, float | should be > 0   | None [#scaled]_  | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | fillnodata_max_search_distance      | Max search distance for rasterio fill nodata                                    | int        | should be > 0   | 50               | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | morphological_filters_size          | Size (in pixels) of erosion and dilation filters used to generate DEM           | int        | should be > 0   | 30               | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | preprocessing_median_filter_size    | Size (in pixels) of first median filter used to smooth median DEM               | int        | should be > 0   | 5                | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | dem_median_output_resolution        | Resolution of output downsampled median DEM                                     | int        | should be > 0   | 30               | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | postprocessing_median_filter_size   | Size (in pixels) of second median filter used to smooth downsampled median DEM  | int        | should be > 0   | 7                | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | bulldozer_max_object_size           | Bulldozer parameter "max_object_size"                                           | int        | should be > 0   | 16               | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | compute_stats                       | Compute statistics of difference between DEM min/max and original DSM           | boolean    |                 | true             | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
 
                 **Example**
 
@@ -874,7 +874,7 @@ The structure follows this organization:
                 +---------------------------------+-------------+---------+-----------------+-----------------+----------+
                 | on_ground_margin                |             | int     |                 | 10              | No       |
                 +---------------------------------+-------------+---------+-----------------+-----------------+----------+
-                | connection_distance [#scaled]_  |             | float   |                 | 3.0 [#scaled]_  | No       |
+                | connection_distance [#scaled]_  |             | float   |                 | None [#scaled]_ | No       |
                 +---------------------------------+-------------+---------+-----------------+-----------------+----------+
                 | nb_points_threshold             |             | int     |                 | 50              | No       |
                 +---------------------------------+-------------+---------+-----------------+-----------------+----------+
@@ -1451,7 +1451,7 @@ The structure follows this organization:
                 +-----------------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
                 | *interpolator*              | Interpolator to use                                           | str            | "cubic"                 | "cubic" , "linear"                    | False    |
                 +-----------------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
-                | *dem_roi_margin* [#scaled]_ | Additional margin (in degrees) for ROI used to crop input DEM | float          | 0.012 [#scaled]_        |                                       | False    |
+                | *dem_roi_margin* [#scaled]_ | Additional margin (in degrees) for ROI used to crop input DEM | float          | None [#scaled]_         |                                       | False    |
                 +-----------------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
 
 
@@ -1623,4 +1623,4 @@ The structure follows this organization:
 
 .. rubric:: Footnotes
 
-.. [#scaled] This parameter is scaled depending on the resolution of the input sensor images. The default parameter given here corresponds to the value used when sensor images are at a resolution of 0.5 meters. You can override this parameter in the configuration if needed. If no sensor images are given (depth map or dsm inputs), the default values will be used.
+.. [#scaled] This parameter is computed at runtime depending on the resolution of the input sensor images. You can still override it in the configuration.
