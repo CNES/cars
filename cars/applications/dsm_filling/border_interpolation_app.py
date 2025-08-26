@@ -161,7 +161,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
                 roi_polys_outepsg, out_shape=roi_raster.shape, transform=dsm_tr
             )
         elif isinstance(roi_polys, Polygon):
-            roi_poly_outepsg = projection.polygon_projection(
+            roi_poly_outepsg = projection.polygon_projection_crs(
                 roi_polys, CRS(roi_epsg), dsm_crs
             )
             roi_raster = rio.features.rasterize(
