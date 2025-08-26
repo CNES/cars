@@ -56,7 +56,7 @@ def test_output_full():
         }
 
         print(f"config {config}")
-        output_parameters.check_output_parameters(config)
+        output_parameters.check_output_parameters(config, 1)
 
 
 @pytest.mark.unit_tests
@@ -69,5 +69,5 @@ def test_output_minimal():
         config = {"directory": os.path.join(directory, "outdir")}
 
         print(f"config {config}")
-        overload = output_parameters.check_output_parameters(config)
+        overload = output_parameters.check_output_parameters(config, 1)
         print(overload)

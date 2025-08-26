@@ -120,9 +120,6 @@ class DefaultPipeline(PipelineTemplate):
         # Check conf inputs
         inputs = self.check_inputs(conf[INPUTS], config_dir=config_dir)
 
-        # Check conf output
-        output = self.check_output(conf[OUTPUT])
-
         # Check advanced parameters
         # TODO static method in the base class
         (
@@ -132,9 +129,16 @@ class DefaultPipeline(PipelineTemplate):
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
             _,
+            self.scaling_coeff,
         ) = advanced_parameters.check_advanced_parameters(
             inputs, conf.get(ADVANCED, {}), check_epipolar_a_priori=True
         )
+
+        # Check conf output
+        (
+            output,
+            self.scaling_coeff,
+        ) = self.check_output(conf[OUTPUT], self.scaling_coeff)
 
         resolutions = advanced["epipolar_resolutions"]
         if isinstance(resolutions, int):
@@ -563,17 +567,19 @@ class DefaultPipeline(PipelineTemplate):
         return output_config
 
     @staticmethod
-    def check_output(conf):
+    def check_output(conf, scaling_coeff):
         """
         Check the output given
 
         :param conf: configuration of output
         :type conf: dict
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
 
         :return overloader output
         :rtype : dict
         """
-        return output_parameters.check_output_parameters(conf)
+        return output_parameters.check_output_parameters(conf, scaling_coeff)
 
     def merge_resolution_conf(self, config1, config2):
         """
@@ -629,6 +635,7 @@ class DefaultPipeline(PipelineTemplate):
         :param conf: configuration of applications
         :type conf: dict
         """
+        scaling_coeff = self.scaling_coeff
 
         # Check if all specified applications are used
         # Application in terrain_application are note used in
@@ -727,7 +734,9 @@ class DefaultPipeline(PipelineTemplate):
         if self.sensors_in_inputs:
             # Epipolar grid generation
             self.epipolar_grid_generation_application = Application(
-                "grid_generation", cfg=used_conf.get("grid_generation", {})
+                "grid_generation",
+                cfg=used_conf.get("grid_generation", {}),
+                scaling_coeff=scaling_coeff,
             )
             used_conf["grid_generation"] = (
                 self.epipolar_grid_generation_application.get_conf()
@@ -736,7 +745,9 @@ class DefaultPipeline(PipelineTemplate):
             # image resampling
 
             self.resampling_application = Application(
-                "resampling", cfg=used_conf.get("resampling", {})
+                "resampling",
+                cfg=used_conf.get("resampling", {}),
+                scaling_coeff=scaling_coeff,
             )
             used_conf["resampling"] = self.resampling_application.get_conf()
 
@@ -758,10 +769,13 @@ class DefaultPipeline(PipelineTemplate):
                 self.ground_truth_reprojection = Application(
                     "ground_truth_reprojection",
                     cfg=used_conf.get("ground_truth_reprojection", {}),
+                    scaling_coeff=scaling_coeff,
                 )
             # holes detection
             self.hole_detection_app = Application(
-                "hole_detection", cfg=used_conf.get("hole_detection", {})
+                "hole_detection",
+                cfg=used_conf.get("hole_detection", {}),
+                scaling_coeff=scaling_coeff,
             )
             used_conf["hole_detection"] = self.hole_detection_app.get_conf()
 
@@ -772,6 +786,7 @@ class DefaultPipeline(PipelineTemplate):
                     "dense_match_filling.1",
                     {"method": "plane"},
                 ),
+                scaling_coeff=scaling_coeff,
             )
             used_conf["dense_match_filling.1"] = (
                 self.dense_match_filling_1.get_conf()
@@ -784,6 +799,7 @@ class DefaultPipeline(PipelineTemplate):
                     "dense_match_filling.2",
                     {"method": "zero_padding"},
                 ),
+                scaling_coeff=scaling_coeff,
             )
             used_conf["dense_match_filling.2"] = (
                 self.dense_match_filling_2.get_conf()
@@ -793,6 +809,7 @@ class DefaultPipeline(PipelineTemplate):
             self.sparse_mtch_sift_app = Application(
                 "sparse_matching",
                 cfg=used_conf.get("sparse_matching.sift", {"method": "sift"}),
+                scaling_coeff=scaling_coeff,
             )
             used_conf["sparse_matching.sift"] = (
                 self.sparse_mtch_sift_app.get_conf()
@@ -820,7 +837,9 @@ class DefaultPipeline(PipelineTemplate):
             ):
                 dense_matching_config["performance_map_method"] = "risk"
             self.dense_matching_app = Application(
-                "dense_matching", cfg=dense_matching_config
+                "dense_matching",
+                cfg=dense_matching_config,
+                scaling_coeff=scaling_coeff,
             )
             used_conf["dense_matching"] = self.dense_matching_app.get_conf()
 
@@ -832,7 +851,9 @@ class DefaultPipeline(PipelineTemplate):
 
             # Triangulation
             self.triangulation_application = Application(
-                "triangulation", cfg=used_conf.get("triangulation", {})
+                "triangulation",
+                cfg=used_conf.get("triangulation", {}),
+                scaling_coeff=scaling_coeff,
             )
             used_conf["triangulation"] = (
                 self.triangulation_application.get_conf()
@@ -840,7 +861,9 @@ class DefaultPipeline(PipelineTemplate):
 
             # MNT generation
             self.dem_generation_application = Application(
-                "dem_generation", cfg=used_conf.get("dem_generation", {})
+                "dem_generation",
+                cfg=used_conf.get("dem_generation", {}),
+                scaling_coeff=scaling_coeff,
             )
 
             height_margin = None
@@ -867,6 +890,7 @@ class DefaultPipeline(PipelineTemplate):
                     "point_cloud_outlier_removal.1",
                     {"method": "small_components"},
                 ),
+                scaling_coeff=scaling_coeff,
             )
 
             connection_val = None
@@ -894,6 +918,7 @@ class DefaultPipeline(PipelineTemplate):
                     "point_cloud_outlier_removal.2",
                     {"method": "statistical"},
                 ),
+                scaling_coeff=scaling_coeff,
             )
             used_conf["point_cloud_outlier_removal.2"] = (
                 self.pc_outlier_removal_2_app.get_conf()
@@ -905,6 +930,7 @@ class DefaultPipeline(PipelineTemplate):
             self.pc_denoising_application = Application(
                 "pc_denoising",
                 cfg=used_conf.get("pc_denoising", {"method": "none"}),
+                scaling_coeff=scaling_coeff,
             )
             used_conf["pc_denoising"] = self.pc_denoising_application.get_conf()
 
@@ -914,6 +940,7 @@ class DefaultPipeline(PipelineTemplate):
                 self.rasterization_application = Application(
                     "point_cloud_rasterization",
                     cfg=used_conf.get("point_cloud_rasterization", {}),
+                    scaling_coeff=scaling_coeff,
                 )
                 used_conf["point_cloud_rasterization"] = (
                     self.rasterization_application.get_conf()
@@ -925,6 +952,7 @@ class DefaultPipeline(PipelineTemplate):
                         "dsm_filling.1",
                         {"method": "exogenous_filling"},
                     ),
+                    scaling_coeff=scaling_coeff,
                 )
                 used_conf["dsm_filling.1"] = (
                     self.dsm_filling_1_application.get_conf()
@@ -947,13 +975,16 @@ class DefaultPipeline(PipelineTemplate):
                         "dsm_filling.3",
                         {"method": "border_interpolation"},
                     ),
+                    scaling_coeff=scaling_coeff,
                 )
                 used_conf["dsm_filling.3"] = (
                     self.dsm_filling_3_application.get_conf()
                 )
                 # Auxiliary filling
                 self.auxiliary_filling_application = Application(
-                    "auxiliary_filling", cfg=conf.get("auxiliary_filling", {})
+                    "auxiliary_filling",
+                    cfg=conf.get("auxiliary_filling", {}),
+                    scaling_coeff=scaling_coeff,
                 )
                 used_conf["auxiliary_filling"] = (
                     self.auxiliary_filling_application.get_conf()
@@ -965,6 +996,7 @@ class DefaultPipeline(PipelineTemplate):
                 self.pc_fusion_application = Application(
                     "point_cloud_fusion",
                     cfg=used_conf.get("point_cloud_fusion", {}),
+                    scaling_coeff=scaling_coeff,
                 )
                 used_conf["point_cloud_fusion"] = (
                     self.pc_fusion_application.get_conf()

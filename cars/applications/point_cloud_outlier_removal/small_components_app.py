@@ -64,15 +64,17 @@ class SmallComponents(
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, conf=None):
+    def __init__(self, scaling_coeff, conf=None):
         """
         Init function of SmallComponents
 
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         :param conf: configuration for points outlier removal
         :return: an application_to_use object
         """
 
-        super().__init__(conf=conf)
+        super().__init__(scaling_coeff, conf=conf)
 
         self.used_method = self.used_config["method"]
 
@@ -131,7 +133,7 @@ class SmallComponents(
         # pts_connection_dist:
         #           distance to use to consider that two points are connected
         overloaded_conf["connection_distance"] = conf.get(
-            "connection_distance", 3.0
+            "connection_distance", self.scaling_coeff * 3.0
         )
         # nb_pts_threshold:
         #           points clusters that have less than this number of points

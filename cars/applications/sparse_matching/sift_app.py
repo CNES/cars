@@ -224,7 +224,7 @@ class Sift(SparseMatching, short_name=["sift"]):
             "sift_matching_threshold": And(float, lambda x: x > 0),
             "sift_n_octave": And(int, lambda x: x > 0),
             "sift_n_scale_per_octave": And(int, lambda x: x > 0),
-            "sift_peak_threshold": Or(float, None),
+            "sift_peak_threshold": Or(float, int),
             "sift_edge_threshold": float,
             "sift_magnification": And(float, lambda x: x > 0),
             "sift_window_size": And(int, lambda x: x > 0),
@@ -514,26 +514,6 @@ class Sift(SparseMatching, short_name=["sift"]):
             epipolar_disparity_map_left.attributes.update(
                 epipolar_image_left.attributes
             )
-            # check sift_peak_threshold with image type
-            # only if sift_peak_threshold is None
-            tmp_sift_peak_threshold = self.sift_peak_threshold
-            if not self.sift_peak_threshold:
-                logging.info("The sift_peak_threshold is set to auto-mode.")
-                # sift_peak_threshold is None or not specified
-                # check input type
-                if np.issubdtype(
-                    epipolar_disparity_map_left.attributes["image_type"],
-                    np.uint8,
-                ):
-                    tmp_sift_peak_threshold = 1
-                else:
-                    tmp_sift_peak_threshold = 20
-                logging.info(
-                    "The sift_peak_threshold will be set to {}.".format(
-                        tmp_sift_peak_threshold
-                    )
-                )
-                self.sift_peak_threshold = tmp_sift_peak_threshold
 
             # Save disparity maps
             if self.save_intermediate_data:
@@ -628,7 +608,7 @@ class Sift(SparseMatching, short_name=["sift"]):
                         matching_threshold=self.sift_matching_threshold,
                         n_octave=self.sift_n_octave,
                         n_scale_per_octave=self.sift_n_scale_per_octave,
-                        peak_threshold=tmp_sift_peak_threshold,
+                        peak_threshold=self.sift_peak_threshold,
                         edge_threshold=self.sift_edge_threshold,
                         magnification=self.sift_magnification,
                         window_size=self.sift_window_size,

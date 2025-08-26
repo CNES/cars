@@ -185,6 +185,7 @@ def test_exception_roi_outside_dtm():
             geoid=geoid,
             default_alt=0,
             pairs_for_roi=pairs_for_roi,
+            scaling_coeff=1,
         )
 
     assert str(excinfo.value) == (

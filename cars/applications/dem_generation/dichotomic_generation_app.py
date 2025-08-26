@@ -64,14 +64,16 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, conf=None):
+    def __init__(self, scaling_coeff, conf=None):
         """
         Init function of DichotomicGeneration
 
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         :param conf: configuration for DichotomicGeneration
         :return: an application_to_use object
         """
-        super().__init__(conf=conf)
+        super().__init__(scaling_coeff, conf=conf)
 
         # check conf
         self.used_method = self.used_config["method"]

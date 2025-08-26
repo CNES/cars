@@ -24,13 +24,15 @@ Used for full_res and low_res pipelines
 """
 
 import logging
+import math
 import os
 
+import numpy as np
 import rasterio as rio
 from json_checker import Checker, OptionalKey, Or
 
 # CARS imports
-from cars.core import inputs, preprocessing, roi_tools
+from cars.core import inputs, preprocessing, projection, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.parameters import (
@@ -235,6 +237,65 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
     return overloaded_conf
 
 
+def get_sensor_resolution(
+    geom_plugin, sensor_path, geomodel, target_epsg=32631
+):
+    """
+    Estimate the sensor image resolution in meters per pixel
+    using geolocation of 3 corners of the image.
+
+    :param geom_plugin: geometry plugin instance
+    :param sensor_path: path to the sensor image
+    :type sensor_path: dict
+    :param geomodel: geometric model for the sensor image
+    :param target_epsg: target EPSG code for projection
+    :type target_epsg: int
+    :return: average resolution in meters/pixel along x and y
+    :rtype: float
+    """
+    width, height = inputs.rasterio_get_size(sensor_path[sens_cst.MAIN_FILE])
+
+    upper_left = (0.5, 0.5)
+    upper_right = (width - 0.5, 0.5)
+    bottom_left = (0.5, height - 0.5)
+
+    # get geodetic coordinates
+    lat_ul, lon_ul, _ = geom_plugin.direct_loc(
+        sensor_path[sens_cst.MAIN_FILE],
+        geomodel,
+        np.array([upper_left[0]]),
+        np.array([upper_left[1]]),
+    )
+    lat_ur, lon_ur, _ = geom_plugin.direct_loc(
+        sensor_path[sens_cst.MAIN_FILE],
+        geomodel,
+        np.array([upper_right[0]]),
+        np.array([upper_right[1]]),
+    )
+    lat_bl, lon_bl, _ = geom_plugin.direct_loc(
+        sensor_path[sens_cst.MAIN_FILE],
+        geomodel,
+        np.array([bottom_left[0]]),
+        np.array([bottom_left[1]]),
+    )
+
+    coords_ll = np.array(
+        [[lon_ul, lat_ul, 0], [lon_ur, lat_ur, 0], [lon_bl, lat_bl, 0]]
+    )
+
+    # Convert to target CRS
+    coords_xy = projection.point_cloud_conversion(coords_ll, 4326, target_epsg)
+
+    diff_x = np.linalg.norm(coords_xy[1] - coords_xy[0])  # UL to UR (width)
+    diff_y = np.linalg.norm(coords_xy[2] - coords_xy[0])  # UL to BL (height)
+
+    # resolution in meters per pixel
+    res_x = diff_x / (width - 1)
+    res_y = diff_y / (height - 1)
+
+    return (res_x + res_y) / 2
+
+
 def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     """
     Check the geometry plugin with inputs
@@ -253,11 +314,40 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     if conf_geom_plugin is None:
         conf_geom_plugin = "SharelocGeometry"
 
+    # Initialize a temporary plugin, to get the product's resolution
+    temp_geom_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            conf_geom_plugin,
+            default_alt=sens_cst.CARS_DEFAULT_ALT,
+        )
+    )
+    average_sensor_resolution = 0
+    for _, sensor_image in conf_inputs[sens_cst.SENSORS].items():
+        sensor = sensor_image[sens_cst.INPUT_IMG]
+        geomodel = sensor_image[sens_cst.INPUT_GEO_MODEL]
+        (
+            sensor,
+            geomodel,
+        ) = temp_geom_plugin.check_product_consistency(sensor, geomodel)
+        average_sensor_resolution += get_sensor_resolution(
+            temp_geom_plugin, sensor, geomodel
+        )
+    average_sensor_resolution /= len(conf_inputs[sens_cst.SENSORS])
+    # approximate resolution to the highest digit:
+    #  0.47 -> 0.5
+    #  7.52 -> 8
+    #  12.9 -> 10
+    nb_digits = int(math.floor(math.log10(abs(average_sensor_resolution))))
+    scaling_coeff = round(average_sensor_resolution, -nb_digits)
+    # make it so 0.5 (CO3D) is the baseline for parameters
+    scaling_coeff *= 2
+
     # Initialize the desired geometry plugin without elevation information
     geom_plugin_without_dem_and_geoid = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             conf_geom_plugin,
             default_alt=sens_cst.CARS_DEFAULT_ALT,
+            scaling_coeff=scaling_coeff,
         )
     )
 
@@ -280,7 +370,7 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
         ] = geomodel
 
     geom_plugin_with_dem_and_geoid = generate_geometry_plugin_with_dem(
-        conf_geom_plugin, conf_inputs
+        conf_geom_plugin, conf_inputs, scaling_coeff=scaling_coeff
     )
 
     # Check dem is big enough
@@ -344,11 +434,12 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
         geom_plugin_without_dem_and_geoid,
         geom_plugin_with_dem_and_geoid,
         dem_generation_roi_poly,
+        scaling_coeff,
     )
 
 
 def generate_geometry_plugin_with_dem(
-    conf_geom_plugin, conf_inputs, dem=None, crop_dem=True
+    conf_geom_plugin, conf_inputs, dem=None, crop_dem=True, scaling_coeff=1
 ):
     """
     Generate geometry plugin with dem and geoid
@@ -356,6 +447,8 @@ def generate_geometry_plugin_with_dem(
     :param conf_geom_plugin: plugin configuration
     :param conf_inputs: inputs configuration
     :param dem: dem to overide the one in inputs
+    :param scaling_coeff: scaling factor for resolution
+    :type scaling_coeff: float
 
     :return: geometry plugin object, with a dem
     """
@@ -389,6 +482,7 @@ def generate_geometry_plugin_with_dem(
             geoid=conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
             default_alt=sens_cst.CARS_DEFAULT_ALT,
             pairs_for_roi=pairs_for_roi,
+            scaling_coeff=scaling_coeff,
         )
     )
 

@@ -31,7 +31,7 @@ import numpy as np
 
 from cars.applications import application_constants
 from cars.applications.application import Application
-from cars.applications.application_template import ApplicationTemplate
+from cars.applications.application_template import ScalingApplicationTemplate
 from cars.applications.point_cloud_outlier_removal import (
     outlier_removal_constants as pr_cst,
 )
@@ -41,7 +41,7 @@ from cars.data_structures import cars_dataset
 
 
 @Application.register("point_cloud_outlier_removal")
-class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
+class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
     """
     PointCloudOutlierRemoval
     """
@@ -49,12 +49,14 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
     available_applications: Dict = {}
     default_application = "statistical"
 
-    def __new__(cls, conf=None):  # pylint: disable=W0613
+    def __new__(cls, scaling_coeff, conf=None):  # pylint: disable=W0613
         """
         Return the required application
         :raises:
          - KeyError when the required application is not registered
 
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         :param conf: configuration for points removal
         :return: a application_to_use object
         """
@@ -95,15 +97,17 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         cls.orchestrator = None
         cls.available_applications[short_name] = cls
 
-    def __init__(self, conf=None):
+    def __init__(self, scaling_coeff, conf=None):
         """
         Init function of PointCloudOutlierRemoval
 
+        :param scaling_coeff: scaling factor for resolution
+        :type scaling_coeff: float
         :param conf: configuration
         :return: an application_to_use object
         """
 
-        super().__init__(conf=conf)
+        super().__init__(scaling_coeff, conf=conf)
 
     @abstractmethod
     def get_on_ground_margin(self, resolution=0.5):

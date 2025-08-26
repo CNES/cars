@@ -63,6 +63,7 @@ class SharelocGeometry(AbstractGeometry):
         geoid=None,
         default_alt=None,
         pairs_for_roi=None,
+        scaling_coeff=1,
     ):
 
         super().__init__(
@@ -71,6 +72,7 @@ class SharelocGeometry(AbstractGeometry):
             geoid=geoid,
             default_alt=default_alt,
             pairs_for_roi=pairs_for_roi,
+            scaling_coeff=scaling_coeff,
         )
 
         self.dem_roi = None
