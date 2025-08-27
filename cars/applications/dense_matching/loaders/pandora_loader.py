@@ -355,6 +355,11 @@ class PandoraLoader:
         # Find the configuration that corresponds to the most common class
         corresponding_conf_name = conf_mapping.get(str(most_common_class), None)
 
+        logging.info(
+            "The conf that has been chosen regarding the "
+            "world classification map is {}".format(corresponding_conf_name)
+        )
+
         # If no equivalence has been found, we use the default configuration
         if corresponding_conf_name is None:
             corresponding_conf_name = "census_sgm_default"
