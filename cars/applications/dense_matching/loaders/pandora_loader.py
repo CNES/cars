@@ -330,15 +330,19 @@ class PandoraLoader:
                 poly = intersection_poly
 
             # Use a buffer because the land_cover_map resolution is coarse
-            buffered_poly = poly.buffer(0.05)
-            data_land_cover, _ = mask(src, [mapping(buffered_poly)], crop=True)
+            data_land_cover, _ = mask(
+                src, [mapping(poly)], crop=True, all_touched=True
+            )
 
             # Find the most common class in the roi
             data_squeeze = data_land_cover.squeeze()
             valid_data = data_squeeze[data_squeeze != src.nodata]
-            classes, counts = np.unique(valid_data, return_counts=True)
-            max_index = np.argmax(counts)
-            most_common_class = classes[max_index]
+
+            most_common_class = None
+            if valid_data.size > 0:
+                classes, counts = np.unique(valid_data, return_counts=True)
+                max_index = np.argmax(counts)
+                most_common_class = classes[max_index]
 
         # Construct the path to the classification to configuration mapping
         if os.path.dirname(classif_to_config_mapping) == "":
@@ -355,14 +359,14 @@ class PandoraLoader:
         # Find the configuration that corresponds to the most common class
         corresponding_conf_name = conf_mapping.get(str(most_common_class), None)
 
+        # If no equivalence has been found, we use the default configuration
+        if corresponding_conf_name is None:
+            corresponding_conf_name = "census_sgm_default"
+
         logging.info(
             "The conf that has been chosen regarding the "
             "world classification map is {}".format(corresponding_conf_name)
         )
-
-        # If no equivalence has been found, we use the default configuration
-        if corresponding_conf_name is None:
-            corresponding_conf_name = "census_sgm_default"
 
         # We return the corresponding configuration
         json_conf_name = os.path.join(
