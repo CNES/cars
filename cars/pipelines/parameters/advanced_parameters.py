@@ -39,6 +39,22 @@ from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
 from cars.pipelines.pipeline_constants import ADVANCED
 
 
+def get_epipolar_resolutions(conf):
+    """
+    Get the epipolar resolutions from the configuration
+
+    :param conf: configuration of advanced parameters
+    :type conf: dict
+
+    :return: list of epipolar resolutions
+    :rtype: list
+    """
+    if adv_cst.EPIPOLAR_RESOLUTIONS in conf:
+        return conf[adv_cst.EPIPOLAR_RESOLUTIONS]
+
+    return [16, 4, 1]
+
+
 def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     """
     Check the advanced parameters consistency
@@ -78,8 +94,13 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
 
     overloaded_conf[adv_cst.PHASING] = conf.get(adv_cst.PHASING, None)
 
-    overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS] = conf.get(
-        adv_cst.EPIPOLAR_RESOLUTIONS, [16, 4, 1]
+    overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS] = get_epipolar_resolutions(
+        conf
+    )
+
+    # use endogenous dm when generated
+    overloaded_conf[adv_cst.USE_ENDOGENOUS_DEM] = conf.get(
+        adv_cst.USE_ENDOGENOUS_DEM, False
     )
 
     overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, False)
@@ -124,17 +145,13 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         check_ground_truth_dsm_data(overloaded_conf[adv_cst.GROUND_TRUTH_DSM])
 
     if check_epipolar_a_priori:
-        # Check conf use_epipolar_a_priori
-        overloaded_conf[adv_cst.USE_EPIPOLAR_A_PRIORI] = conf.get(
-            adv_cst.USE_EPIPOLAR_A_PRIORI, False
-        )
         # Retrieve epipolar_a_priori if it is provided
         overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI] = conf.get(
-            adv_cst.EPIPOLAR_A_PRIORI, {}
+            adv_cst.EPIPOLAR_A_PRIORI, None
         )
         # Retrieve terrain_a_priori if it is provided
         overloaded_conf[adv_cst.TERRAIN_A_PRIORI] = conf.get(
-            adv_cst.TERRAIN_A_PRIORI, {}
+            adv_cst.TERRAIN_A_PRIORI, None
         )
 
     # Check geometry plugin
@@ -196,11 +213,11 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         adv_cst.EPIPOLAR_RESOLUTIONS: Or(int, list),
         adv_cst.LAND_COVER_MAP: str,
         adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: str,
+        adv_cst.USE_ENDOGENOUS_DEM: bool,
     }
     if check_epipolar_a_priori:
-        schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool
-        schema[adv_cst.EPIPOLAR_A_PRIORI] = dict
-        schema[adv_cst.TERRAIN_A_PRIORI] = dict
+        schema[adv_cst.EPIPOLAR_A_PRIORI] = Or(None, dict)
+        schema[adv_cst.TERRAIN_A_PRIORI] = Or(None, dict)
 
     checker_advanced_parameters = Checker(schema)
     checker_advanced_parameters.validate(overloaded_conf)
@@ -246,9 +263,9 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         checker_terrain.validate(overloaded_conf[adv_cst.TERRAIN_A_PRIORI])
 
     # check epipolar a priori for each image pair
-    if (
-        check_epipolar_a_priori
-        and overloaded_conf[adv_cst.USE_EPIPOLAR_A_PRIORI]
+    if check_epipolar_a_priori and (
+        not overloaded_conf[adv_cst.TERRAIN_A_PRIORI] in (None, {})
+        or not overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI] in (None, {})
     ):
         validate_epipolar_a_priori(overloaded_conf, checker_epipolar)
 
@@ -356,10 +373,11 @@ def validate_epipolar_a_priori(
     :type checker_epipolar: Checker
     """
 
-    for key_image_pair in overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI]:
-        checker_epipolar.validate(
-            overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI][key_image_pair]
-        )
+    if overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI] is not None:
+        for key_image_pair in overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI]:
+            checker_epipolar.validate(
+                overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI][key_image_pair]
+            )
 
 
 def check_ground_truth_dsm_data(conf):
@@ -440,7 +458,7 @@ def check_ground_truth_dsm_data(conf):
                     raise RuntimeError("interpolator does not exist")
 
 
-def update_conf(
+def update_conf(  # noqa: C901
     conf,
     grid_correction_coef=None,
     dmin=None,
@@ -465,6 +483,12 @@ def update_conf(
     """
 
     if pair_key is not None:
+        if ADVANCED not in conf:
+            conf[ADVANCED] = {}
+        if adv_cst.EPIPOLAR_A_PRIORI not in conf[ADVANCED]:
+            conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = {}
+        if conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] is None:
+            conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = {}
         if pair_key not in conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI]:
             conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][pair_key] = {}
         if grid_correction_coef is not None:
@@ -490,6 +514,11 @@ def update_conf(
                 dmin,
                 dmax,
             ]
+
+    if adv_cst.TERRAIN_A_PRIORI not in conf[ADVANCED]:
+        conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {}
+    if conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] is None:
+        conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {}
 
     if dem_median is not None:
         conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_median"] = dem_median

@@ -621,6 +621,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         epipolar_images_left[row, col] = None
                     if not in_sensor_right_array[row, col]:
                         epipolar_images_right[row, col] = None
+
         return epipolar_images_left, epipolar_images_right
 
 

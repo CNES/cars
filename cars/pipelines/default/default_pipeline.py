@@ -33,41 +33,55 @@ from __future__ import print_function
 import copy
 import json
 import logging
-import math
 import os
 import shutil
 
 # CARS imports
-from cars import __version__
-from cars.applications.application import Application
 from cars.core import cars_logging
-from cars.core.inputs import get_descriptions_bands, rasterio_get_size
 from cars.core.utils import safe_makedirs
-from cars.orchestrator import orchestrator
-from cars.orchestrator.cluster import log_wrapper
+from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import depth_map_inputs
 from cars.pipelines.parameters import depth_map_inputs_constants as depth_cst
-from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
-from cars.pipelines.parameters import output_parameters, sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
     APPLICATIONS,
     INPUTS,
-    ORCHESTRATOR,
     OUTPUT,
 )
-from cars.pipelines.pipeline_template import (
-    PipelineTemplate,
-    _merge_resolution_conf_rec,
-)
+from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.unit.unit_pipeline import UnitPipeline
+
+package_path = os.path.dirname(__file__)
+FIRST_RES = "first_resolution"
+INTERMEDIATE_RES = "intermediate_resolution"
+FINAL_RES = "final_resolution"
+
+PIPELINE_CONFS = {
+    FIRST_RES: os.path.join(
+        package_path,
+        "..",
+        "conf_resolution",
+        "conf_first_resolution.json",
+    ),
+    INTERMEDIATE_RES: os.path.join(
+        package_path,
+        "..",
+        "conf_resolution",
+        "conf_intermediate_resolution.json",
+    ),
+    FINAL_RES: os.path.join(
+        package_path,
+        "..",
+        "conf_resolution",
+        "conf_final_resolution.json",
+    ),
+}
 
 
 @Pipeline.register(
@@ -84,17 +98,6 @@ class DefaultPipeline(PipelineTemplate):
         """
         Creates pipeline
 
-        Directly creates class attributes:
-            used_conf
-            generate_terrain_products
-            debug_with_roi
-            save_output_dsm
-            save_output_depth_map
-            save_output_point_clouds
-            geom_plugin_without_dem_and_geoid
-            geom_plugin_with_dem_and_geoid
-            dem_generation_roi
-
         :param pipeline_name: name of the pipeline.
         :type pipeline_name: str
         :param cfg: configuration {'matching_cost_method': value}
@@ -103,9 +106,6 @@ class DefaultPipeline(PipelineTemplate):
         :type config_dir: str
         """
 
-        # Used conf
-        self.used_conf = {}
-
         # Transform relative path to absolute path
         if config_dir is not None:
             config_dir = os.path.abspath(config_dir)
@@ -113,1053 +113,229 @@ class DefaultPipeline(PipelineTemplate):
         # Check global conf
         self.check_global_schema(conf)
 
-        # The inputs, outputs and advanced
-        # parameters are all the same for each resolutions
-        # So we do the check once
+        self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
-        # Check conf inputs
-        inputs = self.check_inputs(conf[INPUTS], config_dir=config_dir)
-
-        # Check advanced parameters
-        # TODO static method in the base class
-        (
-            _,
-            advanced,
-            self.geometry_plugin,
-            self.geom_plugin_without_dem_and_geoid,
-            self.geom_plugin_with_dem_and_geoid,
-            _,
-            self.scaling_coeff,
-            _,
-            _,
-        ) = advanced_parameters.check_advanced_parameters(
-            inputs, conf.get(ADVANCED, {}), check_epipolar_a_priori=True
+        # Get epipolar resolutions to use
+        self.epipolar_resolutions = (
+            advanced_parameters.get_epipolar_resolutions(conf.get(ADVANCED, {}))
         )
 
-        # Check conf output
-        (
-            output,
-            self.scaling_coeff,
-        ) = self.check_output(conf[OUTPUT], self.scaling_coeff)
+        # Check application
+        self.check_application_keys_name(
+            self.epipolar_resolutions, conf.get(APPLICATIONS, {})
+        )
+        # Check input
+        conf[INPUTS] = self.check_inputs(conf)
+        # check advanced
+        conf[ADVANCED] = self.check_advanced(conf)
+        # check output
+        conf[OUTPUT] = self.check_output(conf)
 
-        resolutions = advanced["epipolar_resolutions"]
-        if isinstance(resolutions, int):
-            resolutions = [resolutions]
+        if isinstance(self.epipolar_resolutions, int):
+            self.epipolar_resolutions = [self.epipolar_resolutions]
 
         if (
-            (depth_cst.DEPTH_MAPS in inputs) or (dsm_cst.DSMS in inputs)
-        ) and len(resolutions) != 1:
+            (depth_cst.DEPTH_MAPS in conf[INPUTS])
+            or (dsm_cst.DSMS in conf[INPUTS])
+        ) and len(self.epipolar_resolutions) != 1:
             raise RuntimeError(
                 "For the use of those pipelines, "
                 "you have to give only one resolution"
             )
 
-        i = 0
-        last_res = False
-        for res in resolutions:
+        used_configurations = {}
+        self.unit_pipelines = {}
+        self.positions = {}
 
-            if not isinstance(res, int) or res < 0:
+        self.intermediate_out_dirs = []
+
+        self.keep_low_res_dir = False  # TODO update
+
+        for epipolar_resolution_index, epipolar_res in enumerate(
+            self.epipolar_resolutions
+        ):
+            first_res = epipolar_resolution_index == 0
+            intermediate_res = (
+                epipolar_resolution_index == len(self.epipolar_resolutions) - 1
+                or len(self.epipolar_resolutions) == 1
+            )
+            last_res = (
+                epipolar_resolution_index == len(self.epipolar_resolutions) - 1
+            )
+
+            # set computed bool
+            self.positions[epipolar_resolution_index] = {
+                "first_res": first_res,
+                "intermediate_res": intermediate_res,
+                "last_res": last_res,
+            }
+
+            current_conf = copy.deepcopy(conf)
+            current_conf = extract_conf_with_resolution(
+                current_conf,
+                epipolar_res,
+                first_res,
+                intermediate_res,
+                last_res,
+            )
+            # get output directory
+            self.intermediate_out_dirs.append(
+                current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+            )
+
+            if not isinstance(epipolar_res, int) or epipolar_res < 0:
                 raise RuntimeError("The resolution has to be an int > 0")
 
-            # Get the current key
-            key = "resolution_" + str(res)
+            # Initialize unit pipeline in order to retrieve the
+            # used configuration
+            # This pipeline will not be run
 
-            # Choose the right default configuration regarding the resolution
-            package_path = os.path.dirname(__file__)
-
-            if i == 0:
-                json_file = os.path.join(
-                    package_path,
-                    "..",
-                    "conf_resolution",
-                    "conf_first_resolution.json",
-                )
-            elif i == len(resolutions) - 1 or len(resolutions) == 1:
-                json_file = os.path.join(
-                    package_path,
-                    "..",
-                    "conf_resolution",
-                    "conf_final_resolution.json",
-                )
-            else:
-                json_file = os.path.join(
-                    package_path,
-                    "..",
-                    "conf_resolution",
-                    "conf_intermediate_resolution.json",
-                )
-
-            with open(json_file, "r", encoding="utf8") as fstream:
-                resolution_config = json.load(fstream)
-
-            self.used_conf[key] = {}
-
-            # Check conf orchestrator
-            self.used_conf[key][ORCHESTRATOR] = self.check_orchestrator(
-                conf.get(ORCHESTRATOR, None)
+            print("INIT PIPELINE", epipolar_res)
+            current_unit_pipeline = UnitPipeline(
+                current_conf, config_json_dir=self.config_json_dir
             )
-
-            # copy inputs
-            self.used_conf[key][INPUTS] = copy.deepcopy(inputs)
-
-            # Override the resolution
-            self.used_conf[key][ADVANCED] = copy.deepcopy(advanced)
-            self.used_conf[key][ADVANCED][adv_cst.EPIPOLAR_RESOLUTIONS] = res
-
-            # Copy output
-            self.used_conf[key][OUTPUT] = copy.deepcopy(output)
-
-            # Get save intermediate data per res
-            # If true we don't delete the resolution directory
-            if isinstance(
-                self.used_conf[key][ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA],
-                dict,
-            ):
-
-                self.used_conf[key][ADVANCED][
-                    adv_cst.SAVE_INTERMEDIATE_DATA
-                ] = self.used_conf[key][ADVANCED][
-                    adv_cst.SAVE_INTERMEDIATE_DATA
-                ].get(
-                    key, False
-                )
-
-            self.save_intermediate_data = self.used_conf[key][ADVANCED][
-                adv_cst.SAVE_INTERMEDIATE_DATA
-            ]
-
-            self.keep_low_res_dir = self.used_conf[key][ADVANCED][
-                adv_cst.KEEP_LOW_RES_DIR
-            ]
-
-            if i != len(resolutions) - 1:
-                # Change output dir for lower resolution
-                new_dir = (
-                    self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY]
-                    + "/intermediate_res/out_res"
-                    + str(res)
-                )
-                self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY] = new_dir
-                safe_makedirs(
-                    self.used_conf[key][OUTPUT][out_cst.OUT_DIRECTORY]
-                )
-
-                # Put dems in auxiliary output
-                self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_DEM_MAX
-                ] = True
-                self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_DEM_MIN
-                ] = True
-                self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_DEM_MEDIAN
-                ] = True
-
-                if not self.save_intermediate_data:
-                    # For each resolutions we need to calculate the dsm
-                    # (except the last one)
-                    self.used_conf[key][OUTPUT][out_cst.PRODUCT_LEVEL] = "dsm"
-
-                else:
-                    # If save_intermediate_data is true,
-                    # we save the depth_maps also to debug
-                    self.used_conf[key][OUTPUT][out_cst.PRODUCT_LEVEL] = [
-                        "dsm",
-                        "depth_map",
-                    ]
-            else:
-                # For the final res we don't change anything
-                last_res = True
-
-            prod_level = self.used_conf[key][OUTPUT][out_cst.PRODUCT_LEVEL]
-
-            self.save_output_dsm = "dsm" in prod_level
-            self.save_output_depth_map = "depth_map" in prod_level
-            self.save_output_point_cloud = "point_cloud" in prod_level
-
-            self.output_level_none = not (
-                self.save_output_dsm
-                or self.save_output_depth_map
-                or self.save_output_point_cloud
+            self.unit_pipelines[epipolar_resolution_index] = (
+                current_unit_pipeline
             )
-            self.sensors_in_inputs = (
-                sens_cst.SENSORS in self.used_conf[key][INPUTS]
-            )
-            self.depth_maps_in_inputs = (
-                depth_cst.DEPTH_MAPS in self.used_conf[key][INPUTS]
-            )
-            self.dsms_in_inputs = dsm_cst.DSMS in self.used_conf[key][INPUTS]
+            # Get used_conf
+            used_configurations[epipolar_res] = current_unit_pipeline.used_conf
 
-            self.merging = self.used_conf[key][ADVANCED][adv_cst.MERGING]
+        # Generate full used_conf
+        full_used_conf = merge_used_conf(used_configurations)
+        # Save used_conf
+        cars_dataset.save_dict(
+            full_used_conf,
+            os.path.join(self.out_dir, "used_conf.json"),
+            safe_save=True,
+        )
 
-            self.phasing = self.used_conf[key][ADVANCED][adv_cst.PHASING]
-
-            self.save_all_point_clouds_by_pair = self.used_conf[key][
-                OUTPUT
-            ].get(out_cst.SAVE_BY_PAIR, False)
-
-            # Check conf application
-            if APPLICATIONS in conf:
-                if all(
-                    "resolution_" + str(val) not in conf[APPLICATIONS]
-                    for val in resolutions
-                ):
-                    application_all_conf = conf.get(APPLICATIONS, {})
-                else:
-                    self.check_application_keys_name(
-                        resolutions, conf[APPLICATIONS]
-                    )
-                    application_all_conf = conf[APPLICATIONS].get(key, {})
-            else:
-                application_all_conf = {}
-
-            application_all_conf = self.merge_resolution_conf(
-                application_all_conf, resolution_config
-            )
-
-            application_conf = self.check_applications(
-                application_all_conf, key, res, last_res
-            )
-
-            if (
-                self.sensors_in_inputs
-                and not self.depth_maps_in_inputs
-                and not self.dsms_in_inputs
-            ):
-                # Check conf application vs inputs application
-                application_conf = self.check_applications_with_inputs(
-                    self.used_conf[key][INPUTS],
-                    application_conf,
-                    application_all_conf,
-                    res,
-                )
-
-            self.used_conf[key][APPLICATIONS] = application_conf
-
-            i += 1
-
-    def quit_on_app(self, app_name):
-        """
-        Returns whether the pipeline should end after
-        the application was called.
-
-        Only works if the output_level is empty, so that
-        the control is instead given to
-        """
-
-        if not self.output_level_none:
-            # custom quit step was not set, never quit early
-            return False
-
-        return self.app_values[app_name] >= self.last_application_to_run
-
-    def infer_conditions_from_applications(self, conf):
-        """
-        Fills the condition booleans used later in the pipeline by going
-        through the applications and infering which application we should
-        end the pipeline on.
-        """
-
-        self.last_application_to_run = 0
-
-        sensor_to_depth_apps = {
-            "grid_generation": 1,  # and 5
-            "resampling": 2,  # and 8
-            "hole_detection": 3,
-            "sparse_matching.sift": 4,
-            "ground_truth_reprojection": 6,
-            "dense_matching": 8,
-            "dense_match_filling.1": 9,
-            "dense_match_filling.2": 10,
-            "triangulation": 11,
-            "point_cloud_outlier_removal.1": 12,
-            "point_cloud_outlier_removal.2": 13,
-        }
-
-        depth_merge_apps = {
-            "point_cloud_fusion": 14,
-        }
-
-        depth_to_dsm_apps = {
-            "pc_denoising": 15,
-            "point_cloud_rasterization": 16,
-            "dem_generation": 17,
-            "dsm_filling.1": 18,
-            "dsm_filling.2": 19,
-            "dsm_filling.3": 20,
-            "auxiliary_filling": 21,
-        }
-
-        self.app_values = {}
-        self.app_values.update(sensor_to_depth_apps)
-        self.app_values.update(depth_merge_apps)
-        self.app_values.update(depth_to_dsm_apps)
-
-        app_conf = conf.get(APPLICATIONS, {})
-        for key in app_conf:
-
-            if adv_cst.SAVE_INTERMEDIATE_DATA not in app_conf[key]:
-                continue
-
-            if not app_conf[key][adv_cst.SAVE_INTERMEDIATE_DATA]:
-                continue
-
-            if key in sensor_to_depth_apps:
-
-                if not self.sensors_in_inputs:
-                    warn_msg = (
-                        "The application {} can only be used when sensor "
-                        "images are given as an input. "
-                        "Its configuration will be ignored."
-                    ).format(key)
-                    logging.warning(warn_msg)
-
-                elif (
-                    self.sensors_in_inputs
-                    and not self.depth_maps_in_inputs
-                    and not self.dsms_in_inputs
-                ):
-                    self.compute_depth_map = True
-                    self.last_application_to_run = max(
-                        self.last_application_to_run, self.app_values[key]
-                    )
-
-            elif key in depth_to_dsm_apps:
-
-                if not (
-                    self.sensors_in_inputs
-                    or self.depth_maps_in_inputs
-                    or self.dsms_in_inputs
-                ):
-                    warn_msg = (
-                        "The application {} can only be used when sensor "
-                        "images or depth maps are given as an input. "
-                        "Its configuration will be ignored."
-                    ).format(key)
-                    logging.warning(warn_msg)
-
-                else:
-                    if (
-                        self.sensors_in_inputs
-                        and not self.depth_maps_in_inputs
-                        and not self.dsms_in_inputs
-                    ):
-                        self.compute_depth_map = True
-
-                    # enabled to start the depth map to dsm process
-                    self.save_output_dsm = True
-
-                    self.last_application_to_run = max(
-                        self.last_application_to_run, self.app_values[key]
-                    )
-
-            elif key in depth_merge_apps:
-
-                if not self.merging:
-                    warn_msg = (
-                        "The application {} can only be used when merging "
-                        "is activated (this parameter is located in the "
-                        "'advanced' config key). "
-                        "The application's configuration will be ignored."
-                    ).format(key)
-                    logging.warning(warn_msg)
-
-                elif not (
-                    self.sensors_in_inputs
-                    or self.depth_maps_in_inputs
-                    or self.dsms_in_inputs
-                ):
-                    warn_msg = (
-                        "The application {} can only be used when sensor "
-                        "images or depth maps are given as an input. "
-                        "Its configuration will be ignored."
-                    ).format(key)
-                    logging.warning(warn_msg)
-
-                else:
-                    if (
-                        self.sensors_in_inputs
-                        and not self.depth_maps_in_inputs
-                        and not self.dsms_in_inputs
-                    ):
-                        self.compute_depth_map = True
-
-                    # enabled to start the depth map to dsm process
-                    self.save_output_point_cloud = True
-
-                    self.last_application_to_run = max(
-                        self.last_application_to_run, self.app_values[key]
-                    )
-            else:
-                warn_msg = (
-                    "The application {} was not recognized. Its configuration"
-                    "will be ignored."
-                ).format(key)
-                logging.warning(warn_msg)
-
-        if not (self.compute_depth_map or self.save_output_dsm):
-            log_msg = (
-                "No product level was given. CARS has not detected any "
-                "data you wish to save. No computation will be done."
-            )
-            logging.info(log_msg)
-        else:
-            log_msg = (
-                "No product level was given. CARS has detected that you "
-                + "wish to run up to the {} application.".format(
-                    next(
-                        k
-                        for k, v in self.app_values.items()
-                        if v == self.last_application_to_run
-                    )
-                )
-            )
-            logging.warning(log_msg)
-
-    @staticmethod
-    def check_inputs(conf, config_dir=None):
+    def check_inputs(self, conf, config_json_dir=None):
         """
         Check the inputs given
 
-        :param conf: configuration of inputs
+        :param conf: configuration
         :type conf: dict
         :param config_dir: directory of used json, if
             user filled paths with relative paths
         :type config_dir: str
 
-        :return: overloaded inputs
+        :return: overloader inputs
         :rtype: dict
         """
+        return UnitPipeline.check_inputs(conf[INPUTS])
 
-        output_config = {}
-        if (
-            sens_cst.SENSORS in conf
-            and depth_cst.DEPTH_MAPS not in conf
-            and dsm_cst.DSMS not in conf
-        ):
-            output_config = sensor_inputs.sensors_check_inputs(
-                conf, config_dir=config_dir
-            )
-        elif depth_cst.DEPTH_MAPS in conf:
-            output_config = {
-                **output_config,
-                **depth_map_inputs.check_depth_maps_inputs(
-                    conf, config_dir=config_dir
-                ),
-            }
-        else:
-            output_config = {
-                **output_config,
-                **dsm_inputs.check_dsm_inputs(conf, config_dir=config_dir),
-            }
-        return output_config
-
-    @staticmethod
-    def check_output(conf, scaling_coeff):
+    def check_output(self, conf):
         """
         Check the output given
 
         :param conf: configuration of output
         :type conf: dict
-        :param scaling_coeff: scaling factor for resolution
-        :type scaling_coeff: float
 
         :return overloader output
         :rtype : dict
         """
-        return output_parameters.check_output_parameters(conf, scaling_coeff)
+        return UnitPipeline.check_output(conf[OUTPUT])
 
-    def merge_resolution_conf(self, config1, config2):
+    def check_advanced(self, conf):
         """
-        Merge two configuration dict, generating a new configuration
+        Check all conf for advanced configuration
 
-        :param conf1: configuration
-        :type conf1: dict
-        :param conf2: configuration
-        :type conf2: dict
-
-        :return: merged conf
+        :return: overridden advanced conf
         :rtype: dict
-
         """
+        (
+            _,
+            advanced,
+            _,
+            _,
+            _,
+            _,
+        ) = advanced_parameters.check_advanced_parameters(
+            conf[INPUTS], conf.get(ADVANCED, {}), check_epipolar_a_priori=True
+        )
+        return advanced
 
-        merged_dict = config1.copy()
+    def check_applications(self, conf, key=None, res=None, last_res=False):
+        """
+        Check the given configuration for applications
 
-        _merge_resolution_conf_rec(merged_dict, config2)
-
-        return merged_dict
+        :param conf: configuration of applications
+        :type conf: dict
+        """
 
     def check_application_keys_name(self, resolutions, applications_conf):
         """
         Check if the application name for each res match 'resolution_res'
         """
 
-        for key_app, _ in applications_conf.items():
-            if not key_app.startswith("resolution"):
-                raise RuntimeError(
-                    "If you decided to define an "
-                    "application per resolution, "
-                    "all the keys have to be : "
-                    "resolution_res"
-                )
-            if int(key_app.split("_")[1]) not in resolutions:
-                raise RuntimeError(
-                    "This resolution "
-                    + key_app.split("_")[1]
-                    + " is not in the resolution list"
-                )
-
-    def check_applications(  # noqa: C901 : too complex
-        self,
-        conf,
-        key=None,
-        res=None,
-        last_res=False,
-    ):
-        """
-        Check the given configuration for applications,
-        and generates needed applications for pipeline.
-
-        :param conf: configuration of applications
-        :type conf: dict
-        """
-        scaling_coeff = self.scaling_coeff
-
-        # Check if all specified applications are used
-        # Application in terrain_application are note used in
-        # the sensors_to_dense_depth_maps pipeline
-        needed_applications = []
-
-        if self.sensors_in_inputs:
-            needed_applications += [
-                "grid_generation",
-                "resampling",
-                "ground_truth_reprojection",
-                "hole_detection",
-                "dense_match_filling.1",
-                "dense_match_filling.2",
-                "sparse_matching.sift",
-                "dense_matching",
-                "triangulation",
-                "dem_generation",
-                "point_cloud_outlier_removal.1",
-                "point_cloud_outlier_removal.2",
-            ]
-
-        if self.save_output_dsm or self.save_output_point_cloud:
-
-            needed_applications += ["pc_denoising"]
-
-            if self.save_output_dsm:
-                needed_applications += [
-                    "point_cloud_rasterization",
-                    "dsm_filling.1",
-                    "dsm_filling.2",
-                    "dsm_filling.3",
-                    "auxiliary_filling",
-                ]
-
-            if self.merging:  # we have to merge point clouds, add merging apps
-                needed_applications += ["point_cloud_fusion"]
-
-        for app_key in conf.keys():
-            if app_key not in needed_applications:
-                msg = (
-                    f"No {app_key} application used in the "
-                    + "default Cars pipeline"
-                )
-                logging.error(msg)
-                raise NameError(msg)
-
-        # Initialize used config
-        used_conf = {}
-
-        for app_key in [
-            "point_cloud_outlier_removal.1",
-            "point_cloud_outlier_removal.2",
-            "auxiliary_filling",
-        ]:
-            if conf.get(app_key) is not None:
-                config_app = conf.get(app_key)
-                if "activated" not in config_app:
-                    conf[app_key]["activated"] = True
-
-        for app_key in needed_applications:
-            used_conf[app_key] = conf.get(app_key, {})
-            used_conf[app_key]["save_intermediate_data"] = (
-                self.save_intermediate_data
-                or used_conf[app_key].get("save_intermediate_data", False)
-            )
-
-        for app_key in [
-            "point_cloud_fusion",
-            "pc_denoising",
-        ]:
-            if app_key in needed_applications:
-                used_conf[app_key]["save_by_pair"] = used_conf[app_key].get(
-                    "save_by_pair", self.save_all_point_clouds_by_pair
-                )
-
-        self.epipolar_grid_generation_application = None
-        self.resampling_application = None
-        self.ground_truth_reprojection = None
-        self.hole_detection_app = None
-        self.dense_match_filling_1 = None
-        self.dense_match_filling_2 = None
-        self.sparse_mtch_sift_app = None
-        self.dense_matching_app = None
-        self.triangulation_application = None
-        self.dem_generation_application = None
-        self.pc_denoising_application = None
-        self.pc_outlier_removal_1_app = None
-        self.pc_outlier_removal_2_app = None
-        self.rasterization_application = None
-        self.pc_fusion_application = None
-        self.dsm_filling_1_application = None
-        self.dsm_filling_2_application = None
-        self.dsm_filling_3_application = None
-
-        if self.sensors_in_inputs:
-            # Epipolar grid generation
-            self.epipolar_grid_generation_application = Application(
-                "grid_generation",
-                cfg=used_conf.get("grid_generation", {}),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["grid_generation"] = (
-                self.epipolar_grid_generation_application.get_conf()
-            )
-
-            # image resampling
-
-            self.resampling_application = Application(
-                "resampling",
-                cfg=used_conf.get("resampling", {}),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["resampling"] = self.resampling_application.get_conf()
-
-            # ground truth disparity map computation
-            if self.used_conf[key][ADVANCED][adv_cst.GROUND_TRUTH_DSM]:
-                used_conf["ground_truth_reprojection"][
-                    "save_intermediate_data"
-                ] = True
-
-                if isinstance(
-                    self.used_conf[key][ADVANCED][adv_cst.GROUND_TRUTH_DSM], str
-                ):
-                    self.used_conf[key][ADVANCED][adv_cst.GROUND_TRUTH_DSM] = {
-                        "dsm": self.used_conf[key][ADVANCED][
-                            adv_cst.GROUND_TRUTH_DSM
-                        ]
-                    }
-
-                self.ground_truth_reprojection = Application(
-                    "ground_truth_reprojection",
-                    cfg=used_conf.get("ground_truth_reprojection", {}),
-                    scaling_coeff=scaling_coeff,
-                )
-            # holes detection
-            self.hole_detection_app = Application(
-                "hole_detection",
-                cfg=used_conf.get("hole_detection", {}),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["hole_detection"] = self.hole_detection_app.get_conf()
-
-            # disparity filling 1 plane
-            self.dense_match_filling_1 = Application(
-                "dense_match_filling",
-                cfg=used_conf.get(
-                    "dense_match_filling.1",
-                    {"method": "plane"},
-                ),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["dense_match_filling.1"] = (
-                self.dense_match_filling_1.get_conf()
-            )
-
-            # disparity filling 2
-            self.dense_match_filling_2 = Application(
-                "dense_match_filling",
-                cfg=used_conf.get(
-                    "dense_match_filling.2",
-                    {"method": "zero_padding"},
-                ),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["dense_match_filling.2"] = (
-                self.dense_match_filling_2.get_conf()
-            )
-
-            # Sparse Matching
-            self.sparse_mtch_sift_app = Application(
-                "sparse_matching",
-                cfg=used_conf.get("sparse_matching.sift", {"method": "sift"}),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["sparse_matching.sift"] = (
-                self.sparse_mtch_sift_app.get_conf()
-            )
-
-            # Matching
-            generate_performance_map = (
-                self.used_conf[key][OUTPUT]
-                .get(out_cst.AUXILIARY, {})
-                .get(out_cst.AUX_PERFORMANCE_MAP, False)
-            )
-            generate_ambiguity = (
-                self.used_conf[key][OUTPUT]
-                .get(out_cst.AUXILIARY, {})
-                .get(out_cst.AUX_AMBIGUITY, False)
-            )
-            dense_matching_config = used_conf.get("dense_matching", {})
-            if generate_ambiguity is True:
-                dense_matching_config["generate_ambiguity"] = True
-
-            if (
-                generate_performance_map is True
-                and dense_matching_config.get("performance_map_method", None)
-                is None
-            ):
-                dense_matching_config["performance_map_method"] = "risk"
-            self.dense_matching_app = Application(
-                "dense_matching",
-                cfg=dense_matching_config,
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["dense_matching"] = self.dense_matching_app.get_conf()
-
-            if not last_res:
-                used_conf["dense_matching"]["performance_map_method"] = [
-                    "risk",
-                    "intervals",
-                ]
-
-            # Triangulation
-            self.triangulation_application = Application(
-                "triangulation",
-                cfg=used_conf.get("triangulation", {}),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["triangulation"] = (
-                self.triangulation_application.get_conf()
-            )
-
-            # MNT generation
-            self.dem_generation_application = Application(
-                "dem_generation",
-                cfg=used_conf.get("dem_generation", {}),
-                scaling_coeff=scaling_coeff,
-            )
-
-            height_margin = None
-            if res >= 8 and "height_margin" not in used_conf["dem_generation"]:
-                height_margin = [50, 250]
-
-            used_conf["dem_generation"] = (
-                self.dem_generation_application.get_conf()
-            )
-
-            if height_margin is not None:
-                used_conf["dem_generation"]["height_margin"] = height_margin
-
-            # Points cloud small component outlier removal
-            if "point_cloud_outlier_removal.1" in used_conf:
-                if "method" not in used_conf["point_cloud_outlier_removal.1"]:
-                    used_conf["point_cloud_outlier_removal.1"][
-                        "method"
-                    ] = "small_components"
-
-            self.pc_outlier_removal_1_app = Application(
-                "point_cloud_outlier_removal",
-                cfg=used_conf.get(
-                    "point_cloud_outlier_removal.1",
-                    {"method": "small_components"},
-                ),
-                scaling_coeff=scaling_coeff,
-            )
-
-            connection_val = None
-            if (
-                "connection_distance"
-                not in used_conf["point_cloud_outlier_removal.1"]
-            ):
-                connection_val = (
-                    self.pc_outlier_removal_1_app.connection_distance * res
-                )
-
-            used_conf["point_cloud_outlier_removal.1"] = (
-                self.pc_outlier_removal_1_app.get_conf()
-            )
-
-            if connection_val is not None:
-                used_conf["point_cloud_outlier_removal.1"][
-                    "connection_distance"
-                ] = connection_val
-
-            # Points cloud statistical outlier removal
-            self.pc_outlier_removal_2_app = Application(
-                "point_cloud_outlier_removal",
-                cfg=used_conf.get(
-                    "point_cloud_outlier_removal.2",
-                    {"method": "statistical"},
-                ),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["point_cloud_outlier_removal.2"] = (
-                self.pc_outlier_removal_2_app.get_conf()
-            )
-
-        if self.save_output_dsm or self.save_output_point_cloud:
-
-            # Point cloud denoising
-            self.pc_denoising_application = Application(
-                "pc_denoising",
-                cfg=used_conf.get("pc_denoising", {"method": "none"}),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["pc_denoising"] = self.pc_denoising_application.get_conf()
-
-            if self.save_output_dsm:
-
-                # Rasterization
-                self.rasterization_application = Application(
-                    "point_cloud_rasterization",
-                    cfg=used_conf.get("point_cloud_rasterization", {}),
-                    scaling_coeff=scaling_coeff,
-                )
-                used_conf["point_cloud_rasterization"] = (
-                    self.rasterization_application.get_conf()
-                )
-                # DSM filling 1 : Exogenous filling
-                self.dsm_filling_1_application = Application(
-                    "dsm_filling",
-                    cfg=conf.get(
-                        "dsm_filling.1",
-                        {"method": "exogenous_filling"},
-                    ),
-                    scaling_coeff=scaling_coeff,
-                )
-                used_conf["dsm_filling.1"] = (
-                    self.dsm_filling_1_application.get_conf()
-                )
-                # DSM filling 2 : Bulldozer
-                self.dsm_filling_2_application = Application(
-                    "dsm_filling",
-                    cfg=conf.get(
-                        "dsm_filling.2",
-                        {"method": "bulldozer"},
-                    ),
-                )
-                used_conf["dsm_filling.2"] = (
-                    self.dsm_filling_2_application.get_conf()
-                )
-                # DSM filling 3 : Border interpolation
-                self.dsm_filling_3_application = Application(
-                    "dsm_filling",
-                    cfg=conf.get(
-                        "dsm_filling.3",
-                        {"method": "border_interpolation"},
-                    ),
-                    scaling_coeff=scaling_coeff,
-                )
-                used_conf["dsm_filling.3"] = (
-                    self.dsm_filling_3_application.get_conf()
-                )
-                # Auxiliary filling
-                self.auxiliary_filling_application = Application(
-                    "auxiliary_filling",
-                    cfg=conf.get("auxiliary_filling", {}),
-                    scaling_coeff=scaling_coeff,
-                )
-                used_conf["auxiliary_filling"] = (
-                    self.auxiliary_filling_application.get_conf()
-                )
-
-            if self.merging:
-
-                # Point cloud fusion
-                self.pc_fusion_application = Application(
-                    "point_cloud_fusion",
-                    cfg=used_conf.get("point_cloud_fusion", {}),
-                    scaling_coeff=scaling_coeff,
-                )
-                used_conf["point_cloud_fusion"] = (
-                    self.pc_fusion_application.get_conf()
-                )
-
-        return used_conf
-
-    def check_applications_with_inputs(  # noqa: C901 : too complex
-        self, inputs_conf, application_conf, initial_conf_app, res
-    ):
-        """
-        Check for each application the input and output configuration
-        consistency
-
-        :param inputs_conf: inputs checked configuration
-        :type inputs_conf: dict
-        :param application_conf: application checked configuration
-        :type application_conf: dict
-        """
-
-        initial_elevation = (
-            inputs_conf[sens_cst.INITIAL_ELEVATION]["dem"] is not None
-        )
-        if self.sparse_mtch_sift_app.elevation_delta_lower_bound is None:
-            self.sparse_mtch_sift_app.used_config[
-                "elevation_delta_lower_bound"
-            ] = (-500 if initial_elevation else -1000)
-            self.sparse_mtch_sift_app.elevation_delta_lower_bound = (
-                self.sparse_mtch_sift_app.used_config[
-                    "elevation_delta_lower_bound"
-                ]
-            )
-        if self.sparse_mtch_sift_app.elevation_delta_upper_bound is None:
-            self.sparse_mtch_sift_app.used_config[
-                "elevation_delta_upper_bound"
-            ] = (1000 if initial_elevation else 9000)
-            self.sparse_mtch_sift_app.elevation_delta_upper_bound = (
-                self.sparse_mtch_sift_app.used_config[
-                    "elevation_delta_upper_bound"
-                ]
-            )
-        application_conf["sparse_matching.sift"] = (
-            self.sparse_mtch_sift_app.get_conf()
-        )
-
-        if (
-            application_conf["dem_generation"]["method"]
-            == "bulldozer_on_raster"
-        ):
-            first_image_path = next(iter(inputs_conf["sensors"].values()))[
-                "image"
-            ]["main_file"]
-            first_image_size = rasterio_get_size(first_image_path)
-            first_image_nb_pixels = math.prod(first_image_size)
-            dem_gen_used_mem = first_image_nb_pixels / 1e8
-            if dem_gen_used_mem > 8:
-                logging.warning(
-                    "DEM generation method is 'bulldozer_on_raster'. "
-                    f"This method can use up to {dem_gen_used_mem} Gb "
-                    "of memory. If you think that it is too much for "
-                    "your computer, you can re-lauch the run using "
-                    "'dichotomic' method for DEM generation"
-                )
-
-        # check classification application parameter compare
-        # to each sensors inputs classification list
-
-        for application_key in application_conf:
-            if "classification" in application_conf[application_key]:
-                for item in inputs_conf["sensors"]:
-                    if "classification" in inputs_conf["sensors"][item].keys():
-                        if inputs_conf["sensors"][item]["classification"]:
-                            descriptions = get_descriptions_bands(
-                                inputs_conf["sensors"][item]["classification"]
-                            )
-                            if application_conf[application_key][
-                                "classification"
-                            ] and not set(
-                                application_conf[application_key][
-                                    "classification"
-                                ]
-                            ).issubset(
-                                set(descriptions) | {"nodata"}
-                            ):
-                                raise RuntimeError(
-                                    "The {} bands description {} ".format(
-                                        inputs_conf["sensors"][item][
-                                            "classification"
-                                        ],
-                                        list(descriptions),
-                                    )
-                                    + "and the {} config are not ".format(
-                                        application_key
-                                    )
-                                    + "consistent: {}".format(
-                                        application_conf[application_key][
-                                            "classification"
-                                        ]
-                                    )
-                                )
-        for key1, key2 in inputs_conf["pairing"]:
-            corr_cfg = self.dense_matching_app.loader.get_conf()
-            img_left = inputs_conf["sensors"][key1]["image"]["main_file"]
-            img_right = inputs_conf["sensors"][key2]["image"]["main_file"]
-            bands_left = list(
-                inputs_conf["sensors"][key1]["image"]["bands"].keys()
-            )
-            bands_right = list(
-                inputs_conf["sensors"][key2]["image"]["bands"].keys()
-            )
-            classif_left = None
-            classif_right = None
-            if (
-                "classification" in inputs_conf["sensors"][key1]
-                and inputs_conf["sensors"][key1]["classification"] is not None
-            ):
-                classif_left = inputs_conf["sensors"][key1]["classification"][
-                    "main_file"
-                ]
-            if (
-                "classification" in inputs_conf["sensors"][key2]
-                and inputs_conf["sensors"][key1]["classification"] is not None
-            ):
-                classif_right = inputs_conf["sensors"][key2]["classification"][
-                    "main_file"
-                ]
-            self.dense_matching_app.corr_config = (
-                self.dense_matching_app.loader.check_conf(
-                    corr_cfg,
-                    img_left,
-                    img_right,
-                    bands_left,
-                    bands_right,
-                    classif_left,
-                    classif_right,
-                )
-            )
-
-        # Change the step regarding the resolution
-        # For the small resolution, the resampling perform better
-        # with a small step
-        # For the higher ones, a step at 30 should be better
-        first_image_path = next(iter(inputs_conf["sensors"].values()))["image"][
-            "main_file"
-        ]
-        first_image_size = rasterio_get_size(first_image_path)
-        size_low_res_img_row = first_image_size[0] // res
-        size_low_res_img_col = first_image_size[1] // res
-        if (
-            "grid_generation" not in initial_conf_app
-            or "epi_step" not in initial_conf_app["grid_generation"]
-        ):
-            if size_low_res_img_row <= 900 and size_low_res_img_col <= 900:
-                application_conf["grid_generation"]["epi_step"] = res * 5
-            else:
-                application_conf["grid_generation"]["epi_step"] = res * 30
-
-        return application_conf
+        if applications_conf != {}:
+            for key_app, _ in applications_conf.items():
+                if not key_app.startswith("resolution"):
+                    raise RuntimeError(
+                        "If you decided to define an "
+                        "application per resolution, "
+                        "all the keys have to be : "
+                        "resolution_res"
+                    )
+                if int(key_app.split("_")[1]) not in resolutions:
+                    raise RuntimeError(
+                        "This resolution "
+                        + key_app.split("_")[1]
+                        + " is not in the resolution list"
+                    )
 
     def cleanup_low_res_dir(self):
         """
         Clean low res dir
         """
 
-        items = list(self.used_conf.items())
-        for _, conf_res in items[:-1]:
-            out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
+        for out_dir in self.intermediate_out_dirs[:-1]:
             if os.path.exists(out_dir) and os.path.isdir(out_dir):
                 try:
                     shutil.rmtree(out_dir)
-                    print(f"th directory {out_dir} has been cleaned.")
+                    logging.info(f"th directory {out_dir} has been cleaned.")
                 except Exception as exception:
-                    print(f"Error while deleting {out_dir}: {exception}")
+                    logging.error(
+                        f"Error while deleting {out_dir}: {exception}"
+                    )
             else:
-                print(f"The directory {out_dir} has not been deleted")
+                logging.info(f"The directory {out_dir} has not been deleted")
+
+    def overide_with_apriori(self, conf, previous_out_dir, first_res):
+        """
+        Override configuration with terrain a priori
+
+        :param new_conf: configuration
+        :type new_conf: dict
+        """
+
+        new_conf = copy.deepcopy(conf)
+
+        # Extract avanced parameters configuration
+        # epipolar and terrain a priori can only be used on firt resolution
+        if not first_res:
+            dem_min = os.path.join(previous_out_dir, "dsm/dem_min.tif")
+            dem_max = os.path.join(previous_out_dir, "dsm/dem_max.tif")
+            dem_median = os.path.join(previous_out_dir, "dsm/dem_median.tif")
+
+            new_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {
+                "dem_min": dem_min,
+                "dem_max": dem_max,
+                "dem_median": dem_median,
+            }
+            # Use initial elevation or dem median according to use wish
+            if new_conf[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"] is None:
+                new_conf[INPUTS][sens_cst.INITIAL_ELEVATION] = dem_median
+            else:
+                new_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_median"] = (
+                    new_conf[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"]
+                )
+            if new_conf[ADVANCED][adv_cst.USE_ENDOGENOUS_DEM] and not first_res:
+                new_conf[INPUTS][sens_cst.INITIAL_ELEVATION] = dem_median
+
+            new_conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = None
+
+        return new_conf
 
     @cars_profile(name="run_dense_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
@@ -1167,107 +343,223 @@ class DefaultPipeline(PipelineTemplate):
         Run pipeline
 
         """
-        first_res_out_dir = None
+
+        print("RUN")
+
+        # Get first res outdir for sift matches
+        first_res_out_dir = self.intermediate_out_dirs[0]
         previous_out_dir = None
-        generate_dems = True
-        last_key = list(self.used_conf)[-1]
-        final_out_dir = self.used_conf[last_key][OUTPUT][out_cst.OUT_DIRECTORY]
-        use_sift_a_priori = False
+        for resolution_index, epipolar_res in enumerate(
+            self.epipolar_resolutions
+        ):
+            current_out_dir = self.intermediate_out_dirs[resolution_index]
 
-        i = 0
-        nb_res = len(list(self.used_conf.items()))
-        for key, conf_res in self.used_conf.items():
-            out_dir = conf_res[OUTPUT][out_cst.OUT_DIRECTORY]
+            # get position
+            first_res, _, last_res = (
+                self.positions[resolution_index]["first_res"],
+                self.positions[resolution_index]["intermediate_res"],
+                self.positions[resolution_index]["last_res"],
+            )
 
-            if nb_res != 1 and args is not None:
-                # Logging configuration with args Loglevel
+            # Setup logging
+            if not (first_res and last_res):
                 loglevel = getattr(args, "loglevel", "PROGRESS").upper()
 
                 cars_logging.setup_logging(
                     loglevel,
-                    out_dir=os.path.join(out_dir, "logs"),
+                    out_dir=os.path.join(current_out_dir, "logs"),
                     pipeline="",
                 )
 
-            if int(key.split("_")[-1]) != 1:
-                cars_logging.add_progress_message(
-                    "Starting pipeline for resolution 1/" + key.split("_")[-1]
-                )
-            else:
-                cars_logging.add_progress_message(
-                    "Starting pipeline for resolution 1"
-                )
+            cars_logging.add_progress_message(
+                "Starting pipeline for resolution 1/" + str(epipolar_res)
+            )
 
-            # Get the resolution step
-            if previous_out_dir is not None:
-                if i == len(self.used_conf) - 1:
-                    which_resolution = "final"
-                    generate_dems = False
-                else:
-                    which_resolution = "intermediate"
-            else:
-                if len(self.used_conf) == 1:
-                    which_resolution = "single"
-                else:
-                    which_resolution = "first"
-                    first_res_out_dir = out_dir
-
-            # Build a priori
-            if which_resolution in ("final", "intermediate"):
-                dem_min = os.path.join(previous_out_dir, "dsm/dem_min.tif")
-                dem_max = os.path.join(previous_out_dir, "dsm/dem_max.tif")
-                dem_median = os.path.join(
-                    previous_out_dir, "dsm/dem_median.tif"
-                )
-
-                conf_res[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {
-                    "dem_min": dem_min,
-                    "dem_max": dem_max,
-                    "dem_median": dem_median,
-                }
-
-                if conf_res[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"] is None:
-                    conf_res[INPUTS][sens_cst.INITIAL_ELEVATION] = dem_median
-                else:
-                    conf_res[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
-                        "dem_median"
-                    ] = conf_res[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"]
-
-                conf_res[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] = True
+            # use sift a priori if not first
+            use_sift_a_priori = False
+            if not first_res:
                 use_sift_a_priori = True
 
-            # start cars orchestrator
-            with orchestrator.Orchestrator(
-                orchestrator_conf=conf_res[ORCHESTRATOR],
-                out_dir=out_dir,
-                out_json_path=os.path.join(
-                    out_dir,
-                    out_cst.INFO_FILENAME,
-                ),
-            ) as self.cars_orchestrator:
+            # define wich resolution
+            if first_res and last_res:
+                which_resolution = "single"
+            elif first_res:
+                which_resolution = "first"
+            elif last_res:
+                which_resolution = "final"
+            else:
+                which_resolution = "intermediate"
 
-                # initialize out_json
-                self.cars_orchestrator.update_out_info({"version": __version__})
+            # Generate dem
+            generate_dems = True
+            if last_res:
+                generate_dems = False
 
-                used_pipeline = UnitPipeline(conf_res)
+            # Launch unit pipeline
+            used_pipeline = self.unit_pipelines[resolution_index]
 
-                used_pipeline.run(
-                    self.cars_orchestrator,
-                    generate_dems,
-                    which_resolution,
-                    use_sift_a_priori,
-                    first_res_out_dir,
-                    final_out_dir,
-                )
+            overridden_conf = self.overide_with_apriori(
+                used_pipeline.used_conf, previous_out_dir, first_res
+            )
+            updated_pipeline = UnitPipeline(
+                overridden_conf, config_json_dir=self.config_json_dir
+            )
+            updated_pipeline.run(
+                generate_dems=generate_dems,
+                which_resolution=which_resolution,
+                use_sift_a_priori=use_sift_a_priori,
+                first_res_out_dir=first_res_out_dir,
+                final_out_dir=self.out_dir,
+            )
 
-            if nb_res != 1 and args is not None:
-                # Generate summary of tasks
-                log_wrapper.generate_summary(
-                    out_dir, used_pipeline.used_conf, clean_worker_logs=True
-                )
+            # update previous out dir
+            previous_out_dir = current_out_dir
 
-            previous_out_dir = out_dir
-            i += 1
+        # Merge profiling in pdf
+        # TODO store used_conf
 
+        # clean outdir
         if not self.keep_low_res_dir:
             self.cleanup_low_res_dir()
+
+
+def extract_conf_with_resolution(
+    current_conf, res, first_res, intermediate_res, last_res
+):
+    """
+    Extract the configuration for the given resolution
+
+    :param current_conf: current configuration
+    :type current_conf: dict
+    :param res: resolution to extract
+    :type res: int
+    :return: configuration for the given resolution
+    :rtype: dict
+    :param first_res: is first resolution
+    :type first_res: bool
+    :param intermediate_res: is intermediate resolution
+    :type intermediate_res: bool
+    :param last_res: is last resolution
+    :type last_res: bool
+    :param previous_out_dir: path to previous outdir
+    :type: previous_out_dir: str
+    """
+
+    new_dir_out_dir = current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+    if not last_res:
+        new_dir_out_dir = (
+            current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+            + "/intermediate_res/out_res"
+            + str(res)
+        )
+        safe_makedirs(new_dir_out_dir)
+
+    new_conf = copy.deepcopy(current_conf)
+
+    # Extract application configuration
+    current_application_conf = current_conf.get(APPLICATIONS, {})
+    new_application_conf = {}
+    if not any(
+        key.startswith("resolution_") for key in current_application_conf
+    ):
+        # configuration given per resolution
+        for key in current_application_conf:
+            if key.startswith("resolution_") and int(key.split("_")[1]) == res:
+                new_application_conf[key] = current_application_conf[key]
+    else:
+        new_application_conf = current_application_conf
+
+    # apply new configuration
+    new_conf[APPLICATIONS] = new_application_conf
+
+    # Get save intermediate data
+    if isinstance(new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA], dict):
+        # If save_intermediate_data is not a dict, we set it to False
+        new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA] = new_conf[ADVANCED][
+            adv_cst.SAVE_INTERMEDIATE_DATA
+        ].get("resolution_" + str(res), False)
+
+    # Overide epipolar resolution
+    new_conf[ADVANCED][adv_cst.EPIPOLAR_RESOLUTIONS] = res
+
+    # Overide  configuration with pipeline conf
+    if first_res:
+        # read the first resolution conf with json package
+        with open(PIPELINE_CONFS[FIRST_RES], "r", encoding="utf-8") as file:
+            overiding_conf = json.load(file)
+    elif intermediate_res:
+        with open(
+            PIPELINE_CONFS[INTERMEDIATE_RES], "r", encoding="utf-8"
+        ) as file:
+            overiding_conf = json.load(file)
+    else:
+        with open(PIPELINE_CONFS[FINAL_RES], "r", encoding="utf-8") as file:
+            overiding_conf = json.load(file)
+
+    new_conf = overide_pipeline_conf(new_conf, overiding_conf)
+
+    # Overide output to not compute data
+    if not last_res:
+        overiding_conf = {
+            OUTPUT: {
+                out_cst.OUT_DIRECTORY: new_dir_out_dir,
+                out_cst.SAVE_BY_PAIR: True,
+                out_cst.AUXILIARY: {
+                    out_cst.AUX_DEM_MAX: True,
+                    out_cst.AUX_DEM_MIN: True,
+                    out_cst.AUX_DEM_MEDIAN: True,
+                },
+            }
+        }
+        new_conf = overide_pipeline_conf(new_conf, overiding_conf)
+
+        if not new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA]:
+            # Save the less possible things
+            aux_items = new_conf[OUTPUT][out_cst.AUXILIARY].items()
+            for aux_key, _ in aux_items:
+                if aux_key not in ("dem_min", "dem_max", "dem_median"):
+                    new_conf[OUTPUT][out_cst.AUXILIARY][aux_key] = False
+        else:
+            # we save the depth_maps also to debug
+            new_conf[OUTPUT][out_cst.PRODUCT_LEVEL] = [
+                "dsm",
+                "depth_map",
+            ]
+
+    return new_conf
+
+
+def overide_pipeline_conf(conf, overiding_conf):
+    """
+    Merge two dictionaries recursively without removing keys from the base conf.
+
+    :param conf: base configuration dictionary
+    :type conf: dict
+    :param overiding_conf: overriding configuration dictionary
+    :type overiding_conf: dict
+    :return: merged configuration
+    :rtype: dict
+    """
+    result = copy.deepcopy(conf)
+
+    def merge_recursive(base_dict, override_dict):
+        for key, value in override_dict.items():
+            if (
+                key in base_dict
+                and isinstance(base_dict[key], dict)
+                and isinstance(value, dict)
+            ):
+                merge_recursive(base_dict[key], value)
+            else:
+                base_dict[key] = value
+
+    merge_recursive(result, overiding_conf)
+    return result
+
+
+def merge_used_conf(used_configurations):
+    """
+    Merge all used configuration
+    """
+
+    return {"WIP": used_configurations}
