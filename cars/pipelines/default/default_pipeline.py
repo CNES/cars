@@ -46,6 +46,7 @@ from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import depth_map_inputs_constants as depth_cst
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
+from cars.pipelines.parameters import output_parameters
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
@@ -106,6 +107,7 @@ class DefaultPipeline(PipelineTemplate):
         :type config_dir: str
         """
 
+        self.config_dir = config_dir
         # Transform relative path to absolute path
         if config_dir is not None:
             config_dir = os.path.abspath(config_dir)
@@ -192,7 +194,7 @@ class DefaultPipeline(PipelineTemplate):
 
             print("INIT PIPELINE", epipolar_res)
             current_unit_pipeline = UnitPipeline(
-                current_conf, config_json_dir=self.config_json_dir
+                current_conf, config_dir=self.config_dir
             )
             self.unit_pipelines[epipolar_resolution_index] = (
                 current_unit_pipeline
@@ -222,7 +224,9 @@ class DefaultPipeline(PipelineTemplate):
         :return: overloader inputs
         :rtype: dict
         """
-        return UnitPipeline.check_inputs(conf[INPUTS])
+        return UnitPipeline.check_inputs(
+            conf[INPUTS], config_dir=self.config_dir
+        )
 
     def check_output(self, conf):
         """
@@ -234,7 +238,15 @@ class DefaultPipeline(PipelineTemplate):
         :return overloader output
         :rtype : dict
         """
-        return UnitPipeline.check_output(conf[OUTPUT])
+
+        print("initial", conf[OUTPUT])
+        print("scaling", self.scaling_coeff)
+        conf_output, self.scaling_coeff = (
+            output_parameters.check_output_parameters(
+                conf[OUTPUT], self.scaling_coeff
+            )
+        )
+        return conf_output
 
     def check_advanced(self, conf):
         """
@@ -243,15 +255,12 @@ class DefaultPipeline(PipelineTemplate):
         :return: overridden advanced conf
         :rtype: dict
         """
-        (
-            _,
-            advanced,
-            _,
-            _,
-            _,
-            _,
-        ) = advanced_parameters.check_advanced_parameters(
-            conf[INPUTS], conf.get(ADVANCED, {}), check_epipolar_a_priori=True
+        (_, advanced, _, _, _, _, self.scaling_coeff) = (
+            advanced_parameters.check_advanced_parameters(
+                conf[INPUTS],
+                conf.get(ADVANCED, {}),
+                check_epipolar_a_priori=True,
+            )
         )
         return advanced
 
@@ -402,7 +411,7 @@ class DefaultPipeline(PipelineTemplate):
                 used_pipeline.used_conf, previous_out_dir, first_res
             )
             updated_pipeline = UnitPipeline(
-                overridden_conf, config_json_dir=self.config_json_dir
+                overridden_conf, config_dir=self.config_dir
             )
             updated_pipeline.run(
                 generate_dems=generate_dems,
@@ -445,6 +454,8 @@ def extract_conf_with_resolution(
     :type: previous_out_dir: str
     """
 
+    print("current_conf", current_conf)
+    print(OUTPUT, out_cst.OUT_DIRECTORY)
     new_dir_out_dir = current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
     if not last_res:
         new_dir_out_dir = (

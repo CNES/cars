@@ -487,8 +487,7 @@ class UnitPipeline(PipelineTemplate):
             safe_save=True,
         )
 
-    @staticmethod
-    def check_output(conf, scaling_coeff):
+    def check_output(self, conf, scaling_coeff):
         """
         Check the output given
 
@@ -504,7 +503,6 @@ class UnitPipeline(PipelineTemplate):
     def check_applications(  # noqa: C901 : too complex
         self,
         conf,
-        epipolar_resolution,
         key=None,
     ):
         """
@@ -513,8 +511,6 @@ class UnitPipeline(PipelineTemplate):
 
         :param conf: configuration of applications
         :type conf: dict
-        :param epipolar_resolution: epipolar resolution
-        :type epipolar_resolution: int
         """
         scaling_coeff = self.scaling_coeff
 
@@ -722,18 +718,7 @@ class UnitPipeline(PipelineTemplate):
                     "risk",
                     "intervals",
                 ]
-            if epipolar_resolution <= 16:
-                if (
-                    "dense matching" not in dense_matching_config
-                    or "confidence filtering" not in conf["dense matching"]
-                    or "lower bound"
-                    not in dense_matching_config["confidence filtering"]
-                ):
-                    if "confidence_filtering" not in dense_matching_config:
-                        dense_matching_config["confidence_filtering"] = {}
-                    dense_matching_config["confidence_filtering"][
-                        "lower_bound"
-                    ] = -90
+
             self.dense_matching_app = Application(
                 "dense_matching",
                 cfg=dense_matching_config,

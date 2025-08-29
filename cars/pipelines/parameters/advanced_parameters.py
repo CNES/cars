@@ -159,16 +159,6 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     geom_plugin_with_dem_and_geoid = None
     dem_generation_roi = None
 
-    # If use a priori, override initial elevation with dem_median
-    if adv_cst.USE_EPIPOLAR_A_PRIORI in overloaded_conf:
-        if overloaded_conf[adv_cst.USE_EPIPOLAR_A_PRIORI]:
-            if adv_cst.DEM_MEDIAN in overloaded_conf[adv_cst.TERRAIN_A_PRIORI]:
-                inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] = (
-                    overloaded_conf[adv_cst.TERRAIN_A_PRIORI][
-                        adv_cst.DEM_MEDIAN
-                    ]
-                )
-
     scaling_coeff = None
     if inputs[sens_cst.SENSORS] is not None:
         # Check geometry plugin and overwrite geomodel in conf inputs
