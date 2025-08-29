@@ -130,6 +130,8 @@ class DefaultPipeline(PipelineTemplate):
             self.geom_plugin_with_dem_and_geoid,
             _,
             self.scaling_coeff,
+            _,
+            _,
         ) = advanced_parameters.check_advanced_parameters(
             inputs, conf.get(ADVANCED, {}), check_epipolar_a_priori=True
         )

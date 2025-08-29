@@ -78,6 +78,7 @@ class CensusMccnnSgm(
         "census_sgm_mountain_and_vegetation",
         "census_sgm_homogeneous",
         "mccnn_sgm",
+        "auto",
     ],
 ):  # pylint: disable=R0903,disable=R0902
     """
@@ -178,7 +179,7 @@ class CensusMccnnSgm(
 
         # Overload conf
         overloaded_conf["method"] = conf.get(
-            "method", "census_sgm_default"
+            "method", "auto"
         )  # change it if census_sgm is not default
         # method called in abstract_dense_matching_app.py
         overloaded_conf["min_epi_tile_size"] = conf.get(
@@ -596,6 +597,13 @@ class CensusMccnnSgm(
             return margins
 
         return margins_wrapper
+
+    def get_method(self):
+        """
+        return the method that will be used in dense_matching
+        """
+
+        return self.used_method
 
     @cars_profile(name="Optimal size estimation")
     def get_optimal_tile_size(self, disp_range_grid, max_ram_per_worker):
