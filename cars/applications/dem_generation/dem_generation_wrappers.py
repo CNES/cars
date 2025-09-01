@@ -266,10 +266,10 @@ def downsample_dem(input_dem, scale, median_filter_size=7):
     metadata["transform"] = dst_transform
     metadata["height"] = dst_height
     metadata["width"] = dst_width
-    output = np.zeros((dst_height, dst_width))
+    dem_data = np.zeros((dst_height, dst_width))
     reproject(
         data,
-        output,
+        dem_data,
         src_transform=src_transform,
         src_crs=crs,
         dst_transform=dst_transform,
@@ -278,26 +278,35 @@ def downsample_dem(input_dem, scale, median_filter_size=7):
         resampling=Resampling.med,
     )
 
-    # Median filter as post-processing
-    output = median_filter(output, size=median_filter_size)
+    # Post-processing
+
+    # Median filter
+    dem_data = median_filter(dem_data, size=median_filter_size)
+
+    # Fill nodata
+    dem_data = rio.fill.fillnodata(
+        dem_data,
+        mask=~(dem_data==nodata),
+    )
 
     with rio.open(input_dem, "w", **metadata) as dst:
-        dst.write(output, 1)
+        dst.write(dem_data, 1)
 
 
-def modify_terrain_bounds(dem_roi_to_use, epsg, margin):
+def modify_terrain_bounds(bounds_poly, in_epsg, out_epsg, margin):
     """
     Modify the terrain bounds
 
-    :param dem_roi_to_use: the dem roi
-    :type dem_roi_to_use: polygon
-    :param epsg: the epsg code
-    :type epsg: int
-    :param margin: the margin
+    :param bounds_poly: Input region of interest for DEM
+    :type bounds_poly: list
+    :param in_epsg: EPSG code of dem_roi_to_use
+    :type in_epsg: int
+    :param out_epsg: EPSG code of dem_roi_to_use
+    :type out_epsg: int
+    :param margin: Margin of the output ROI in meters
     :type margin: int
     """
     # Get bounds
-    bounds_poly = dem_roi_to_use.bounds
     xmin = min(bounds_poly[0], bounds_poly[2])
     xmax = max(bounds_poly[0], bounds_poly[2])
     ymin = min(bounds_poly[1], bounds_poly[3])
@@ -305,24 +314,25 @@ def modify_terrain_bounds(dem_roi_to_use, epsg, margin):
 
     bounds_cloud = [xmin, ymin, xmax, ymax]
 
-    # Convert resolution and margin to degrees
-    utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
-    conversion_factor = preprocessing.get_conversion_factor(
-        bounds_cloud, 4326, utm_epsg
-    )
-    margin_in_degrees = margin * conversion_factor
+    if in_epsg == 4326:
+        # Convert resolution and margin to degrees
+        utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+        conversion_factor = preprocessing.get_conversion_factor(
+            bounds_cloud, 4326, utm_epsg
+        )
+        margin *= conversion_factor
 
     # Get borders, adding margin
-    xmin = xmin - margin_in_degrees
-    ymin = ymin - margin_in_degrees
-    xmax = xmax + margin_in_degrees
-    ymax = ymax + margin_in_degrees
+    xmin = xmin - margin
+    ymin = ymin - margin
+    xmax = xmax + margin
+    ymax = ymax + margin
 
     terrain_bounds = [xmin, ymin, xmax, ymax]
 
-    if epsg != 4326:
-        crs_in = pyproj.CRS.from_epsg(4326)
-        crs_out = pyproj.CRS.from_epsg(epsg)
+    if out_epsg != in_epsg:
+        crs_in = pyproj.CRS.from_epsg(in_epsg)
+        crs_out = pyproj.CRS.from_epsg(out_epsg)
 
         transformer = pyproj.Transformer.from_crs(
             crs_in, crs_out, always_xy=True
@@ -344,7 +354,7 @@ def modify_terrain_bounds(dem_roi_to_use, epsg, margin):
 
 def reproject_dem(dsm_file_name, epsg_out, out_file_name):
     """
-    Reproject the dem
+    Reproject the DEM
 
     :param dsm_file_name: the path to dsm
     :type dsm_file_name: str
