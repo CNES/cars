@@ -1318,8 +1318,6 @@ class UnitPipeline(PipelineTemplate):
                         self.input_roi_poly, self.input_roi_epsg, self.epsg
                     )
 
-                self.vertical_crs = projection.get_output_crs(self.epsg, output)
-
         # Clean grids at the end of processing if required. Note that this will
         # also clean refined grids
         if not (save_corrected_grid or save_matches):
@@ -1864,6 +1862,8 @@ class UnitPipeline(PipelineTemplate):
                 self.roi_poly = preprocessing.compute_roi_poly(
                     self.input_roi_poly, self.input_roi_epsg, self.epsg
                 )
+
+            self.vertical_crs = projection.get_output_crs(self.epsg, output)
 
             if (
                 self.save_output_dsm
