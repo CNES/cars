@@ -286,7 +286,7 @@ def downsample_dem(input_dem, scale, median_filter_size=7):
     # Fill nodata
     dem_data = rio.fill.fillnodata(
         dem_data,
-        mask=~(dem_data==nodata),
+        mask=~(dem_data == nodata),
     )
 
     with rio.open(input_dem, "w", **metadata) as dst:

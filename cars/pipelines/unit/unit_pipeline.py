@@ -1933,7 +1933,6 @@ class UnitPipeline(PipelineTemplate):
                             )
                         )
 
-
             if self.dense_matching_app.get_method() == "auto":
                 # Copy the initial corr_config in order to keep
                 # the inputs that have already been checked
