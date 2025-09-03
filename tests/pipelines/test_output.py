@@ -98,11 +98,11 @@ def test_output_epsg(case):
 
         if case["expected"] == "valid":
             # Should succeed without raising
-            output_parameters.check_output_parameters(config)
+            output_parameters.check_output_parameters(config, 1)
         else:
             with pytest.raises(DictCheckerError):
                 # Expecting some sort of failure
-                output_parameters.check_output_parameters(config)
+                output_parameters.check_output_parameters(config, 1)
 
 
 @pytest.mark.unit_tests
