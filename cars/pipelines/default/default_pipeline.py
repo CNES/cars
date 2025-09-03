@@ -149,9 +149,14 @@ class DefaultPipeline(PipelineTemplate):
         self.unit_pipelines = {}
         self.positions = {}
 
-        self.intermediate_out_dirs = []
+        self.intermediate_data_dir = os.path.join(
+            self.out_dir, "intermediate_data"
+        )
 
-        self.keep_low_res_dir = False  # TODO update
+        self.keep_low_res_dir = conf[ADVANCED][adv_cst.KEEP_LOW_RES_DIR]
+
+        # Get first res outdir for sift matches
+        self.first_res_out_dir_with_sensors = None
 
         for epipolar_resolution_index, epipolar_res in enumerate(
             self.epipolar_resolutions
@@ -179,11 +184,13 @@ class DefaultPipeline(PipelineTemplate):
                 first_res,
                 intermediate_res,
                 last_res,
+                self.intermediate_data_dir,
             )
-            # get output directory
-            self.intermediate_out_dirs.append(
-                current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
-            )
+
+            if first_res:
+                self.first_res_out_dir_with_sensors = current_conf[OUTPUT][
+                    "directory"
+                ]
 
             if not isinstance(epipolar_res, int) or epipolar_res < 0:
                 raise RuntimeError("The resolution has to be an int > 0")
@@ -202,7 +209,9 @@ class DefaultPipeline(PipelineTemplate):
             used_configurations[epipolar_res] = current_unit_pipeline.used_conf
 
         # Generate full used_conf
-        full_used_conf = merge_used_conf(used_configurations)
+        full_used_conf = merge_used_conf(
+            used_configurations, self.epipolar_resolutions
+        )
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,
@@ -300,17 +309,25 @@ class DefaultPipeline(PipelineTemplate):
         Clean low res dir
         """
 
-        for out_dir in self.intermediate_out_dirs[:-1]:
-            if os.path.exists(out_dir) and os.path.isdir(out_dir):
-                try:
-                    shutil.rmtree(out_dir)
-                    logging.info(f"th directory {out_dir} has been cleaned.")
-                except Exception as exception:
-                    logging.error(
-                        f"Error while deleting {out_dir}: {exception}"
-                    )
-            else:
-                logging.info(f"The directory {out_dir} has not been deleted")
+        if os.path.exists(self.intermediate_data_dir) and os.path.isdir(
+            self.intermediate_data_dir
+        ):
+            try:
+                shutil.rmtree(self.intermediate_data_dir)
+                logging.info(
+                    f"th directory {self.intermediate_data_dir} "
+                    f" has been cleaned."
+                )
+            except Exception as exception:
+                logging.error(
+                    f"Error while deleting {self.intermediate_data_dir}: "
+                    f"{exception}"
+                )
+        else:
+            logging.info(
+                f"The directory {self.intermediate_data_dir} has not "
+                f"been deleted"
+            )
 
     def overide_with_apriori(self, conf, previous_out_dir, first_res):
         """
@@ -363,13 +380,14 @@ class DefaultPipeline(PipelineTemplate):
             ),
         )
 
-        # Get first res outdir for sift matches
-        first_res_out_dir = self.intermediate_out_dirs[0]
         previous_out_dir = None
         for resolution_index, epipolar_res in enumerate(
             self.epipolar_resolutions
         ):
-            current_out_dir = self.intermediate_out_dirs[resolution_index]
+
+            # Get tested unit pipeline
+            used_pipeline = self.unit_pipelines[resolution_index]
+            current_out_dir = used_pipeline.used_conf[OUTPUT]["directory"]
 
             # get position
             first_res, _, last_res = (
@@ -416,9 +434,7 @@ class DefaultPipeline(PipelineTemplate):
             if last_res:
                 generate_dems = False
 
-            # Launch unit pipeline
-            used_pipeline = self.unit_pipelines[resolution_index]
-
+            # Overide with a priori
             overridden_conf = self.overide_with_apriori(
                 used_pipeline.used_conf, previous_out_dir, first_res
             )
@@ -429,7 +445,7 @@ class DefaultPipeline(PipelineTemplate):
                 generate_dems=generate_dems,
                 which_resolution=which_resolution,
                 use_sift_a_priori=use_sift_a_priori,
-                first_res_out_dir=first_res_out_dir,
+                first_res_out_dir=self.first_res_out_dir_with_sensors,
                 log_dir=current_log_dir,
             )
 
@@ -438,14 +454,11 @@ class DefaultPipeline(PipelineTemplate):
 
             # generate summary
             log_wrapper.generate_summary(
-                current_log_dir,
-                updated_pipeline.used_conf,
-                clean_worker_logs=True,
+                current_log_dir, updated_pipeline.used_conf
             )
 
         # Merge profiling in pdf
         log_wrapper.generate_pdf_profiling(os.path.join(self.out_dir, "logs"))
-        # TODO store used_conf
 
         # clean outdir
         if not self.keep_low_res_dir:
@@ -477,7 +490,12 @@ def extract_applications(current_applications_conf, res, default_conf_for_res):
 
 
 def extract_conf_with_resolution(
-    current_conf, res, first_res, intermediate_res, last_res
+    current_conf,
+    res,
+    first_res,
+    intermediate_res,
+    last_res,
+    intermediate_data_dir,
 ):
     """
     Extract the configuration for the given resolution
@@ -500,10 +518,8 @@ def extract_conf_with_resolution(
 
     new_dir_out_dir = current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
     if not last_res:
-        new_dir_out_dir = (
-            current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
-            + "/intermediate_res/out_res"
-            + str(res)
+        new_dir_out_dir = os.path.join(
+            intermediate_data_dir, "out_res" + str(res)
         )
         safe_makedirs(new_dir_out_dir)
 
@@ -601,9 +617,25 @@ def overide_pipeline_conf(conf, overiding_conf):
     return result
 
 
-def merge_used_conf(used_configurations):
+def merge_used_conf(used_configurations, epipolar_resolutions):
     """
     Merge all used configuration
     """
+    used_configurations = copy.deepcopy(used_configurations)
 
-    return {"WIP": used_configurations}
+    merged_conf = {
+        INPUTS: used_configurations[epipolar_resolutions[0]][INPUTS],
+        ADVANCED: used_configurations[epipolar_resolutions[0]][ADVANCED],
+        OUTPUT: used_configurations[epipolar_resolutions[0]][OUTPUT],
+    }
+
+    merged_conf[APPLICATIONS] = {}
+    merged_conf[APPLICATIONS]["all"] = {}
+
+    # Merge applications
+    for res in epipolar_resolutions:
+        merged_conf[APPLICATIONS][res] = used_configurations[res][APPLICATIONS]
+
+    # apply epipolar resolutions
+    merged_conf[ADVANCED]["epipolar_resolutions"] = epipolar_resolutions
+    return merged_conf

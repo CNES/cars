@@ -80,18 +80,6 @@ class ProfilingFilter(logging.Filter):  # pylint: disable=R0903
         return "PROFILING_LOG" not in record.msg
 
 
-class BasicFilter(logging.Filter):  # pylint: disable=R0903
-    """
-    ProfilingFilter
-    """
-
-    def filter(self, record):
-        """ "
-        Filter message
-        """
-        return "PROFILING_LOG" in record.msg
-
-
 class ProfilinglHandler(logging.FileHandler):  # pylint: disable=R0903
     """
     Profiling
@@ -212,10 +200,7 @@ def setup_logging(
                 "filters": ["no_profiling"],
             }
         },
-        "filters": {
-            "no_profiling": {"()": ProfilingFilter},
-            "only_profiling": {"()": BasicFilter},
-        },
+        "filters": {"no_profiling": {"()": ProfilingFilter}},
         "loggers": {
             "": {  # root logger
                 "handlers": [],
@@ -244,7 +229,7 @@ def setup_logging(
             "class": "logging.FileHandler",
             "filename": global_log_file,
             "level": min(numeric_level, logging.INFO),
-            "mode": "w",
+            "mode": "a",
             "formatter": "standard",
             "filters": ["no_profiling"],
         }
@@ -264,7 +249,7 @@ def setup_logging(
             "class": "logging.FileHandler",
             "filename": log_file,
             "level": min(numeric_level, logging.INFO),
-            "mode": "w",
+            "mode": "a",
             "formatter": "standard",
             "filters": ["no_profiling"],
         }
@@ -281,9 +266,8 @@ def setup_logging(
             "class": "logging.FileHandler",
             "filename": profiling_file,
             "level": PROFILING_LOG,
-            "mode": "w",
+            "mode": "a",
             "formatter": "standard",
-            # "filters": ["only_profiling"],
         }
         add_handler_name(logging_config, handler_main_profiling)
 
@@ -303,8 +287,6 @@ def setup_logging(
             "level": PROFILING_LOG,
             "propagate": False,
         }
-        # logging.getLogger().setLevel(min(numeric_level, PROFILING_LOG))
-        # profiling_logger.setLevel(min(numeric_level, PROFILING_LOG))
 
         # sett handlers
         log_file_workers = os.path.join(
@@ -333,7 +315,6 @@ def setup_logging(
             "filename": log_file_workers_profiling,
             "level": PROFILING_LOG,
             "formatter": "workers",
-            # "filters": ["only_profiling"],
         }
         add_handler_name(logging_config, handler_workers_profiling)
 

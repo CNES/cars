@@ -485,7 +485,7 @@ class UnitPipeline(PipelineTemplate):
         )
         cars_dataset.save_dict(
             self.refined_conf,
-            os.path.join(self.out_dir, "refined.json"),
+            os.path.join(self.out_dir, "refined_conf.json"),
             safe_save=True,
         )
 

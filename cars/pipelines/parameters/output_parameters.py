@@ -104,7 +104,7 @@ def check_output_parameters(conf, scaling_coeff):
 
     else:
         resolution = float(0.5 * scaling_coeff)
-        logging.warning(
+        logging.info(
             "The resolution of the output DSM will be " f"{resolution} meters. "
         )
 
