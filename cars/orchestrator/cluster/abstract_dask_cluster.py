@@ -56,7 +56,7 @@ class AbstractDaskCluster(
     AbstractDaskCluster
     """
 
-    def __init__(self, conf_cluster, out_dir, launch_worker=True):
+    def __init__(self, conf_cluster, out_dir, log_dir, launch_worker=True):
         """
         Init function of AbstractDaskCluster
 
@@ -64,8 +64,12 @@ class AbstractDaskCluster(
 
         """
 
+        print("cluster log_dir", log_dir)
+
         # call parent init
-        super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
+        super().__init__(
+            conf_cluster, out_dir, log_dir, launch_worker=launch_worker
+        )
         # retrieve parameters
         self.nb_workers = self.checked_conf_cluster["nb_workers"]
         self.task_timeout = self.checked_conf_cluster["task_timeout"]

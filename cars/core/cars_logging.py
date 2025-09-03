@@ -80,23 +80,55 @@ class ProfilingFilter(logging.Filter):  # pylint: disable=R0903
         return "PROFILING_LOG" not in record.msg
 
 
+class BasicFilter(logging.Filter):  # pylint: disable=R0903
+    """
+    ProfilingFilter
+    """
+
+    def filter(self, record):
+        """ "
+        Filter message
+        """
+        return "PROFILING_LOG" in record.msg
+
+
 class ProfilinglHandler(logging.FileHandler):  # pylint: disable=R0903
     """
     Profiling
     """
 
-    def __init__(self, log_file):
+    def __init__(self, filename, mode="a", encoding=None, delay=False):
         """
         Init
         """
-        self.sender = LogSender(log_file)
-        logging.FileHandler.__init__(self, log_file, "a")
+        super().__init__(filename, mode, encoding, delay)
+        self.sender = LogSender(filename)
 
     def emit(self, record):
         """
         Emit
         """
         if "PROFILING" in record.levelname:
+            self.sender.write_log(self.format(record) + "\n")
+
+
+class WorkerHandler(logging.FileHandler):  # pylint: disable=R0903
+    """
+    Profiling
+    """
+
+    def __init__(self, filename, mode="a", encoding=None, delay=False):
+        """
+        Init
+        """
+        super().__init__(filename, mode, encoding, delay)
+        self.sender = LogSender(filename)
+
+    def emit(self, record):
+        """
+        Emit
+        """
+        if "PROFILING" not in record.levelname:
             self.sender.write_log(self.format(record) + "\n")
 
 
@@ -127,6 +159,7 @@ def setup_logging(
     log_dir=None,
     pipeline="",
     in_worker=False,
+    global_log_file=None,
 ):
     """
     Setup the CARS logging configuration
@@ -145,25 +178,16 @@ def setup_logging(
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: %s" % loglevel)
 
-    def add_handler_name(config, handler_name):
+    def add_handler_name(config, handler_name, filtered_logger=None):
         """
         add handler name in known handlers of loggers
         """
         for key in config["loggers"].keys():
-            config["loggers"][key]["handlers"].append(handler_name)
-
-    def add_handler_to_logging(
-        log_file_name, formatter, log_level, handler_name
-    ):
-        """
-        Add handler to logging
-        """
-        formatter_log = logging.Formatter(formatter)
-        h_log_file = ProfilinglHandler(log_file_name)
-        h_log_file.setFormatter(formatter_log)
-        h_log_file.setLevel(log_level)
-        h_log_file.set_name(handler_name)
-        logging.getLogger().addHandler(h_log_file)
+            if filtered_logger is not None:
+                if key in filtered_logger:
+                    config["loggers"][key]["handlers"].append(handler_name)
+            else:
+                config["loggers"][key]["handlers"].append(handler_name)
 
     logging_config = {
         "version": 1,
@@ -188,7 +212,10 @@ def setup_logging(
                 "filters": ["no_profiling"],
             }
         },
-        "filters": {"no_profiling": {"()": ProfilingFilter}},
+        "filters": {
+            "no_profiling": {"()": ProfilingFilter},
+            "only_profiling": {"()": BasicFilter},
+        },
         "loggers": {
             "": {  # root logger
                 "handlers": [],
@@ -208,16 +235,30 @@ def setup_logging(
         },
     }
 
+    # add global log file
+    if global_log_file is not None:
+        os.makedirs(os.path.dirname(global_log_file), exist_ok=True)
+
+        handler_global_main = "file_global_main"
+        logging_config["handlers"][handler_global_main] = {
+            "class": "logging.FileHandler",
+            "filename": global_log_file,
+            "level": min(numeric_level, logging.INFO),
+            "mode": "w",
+            "formatter": "standard",
+            "filters": ["no_profiling"],
+        }
+        add_handler_name(logging_config, handler_global_main)
+
     # add file formaters:
     if out_dir is not None:
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
         log_file = os.path.join(
             out_dir,
             "{}_{}.log".format(
                 datetime.now().strftime("%y-%m-%d_%Hh%Mm"), pipeline
             ),
         )
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
         handler_main = "file_main"
         logging_config["handlers"][handler_main] = {
             "class": "logging.FileHandler",
@@ -225,6 +266,7 @@ def setup_logging(
             "level": min(numeric_level, logging.INFO),
             "mode": "w",
             "formatter": "standard",
+            "filters": ["no_profiling"],
         }
         add_handler_name(logging_config, handler_main)
 
@@ -238,56 +280,65 @@ def setup_logging(
         logging_config["handlers"][handler_main_profiling] = {
             "class": "logging.FileHandler",
             "filename": profiling_file,
-            "level": min(numeric_level, PROFILING_LOG),
+            "level": PROFILING_LOG,
             "mode": "w",
             "formatter": "standard",
+            # "filters": ["only_profiling"],
         }
         add_handler_name(logging_config, handler_main_profiling)
 
     if not in_worker:
         add_handler_name(logging_config, "stdout")
-        logging.config.dictConfig(logging_config)
     else:
         # remove stdout as handler
         del logging_config["handlers"]["stdout"]
-        logging.config.dictConfig(logging_config)
 
         # add file handlers
-        if log_dir is not None:
-            if not os.path.exists(log_dir):
-                os.makedirs(log_dir)
 
         # change level of root logger in workerss
-        logging.getLogger().setLevel(min(numeric_level, PROFILING_LOG))
-        profiling_logger.setLevel(min(numeric_level, PROFILING_LOG))
-        # Add filter to existing logger
-        for handler in logging.root.handlers:
-            handler.addFilter(ProfilingFilter())
+        handler_workers = "file_workers"
+        handler_workers_profiling = "file_workers_profiling"
+        logging_config["loggers"]["profiling_logger"] = {
+            "handlers": [],
+            "level": PROFILING_LOG,
+            "propagate": False,
+        }
+        # logging.getLogger().setLevel(min(numeric_level, PROFILING_LOG))
+        # profiling_logger.setLevel(min(numeric_level, PROFILING_LOG))
+
         # sett handlers
         log_file_workers = os.path.join(
             log_dir,
             "workers.log",
         )
-        handler_workers = "file_workers"
-        add_handler_to_logging(
-            log_file_workers,
-            logging_config["formatters"]["workers"]["format"],
-            min(numeric_level, logging.INFO),
-            handler_workers,
-        )
+        os.makedirs(os.path.dirname(log_file_workers), exist_ok=True)
+
+        logging_config["handlers"][handler_workers] = {
+            "class": "cars.core.cars_logging.WorkerHandler",
+            "filename": log_file_workers,
+            "level": min(numeric_level, logging.INFO),
+            "formatter": "workers",
+            "filters": ["no_profiling"],
+        }
+        add_handler_name(logging_config, handler_workers)
 
         # profiling
         log_file_workers_profiling = os.path.join(
             log_dir,
             "profiling.log",
         )
-        handler_workers_profiling = "file_workers_profiling"
-        add_handler_to_logging(
-            log_file_workers_profiling,
-            logging_config["formatters"]["workers"]["format"],
-            min(numeric_level, PROFILING_LOG),
-            handler_workers_profiling,
-        )
+
+        logging_config["handlers"][handler_workers_profiling] = {
+            "class": "cars.core.cars_logging.ProfilinglHandler",
+            "filename": log_file_workers_profiling,
+            "level": PROFILING_LOG,
+            "formatter": "workers",
+            # "filters": ["only_profiling"],
+        }
+        add_handler_name(logging_config, handler_workers_profiling)
+
+    # Create config
+    logging.config.dictConfig(logging_config)
 
 
 def add_progress_message(message):

@@ -255,6 +255,8 @@ class UnitPipeline(PipelineTemplate):
 
         self.used_conf[APPLICATIONS] = application_conf
 
+        self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+
     def quit_on_app(self, app_name):
         """
         Returns whether the pipeline should end after
@@ -3079,38 +3081,27 @@ class UnitPipeline(PipelineTemplate):
             ):
                 self.cars_orchestrator.add_to_clean(self.dump_dir)
 
-    @cars_profile(name="run_dense_pipeline", interval=0.5)
+    @cars_profile(name="run_unit_pipeline", interval=0.5)
     def run(
         self,
         generate_dems=False,
         which_resolution="single",
         use_sift_a_priori=False,
         first_res_out_dir=None,
-        final_out_dir=None,
+        log_dir=None,
     ):  # noqa C901
         """
         Run pipeline
 
         """
 
-        print(
-            "params ",
-            "\n generate_dems",
-            generate_dems,
-            "\n which_resolution",
-            which_resolution,
-            "\n use_sift_a_priori",
-            use_sift_a_priori,
-            "\n generate_dems",
-            generate_dems,
-            "\n first_res_out_dir",
-            first_res_out_dir,
-            "\n final_out_dir",
-            final_out_dir,
-        )
-
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
         self.dump_dir = os.path.join(self.out_dir, "dump_dir")
+        if log_dir is not None:
+            self.log_dir = log_dir
+        else:
+            self.log_dir = os.path.join(self.out_dir, "logs")
+
         self.first_res_out_dir = first_res_out_dir
         self.texture_bands = self.used_conf[ADVANCED][adv_cst.TEXTURE_BANDS]
 
@@ -3128,6 +3119,7 @@ class UnitPipeline(PipelineTemplate):
         with orchestrator.Orchestrator(
             orchestrator_conf=self.used_conf[ORCHESTRATOR],
             out_dir=self.out_dir,
+            log_dir=self.log_dir,
             out_json_path=os.path.join(
                 self.out_dir,
                 out_cst.INFO_FILENAME,

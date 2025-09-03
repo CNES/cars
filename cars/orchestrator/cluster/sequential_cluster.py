@@ -37,7 +37,7 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
     SequentialCluster
     """
 
-    def __init__(self, conf_cluster, out_dir, launch_worker=True):
+    def __init__(self, conf_cluster, out_dir, log_dir, launch_worker=True):
         """
         Init function of SequentialCluster
 
@@ -45,7 +45,9 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
 
         """
         # call parent init
-        super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
+        super().__init__(
+            conf_cluster, out_dir, log_dir, launch_worker=launch_worker
+        )
 
         # retrieve parameters
         self.profiling = self.checked_conf_cluster["profiling"]

@@ -35,11 +35,13 @@ import json
 import logging
 import os
 import shutil
+from datetime import datetime
 
 # CARS imports
 from cars.core import cars_logging
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
+from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
@@ -123,9 +125,7 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         # Check application
-        self.check_application_keys_name(
-            self.epipolar_resolutions, conf.get(APPLICATIONS, {})
-        )
+        self.check_applications(conf)
         # Check input
         conf[INPUTS] = self.check_inputs(conf)
         # check advanced
@@ -192,7 +192,6 @@ class DefaultPipeline(PipelineTemplate):
             # used configuration
             # This pipeline will not be run
 
-            print("INIT PIPELINE", epipolar_res)
             current_unit_pipeline = UnitPipeline(
                 current_conf, config_dir=self.config_dir
             )
@@ -238,9 +237,6 @@ class DefaultPipeline(PipelineTemplate):
         :return overloader output
         :rtype : dict
         """
-
-        print("initial", conf[OUTPUT])
-        print("scaling", self.scaling_coeff)
         conf_output, self.scaling_coeff = (
             output_parameters.check_output_parameters(
                 conf[OUTPUT], self.scaling_coeff
@@ -264,34 +260,40 @@ class DefaultPipeline(PipelineTemplate):
         )
         return advanced
 
-    def check_applications(self, conf, key=None, res=None, last_res=False):
+    def check_applications(self, conf):
         """
         Check the given configuration for applications
 
         :param conf: configuration of applications
         :type conf: dict
         """
+        applications_conf = conf.get(APPLICATIONS, {})
+        # check format: contains "all" of "resolutions
 
-    def check_application_keys_name(self, resolutions, applications_conf):
-        """
-        Check if the application name for each res match 'resolution_res'
-        """
+        int_keys = [int(epi_res) for epi_res in self.epipolar_resolutions]
+        string_keys = [str(key) for key in int_keys]
 
-        if applications_conf != {}:
-            for key_app, _ in applications_conf.items():
-                if not key_app.startswith("resolution"):
-                    raise RuntimeError(
-                        "If you decided to define an "
-                        "application per resolution, "
-                        "all the keys have to be : "
-                        "resolution_res"
-                    )
-                if int(key_app.split("_")[1]) not in resolutions:
-                    raise RuntimeError(
-                        "This resolution "
-                        + key_app.split("_")[1]
-                        + " is not in the resolution list"
-                    )
+        possible_keys = ["all"] + int_keys + string_keys
+
+        # Check conf keys in possible keys
+        for app_base_key in applications_conf.keys():
+            if app_base_key not in possible_keys:
+                raise RuntimeError(
+                    "Application key {} not in possibles keys in : 'all', {} , "
+                    "as int or str".format(app_base_key, string_keys)
+                )
+
+        # Key str and int key are not defined for the same resolution
+        for resolution in int_keys:
+            if (
+                resolution in applications_conf
+                and str(resolution) in applications_conf
+            ):
+                raise RuntimeError(
+                    "Application configuration for {} resolution "
+                    "is defined both "
+                    "with int and str key".format(resolution)
+                )
 
     def cleanup_low_res_dir(self):
         """
@@ -346,14 +348,20 @@ class DefaultPipeline(PipelineTemplate):
 
         return new_conf
 
-    @cars_profile(name="run_dense_pipeline", interval=0.5)
+    @cars_profile(name="run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
         """
         Run pipeline
 
         """
 
-        print("RUN")
+        global_log_file = os.path.join(
+            self.out_dir,
+            "logs",
+            "{}_{}.log".format(
+                datetime.now().strftime("%y-%m-%d_%Hh%Mm"), "default_pipeline"
+            ),
+        )
 
         # Get first res outdir for sift matches
         first_res_out_dir = self.intermediate_out_dirs[0]
@@ -370,15 +378,19 @@ class DefaultPipeline(PipelineTemplate):
                 self.positions[resolution_index]["last_res"],
             )
 
-            # Setup logging
-            if not (first_res and last_res):
-                loglevel = getattr(args, "loglevel", "PROGRESS").upper()
+            # setup logging
+            loglevel = getattr(args, "loglevel", "PROGRESS").upper()
 
-                cars_logging.setup_logging(
-                    loglevel,
-                    out_dir=os.path.join(current_out_dir, "logs"),
-                    pipeline="",
-                )
+            current_log_dir = os.path.join(
+                self.out_dir, "logs", "res_" + str(epipolar_res)
+            )
+
+            cars_logging.setup_logging(
+                loglevel,
+                out_dir=current_log_dir,
+                pipeline="unit_pipeline",
+                global_log_file=global_log_file,
+            )
 
             cars_logging.add_progress_message(
                 "Starting pipeline for resolution 1/" + str(epipolar_res)
@@ -418,18 +430,50 @@ class DefaultPipeline(PipelineTemplate):
                 which_resolution=which_resolution,
                 use_sift_a_priori=use_sift_a_priori,
                 first_res_out_dir=first_res_out_dir,
-                final_out_dir=self.out_dir,
+                log_dir=current_log_dir,
             )
 
             # update previous out dir
             previous_out_dir = current_out_dir
 
+            # generate summary
+            log_wrapper.generate_summary(
+                current_log_dir,
+                updated_pipeline.used_conf,
+                clean_worker_logs=True,
+            )
+
         # Merge profiling in pdf
+        log_wrapper.generate_pdf_profiling(os.path.join(self.out_dir, "logs"))
         # TODO store used_conf
 
         # clean outdir
         if not self.keep_low_res_dir:
             self.cleanup_low_res_dir()
+
+
+def extract_applications(current_applications_conf, res, default_conf_for_res):
+    """
+    Extract applications for current resolution
+    """
+
+    # "all" : applied to all conf
+    # int  (1, 2, 4, 8, 16, ...) applied for specified resolution
+
+    all_conf = current_applications_conf.get("all", {})
+    # Overide with default_conf_for_res
+    all_conf = overide_pipeline_conf(all_conf, default_conf_for_res)
+    # Get configuration for current res
+    if res in current_applications_conf:
+        # key is int
+        key = res
+    else:
+        key = str(res)
+
+    res_conf = current_applications_conf.get(key, {})
+
+    new_application_conf = overide_pipeline_conf(all_conf, res_conf)
+    return new_application_conf
 
 
 def extract_conf_with_resolution(
@@ -454,8 +498,6 @@ def extract_conf_with_resolution(
     :type: previous_out_dir: str
     """
 
-    print("current_conf", current_conf)
-    print(OUTPUT, out_cst.OUT_DIRECTORY)
     new_dir_out_dir = current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
     if not last_res:
         new_dir_out_dir = (
@@ -466,22 +508,6 @@ def extract_conf_with_resolution(
         safe_makedirs(new_dir_out_dir)
 
     new_conf = copy.deepcopy(current_conf)
-
-    # Extract application configuration
-    current_application_conf = current_conf.get(APPLICATIONS, {})
-    new_application_conf = {}
-    if not any(
-        key.startswith("resolution_") for key in current_application_conf
-    ):
-        # configuration given per resolution
-        for key in current_application_conf:
-            if key.startswith("resolution_") and int(key.split("_")[1]) == res:
-                new_application_conf[key] = current_application_conf[key]
-    else:
-        new_application_conf = current_application_conf
-
-    # apply new configuration
-    new_conf[APPLICATIONS] = new_application_conf
 
     # Get save intermediate data
     if isinstance(new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA], dict):
@@ -507,13 +533,20 @@ def extract_conf_with_resolution(
         with open(PIPELINE_CONFS[FINAL_RES], "r", encoding="utf-8") as file:
             overiding_conf = json.load(file)
 
-    new_conf = overide_pipeline_conf(new_conf, overiding_conf)
+    # extract application
+    new_conf[APPLICATIONS] = extract_applications(
+        current_conf.get(APPLICATIONS, {}),
+        res,
+        overiding_conf.get(APPLICATIONS, {}),
+    )
 
     # Overide output to not compute data
+    # Overide resolution to let unit pipeline manage it
     if not last_res:
         overiding_conf = {
             OUTPUT: {
                 out_cst.OUT_DIRECTORY: new_dir_out_dir,
+                out_cst.RESOLUTION: None,
                 out_cst.SAVE_BY_PAIR: True,
                 out_cst.AUXILIARY: {
                     out_cst.AUX_DEM_MAX: True,

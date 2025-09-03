@@ -89,7 +89,7 @@ def check_output_parameters(conf, scaling_coeff):
 
     resolution = None
     overloaded_scaling_coeff = scaling_coeff
-    if output_constants.RESOLUTION in overloaded_conf:
+    if overloaded_conf.get(output_constants.RESOLUTION, None) is not None:
         resolution = overloaded_conf[output_constants.RESOLUTION]
         # update scaling coeff so the parameters are right for the dsm
         # overloaded_scaling_coeff = 2*resolution
