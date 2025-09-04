@@ -435,7 +435,7 @@ The structure follows this organization:
         +-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
         | *auxiliary*             | Selection of additional files in products                   | dict               | See below             | No       |
         +-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
-        | *epsg*                  | EPSG code                                                   | int, should be > 0 | None                  | No       |
+        | *epsg*                  | EPSG code                                                   | int, string        | None                  | No       |
         +-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
         | *geoid*                 | Output geoid                                                | bool or string     | True                  | No       |
         +-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
@@ -544,12 +544,36 @@ The structure follows this organization:
 
                 Note that not all rasters associated to the DSM that CARS can produce are available in the output product auxiliary data. For example, confidence intervals are not part of the output product but can be found in the rasterization `dump_dir` if `generate_confidence_intervals` is activated in the `dense_matching` application (to compute the confidence) and `save_intermediate_data` is activated in the `rasterization` application configuration (to write it on disk).
 
+            .. tab:: EPSG
+
+                This parameter defines the EPSG code to which the output data will be referenced.
+                If set to None, CARS will automatically use the EPSG code of the most suitable UTM zone for the input data.
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/output_epsg_1
+
+                When combined with the Geoid parameter, the EPSG ensures that the output file is assigned a CRS that also includes the corresponding vertical reference system.
+                
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/output_epsg_2
+
+                Additionally, this parameter can be used to override the vertical CRS of the output data, by specifying either a 3D CRS or a CompoundCRS.
+                For example, if the geoid provided is associated with a specific EPSG code that CARS cannot automatically detect, you can explicitly set it here.
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/output_epsg_3                
+
+
             .. tab:: Geoid
 
                 This parameter refers to the vertical reference of the output product, used as an altitude offset during triangulation.
                 It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to `True` CARS default geoid is used,
                 if set to `False` no vertical offset is applied (ellipsoid reference).
 
+                If the EPSG parameter does not already define a vertical reference, a Vertical CRS (VCRS) is derived from the `Geoid` parameter.
+
+                - If set to ``False``, a WKT corresponding to WGS84 is used.
+                - If set to ``True``, the default EGM96 model (EPSG:5773) is used.
+                - If set to a file path, the geoid file name is used to determine the appropriate VCRS. Currently, only EGM96 and EGM08 are supported.
+
+                If the provided file is not recognized, a WKT referencing the file directly is created instead.
 
             .. tab:: DSM output
 

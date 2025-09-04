@@ -182,6 +182,22 @@ def polygon_projection(poly: Polygon, epsg_in: int, epsg_out: int) -> Polygon:
     return poly
 
 
+def polygon_projection_crs(poly: Polygon, crs_in: CRS, crs_out: CRS) -> Polygon:
+    """
+    Projects a polygon from an initial crs to another
+
+    :param poly: poly to project
+    :param crs_in: initial crs
+    :param crs_out: final crs
+    :return: The polygon in the final projection
+    """
+    # Project polygon between CRS (keep always_xy for compatibility)
+    project = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)
+    poly = transform(project.transform, poly)
+
+    return poly
+
+
 def geo_to_ecef(
     lat: np.ndarray, lon: np.ndarray, alt: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -341,6 +357,27 @@ def point_cloud_conversion(
     crs_in = pyproj.CRS.from_epsg(epsg_in)
     crs_out = pyproj.CRS.from_epsg(epsg_out)
 
+    # Project point cloud between CRS (keep always_xy for compatibility)
+    cloud_in = np.array(cloud_in).T
+    transformer = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)
+
+    cloud_in = transformer.transform(*cloud_in)
+    cloud_in = np.array(cloud_in).T
+
+    return cloud_in
+
+
+def point_cloud_conversion_crs(
+    cloud_in: np.ndarray, crs_in: int, crs_out: int
+) -> np.ndarray:
+    """
+    Convert a point cloud from a SRS to another one.
+
+    :param cloud_in: cloud to project
+    :param crs_in: crs of the input SRS
+    :param crs_out: crs of the output SRS
+    :return: Projected point cloud
+    """
     # Project point cloud between CRS (keep always_xy for compatibility)
     cloud_in = np.array(cloud_in).T
     transformer = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)
@@ -721,3 +758,83 @@ def get_ground_angles(
     convergence_angle = np.degrees(utils.angle_vectors(enu1, enu2))
 
     return az1, elev_angle1, az2, elev_angle2, convergence_angle
+
+
+def get_output_crs(epsg, out_conf):
+    """
+    Détermine le CRS de sortie en fonction de la config.
+    """
+    geoid = out_conf.get("geoid")
+    crs_epsg = CRS(f"EPSG:{epsg}")
+
+    if len(crs_epsg.axis_info) != 2:
+        return crs_epsg  # the user himself set a 3D CRS
+
+    geoid_is_path = isinstance(geoid, str)
+
+    if geoid_is_path:  # user given geoid
+        vepsg = guess_vcrs_from_file_name(geoid)
+        if vepsg is None:
+            custom_wkt = (
+                'VERTCRS["Custom geoid height",'
+                + f'    VDATUM["Custom geoid model (file: {geoid})"],'
+                + "    CS[vertical,1],"
+                + '    AXIS["gravity-related height (h)", up],'
+                + '    LENGTHUNIT["metre", 1, ID["EPSG", 9001]]'
+                "]"
+            )
+            logging.warning(
+                "Could not create a known VCRS from the geoid file."
+            )
+            return CRS.from_wkt(
+                f'COMPOUNDCRS["EPSG:{epsg} + Custom geoid height",'
+                f"    {crs_epsg.to_wkt()},"
+                f"    {custom_wkt}]"
+            )
+        # a vepsg was found using the geoid file
+        return CRS(f"EPSG:{epsg}+{vepsg}")
+
+    if geoid:  # geoid == True
+        return CRS(f"EPSG:{epsg}+5773")
+
+    # geoid == False
+    wgs84_wkt = (
+        'VERTCRS["WGS 84 ellipsoidal height",'
+        + '    VDATUM["WGS 84"],'
+        + "    CS[vertical,1],"
+        + '    AXIS["ellipsoidal height (h)", up],'
+        + '    LENGTHUNIT["metre", 1, ID["EPSG", 9001]]'
+        "]"
+    )
+    logging.warning("The output VCRS is WGS84.")
+
+    return CRS.from_wkt(
+        f'COMPOUNDCRS["EPSG:{epsg} + WGS84 ellipsoidal height",'
+        f"    {crs_epsg.to_wkt()},"
+        f"    {wgs84_wkt}]"
+    )
+
+
+def guess_vcrs_from_file_name(filepath):
+    """
+    Tries to detect the geoid's EPSG from the file name
+    """
+    filename = os.path.basename(filepath).lower()
+
+    known_models = {
+        "egm96": 5773,  # EGM96 height
+        "egm_96": 5773,  # alias
+        "egm 96": 5773,  # alias
+        "egm1996": 5773,  # alias
+        "egm08": 3855,  # EGM2008 height
+        "egm_08": 3855,  # alias
+        "egm 08": 3855,  # alias
+        "egm2008": 3855,  # alias
+    }
+
+    for key, vepsg in known_models.items():
+        if key in filename:
+            return vepsg
+
+    # aucun match connu
+    return None

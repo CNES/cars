@@ -30,6 +30,7 @@ import numpy as np
 import rasterio as rio
 import xarray as xr
 from json_checker import Checker
+from pyproj import CRS
 from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
@@ -264,12 +265,12 @@ class AuxiliaryFillingFromSensors(
         [saving_info] = self.orchestrator.get_saving_infos([aux_filled_image])
 
         reference_transform = inputs.rasterio_get_transform(dsm_file)
-        reference_epsg = inputs.rasterio_get_epsg(dsm_file)
+        reference_crs = inputs.rasterio_get_crs(dsm_file)
 
         # Pre-compute sensor bounds of all sensors to filter sensors that do
         # not intersect with tile in tasks
         sensor_bounds = auxiliary_filling_wrappers.compute_sensor_bounds(
-            sensor_inputs, geom_plugin, reference_epsg
+            sensor_inputs, geom_plugin, reference_crs
         )
 
         for row in range(aux_filled_image.shape[0]):
@@ -296,7 +297,7 @@ class AuxiliaryFillingFromSensors(
                     pairing,
                     window,
                     reference_transform,
-                    reference_epsg,
+                    reference_crs,
                     full_saving_info,
                     geom_plugin,
                     texture_bands,
@@ -324,7 +325,7 @@ def filling_from_sensor_wrapper(
     pairing,
     window,
     transform,
-    epsg,
+    crs,
     saving_info,
     geom_plugin,
     texture_bands,
@@ -351,8 +352,8 @@ def filling_from_sensor_wrapper(
     :type window: dict
     :param transform: input geo transform
     :type transform: tuple
-    :param epsg: input epsg
-    :type epsg: int
+    :param crs: input crs
+    :type crs: CRS
     :param saving_info: saving info for cars orchestrator
     :type saving_info: dict
     :param geom_plugin: geometry plugin used for inverse locations
@@ -399,8 +400,8 @@ def filling_from_sensor_wrapper(
 
     stacked_values = np.vstack([cols_values_2d.ravel(), rows_values_2d.ravel()])
 
-    lon_lat = projection.point_cloud_conversion(
-        stacked_values.transpose(), epsg, 4326
+    lon_lat = projection.point_cloud_conversion_crs(
+        stacked_values.transpose(), crs, CRS(4326)
     )
 
     rio_window = rio.windows.Window.from_slices(

@@ -22,12 +22,13 @@
 this module contains the AuxiliaryFillingFromSensors application class.
 """
 
+from pyproj import CRS
 from shapely.geometry import Polygon
 
-from cars.core.projection import polygon_projection
+from cars.core.projection import polygon_projection_crs
 
 
-def compute_sensor_bounds(sensor_inputs, geom_plugin, output_epsg):
+def compute_sensor_bounds(sensor_inputs, geom_plugin, output_crs):
     """
     Compute bounds of each input sensor that have an associated color or
     classification image
@@ -38,8 +39,8 @@ def compute_sensor_bounds(sensor_inputs, geom_plugin, output_epsg):
     :type geom_plugin: AbstractGeometry
     :param geom_plugin: geometry plugin used for inverse locations
     :type geom_plugin: AbstractGeometry
-    :param output_epsg: epsg of the output polygons
-    :type output_epsg: int
+    :param output_crs: crs of the output polygons
+    :type output_crs: CRS
 
     :return: a dictionary containing a Polygon in output geometry for each
         valid input sensor
@@ -59,8 +60,8 @@ def compute_sensor_bounds(sensor_inputs, geom_plugin, output_epsg):
 
         poly_geo = Polygon([u_l, u_r, l_r, l_l, u_l])
 
-        sensor_bounds[sensor_name] = polygon_projection(
-            poly_geo, 4326, output_epsg
+        sensor_bounds[sensor_name] = polygon_projection_crs(
+            poly_geo, CRS(4326), output_crs
         )
 
     return sensor_bounds

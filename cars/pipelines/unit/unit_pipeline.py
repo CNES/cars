@@ -36,6 +36,7 @@ import math
 import os
 
 import numpy as np
+from pyproj import CRS
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars import __version__
@@ -56,6 +57,7 @@ from cars.core import preprocessing, projection, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import (
     get_descriptions_bands,
+    rasterio_get_crs,
     rasterio_get_epsg,
     rasterio_get_size,
     read_vector,
@@ -1861,6 +1863,8 @@ class UnitPipeline(PipelineTemplate):
                     self.input_roi_poly, self.input_roi_epsg, self.epsg
                 )
 
+            self.vertical_crs = projection.get_output_crs(self.epsg, output)
+
             if (
                 self.save_output_dsm
                 or self.save_output_point_cloud
@@ -2383,6 +2387,7 @@ class UnitPipeline(PipelineTemplate):
         _ = self.rasterization_application.run(
             self.point_cloud_to_rasterize,
             self.epsg,
+            self.vertical_crs,
             resolution=self.resolution,
             orchestrator=self.cars_orchestrator,
             dsm_file_name=dsm_file_name,
@@ -2620,6 +2625,7 @@ class UnitPipeline(PipelineTemplate):
             )
 
             self.epsg = rasterio_get_epsg(dict_path["dsm"][0])
+            self.vertical_crs = rasterio_get_crs(dict_path["dsm"][0])
 
             # Compute roi polygon, in input EPSG
             self.roi_poly = preprocessing.compute_roi_poly(
@@ -2749,9 +2755,9 @@ class UnitPipeline(PipelineTemplate):
                     )
 
                     # Project polygon if epsg is different
-                    if self.epsg != inter_epsg:
-                        inter_poly = projection.polygon_projection(
-                            inter_poly, inter_epsg, self.epsg
+                    if self.vertical_crs != CRS(inter_epsg):
+                        inter_poly = projection.polygon_projection_crs(
+                            inter_poly, CRS(inter_epsg), self.vertical_crs
                         )
 
                 self.list_intersection_poly.append(inter_poly)
@@ -2921,6 +2927,10 @@ class UnitPipeline(PipelineTemplate):
         )
         if self.epsg is None:
             self.epsg = epsg_cloud
+
+        self.vertical_crs = projection.get_output_crs(
+            self.epsg, self.used_conf[OUTPUT]
+        )
 
         self.resolution = (
             self.used_conf[OUTPUT][out_cst.RESOLUTION] * self.res_resamp
