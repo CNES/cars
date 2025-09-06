@@ -52,8 +52,6 @@ USE_ENDOGENOUS_DEM = "use_endogenous_dem"
 DEM_MEDIAN = "dem_median"
 DEM_MIN = "dem_min"
 DEM_MAX = "dem_max"
-ALTITUDE_DELTA_MAX = "altitude_delta_max"
-ALTITUDE_DELTA_MIN = "altitude_delta_min"
 
 # ground truth dsm
 INPUT_GROUND_TRUTH_DSM = "dsm"

@@ -1159,21 +1159,10 @@ class UnitPipeline(PipelineTemplate):
             # We generate grids with dem if it is provided.
             # If not provided, grid are generated without dem and a dem
             # will be generated, to use later for a new grid generation**
-            altitude_delta_min = inputs.get(sens_cst.INITIAL_ELEVATION, {}).get(
-                sens_cst.ALTITUDE_DELTA_MIN, None
-            )
-            altitude_delta_max = inputs.get(sens_cst.INITIAL_ELEVATION, {}).get(
-                sens_cst.ALTITUDE_DELTA_MAX, None
-            )
 
             if inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] is None:
                 geom_plugin = self.geom_plugin_without_dem_and_geoid
 
-                if None not in (altitude_delta_min, altitude_delta_max):
-                    raise RuntimeError(
-                        "Dem path is mandatory for "
-                        "the use of altitude deltas"
-                    )
             else:
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
 
@@ -1464,12 +1453,6 @@ class UnitPipeline(PipelineTemplate):
             dem_max = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
                 adv_cst.DEM_MAX
             ]
-            altitude_delta_min = self.used_conf[ADVANCED][
-                adv_cst.TERRAIN_A_PRIORI
-            ][adv_cst.ALTITUDE_DELTA_MIN]
-            altitude_delta_max = self.used_conf[ADVANCED][
-                adv_cst.TERRAIN_A_PRIORI
-            ][adv_cst.ALTITUDE_DELTA_MAX]
 
         # Define param
         use_global_disp_range = self.dense_matching_app.use_global_disp_range
@@ -1698,36 +1681,20 @@ class UnitPipeline(PipelineTemplate):
                     pair_key=pair_key,
                 )
             else:
-                if None in (altitude_delta_min, altitude_delta_max):
-                    # Generate min and max disp grids from dems
-                    # generate_disparity_grids runs orchestrator.breakpoint()
-                    self.pairs[pair_key]["disp_range_grid"] = (
-                        self.dense_matching_app.generate_disparity_grids(
-                            self.pairs[pair_key]["sensor_image_right"],
-                            self.pairs[pair_key]["corrected_grid_right"],
-                            self.geom_plugin_with_dem_and_geoid,
-                            dem_min=dem_min,
-                            dem_max=dem_max,
-                            dem_median=dem_median,
-                            pair_folder=dense_matching_pair_folder,
-                            orchestrator=self.cars_orchestrator,
-                        )
+                # Generate min and max disp grids from dems
+                # generate_disparity_grids runs orchestrator.breakpoint()
+                self.pairs[pair_key]["disp_range_grid"] = (
+                    self.dense_matching_app.generate_disparity_grids(
+                        self.pairs[pair_key]["sensor_image_right"],
+                        self.pairs[pair_key]["corrected_grid_right"],
+                        self.geom_plugin_with_dem_and_geoid,
+                        dem_min=dem_min,
+                        dem_max=dem_max,
+                        dem_median=dem_median,
+                        pair_folder=dense_matching_pair_folder,
+                        orchestrator=self.cars_orchestrator,
                     )
-                else:
-                    # Generate min and max disp grids from deltas
-                    # generate_disparity_grids runs orchestrator.breakpoint()
-                    self.pairs[pair_key]["disp_range_grid"] = (
-                        self.dense_matching_app.generate_disparity_grids(
-                            self.pairs[pair_key]["sensor_image_right"],
-                            self.pairs[pair_key]["corrected_grid_right"],
-                            self.geom_plugin_with_dem_and_geoid,
-                            altitude_delta_min=altitude_delta_min,
-                            altitude_delta_max=altitude_delta_max,
-                            dem_median=dem_median,
-                            pair_folder=dense_matching_pair_folder,
-                            orchestrator=self.cars_orchestrator,
-                        )
-                    )
+                )
 
                 if use_global_disp_range:
                     # Generate min and max disp grids from constants

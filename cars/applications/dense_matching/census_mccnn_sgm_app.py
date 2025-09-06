@@ -722,8 +722,6 @@ class CensusMccnnSgm(
         geom_plugin_with_dem_and_geoid,
         dmin=None,
         dmax=None,
-        altitude_delta_min=None,
-        altitude_delta_max=None,
         dem_median=None,
         dem_min=None,
         dem_max=None,
@@ -748,10 +746,6 @@ class CensusMccnnSgm(
         :type dmin: float
         :param dmax: maximum disparity
         :type dmax: float
-        :param altitude_delta_max: Delta max of altitude
-        :type altitude_delta_max: int
-        :param altitude_delta_min: Delta min of altitude
-        :type altitude_delta_min: int
         :param dem_median: path to median dem
         :type dem_median: str
         :param dem_min: path to minimum dem
@@ -821,19 +815,13 @@ class CensusMccnnSgm(
 
         if None not in (dmin, dmax):
             # use global disparity range
-            if None not in (dem_min, dem_max) or None not in (
-                altitude_delta_min,
-                altitude_delta_max,
-            ):
+            if None not in (dem_min, dem_max):
                 raise RuntimeError("Mix between local and global mode")
 
             # Only one tile
             grid_disp_range.tiling_grid = np.array([[[0, nb_rows, 0, nb_cols]]])
 
-        elif None not in (dem_min, dem_max, dem_median) or None not in (
-            altitude_delta_min,
-            altitude_delta_max,
-        ):
+        elif None not in (dem_min, dem_max, dem_median):
 
             # Generate multiple tiles
             grid_tile_size = self.epi_disp_grid_tile_size
@@ -891,10 +879,7 @@ class CensusMccnnSgm(
 
         if None not in (dmin, dmax):
             # use global disparity range
-            if None not in (dem_min, dem_max) or None not in (
-                altitude_delta_min,
-                altitude_delta_max,
-            ):
+            if None not in (dem_min, dem_max):
                 raise RuntimeError("Mix between local and global mode")
 
             saving_info_global_infos_full = ocht.update_saving_infos(
@@ -919,10 +904,7 @@ class CensusMccnnSgm(
                 saving_info_global_infos_full,
             )
 
-        elif None not in (dem_min, dem_max, dem_median) or None not in (
-            altitude_delta_min,
-            altitude_delta_max,
-        ):
+        elif None not in (dem_min, dem_max, dem_median):
 
             # use filter to propagate min and max
             filter_overlap = (
@@ -959,8 +941,6 @@ class CensusMccnnSgm(
                         dem_median,
                         dem_min,
                         dem_max,
-                        altitude_delta_min,
-                        altitude_delta_max,
                         raster_profile,
                         full_saving_info,
                         saving_info_global_infos_full,

@@ -240,22 +240,10 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
         overloaded_conf[adv_cst.TERRAIN_A_PRIORI][adv_cst.DEM_MAX] = (
             overloaded_conf[adv_cst.TERRAIN_A_PRIORI].get(adv_cst.DEM_MAX, None)
         )
-        overloaded_conf[adv_cst.TERRAIN_A_PRIORI][
-            adv_cst.ALTITUDE_DELTA_MIN
-        ] = overloaded_conf[adv_cst.TERRAIN_A_PRIORI].get(
-            adv_cst.ALTITUDE_DELTA_MIN, None
-        )
-        overloaded_conf[adv_cst.TERRAIN_A_PRIORI][
-            adv_cst.ALTITUDE_DELTA_MAX
-        ] = overloaded_conf[adv_cst.TERRAIN_A_PRIORI].get(
-            adv_cst.ALTITUDE_DELTA_MAX, None
-        )
         terrain_a_priori_schema = {
             adv_cst.DEM_MEDIAN: str,
             adv_cst.DEM_MIN: Or(str, None),  # TODO mandatory with local disp
             adv_cst.DEM_MAX: Or(str, None),
-            adv_cst.ALTITUDE_DELTA_MIN: Or(int, None),
-            adv_cst.ALTITUDE_DELTA_MAX: Or(int, None),
         }
         checker_terrain = Checker(terrain_a_priori_schema)
         checker_terrain.validate(overloaded_conf[adv_cst.TERRAIN_A_PRIORI])
@@ -466,8 +454,6 @@ def update_conf(  # noqa: C901
     dem_median=None,
     dem_min=None,
     dem_max=None,
-    altitude_delta_max=None,
-    altitude_delta_min=None,
 ):
     """
     Update the conf with grid correction and disparity range
@@ -530,11 +516,3 @@ def update_conf(  # noqa: C901
         conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_min"] = dem_min
     if dem_max is not None:
         conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_max"] = dem_max
-    if altitude_delta_max is not None:
-        conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
-            "altitude_delta_max"
-        ] = altitude_delta_max
-    if altitude_delta_min is not None:
-        conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
-            "altitude_delta_min"
-        ] = altitude_delta_min

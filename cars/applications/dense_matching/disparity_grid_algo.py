@@ -162,8 +162,6 @@ def generate_disp_range_from_dem_wrapper(
     dem_median,
     dem_min,
     dem_max,
-    altitude_delta_min,
-    altitude_delta_max,
     raster_profile,
     saving_info,
     saving_info_global_infos,
@@ -193,10 +191,6 @@ def generate_disp_range_from_dem_wrapper(
     :type dem_min: str
     :param dem_max: Path of dem max.
     :type dem_max: srt
-    :param altitude_delta_min: The minimum altitude delta.
-    :type altitude_delta_min: float
-    :param altitude_delta_max: The maximum altitude delta.
-    :type altitude_delta_max: float
     :param raster_profile: The raster profile.
     :type raster_profile: dict
     :param saving_info: The disp range grid saving information.
@@ -356,18 +350,14 @@ def generate_disp_range_from_dem_wrapper(
     lon_mean = terrain_position_lon_lat[:, 0]
     lat_mean = terrain_position_lon_lat[:, 1]
 
-    if None not in (dem_min, dem_max, dem_median):
-        # dem min and max are in 4326
-        dem_min_list = inputs.rasterio_get_values(
-            dem_min, lon_mean, lat_mean, point_cloud_conversion
-        )
-        dem_max_list = inputs.rasterio_get_values(
-            dem_max, lon_mean, lat_mean, point_cloud_conversion
-        )
-        nan_mask = nan_mask & ~np.isnan(dem_min_list) & ~np.isnan(dem_max_list)
-    else:
-        dem_min_list = dem_median_list - altitude_delta_min
-        dem_max_list = dem_median_list + altitude_delta_max
+    # dem min and max are in 4326
+    dem_min_list = inputs.rasterio_get_values(
+        dem_min, lon_mean, lat_mean, point_cloud_conversion
+    )
+    dem_max_list = inputs.rasterio_get_values(
+        dem_max, lon_mean, lat_mean, point_cloud_conversion
+    )
+    nan_mask = nan_mask & ~np.isnan(dem_min_list) & ~np.isnan(dem_max_list)
 
     # filter nan value from input points
     lon_mean = lon_mean[nan_mask]
