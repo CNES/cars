@@ -76,7 +76,6 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.resolution = self.used_config["resolution"]
         self.margin = self.used_config["margin"]
         height_margin = self.used_config["height_margin"]
         if isinstance(height_margin, list):
@@ -94,8 +93,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         self.postprocessing_median_filter_size = self.used_config[
             "postprocessing_median_filter_size"
         ]
-        self.dem_median_output_resolution = self.used_config[
-            "dem_median_output_resolution"
+        self.dem_median_downsample_factor = self.used_config[
+            "dem_median_downsample_factor"
         ]
         self.fillnodata_max_search_distance = self.used_config[
             "fillnodata_max_search_distance"
@@ -136,9 +135,6 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer_on_raster")
-        overloaded_conf["resolution"] = conf.get(
-            "resolution", float(self.scaling_coeff * 2)
-        )
         overloaded_conf["margin"] = conf.get(
             "margin", float(self.scaling_coeff * 500)
         )
@@ -151,8 +147,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         overloaded_conf["postprocessing_median_filter_size"] = conf.get(
             "postprocessing_median_filter_size", 7
         )
-        overloaded_conf["dem_median_output_resolution"] = conf.get(
-            "dem_median_output_resolution", 30
+        overloaded_conf["dem_median_downsample_factor"] = conf.get(
+            "dem_median_downsample_factor", 15
         )
         overloaded_conf["fillnodata_max_search_distance"] = conf.get(
             "fillnodata_max_search_distance", 50
@@ -160,7 +156,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         overloaded_conf["min_dem"] = conf.get("min_dem", -500)
         overloaded_conf["max_dem"] = conf.get("max_dem", 1000)
         overloaded_conf["height_margin"] = conf.get(
-            "height_margin", float(self.scaling_coeff * 20)
+            "height_margin", float(self.scaling_coeff * 5)
         )
         overloaded_conf["bulldozer_max_object_size"] = conf.get(
             "bulldozer_max_object_size", 8
@@ -176,13 +172,12 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
 
         rectification_schema = {
             "method": str,
-            "resolution": And(Or(float, int), lambda x: x > 0),
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
             "margin": And(Or(float, int), lambda x: x > 0),
             "morphological_filters_size": And(int, lambda x: x > 0),
             "preprocessing_median_filter_size": And(int, lambda x: x > 0),
             "postprocessing_median_filter_size": And(int, lambda x: x > 0),
-            "dem_median_output_resolution": And(int, lambda x: x > 0),
+            "dem_median_downsample_factor": And(int, lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
             "min_dem": And(Or(int, float), lambda x: x < 0),
             "max_dem": And(Or(int, float), lambda x: x > 0),
@@ -201,7 +196,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         return overloaded_conf
 
     @cars_profile(name="DEM Generation")
-    def run(
+    def run(  # noqa: C901
         self,
         dsm_file_name,
         output_dir,
@@ -244,8 +239,6 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         if output_geoid is True:
             input_geoid = False
             output_geoid = False
-
-        resolution_in_meters = self.resolution
 
         # rasterize point cloud
         dem_min_path = dem_min_file_name
@@ -414,17 +407,24 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             )
             shutil.copy2(dem_median_path_out, intermediate_dem_median_path)
 
-        # Downsample median dem
-        downsample_dem(
-            dem_median_path_out,
-            scale=self.dem_median_output_resolution / resolution_in_meters,
-            median_filter_size=self.postprocessing_median_filter_size,
-            default_alt=default_alt,
-        )
+        # Get dsm resolution
+        dsm_resolution = (
+            inputs.rasterio_get_resolution(dem_median_path_in)[0]
+            + inputs.rasterio_get_resolution(dem_median_path_in)[1]
+        ) / 2
+
+        # Downsample median dem only if large enough
+        if np.sum(~mask) / self.dem_median_downsample_factor**2 > 10:
+            downsample_dem(
+                dem_median_path_out,
+                scale=self.dem_median_downsample_factor,
+                median_filter_size=self.postprocessing_median_filter_size,
+                default_alt=default_alt,
+            )
 
         # Launch Bulldozer on dem min
         saved_transform = edit_transform(
-            dem_min_path, resolution=resolution_in_meters
+            dem_min_path, resolution=dsm_resolution
         )
         logging.info("Launch Bulldozer on DEM min")
         temp_output_path = launch_bulldozer(
@@ -439,7 +439,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
 
         # Inverse dem max and launch bulldozer
         saved_transform = edit_transform(
-            dem_max_path, resolution=resolution_in_meters
+            dem_max_path, resolution=dsm_resolution
         )
         reverse_dem(dem_max_path)
         logging.info("Launch Bulldozer on DEM max")

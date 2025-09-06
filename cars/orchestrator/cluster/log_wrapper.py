@@ -26,6 +26,7 @@ Contains functions for wrapper logs
 import copy
 import cProfile
 import datetime
+import functools
 import gc
 import io
 import logging
@@ -498,6 +499,30 @@ def log_delta_memory(func, memory_start, memory_end):
     log_message(func, message)
 
 
+def exception_safe(func):
+    """
+    Decorator for consistent exception handling in profiling functions
+
+    :param func: function to wrap
+    :return: wrapped function
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            error_msg = (
+                f"Error in {func.__name__}: {type(exc).__name__}: {str(exc)}"
+            )
+            logging.error(error_msg)
+            cars_logging.add_profiling_message(f"ERROR - {error_msg}")
+            return None
+
+    return wrapper
+
+
+@exception_safe
 def generate_summary(out_dir, used_conf, clean_worker_logs=False):
     """
     Generate Profiling summary

@@ -123,6 +123,8 @@ class DefaultPipeline(PipelineTemplate):
         self.epipolar_resolutions = (
             advanced_parameters.get_epipolar_resolutions(conf.get(ADVANCED, {}))
         )
+        if isinstance(self.epipolar_resolutions, int):
+            self.epipolar_resolutions = [self.epipolar_resolutions]
 
         # Check application
         self.check_applications(conf)
@@ -132,9 +134,6 @@ class DefaultPipeline(PipelineTemplate):
         conf[ADVANCED] = self.check_advanced(conf)
         # check output
         conf[OUTPUT] = self.check_output(conf)
-
-        if isinstance(self.epipolar_resolutions, int):
-            self.epipolar_resolutions = [self.epipolar_resolutions]
 
         if (
             (depth_cst.DEPTH_MAPS in conf[INPUTS])
@@ -215,7 +214,7 @@ class DefaultPipeline(PipelineTemplate):
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,
-            os.path.join(self.out_dir, "used_conf.json"),
+            os.path.join(self.out_dir, "global_used_conf.json"),
             safe_save=True,
         )
 
@@ -340,7 +339,7 @@ class DefaultPipeline(PipelineTemplate):
         new_conf = copy.deepcopy(conf)
 
         # Extract avanced parameters configuration
-        # epipolar and terrain a priori can only be used on firt resolution
+        # epipolar and terrain a priori can only be used on first resolution
         if not first_res:
             dem_min = os.path.join(previous_out_dir, "dsm/dem_min.tif")
             dem_max = os.path.join(previous_out_dir, "dsm/dem_max.tif")
@@ -573,18 +572,18 @@ def extract_conf_with_resolution(
         }
         new_conf = overide_pipeline_conf(new_conf, overiding_conf)
 
+        # set product level to dsm
+        new_conf[OUTPUT][out_cst.PRODUCT_LEVEL] = ["dsm"]
+        # remove resolution to let CARS compute it for current
+        # epipolar resolution
+        new_conf[OUTPUT]["resolution"] = None
+
         if not new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA]:
             # Save the less possible things
             aux_items = new_conf[OUTPUT][out_cst.AUXILIARY].items()
             for aux_key, _ in aux_items:
                 if aux_key not in ("dem_min", "dem_max", "dem_median"):
                     new_conf[OUTPUT][out_cst.AUXILIARY][aux_key] = False
-        else:
-            # we save the depth_maps also to debug
-            new_conf[OUTPUT][out_cst.PRODUCT_LEVEL] = [
-                "dsm",
-                "depth_map",
-            ]
 
     return new_conf
 

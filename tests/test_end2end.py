@@ -81,7 +81,7 @@ def test_end2end_dsm_fusion():
             },
         )
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "sparse_matching.sift": {
                     "method": "sift",
@@ -549,7 +549,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
         # Fill color, and dsm with bulldozer
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "dem_generation": {"resolution": 30},
                 "sparse_matching.sift": {
@@ -822,7 +822,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         )
 
         application_config = {
-            "resolution_4": {
+            "4": {
                 "sparse_matching.sift": {
                     "method": "sift",
                     # Uncomment the following line to update dsm reference data
@@ -834,7 +834,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                     "decimation_factor": 100,
                 },
             },
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic"},
                 "sparse_matching.sift": {
@@ -907,10 +907,12 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 < 46
             )
 
-        used_conf_path = os.path.join(out_dir, "used_conf.json")
+        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
+        refined_conf_path = os.path.join(out_dir, "refined_conf.json")
 
         # check used_conf file exists
         assert os.path.isfile(used_conf_path)
+        assert os.path.isfile(refined_conf_path)
 
         out_dir_res4 = os.path.join(
             input_config_sparse_dsm["output"]["directory"],
@@ -997,7 +999,7 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {
                     "method": "epipolar",
                     "epi_step": 30,
@@ -1149,7 +1151,7 @@ def test_end2end_ventoux_unique():
             }
         }
 
-        used_conf_path = os.path.join(out_dir, "used_conf.json")
+        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
 
         # check used_conf file exists
         assert os.path.isfile(used_conf_path)
@@ -1265,7 +1267,7 @@ def test_end2end_ventoux_unique():
                 "save_intermediate_data": True,
             },
         }
-        input_config_dense_dsm["applications"]["resolution_1"].update(
+        input_config_dense_dsm["applications"]["1"].update(
             dense_dsm_applications
         )
         # update epsg
@@ -1284,7 +1286,7 @@ def test_end2end_ventoux_unique():
 
         out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check used_conf for dense dsm
-        used_conf_path = os.path.join(out_dir, "used_conf.json")
+        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
 
         # check used_conf file exists
         assert os.path.isfile(used_conf_path)
@@ -1380,7 +1382,7 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -1499,7 +1501,7 @@ def test_end2end_ventoux_unique():
                 "texture_no_data": 0,
             },
         }
-        input_config_dense_dsm["applications"]["resolution_1"].update(
+        input_config_dense_dsm["applications"]["1"].update(
             dense_dsm_applications
         )
         # update epsg
@@ -1546,7 +1548,7 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -1612,7 +1614,7 @@ def test_end2end_ventoux_unique():
                 "texture_no_data": 0,
             },
         }
-        input_config_dense_dsm["applications"]["resolution_1"].update(
+        input_config_dense_dsm["applications"]["1"].update(
             dense_dsm_applications
         )
         # update epsg
@@ -1666,10 +1668,12 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             },
         )
         input_config_pc["applications"] = {
-            "dense_matching": {
-                "method": "census_sgm_default",
-                "use_cross_validation": True,
-            },
+            "all": {
+                "dense_matching": {
+                    "method": "census_sgm_default",
+                    "use_cross_validation": True,
+                }
+            }
         }
 
         input_config_pc["output"]["product_level"] = ["depth_map"]
@@ -1875,7 +1879,7 @@ def test_end2end_ventoux_unique_split():
             },
         )
         application_config = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 200},
                 "sparse_matching.sift": {
@@ -2534,7 +2538,7 @@ def test_end2end_use_epipolar_a_priori():
         input_config_sparse_res["inputs"]["initial_elevation"] = None
 
         application_config = {
-            "resolution_4": {
+            "4": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "nb_points_threshold": 150,
@@ -2548,7 +2552,7 @@ def test_end2end_use_epipolar_a_priori():
                     "decimation_factor": 100,
                 },
             },
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 200},
                 "sparse_matching.sift": {
@@ -2714,7 +2718,7 @@ def test_end2end_use_epipolar_a_priori():
             }
         }
 
-        used_conf_path = os.path.join(out_dir, "used_conf.json")
+        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
 
         # check refined_config_dense_dsm_json file exists
         assert os.path.isfile(used_conf_path)
@@ -2763,7 +2767,7 @@ def test_end2end_use_epipolar_a_priori():
         # update applications
         input_config_dense_dsm["applications"] = input_config_sparse_res[
             "applications"
-        ]["resolution_1"]
+        ]["1"]
         dense_dsm_applications = {
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -2800,7 +2804,7 @@ def test_end2end_use_epipolar_a_priori():
         out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Check used_conf for dense_dsm
-        used_conf_path = os.path.join(out_dir, "used_conf.json")
+        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
 
         # check used_conf file exists
         assert os.path.isfile(used_conf_path)
@@ -2909,7 +2913,7 @@ def test_prepare_ventoux_bias():
             },
         )
         application_config = {
-            "resolution_4": {
+            "4": {
                 "sparse_matching.sift": {
                     "method": "sift",
                     "epipolar_error_upper_bound": 43.0,
@@ -2921,7 +2925,7 @@ def test_prepare_ventoux_bias():
                     "decimation_factor": 100,
                 },
             },
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 100},
                 "dense_matching": {
@@ -2995,7 +2999,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         )
 
         application_config = {
-            "resolution_4": {
+            "4": {
                 "sparse_matching.sift": {
                     "method": "sift",
                     "epipolar_error_upper_bound": 43.0,
@@ -3006,7 +3010,7 @@ def test_end2end_ventoux_full_output_no_elevation():
                     "decimation_factor": 80,
                 },
             },
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {
                     "method": "bicubic",
@@ -3433,7 +3437,7 @@ def test_end2end_ventoux_with_color():
             },
         )
         application_config = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {
                     "method": "bicubic",
@@ -3473,14 +3477,6 @@ def test_end2end_ventoux_with_color():
         input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 1]
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
-
-        # Add a margin on recitification grid
-        # TODO change this when the new API with
-        # bicubic interpolator is implemented
-        geom_plugin_1 = sparse_res_pipeline.geom_plugin_with_dem_and_geoid
-        geom_plugin_2 = sparse_res_pipeline.geom_plugin_without_dem_and_geoid
-        geom_plugin_1.rectification_grid_margin = 5
-        geom_plugin_2.rectification_grid_margin = 5
 
         sparse_res_pipeline.run()
 
@@ -3545,7 +3541,7 @@ def test_end2end_ventoux_with_color():
                 "use_median": False,
             },
         }
-        input_config_dense_dsm["applications"]["resolution_1"].update(
+        input_config_dense_dsm["applications"]["1"].update(
             dense_dsm_applications
         )
         # update epsg
@@ -3559,14 +3555,6 @@ def test_end2end_ventoux_with_color():
         input_config_dense_dsm["output"]["auxiliary"] = {"ambiguity": True}
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
-
-        # Add a margin on recitification grid
-        # TODO change this when the new API with
-        # bicubic interpolator is implemented
-        geom_plugin_1 = dense_dsm_pipeline.geom_plugin_with_dem_and_geoid
-        geom_plugin_2 = dense_dsm_pipeline.geom_plugin_without_dem_and_geoid
-        geom_plugin_1.rectification_grid_margin = 5
-        geom_plugin_2.rectification_grid_margin = 5
 
         dense_dsm_pipeline.run()
 
@@ -3809,7 +3797,7 @@ def test_end2end_ventoux_with_classif():
             },
         )
         application_config = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {
                     "method": "bicubic",
@@ -3908,7 +3896,7 @@ def test_end2end_ventoux_with_classif():
                 "use_median": False,
             },
         }
-        input_config_dense_dsm["applications"]["resolution_1"].update(
+        input_config_dense_dsm["applications"]["1"].update(
             dense_dsm_applications
         )
         # update epsg
@@ -4075,7 +4063,7 @@ def test_compute_dsm_with_roi_ventoux():
             },
         )
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "dense_matching": {
@@ -4232,7 +4220,7 @@ def test_compute_dsm_with_snap_to_img1():
             },
         )
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -4360,7 +4348,7 @@ def test_end2end_quality_stats():
         # no srtm
         input_config_dense_dsm["inputs"]["initial_elevation"] = None
         dense_dsm_applications = {
-            "resolution_4": {
+            "4": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "activated": True,
@@ -4374,7 +4362,7 @@ def test_end2end_quality_stats():
                     "decimation_factor": 80,
                 },
             },
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -4656,7 +4644,7 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {
                     "method": "epipolar",
                     "epi_step": 30,
@@ -4787,7 +4775,7 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {
                     "method": "epipolar",
                     "epi_step": 30,
@@ -4882,7 +4870,7 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {
                     "method": "epipolar",
                     "epi_step": 30,
@@ -5027,7 +5015,7 @@ def test_end2end_paca_with_mask():
             },
         )
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
                 "sparse_matching.sift": {
@@ -5095,18 +5083,6 @@ def test_end2end_paca_with_mask():
         dense_dsm_pipeline_bulldozer = default.DefaultPipeline(
             input_config_dense_dsm
         )
-
-        # Add a margin on recitification grid
-        # TODO change this when the new API with
-        # bicubic interpolator is implemented
-        geom_plugin_1 = (
-            dense_dsm_pipeline_bulldozer.geom_plugin_with_dem_and_geoid
-        )
-        geom_plugin_2 = (
-            dense_dsm_pipeline_bulldozer.geom_plugin_without_dem_and_geoid
-        )
-        geom_plugin_1.rectification_grid_margin = 5
-        geom_plugin_2.rectification_grid_margin = 5
 
         dense_dsm_pipeline_bulldozer.run()
 
@@ -5192,7 +5168,7 @@ def test_end2end_paca_with_mask():
         # clean out dir for second run
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        input_config_dense_dsm["applications"]["resolution_1"].update(
+        input_config_dense_dsm["applications"]["1"].update(
             {
                 "dense_match_filling.2": {
                     "method": "zero_padding",
@@ -5212,18 +5188,6 @@ def test_end2end_paca_with_mask():
         dense_dsm_pipeline_matches = default.DefaultPipeline(
             input_config_dense_dsm
         )
-
-        # Add a margin on recitification grid
-        # TODO change this when the new API with
-        # bicubic interpolator is implemented
-        geom_plugin_1 = (
-            dense_dsm_pipeline_matches.geom_plugin_with_dem_and_geoid
-        )
-        geom_plugin_2 = (
-            dense_dsm_pipeline_matches.geom_plugin_without_dem_and_geoid
-        )
-        geom_plugin_1.rectification_grid_margin = 5
-        geom_plugin_2.rectification_grid_margin = 5
 
         dense_dsm_pipeline_matches.run()
 
@@ -5289,7 +5253,7 @@ def test_end2end_paca_with_mask():
         # clean out dir for second run
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        input_config_dense_dsm["applications"]["resolution_1"].update(
+        input_config_dense_dsm["applications"]["1"].update(
             {
                 "dense_match_filling.2": {
                     "method": "zero_padding",
@@ -5361,7 +5325,7 @@ def test_end2end_disparity_filling():
             },
         )
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "dense_matching": {
                     "method": "auto",
                     "use_cross_validation": True,
@@ -5504,7 +5468,7 @@ def test_end2end_disparity_filling_with_zeros():
             "multiprocessing",
         )
         dense_dsm_applications = {
-            "resolution_1": {
+            "1": {
                 "sparse_matching.sift": {
                     "decimation_factor": 80,
                 },
@@ -5655,12 +5619,17 @@ def test_end2end_gizeh_dry_run_of_used_conf():
         )
 
         applications = {
-            "triangulation": {
-                "save_intermediate_data": True,
+            "all": {
+                "triangulation": {
+                    "save_intermediate_data": True,
+                }
             }
         }
-
         sensors_input_config_first_run["applications"] = applications
+        sensors_input_config_first_run["advanced"]["keep_low_res_dir"] = True
+        sensors_input_config_first_run["advanced"][
+            "save_intermediate_data"
+        ] = True
         sensors_input_config_first_run["advanced"]["epipolar_resolutions"] = [
             4,
             1,
@@ -5675,17 +5644,19 @@ def test_end2end_gizeh_dry_run_of_used_conf():
         )
 
         # Run sensors pipeline with generated config
-        used_conf = os.path.join(sensors_out_dir_first_run, "used_conf.json")
-        with open(used_conf, "r", encoding="utf8") as fstream:
+        refined_conf = os.path.join(
+            sensors_out_dir_first_run, "refined_conf.json"
+        )
+        with open(refined_conf, "r", encoding="utf8") as fstream:
             sensors_input_config_second_run = json.load(fstream)
 
         sensors_input_config_second_run["output"][
             "directory"
-        ] += "_from_used_conf"
+        ] += "_from_refined_conf"
 
         first_res_out_dir = os.path.join(
             sensors_input_config_first_run["output"]["directory"],
-            "intermediate_res/out_res4",
+            "intermediate_data/out_res4",
         )
 
         sensors_pipeline_second_run = unit.UnitPipeline(
@@ -5739,13 +5710,15 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             ]
 
             # Run pc pipeline with generated config
-            used_conf = os.path.join(pc_out_dir_first_run, "used_conf.json")
-            with open(used_conf, "r", encoding="utf8") as fstream:
+            refined_conf = os.path.join(
+                pc_out_dir_first_run, "refined_conf.json"
+            )
+            with open(refined_conf, "r", encoding="utf8") as fstream:
                 pc_input_config_second_run = json.load(fstream)
 
             pc_input_config_second_run["output"][
                 "directory"
-            ] += "_from_used_conf"
+            ] += "_from_refined_conf"
 
             pc_pipeline_second_run = unit.UnitPipeline(
                 pc_input_config_second_run

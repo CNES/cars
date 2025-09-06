@@ -75,6 +75,9 @@ from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters, sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
+from cars.pipelines.parameters.advanced_parameters_constants import (
+    USE_ENDOGENOUS_DEM,
+)
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
@@ -480,7 +483,7 @@ class UnitPipeline(PipelineTemplate):
 
         cars_dataset.save_dict(
             self.used_conf,
-            os.path.join(self.out_dir, "used_conf.json"),
+            os.path.join(self.out_dir, "current_res_used_conf.json"),
             safe_save=True,
         )
         cars_dataset.save_dict(
@@ -1016,6 +1019,65 @@ class UnitPipeline(PipelineTemplate):
 
         return application_conf
 
+    def generate_grid_correction_on_dem(self, pair_key, geo_plugin_on_dem):
+        """
+        Generate the epipolar grid correction for a given pair, using given dem
+        """
+
+        # Generate new grids with dem
+        # Generate rectification grids
+        (
+            grid_left_new_dem,
+            grid_right_new_dem,
+        ) = self.epipolar_grid_generation_application.run(
+            self.pairs[pair_key]["sensor_image_left"],
+            self.pairs[pair_key]["sensor_image_right"],
+            geo_plugin_on_dem,
+            orchestrator=self.cars_orchestrator,
+            pair_folder=os.path.join(
+                self.dump_dir,
+                "epipolar_grid_generation",
+                "new_dem",
+                pair_key,
+            ),
+            pair_key=pair_key,
+        )
+
+        if self.pairs[pair_key].get("sensor_matches_left", None) is None:
+            logging.error(
+                "No sensor matches available to compute grid correction"
+            )
+            return None
+
+        # Generate new matches with new grids
+        new_grid_matches_array = geo_plugin_on_dem.transform_matches_from_grids(
+            self.pairs[pair_key]["sensor_matches_left"],
+            self.pairs[pair_key]["sensor_matches_right"],
+            grid_left_new_dem,
+            grid_right_new_dem,
+        )
+
+        # Generate grid_correction
+        # Compute grid correction
+        (
+            new_grid_correction_coef,
+            _,
+            _,
+            _,
+        ) = grid_correction_app.estimate_right_grid_correction(
+            new_grid_matches_array,
+            grid_right_new_dem,
+            save_matches=False,
+            minimum_nb_matches=0,
+            pair_folder=os.path.join(
+                self.dump_dir, "grid_correction", " new_dem", pair_key
+            ),
+            pair_key=pair_key,
+            orchestrator=self.cars_orchestrator,
+        )
+
+        return new_grid_correction_coef
+
     def sensor_to_depth_maps(self):  # noqa: C901
         """
         Creates the depth map from the sensor images given in the input,
@@ -1409,33 +1471,6 @@ class UnitPipeline(PipelineTemplate):
                 adv_cst.TERRAIN_A_PRIORI
             ][adv_cst.ALTITUDE_DELTA_MAX]
 
-            # update used configuration with terrain a priori
-            if None not in (altitude_delta_min, altitude_delta_max):
-                advanced_parameters.update_conf(
-                    self.refined_conf,
-                    dem_median=dem_median,
-                    altitude_delta_min=altitude_delta_min,
-                    altitude_delta_max=altitude_delta_max,
-                )
-            else:
-                advanced_parameters.update_conf(
-                    self.refined_conf,
-                    dem_median=dem_median,
-                    dem_min=dem_min,
-                    dem_max=dem_max,
-                )
-
-            advanced_parameters.update_conf(
-                self.refined_conf,
-                dem_median=dem_median,
-                dem_min=dem_min,
-                dem_max=dem_max,
-            )
-
-        # quit only after the configuration was updated
-        if self.quit_on_app("dem_generation"):
-            return True
-
         # Define param
         use_global_disp_range = self.dense_matching_app.use_global_disp_range
 
@@ -1603,21 +1638,16 @@ class UnitPipeline(PipelineTemplate):
                 right=True,
             )
 
-            # Update used_conf configuration with epipolar a priori
-            # Add global min and max computed with grids
+            # Update refined_conf configuration with epipolar a priori
             advanced_parameters.update_conf(
                 self.refined_conf,
                 grid_correction_coef=self.pairs[pair_key][
                     "grid_correction_coef"
                 ],
                 pair_key=pair_key,
-            )
-            advanced_parameters.update_conf(
-                self.refined_conf,
-                grid_correction_coef=self.pairs[pair_key][
-                    "grid_correction_coef"
-                ],
-                pair_key=pair_key,
+                reference_dem=self.used_conf[INPUTS][
+                    sens_cst.INITIAL_ELEVATION
+                ][sens_cst.DEM_PATH],
             )
             # saved used configuration
             self.save_configurations()
@@ -2554,6 +2584,7 @@ class UnitPipeline(PipelineTemplate):
                 cars_orchestrator=self.cars_orchestrator,
             )
 
+            # Update refined conf configuration with dem paths
             dem_median = paths["dem_median"]
             dem_min = paths["dem_min"]
             dem_max = paths["dem_max"]
@@ -2564,6 +2595,40 @@ class UnitPipeline(PipelineTemplate):
                 dem_min=dem_min,
                 dem_max=dem_max,
             )
+
+            if self.used_conf[ADVANCED][USE_ENDOGENOUS_DEM]:
+                # Generate new geom plugin with dem
+                new_geom_plugin = (
+                    sensor_inputs.generate_geometry_plugin_with_dem(
+                        self.geometry_plugin,
+                        self.used_conf[INPUTS],
+                        dem=dem_median,
+                    )
+                )
+
+                for (
+                    pair_key,
+                    _,
+                    _,
+                ) in self.list_sensor_pairs:
+                    new_grid_correction_coef = (
+                        self.generate_grid_correction_on_dem(
+                            pair_key,
+                            new_geom_plugin,
+                        )
+                    )
+                    if new_grid_correction_coef is not None:
+                        # Update refined_conf configuration with epipolar
+                        # a priori
+                        advanced_parameters.update_conf(
+                            self.refined_conf,
+                            grid_correction_coef=new_grid_correction_coef,
+                            pair_key=pair_key,
+                            reference_dem=dem_median,
+                        )
+
+            # saved used configuration
+            self.save_configurations()
 
         return False
 

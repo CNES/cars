@@ -81,7 +81,8 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     )
 
     overloaded_conf[adv_cst.KEEP_LOW_RES_DIR] = conf.get(
-        adv_cst.KEEP_LOW_RES_DIR, True
+        adv_cst.KEEP_LOW_RES_DIR,
+        bool(overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA]),
     )
 
     overloaded_conf[adv_cst.DEBUG_WITH_ROI] = conf.get(
@@ -100,7 +101,8 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
 
     # use endogenous dm when generated
     overloaded_conf[adv_cst.USE_ENDOGENOUS_DEM] = conf.get(
-        adv_cst.USE_ENDOGENOUS_DEM, False
+        adv_cst.USE_ENDOGENOUS_DEM,
+        inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] is None,
     )
 
     overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, False)
@@ -221,6 +223,7 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
     epipolar_schema = {
         adv_cst.GRID_CORRECTION: Or(list, None),
         adv_cst.DISPARITY_RANGE: list,
+        adv_cst.REFERENCE_DEM: Or(str, None),
     }
     checker_epipolar = Checker(epipolar_schema)
 
@@ -456,6 +459,7 @@ def check_ground_truth_dsm_data(conf):
 def update_conf(  # noqa: C901
     conf,
     grid_correction_coef=None,
+    reference_dem=None,
     dmin=None,
     dmax=None,
     pair_key=None,
@@ -469,6 +473,9 @@ def update_conf(  # noqa: C901
     Update the conf with grid correction and disparity range
     :param grid_correction_coef: grid correction coefficient
     :type grid_correction_coef: list
+    :param reference_dem: Dem used to compute epipolar grids, and
+        grid correction
+    :type reference_dem: str
     :param dmin: disparity range minimum
     :type dmin: float
     :param dmax: disparity range maximum
@@ -486,7 +493,10 @@ def update_conf(  # noqa: C901
             conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = {}
         if pair_key not in conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI]:
             conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][pair_key] = {}
-        if grid_correction_coef is not None:
+        if grid_correction_coef is not None and reference_dem is not None:
+            conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][pair_key][
+                "reference_dem"
+            ] = reference_dem
             if len(grid_correction_coef) == 2:
                 conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][pair_key][
                     "grid_correction"

@@ -45,6 +45,7 @@ DSM_MERGING_TILE_SIZE = "dsm_merging_tile_size"
 # inner epipolar a priori constants
 GRID_CORRECTION = "grid_correction"
 DISPARITY_RANGE = "disparity_range"
+REFERENCE_DEM = "reference_dem"
 
 TERRAIN_A_PRIORI = "terrain_a_priori"
 USE_ENDOGENOUS_DEM = "use_endogenous_dem"
