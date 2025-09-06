@@ -473,8 +473,7 @@ def update_conf(  # noqa: C901
     Update the conf with grid correction and disparity range
     :param grid_correction_coef: grid correction coefficient
     :type grid_correction_coef: list
-    :param reference_dem: Dem used to compute epipolar grids, and
-        grid correction
+    :param reference_dem: Dem used to compute epipolar grids
     :type reference_dem: str
     :param dmin: disparity range minimum
     :type dmin: float
