@@ -75,7 +75,11 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["activated"] = conf.get("activated", False)
-        overloaded_conf["classification"] = conf.get("classification", None)
+        overloaded_conf["classification"] = conf.get("classification", "nodata")
+        if isinstance(overloaded_conf["classification"], str):
+            overloaded_conf["classification"] = [
+                overloaded_conf["classification"]
+            ]
         overloaded_conf["component_min_size"] = conf.get(
             "component_min_size", 5
         )

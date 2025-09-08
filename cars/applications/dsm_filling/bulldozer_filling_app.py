@@ -73,7 +73,13 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["activated"] = conf.get("activated", False)
-        overloaded_conf["classification"] = conf.get("classification", None)
+        overloaded_conf["classification"] = conf.get("classification", "nodata")
+
+        if isinstance(overloaded_conf["classification"], str):
+            overloaded_conf["classification"] = [
+                overloaded_conf["classification"]
+            ]
+
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -212,7 +218,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
                 out_dsm.write(dsm, 1)
 
-        if classif_file is not None:
+        if classif_file is not None and os.path.exists(classif_file):
             classif_descriptions = inputs.get_descriptions_bands(classif_file)
         else:
             classif_descriptions = []
@@ -226,7 +232,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 classif[classif_msk == 0] = 0
                 filling_mask = np.logical_and(classif, roi_raster > 0)
             elif label == "nodata":
-                if classif_file is not None:
+                if classif_file is not None and os.path.exists(classif_file):
                     with rio.open(classif_file) as in_classif:
                         classif_msk = in_classif.read_masks(1)
                     classif = ~classif_msk

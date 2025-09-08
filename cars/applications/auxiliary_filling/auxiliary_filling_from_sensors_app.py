@@ -192,12 +192,15 @@ class AuxiliaryFillingFromSensors(
             shutil.move(color_file, color_not_filled_file)
 
         classification_not_filled_file = None
+        # classif_file could be defined without data attached
+        if classif_file is not None and not os.path.exists(classif_file):
+            classif_file = None
+
         if classif_file is not None:
             classification_not_filled_file = os.path.join(
                 dump_dir, "classification_not_filled.tif"
             )
-            if os.path.exists(classif_file):
-                shutil.move(classif_file, classification_not_filled_file)
+            shutil.move(classif_file, classification_not_filled_file)
 
         # Clean dump_dir at the end of processing if required
         if not self.used_config["save_intermediate_data"]:
@@ -459,6 +462,7 @@ def filling_from_sensor_wrapper(
     number_of_classification_bands = 0
     classification_values = None
     classification_band_names = None
+
     if classification_file is not None:
         if os.path.exists(classification_file):
             with rio.open(classification_file) as classification_image:

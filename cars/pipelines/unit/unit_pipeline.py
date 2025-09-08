@@ -817,9 +817,9 @@ class UnitPipeline(PipelineTemplate):
                 )
 
             if (
-                self.dsm_filling_1_application.classification
-                or self.dsm_filling_2_application.classification
-                or self.dsm_filling_3_application.classification
+                self.dsm_filling_1_application.classification != ["nodata"]
+                or self.dsm_filling_2_application.classification != ["nodata"]
+                or self.dsm_filling_3_application.classification != ["nodata"]
             ):
                 self.save_output_classif_for_filling = True
 

@@ -260,20 +260,6 @@ class DefaultPipeline(PipelineTemplate):
                     # (except the last one)
                     self.used_conf[key][OUTPUT][out_cst.PRODUCT_LEVEL] = "dsm"
 
-                    # The idea is to calculate the less possible things
-                    # So we override those parameters
-                    self.used_conf[key][ADVANCED][adv_cst.MERGING] = False
-                    self.used_conf[key][ADVANCED][adv_cst.PHASING] = None
-                    self.used_conf[key][OUTPUT][out_cst.SAVE_BY_PAIR] = False
-
-                    aux_items = self.used_conf[key][OUTPUT][
-                        out_cst.AUXILIARY
-                    ].items()
-                    for aux_key, _ in aux_items:
-                        if aux_key not in ("dem_min", "dem_max", "dem_median"):
-                            self.used_conf[key][OUTPUT][out_cst.AUXILIARY][
-                                aux_key
-                            ] = False
                 else:
                     # If save_intermediate_data is true,
                     # we save the depth_maps also to debug

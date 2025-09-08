@@ -74,7 +74,11 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["activated"] = conf.get("activated", False)
-        overloaded_conf["classification"] = conf.get("classification", None)
+        overloaded_conf["classification"] = conf.get("classification", "nodata")
+        if isinstance(overloaded_conf["classification"], str):
+            overloaded_conf["classification"] = [
+                overloaded_conf["classification"]
+            ]
         overloaded_conf["fill_with_geoid"] = conf.get("fill_with_geoid", None)
         overloaded_conf["interpolation_method"] = conf.get(
             "interpolation_method", "bilinear"
