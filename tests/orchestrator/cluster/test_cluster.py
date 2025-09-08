@@ -26,6 +26,8 @@ Test module for cars/orchestrator/cluster/cluster.py
 # Standard imports
 from __future__ import absolute_import
 
+import logging
+import os
 import tempfile
 
 import numpy as np
@@ -35,6 +37,7 @@ import pytest
 import xarray as xr
 
 # CARS imports
+from cars.core import cars_logging
 from cars.orchestrator.cluster import abstract_cluster
 from cars.orchestrator.cluster.mp_cluster.mp_factorizer import factorize_delayed
 
@@ -102,8 +105,15 @@ def pipeline_step_by_step(conf):
     # create temporary dir
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         # Create cluster
+        log_dir = os.path.join(directory, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        cars_logging.setup_logging(
+            logging.WARNING,
+            out_dir=log_dir,
+            pipeline="unit_pipeline",
+        )
         cluster = abstract_cluster.AbstractCluster(  # pylint: disable=E0110
-            current_conf, directory
+            current_conf, directory, log_dir
         )
 
         # Create tasks
@@ -246,8 +256,15 @@ def test_tasks_pipeline_dump_xarray(conf):
     # create temporary dir
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         # Create cluster
+        log_dir = os.path.join(directory, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        cars_logging.setup_logging(
+            logging.WARNING,
+            out_dir=log_dir,
+            pipeline="unit_pipeline",
+        )
         cluster = abstract_cluster.AbstractCluster(  # pylint: disable=E0110
-            current_conf, directory
+            current_conf, directory, log_dir
         )
 
         # Create tasks
@@ -299,9 +316,17 @@ def test_factorize_tasks_mp(conf):
     current_conf = conf
     # create temporary dir
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+
         # Create cluster
+        log_dir = os.path.join(directory, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        cars_logging.setup_logging(
+            logging.WARNING,
+            out_dir=log_dir,
+            pipeline="unit_pipeline",
+        )
         cluster = abstract_cluster.AbstractCluster(  # pylint: disable=E0110
-            current_conf, directory
+            current_conf, directory, log_dir
         )
 
         # Create tasks

@@ -537,6 +537,7 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
             nb_workers = used_conf["orchestrator"]["nb_workers"]
 
     workers_log_dir = os.path.join(out_dir, "workers_log")
+    os.makedirs(workers_log_dir, exist_ok=True)
 
     log_file_main = os.path.join(
         workers_log_dir,
