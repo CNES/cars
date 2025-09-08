@@ -270,7 +270,7 @@ class SimpleGaussian(
         :type color_file_name: str
         :param mask_file_name: path of color
         :type mask_file_name: str
-        :param classif_file_name: path of color
+        :param classif_file_name: path of classification
         :type classif_file_name: str
         :param performance_map_file_name: path of performance map file
         :type performance_map_file_name: str
@@ -320,6 +320,27 @@ class SimpleGaussian(
         # Get if color, mask and stats are saved
         save_intermediate_data = self.used_config["save_intermediate_data"]
 
+        keep_dir = (
+            len(
+                list(
+                    filter(
+                        lambda x: x is not None,
+                        [
+                            weights_file_name,
+                            color_file_name,
+                            mask_file_name,
+                            classif_file_name,
+                            performance_map_file_name,
+                            ambiguity_file_name,
+                            contributing_pair_file_name,
+                            filling_file_name,
+                        ],
+                    )
+                )
+            )
+            > 0
+        )
+
         if not self.color_dtype:
             self.color_dtype = color_dtype
 
@@ -336,7 +357,7 @@ class SimpleGaussian(
         if dump_dir is not None:
             out_dump_dir = dump_dir
             safe_makedirs(dump_dir)
-            if not save_intermediate_data:
+            if not save_intermediate_data and not keep_dir:
                 self.orchestrator.add_to_clean(dump_dir)
         else:
             out_dump_dir = self.orchestrator.out_dir
@@ -515,6 +536,7 @@ class SimpleGaussian(
             out_classif_file_name = os.path.join(
                 out_dump_dir, "classification.tif"
             )
+
         if out_classif_file_name is not None:
             list_computed_layers += ["classif"]
             self.orchestrator.add_to_save_lists(
