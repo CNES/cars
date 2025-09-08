@@ -745,7 +745,7 @@ class AbstractGeometry(metaclass=ABCMeta):
                 geomodel,
                 lat_coord[status],
                 lon_coord[status],
-                np.array([0]),
+                np.array([self.default_alt]),
             )
 
             image_points[:, status] = image_points_retry
