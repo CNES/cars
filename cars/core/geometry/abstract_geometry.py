@@ -18,6 +18,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# pylint: disable=C0302
+
 """
 this module contains the abstract geometry class to use in the
 geometry plugins
@@ -624,7 +627,6 @@ class AbstractGeometry(metaclass=ABCMeta):
         :return: Latitude, Longitude, Altitude coordinates list as a numpy array
         """
 
-
     def safe_direct_loc(
         self,
         sensor,
@@ -661,18 +663,18 @@ class AbstractGeometry(metaclass=ABCMeta):
             status = np.any(np.isnan(ground_points), axis=0)
             if sum(status) > 0:
                 logging.warning(
-                    "{} errors have been detected on direct loc and will be re-launched".format(sum(status))
+                    "{} errors have been detected on direct "
+                    "loc and will be re-launched".format(sum(status))
                 )
                 ground_points_retry = self.direct_loc(
                     sensor,
                     geomodel,
                     x_coord[status],
                     y_coord[status],
-                    np.array([0])
+                    np.array([0]),
                 )
                 ground_points[:, status] = ground_points_retry
         return ground_points
-            
 
     @abstractmethod
     def inverse_loc(
@@ -696,7 +698,6 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param z_coord: Z Altitude list
         :return: X  / Y / Z Coordinates list in input image as a numpy array
         """
-
 
     def safe_inverse_loc(
         self,
@@ -731,25 +732,24 @@ class AbstractGeometry(metaclass=ABCMeta):
         else:
             logging.warning("Inverse loc function launched on empty list")
             return [], [], []
-        if z_coord is not None:
-            return image_points[0], image_points[1], image_points[2]
-        else:
+        if z_coord is None:
             image_points = np.array(image_points)
             status = np.any(np.isnan(image_points), axis=0)
             if sum(status) > 0:
                 logging.warning(
-                    "{} errors have been detected on inverse loc and will be re-launched".format(sum(status))
+                    "{} errors have been detected on inverse "
+                    "loc and will be re-launched".format(sum(status))
                 )
             image_points_retry = self.inverse_loc(
                 sensor,
                 geomodel,
                 lat_coord[status],
                 lon_coord[status],
-                np.array([0])
+                np.array([0]),
             )
 
             image_points[:, status] = image_points_retry
-            return image_points[0], image_points[1], image_points[2]
+        return image_points[0], image_points[1], image_points[2]
 
     def image_envelope(
         self,

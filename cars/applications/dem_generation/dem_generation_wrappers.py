@@ -293,7 +293,9 @@ def downsample_dem(input_dem, scale, median_filter_size=7):
         dst.write(dem_data, 1)
 
 
-def modify_terrain_bounds(bounds_poly, in_epsg, out_epsg, margin):
+def modify_terrain_bounds(
+    bounds_poly, in_epsg, out_epsg, constant_margin, linear_margin=0
+):
     """
     Modify the terrain bounds
 
@@ -320,13 +322,13 @@ def modify_terrain_bounds(bounds_poly, in_epsg, out_epsg, margin):
         conversion_factor = preprocessing.get_conversion_factor(
             bounds_cloud, 4326, utm_epsg
         )
-        margin *= conversion_factor
+        constant_margin *= conversion_factor
 
     # Get borders, adding margin
-    xmin = xmin - margin
-    ymin = ymin - margin
-    xmax = xmax + margin
-    ymax = ymax + margin
+    xmin = xmin - constant_margin - linear_margin * (xmax - xmin)
+    ymin = ymin - constant_margin - linear_margin * (ymax - ymin)
+    xmax = xmax + constant_margin + linear_margin * (xmax - xmin)
+    ymax = ymax + constant_margin + linear_margin * (ymax - ymin)
 
     terrain_bounds = [xmin, ymin, xmax, ymax]
 

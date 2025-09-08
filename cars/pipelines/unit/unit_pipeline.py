@@ -1930,6 +1930,7 @@ class UnitPipeline(PipelineTemplate):
                                 self.epsg,
                                 self.epsg,
                                 self.dem_generation_application.margin,
+                                0.5,
                             )
                         )
 
