@@ -299,7 +299,7 @@ def generate_disp_range_from_dem_wrapper(
         trans_inv_sensor, sensor_bbox[:, 1], sensor_bbox[:, 0]
     )
 
-    terrain_bbox = geo_plugin.direct_loc(
+    terrain_bbox = geo_plugin.safe_direct_loc(
         sensor_image_right["image"]["main_file"],
         sensor_image_right["geomodel"],
         col_sensor_bbox,
@@ -381,7 +381,7 @@ def generate_disp_range_from_dem_wrapper(
         ind_cols_sensor,
         ind_rows_sensor,
         _,
-    ) = geom_plugin_with_dem_and_geoid.inverse_loc(
+    ) = geom_plugin_with_dem_and_geoid.safe_inverse_loc(
         sensor_image_right["image"]["main_file"],
         sensor_image_right["geomodel"],
         lat_mean,
