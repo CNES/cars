@@ -284,14 +284,10 @@ def resample_image(  # noqa: C901
             (nb_bands, region[3] - region[1], region[2] - region[0]),
             dtype=np.float32,
         )
-        nodata = 0
-        if nodata is not None or mask is not None:
-            msk = np.empty(
-                (nb_bands, region[3] - region[1], region[2] - region[0]),
-                dtype=np.float32,
-            )
-        else:
-            msk = None
+        msk = np.empty(
+            (nb_bands, region[3] - region[1], region[2] - region[0]),
+            dtype=np.float32,
+        )
 
         ystart = 0
         with rio.open(grid["path"]) as grid_reader, rio.open(img) as img_reader:
@@ -513,51 +509,50 @@ def oversampling_func(
     resamp[:, ystart : ystart + ysize, xstart : xstart + xsize] = block_resamp
 
     # create msk
-    if nodata is not None or mask is not None:
-        if in_sensor:
-            # get mask in source geometry
+    if in_sensor:
+        # get mask in source geometry
+        if mask is not None:
+            with rio.open(mask) as msk_reader:
+                msk_as_array = msk_reader.read(1, window=img_window)
+            msk_as_array = np.array([msk_as_array] * img_as_array.shape[0])
+        else:
+            msk_as_array = np.zeros(img_as_array.shape)
+
+        if nodata is not None:
             nodata_index = img_as_array == nodata
-
-            if mask is not None:
-                with rio.open(mask) as msk_reader:
-                    msk_as_array = msk_reader.read(1, window=img_window)
-                msk_as_array = np.array([msk_as_array] * img_as_array.shape[0])
-            else:
-                msk_as_array = np.zeros(img_as_array.shape)
-
             msk_as_array[nodata_index] = nodata_msk
 
-            # resample mask
-            block_msk = cresample.grid(
-                msk_as_array,
-                grid_as_array,
-                oversampling,
-                interpolator=interpolator_mask,
-                nodata=nodata_msk,
-            )
+        # resample mask
+        block_msk = cresample.grid(
+            msk_as_array,
+            grid_as_array,
+            oversampling,
+            interpolator=interpolator_mask,
+            nodata=nodata_msk,
+        )
 
-            if interpolator_mask == "bicubic":
-                block_msk = np.where(
-                    block_msk >= 0.5,
-                    1,
-                    np.where(block_msk < 0.5, 0, block_msk),
-                ).astype(int)
+        if interpolator_mask == "bicubic":
+            block_msk = np.where(
+                block_msk >= 0.5,
+                1,
+                np.where(block_msk < 0.5, 0, block_msk),
+            ).astype(int)
 
-            block_msk = block_msk[
-                ...,
-                ext_region[1] : ext_region[3] - 1,
-                ext_region[0] : ext_region[2] - 1,
-            ]
-        else:
-            block_msk = np.full(
-                (
-                    nb_bands,
-                    block_region[3] - block_region[1],
-                    block_region[2] - block_region[0],
-                ),
-                fill_value=nodata_msk,
-            )
+        block_msk = block_msk[
+            ...,
+            ext_region[1] : ext_region[3] - 1,
+            ext_region[0] : ext_region[2] - 1,
+        ]
+    else:
+        block_msk = np.full(
+            (
+                nb_bands,
+                block_region[3] - block_region[1],
+                block_region[2] - block_region[0],
+            ),
+            fill_value=nodata_msk,
+        )
 
-        msk[:, ystart : ystart + ysize, xstart : xstart + xsize] = block_msk
+    msk[:, ystart : ystart + ysize, xstart : xstart + xsize] = block_msk
 
     return resamp, msk

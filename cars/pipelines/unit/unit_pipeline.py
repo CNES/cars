@@ -1913,13 +1913,26 @@ class UnitPipeline(PipelineTemplate):
                 )
 
                 if self.which_resolution not in ("final", "single"):
+                    # To get the correct size for the dem generation
                     if self.dem_generation_roi is not None:
-                        # To get the correct size for the dem generation
+                        # ROI has been computed by Shareloc
                         self.terrain_bounds = (
                             dem_wrappers.modify_terrain_bounds(
-                                self.dem_generation_roi,
+                                self.dem_generation_roi.bounds,
+                                4326,
                                 self.epsg,
                                 self.dem_generation_application.margin,
+                            )
+                        )
+                    else:
+                        # ROI has not been computed
+                        self.terrain_bounds = (
+                            dem_wrappers.modify_terrain_bounds(
+                                self.terrain_bounds,
+                                self.epsg,
+                                self.epsg,
+                                self.dem_generation_application.margin,
+                                0.7,
                             )
                         )
 
