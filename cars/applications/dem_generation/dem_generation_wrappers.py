@@ -244,7 +244,12 @@ def reverse_dem(input_dem):
         out_dem.nodata = -nodata
 
 
-def downsample_dem(input_dem, scale, median_filter_size=7):
+def downsample_dem(
+    input_dem,
+    scale,
+    median_filter_size=7,
+    default_alt=0,
+):
     """
     Downsample median DEM with median resampling
 
@@ -289,7 +294,7 @@ def downsample_dem(input_dem, scale, median_filter_size=7):
         mask=~(dem_data == nodata),
     )
 
-    dem_data[dem_data == nodata] = 0
+    dem_data[dem_data == nodata] = default_alt
 
     with rio.open(input_dem, "w", **metadata) as dst:
         dst.write(dem_data, 1)

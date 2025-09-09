@@ -2508,6 +2508,7 @@ class UnitPipeline(PipelineTemplate):
                         sens_cst.DEM_PATH
                     ]
                 ),
+                default_alt=self.geom_plugin_with_dem_and_geoid.default_alt,
                 cars_orchestrator=self.cars_orchestrator,
             )
 
