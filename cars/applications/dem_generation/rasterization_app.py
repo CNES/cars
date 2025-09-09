@@ -211,6 +211,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         input_geoid,
         output_geoid,
         initial_elevation=None,
+        default_alt=0,
         cars_orchestrator=None,
     ):
         """
@@ -418,6 +419,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             dem_median_path_out,
             scale=self.dem_median_output_resolution / resolution_in_meters,
             median_filter_size=self.postprocessing_median_filter_size,
+            default_alt=default_alt,
         )
 
         # Launch Bulldozer on dem min

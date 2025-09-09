@@ -181,6 +181,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         output_geoid,
         dem_roi_to_use=None,
         initial_elevation=None,
+        default_alt=0,
         cars_orchestrator=None,
     ):
         """
