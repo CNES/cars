@@ -242,9 +242,7 @@ class UnitPipeline(PipelineTemplate):
         )
 
         # Check conf application
-        application_conf = self.check_applications(
-            conf.get(APPLICATIONS, {}), self.res_resamp
-        )
+        application_conf = self.check_applications(conf.get(APPLICATIONS, {}))
 
         if (
             self.sensors_in_inputs
@@ -508,7 +506,6 @@ class UnitPipeline(PipelineTemplate):
     def check_applications(  # noqa: C901 : too complex
         self,
         conf,
-        key=None,
     ):
         """
         Check the given configuration for applications,

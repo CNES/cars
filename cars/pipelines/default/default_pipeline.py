@@ -259,7 +259,7 @@ class DefaultPipeline(PipelineTemplate):
         :return: overridden advanced conf
         :rtype: dict
         """
-        (_, advanced, _, _, _, _, self.scaling_coeff) = (
+        (_, advanced, _, _, _, _, self.scaling_coeff, _, _) = (
             advanced_parameters.check_advanced_parameters(
                 conf[INPUTS],
                 conf.get(ADVANCED, {}),
@@ -328,7 +328,7 @@ class DefaultPipeline(PipelineTemplate):
                 f"been deleted"
             )
 
-    def overide_with_apriori(self, conf, previous_out_dir, first_res):
+    def override_with_apriori(self, conf, previous_out_dir, first_res):
         """
         Override configuration with terrain a priori
 
@@ -434,7 +434,7 @@ class DefaultPipeline(PipelineTemplate):
                 generate_dems = False
 
             # Overide with a priori
-            overridden_conf = self.overide_with_apriori(
+            overridden_conf = self.override_with_apriori(
                 used_pipeline.used_conf, previous_out_dir, first_res
             )
             updated_pipeline = UnitPipeline(
