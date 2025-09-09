@@ -289,6 +289,8 @@ def downsample_dem(input_dem, scale, median_filter_size=7):
         mask=~(dem_data == nodata),
     )
 
+    dem_data[dem_data == nodata] = 0
+
     with rio.open(input_dem, "w", **metadata) as dst:
         dst.write(dem_data, 1)
 
