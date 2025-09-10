@@ -1,6 +1,7 @@
 ---
 applications:
-  application_name:
-    method: application_dependent
-    parameter1: 3
-    parameter2: 0.3
+  all:
+    application_name:
+      method: application_dependent
+      parameter1: 3
+      parameter2: 0.3

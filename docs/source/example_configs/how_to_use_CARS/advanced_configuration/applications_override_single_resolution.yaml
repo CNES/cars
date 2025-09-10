@@ -1,11 +1,11 @@
 ---
 applications:
-  resolution_4:
+  4:
     application_name:
       method: first_method
       parameter1: 26
       parameter2: 0.9
-  resolution_1:
+  1:
     application_name:
       method: second_method
       parameter1: 8
