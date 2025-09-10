@@ -292,7 +292,7 @@ class UnitPipeline(PipelineTemplate):
         sensor_to_depth_apps = {
             "grid_generation": 1,  # and 5
             "resampling": 2,  # and 8
-            "sparse_matching.sift": 4,
+            "sparse_matching": 4,
             "ground_truth_reprojection": 6,
             "dense_matching": 8,
             "dense_match_filling": 9,
@@ -532,7 +532,7 @@ class UnitPipeline(PipelineTemplate):
                 "resampling",
                 "ground_truth_reprojection",
                 "dense_match_filling",
-                "sparse_matching.sift",
+                "sparse_matching",
                 "dense_matching",
                 "triangulation",
                 "dem_generation",
@@ -597,7 +597,7 @@ class UnitPipeline(PipelineTemplate):
         self.resampling_application = None
         self.ground_truth_reprojection = None
         self.dense_match_filling = None
-        self.sparse_mtch_sift_app = None
+        self.sparse_mtch_app = None
         self.dense_matching_app = None
         self.triangulation_application = None
         self.dem_generation_application = None
@@ -664,14 +664,12 @@ class UnitPipeline(PipelineTemplate):
             )
 
             # Sparse Matching
-            self.sparse_mtch_sift_app = Application(
+            self.sparse_mtch_app = Application(
                 "sparse_matching",
-                cfg=used_conf.get("sparse_matching.sift", {"method": "sift"}),
+                cfg=used_conf.get("sparse_matching", {"method": "sift"}),
                 scaling_coeff=scaling_coeff,
             )
-            used_conf["sparse_matching.sift"] = (
-                self.sparse_mtch_sift_app.get_conf()
-            )
+            used_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
             # Matching
             generate_performance_map = (
@@ -865,27 +863,21 @@ class UnitPipeline(PipelineTemplate):
         initial_elevation = (
             inputs_conf[sens_cst.INITIAL_ELEVATION]["dem"] is not None
         )
-        if self.sparse_mtch_sift_app.elevation_delta_lower_bound is None:
-            self.sparse_mtch_sift_app.used_config[
-                "elevation_delta_lower_bound"
-            ] = (-500 if initial_elevation else -1000)
-            self.sparse_mtch_sift_app.elevation_delta_lower_bound = (
-                self.sparse_mtch_sift_app.used_config[
-                    "elevation_delta_lower_bound"
-                ]
+        if self.sparse_mtch_app.elevation_delta_lower_bound is None:
+            self.sparse_mtch_app.used_config["elevation_delta_lower_bound"] = (
+                -500 if initial_elevation else -1000
             )
-        if self.sparse_mtch_sift_app.elevation_delta_upper_bound is None:
-            self.sparse_mtch_sift_app.used_config[
-                "elevation_delta_upper_bound"
-            ] = (1000 if initial_elevation else 9000)
-            self.sparse_mtch_sift_app.elevation_delta_upper_bound = (
-                self.sparse_mtch_sift_app.used_config[
-                    "elevation_delta_upper_bound"
-                ]
+            self.sparse_mtch_app.elevation_delta_lower_bound = (
+                self.sparse_mtch_app.used_config["elevation_delta_lower_bound"]
             )
-        application_conf["sparse_matching.sift"] = (
-            self.sparse_mtch_sift_app.get_conf()
-        )
+        if self.sparse_mtch_app.elevation_delta_upper_bound is None:
+            self.sparse_mtch_app.used_config["elevation_delta_upper_bound"] = (
+                1000 if initial_elevation else 9000
+            )
+            self.sparse_mtch_app.elevation_delta_upper_bound = (
+                self.sparse_mtch_app.used_config["elevation_delta_upper_bound"]
+            )
+        application_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
         # check classification application parameter compare
         # to each sensors inputs classification list
@@ -1099,7 +1091,7 @@ class UnitPipeline(PipelineTemplate):
         # used in dem generation
         self.triangulated_matches_list = []
 
-        save_matches = self.sparse_mtch_sift_app.get_save_matches()
+        save_matches = self.sparse_mtch_app.get_save_matches()
 
         save_corrected_grid = (
             self.epipolar_grid_generation_application.get_save_grids()
@@ -1158,7 +1150,7 @@ class UnitPipeline(PipelineTemplate):
                 # no a priori
 
                 # Get required bands of first resampling
-                required_bands = self.sparse_mtch_sift_app.get_required_bands()
+                required_bands = self.sparse_mtch_app.get_required_bands()
 
                 # Run first epipolar resampling
                 (
@@ -1175,7 +1167,7 @@ class UnitPipeline(PipelineTemplate):
                         self.dump_dir, "resampling", "initial", pair_key
                     ),
                     pair_key=pair_key,
-                    margins_fun=self.sparse_mtch_sift_app.get_margins_fun(),
+                    margins_fun=self.sparse_mtch_app.get_margins_fun(),
                     tile_width=None,
                     tile_height=None,
                     required_bands=required_bands,
@@ -1192,13 +1184,13 @@ class UnitPipeline(PipelineTemplate):
                 (
                     self.pairs[pair_key]["epipolar_matches_left"],
                     _,
-                ) = self.sparse_mtch_sift_app.run(
+                ) = self.sparse_mtch_app.run(
                     self.pairs[pair_key]["epipolar_image_left"],
                     self.pairs[pair_key]["epipolar_image_right"],
                     self.pairs[pair_key]["grid_left"]["disp_to_alt_ratio"],
                     orchestrator=self.cars_orchestrator,
                     pair_folder=os.path.join(
-                        self.dump_dir, "sparse_matching.sift", pair_key
+                        self.dump_dir, "sparse_matching", pair_key
                     ),
                     pair_key=pair_key,
                 )
@@ -1206,16 +1198,14 @@ class UnitPipeline(PipelineTemplate):
             # Run cluster breakpoint to compute sifts: force computation
             self.cars_orchestrator.breakpoint()
 
-            minimum_nb_matches = (
-                self.sparse_mtch_sift_app.get_minimum_nb_matches()
-            )
+            minimum_nb_matches = self.sparse_mtch_app.get_minimum_nb_matches()
 
             # Run grid correction application
             if self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (None, {}):
                 # Estimate grid correction if no epipolar a priori
                 # Filter and save matches
                 self.pairs[pair_key]["matches_array"] = (
-                    self.sparse_mtch_sift_app.filter_matches(
+                    self.sparse_mtch_app.filter_matches(
                         self.pairs[pair_key]["epipolar_matches_left"],
                         self.pairs[pair_key]["grid_left"],
                         self.pairs[pair_key]["grid_right"],
@@ -1223,11 +1213,9 @@ class UnitPipeline(PipelineTemplate):
                         orchestrator=self.cars_orchestrator,
                         pair_key=pair_key,
                         pair_folder=os.path.join(
-                            self.dump_dir, "sparse_matching.sift", pair_key
+                            self.dump_dir, "sparse_matching", pair_key
                         ),
-                        save_matches=(
-                            self.sparse_mtch_sift_app.get_save_matches()
-                        ),
+                        save_matches=(self.sparse_mtch_app.get_save_matches()),
                     )
                 )
 
@@ -1267,7 +1255,7 @@ class UnitPipeline(PipelineTemplate):
                     pair_key
                 ]["grid_left"]
 
-                if self.quit_on_app("sparse_matching.sift"):
+                if self.quit_on_app("sparse_matching"):
                     continue
 
                 # Shrink disparity intervals according to SIFT disparities
@@ -1275,7 +1263,7 @@ class UnitPipeline(PipelineTemplate):
                     "disp_to_alt_ratio"
                 ]
                 disp_bounds_params = (
-                    self.sparse_mtch_sift_app.disparity_bounds_estimation
+                    self.sparse_mtch_app.disparity_bounds_estimation
                 )
 
                 if disp_bounds_params["activated"]:
@@ -1303,11 +1291,11 @@ class UnitPipeline(PipelineTemplate):
                     )
                 else:
                     disp_min = (
-                        -self.sparse_mtch_sift_app.elevation_delta_upper_bound
+                        -self.sparse_mtch_app.elevation_delta_upper_bound
                         / disp_to_alt_ratio
                     )
                     disp_max = (
-                        -self.sparse_mtch_sift_app.elevation_delta_lower_bound
+                        -self.sparse_mtch_app.elevation_delta_lower_bound
                         / disp_to_alt_ratio
                     )
                     logging.info(
@@ -1350,7 +1338,7 @@ class UnitPipeline(PipelineTemplate):
         if (
             self.quit_on_app("grid_generation")
             or self.quit_on_app("resampling")
-            or self.quit_on_app("sparse_matching.sift")
+            or self.quit_on_app("sparse_matching")
         ):
             return True
 
@@ -1451,7 +1439,7 @@ class UnitPipeline(PipelineTemplate):
                 # Correct grids with former matches
                 # Transform matches to new grids
 
-                save_matches = self.sparse_mtch_sift_app.get_save_matches()
+                save_matches = self.sparse_mtch_app.get_save_matches()
 
                 self.sensor_matches_left = os.path.join(
                     self.first_res_out_dir,
@@ -1572,7 +1560,7 @@ class UnitPipeline(PipelineTemplate):
                     )
                 )
 
-                dsp_marg = self.sparse_mtch_sift_app.get_disparity_margin()
+                dsp_marg = self.sparse_mtch_app.get_disparity_margin()
                 updating_infos = {
                     application_constants.APPLICATION_TAG: {
                         sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
@@ -1622,7 +1610,7 @@ class UnitPipeline(PipelineTemplate):
                         ]
 
                         # update orchestrator_out_json
-                        marg = self.sparse_mtch_sift_app.get_disparity_margin()
+                        marg = self.sparse_mtch_app.get_disparity_margin()
                         updating_infos = {
                             application_constants.APPLICATION_TAG: {
                                 sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
