@@ -23,6 +23,7 @@ this module contains the dichotomic dem generation application class.
 """
 # Standard library
 import logging
+import math
 import os
 import shutil
 
@@ -156,7 +157,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         overloaded_conf["min_dem"] = conf.get("min_dem", -500)
         overloaded_conf["max_dem"] = conf.get("max_dem", 1000)
         overloaded_conf["height_margin"] = conf.get(
-            "height_margin", float(self.scaling_coeff * 5)
+            "height_margin", float(math.sqrt(self.scaling_coeff * 100))
         )
         overloaded_conf["bulldozer_max_object_size"] = conf.get(
             "bulldozer_max_object_size", 8
