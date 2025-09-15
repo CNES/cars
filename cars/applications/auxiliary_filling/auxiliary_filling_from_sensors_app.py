@@ -373,10 +373,15 @@ def filling_from_sensor_wrapper(
 
     """
 
-    col_min_ground = window["col_min"] * transform[0] + transform[2]
-    col_max_ground = window["col_max"] * transform[0] + transform[2]
-    row_min_ground = window["row_min"] * transform[4] + transform[5]
-    row_max_ground = window["row_max"] * transform[4] + transform[5]
+    col_min = window["col_min"]
+    col_max = window["col_max"]
+    row_min = window["row_min"]
+    row_max = window["row_max"]
+
+    col_min_ground = col_min * transform[0] + transform[2]
+    col_max_ground = col_max * transform[0] + transform[2]
+    row_min_ground = row_min * transform[4] + transform[5]
+    row_max_ground = row_max * transform[4] + transform[5]
 
     ground_polygon = Polygon(
         [
@@ -388,15 +393,13 @@ def filling_from_sensor_wrapper(
         ]
     )
 
-    cols = np.arange(
-        col_min_ground,
-        col_max_ground,
-        transform[0],
+    cols = (
+        np.linspace(col_min, col_max, col_max - col_min) * transform[0]
+        + transform[2]
     )
-    rows = np.arange(
-        row_min_ground,
-        row_max_ground,
-        transform[4],
+    rows = (
+        np.linspace(row_min, row_max, row_max - row_min) * transform[4]
+        + transform[5]
     )
 
     cols_values_2d, rows_values_2d = np.meshgrid(cols, rows)
@@ -409,12 +412,12 @@ def filling_from_sensor_wrapper(
 
     rio_window = rio.windows.Window.from_slices(
         (
-            window["row_min"],
-            window["row_max"],
+            row_min,
+            row_max,
         ),
         (
-            window["col_min"],
-            window["col_max"],
+            col_min,
+            col_max,
         ),
     )
 
@@ -543,8 +546,8 @@ def filling_from_sensor_wrapper(
                 classification_values_filled[band_index, :],
             )
 
-    row_arr = np.array(range(window["row_min"], window["row_max"]))
-    col_arr = np.array(range(window["col_min"], window["col_max"]))
+    row_arr = np.array(range(row_min, row_max))
+    col_arr = np.array(range(col_min, col_max))
 
     values = {}
     coords = {cst.ROW: row_arr, cst.COL: col_arr}
