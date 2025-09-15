@@ -21,7 +21,7 @@
 """
 Contains functions for wrapper logs
 """
-# pylint: disable=too-many-lines
+# pylint: disable=C0302
 
 import copy
 import cProfile

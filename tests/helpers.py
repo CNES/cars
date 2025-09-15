@@ -102,6 +102,8 @@ def generate_input_json(
         config = json.load(fstream)
     # Overload orchestrator
     config["orchestrator"] = {"mode": orchestrator_mode}
+    if orchestrator_mode in ("mp", "multiprocessing"):
+        config["orchestrator"]["per_job_timeout"] = 120
     if orchestrator_parameters is not None:
         config["orchestrator"].update(orchestrator_parameters)
     # Overload output directory
