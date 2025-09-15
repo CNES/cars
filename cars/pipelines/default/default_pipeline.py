@@ -568,7 +568,12 @@ def extract_conf_with_resolution(
                     out_cst.AUX_DEM_MIN: True,
                     out_cst.AUX_DEM_MEDIAN: True,
                 },
-            }
+            },
+            APPLICATIONS: {
+                "dense_matching": {
+                    "performance_map_method": ["risk", "intervals"]
+                }
+            },
         }
         new_conf = overide_pipeline_conf(new_conf, overiding_conf)
 
