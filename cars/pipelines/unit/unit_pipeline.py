@@ -1098,7 +1098,7 @@ class UnitPipeline(PipelineTemplate):
                 self.input_roi_poly, self.input_roi_epsg, self.epsg
             )
 
-        self.resolution = output[out_cst.RESOLUTION] * self.res_resamp
+        self.resolution = output[out_cst.RESOLUTION]
 
         # List of terrain roi corresponding to each epipolar pair
         # Used to generate final terrain roi
@@ -3017,9 +3017,7 @@ class UnitPipeline(PipelineTemplate):
             self.epsg, self.used_conf[OUTPUT]
         )
 
-        self.resolution = (
-            self.used_conf[OUTPUT][out_cst.RESOLUTION] * self.res_resamp
-        )
+        self.resolution = self.used_conf[OUTPUT][out_cst.RESOLUTION]
 
         # Compute roi polygon, in input EPSG
         self.roi_poly = preprocessing.compute_roi_poly(

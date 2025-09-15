@@ -332,6 +332,7 @@ def modify_terrain_bounds(
         constant_margin *= conversion_factor
 
     # Get borders, adding margin
+
     xmin = xmin - constant_margin - linear_margin * (xmax - xmin)
     ymin = ymin - constant_margin - linear_margin * (ymax - ymin)
     xmax = xmax + constant_margin + linear_margin * (xmax - xmin)

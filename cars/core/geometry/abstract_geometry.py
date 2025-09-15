@@ -168,9 +168,7 @@ class AbstractGeometry(metaclass=ABCMeta):
             "plugin_name", "SharelocGeometry"
         )
         overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
-        overloaded_conf["dem_roi_margin"] = conf.get(
-            "dem_roi_margin", float(self.scaling_coeff * 0.012)
-        )
+        overloaded_conf["dem_roi_margin"] = conf.get("dem_roi_margin", 0.012)
 
         geometry_schema = {
             "plugin_name": str,
