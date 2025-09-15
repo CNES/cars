@@ -183,7 +183,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         initial_elevation=None,
         default_alt=0,
         cars_orchestrator=None,
-    ):
+    ):  # pylint: disable=W0613
         """
         Run dichotomic dem generation using matches
 

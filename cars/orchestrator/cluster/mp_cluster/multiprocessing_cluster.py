@@ -21,7 +21,7 @@
 """
 Contains abstract function for multiprocessing Cluster
 """
-# pylint: disable=too-many-lines
+# pylint: disable=C0302
 
 import copy
 import itertools

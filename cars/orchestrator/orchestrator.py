@@ -22,7 +22,7 @@
 this module contains the orchestrator class
 """
 
-# pylint: disable=too-many-lines
+# pylint: disable=C0302
 
 import collections
 import logging
