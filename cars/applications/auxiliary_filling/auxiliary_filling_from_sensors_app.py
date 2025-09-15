@@ -31,6 +31,8 @@ import rasterio as rio
 import xarray as xr
 from json_checker import Checker
 from pyproj import CRS
+from rasterio.enums import Resampling
+from rasterio.warp import reproject
 from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
@@ -136,6 +138,7 @@ class AuxiliaryFillingFromSensors(
         pairing,
         geom_plugin,
         texture_bands,
+        output_geoid,
         orchestrator=None,
     ):
         """
@@ -158,6 +161,10 @@ class AuxiliaryFillingFromSensors(
         :type geom_plugin: AbstractGeometry
         :param texture_bands: list of band names used for output texture
         :type texture_bands: list
+        :param output_geoid: output geoid filename as vertical reference for the
+            input DSM. If a boolean is provided instead of a filename True means
+            defined relative to cars internal geoid, and false on ellipsoid
+        :type output_geoid: OR(bool, str)
         :param orchestrator: orchestrator used
         :type orchestrator: Orchestrator
         """
@@ -304,6 +311,7 @@ class AuxiliaryFillingFromSensors(
                     full_saving_info,
                     geom_plugin,
                     texture_bands,
+                    output_geoid,
                     mode=self.used_config["mode"],
                     texture_interpolator=self.used_config[
                         "texture_interpolator"
@@ -332,6 +340,7 @@ def filling_from_sensor_wrapper(
     saving_info,
     geom_plugin,
     texture_bands,
+    output_geoid,
     mode,
     texture_interpolator,
     use_mask,
@@ -363,6 +372,10 @@ def filling_from_sensor_wrapper(
     :type geom_plugin: AbstractGeometry
     :param texture_bands: list of band names used for output texture
     :type texture_bands: list
+    :param output_geoid: output geoid filename as vertical reference for the
+        input DSM. If a boolean is provided instead of a filename True means
+        defined relative to cars internal geoid, and false on ellipsoid
+    :type output_geoid: OR(bool, str)
     :param mode: geometry plugin used for inverse locations
     :type mode: str
     :param texture_interpolator: scipy interpolator use to interpolate color
@@ -370,7 +383,6 @@ def filling_from_sensor_wrapper(
     :type texture_interpolator: str
     :param use_mask: use mask information from sensors in color computation
     :type use_mask: bool
-
     """
 
     col_min = window["col_min"]
@@ -430,6 +442,28 @@ def filling_from_sensor_wrapper(
         alt_values = dsm_image.read(1, window=rio_window)
         target_mask = dsm_image.read_masks(1, window=rio_window)
         dsm_profile = dsm_image.profile
+
+    if output_geoid:
+        if output_geoid is True:
+            geoid_file = geom_plugin.geoid
+        else:
+            geoid_file = output_geoid
+        with rio.open(geoid_file) as in_geoid:
+            # Reproject the geoid data to match the DSM
+            output_geoid_data = np.empty(
+                alt_values.shape, dtype=in_geoid.dtypes[0]
+            )
+
+            reproject(
+                source=rio.band(in_geoid, 1),
+                destination=output_geoid_data,
+                src_transform=in_geoid.transform,
+                src_crs=in_geoid.crs,
+                dst_transform=transform,
+                dst_crs=crs,
+                resampling=Resampling.bilinear,
+            )
+            alt_values -= output_geoid_data
 
     nodata_color = None
     nodata_classif = None

@@ -87,7 +87,17 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
 
     @abstractmethod
     def run(
-        self, dsm_file, color_file, classif_file, dump_dir, orchestrator=None
+        self,
+        dsm_file,
+        color_file,
+        classif_file,
+        dump_dir,
+        sensor_inputs,
+        pairing,
+        geom_plugin,
+        texture_bands,
+        output_geoid,
+        orchestrator=None,
     ):
         """
         Run Auxiliary filling
