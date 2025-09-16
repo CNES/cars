@@ -2,9 +2,9 @@
 
 ## 0.12.1  Bugfix release (August 2025)
 
-- cleanup sequential orchestrator [#1123]
-- fix missing tiles in auxiliary filling outputs [#1061]
-- fix classification fusion artifacts in dense matching [#1109]
+- Cleanup sequential orchestrator [#1123].
+- Fix missing tiles in auxiliary filling outputs [#1061].
+- Fix classification fusion artifacts in dense matching [#1109].
 
 
 ## 0.12.0  Improving Dem generations (June 2025)
