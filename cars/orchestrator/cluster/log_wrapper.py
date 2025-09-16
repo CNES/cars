@@ -509,6 +509,9 @@ def exception_safe(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        """
+        Catch error
+        """
         try:
             return func(*args, **kwargs)
         except Exception as exc:

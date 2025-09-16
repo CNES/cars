@@ -607,6 +607,9 @@ def overide_pipeline_conf(conf, overiding_conf):
     result = copy.deepcopy(conf)
 
     def merge_recursive(base_dict, override_dict):
+        """
+        Main recursive function
+        """
         for key, value in override_dict.items():
             if (
                 key in base_dict
