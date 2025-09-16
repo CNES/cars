@@ -67,7 +67,7 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import depth_map_inputs
+from cars.pipelines.parameters import application_parameters, depth_map_inputs
 from cars.pipelines.parameters import depth_map_inputs_constants as depth_cst
 from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
@@ -521,40 +521,17 @@ class UnitPipeline(PipelineTemplate):
         """
         scaling_coeff = self.scaling_coeff
 
+        needed_applications = application_parameters.get_needed_apps(
+            self.sensors_in_inputs,
+            self.save_output_dsm,
+            self.save_output_point_cloud,
+            self.merging,
+            conf,
+        )
+
         # Check if all specified applications are used
         # Application in terrain_application are note used in
         # the sensors_to_dense_depth_maps pipeline
-        needed_applications = []
-
-        if self.sensors_in_inputs:
-            needed_applications += [
-                "grid_generation",
-                "resampling",
-                "ground_truth_reprojection",
-                "dense_match_filling",
-                "sparse_matching",
-                "dense_matching",
-                "triangulation",
-                "dem_generation",
-                "point_cloud_outlier_removal.1",
-                "point_cloud_outlier_removal.2",
-            ]
-
-        if self.save_output_dsm or self.save_output_point_cloud:
-            needed_applications += ["pc_denoising"]
-
-            if self.save_output_dsm:
-                needed_applications += [
-                    "point_cloud_rasterization",
-                    "dsm_filling.1",
-                    "dsm_filling.2",
-                    "dsm_filling.3",
-                    "auxiliary_filling",
-                ]
-
-            if self.merging:  # we have to merge point clouds, add merging apps
-                needed_applications += ["point_cloud_fusion"]
-
         for app_key in conf.keys():
             if app_key not in needed_applications:
                 msg = (
@@ -567,28 +544,25 @@ class UnitPipeline(PipelineTemplate):
         # Initialize used config
         used_conf = {}
 
-        for app_key in [
-            "point_cloud_outlier_removal.1",
-            "point_cloud_outlier_removal.2",
-            "auxiliary_filling",
-        ]:
-            if conf.get(app_key) is not None:
-                config_app = conf.get(app_key)
-                if "activated" not in config_app:
-                    conf[app_key]["activated"] = True
-
         for app_key in needed_applications:
             used_conf[app_key] = conf.get(app_key, {})
+            if used_conf[app_key] is None:
+                continue
             used_conf[app_key]["save_intermediate_data"] = (
                 self.save_all_intermediate_data
                 or used_conf[app_key].get("save_intermediate_data", False)
             )
 
-        for app_key in [
-            "point_cloud_fusion",
-            "pc_denoising",
-        ]:
-            if app_key in needed_applications:
+            if app_key == "auxiliary_filling":
+                if used_conf[app_key] is not None:
+                    used_conf[app_key]["activated"] = used_conf[app_key].get(
+                        "activated", True
+                    )
+
+            if app_key in [
+                "point_cloud_fusion",
+                "pc_denoising",
+            ]:
                 used_conf[app_key]["save_by_pair"] = used_conf[app_key].get(
                     "save_by_pair", self.save_all_point_clouds_by_pair
                 )
@@ -602,8 +576,7 @@ class UnitPipeline(PipelineTemplate):
         self.triangulation_application = None
         self.dem_generation_application = None
         self.pc_denoising_application = None
-        self.pc_outlier_removal_1_app = None
-        self.pc_outlier_removal_2_app = None
+        self.pc_outlier_removal_apps = {}
         self.rasterization_application = None
         self.pc_fusion_application = None
         self.dsm_filling_1_application = None
@@ -727,36 +700,35 @@ class UnitPipeline(PipelineTemplate):
                 self.dem_generation_application.get_conf()
             )
 
-            # Points cloud small component outlier removal
-            if "point_cloud_outlier_removal.1" in used_conf:
-                if "method" not in used_conf["point_cloud_outlier_removal.1"]:
-                    used_conf["point_cloud_outlier_removal.1"][
-                        "method"
-                    ] = "small_components"
-            self.pc_outlier_removal_1_app = Application(
-                "point_cloud_outlier_removal",
-                cfg=used_conf.get(
-                    "point_cloud_outlier_removal.1",
-                    {"method": "small_components"},
-                ),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["point_cloud_outlier_removal.1"] = (
-                self.pc_outlier_removal_1_app.get_conf()
-            )
+            for app_key, app_conf in used_conf.items():
+                if not app_key.startswith("point_cloud_outlier_removal"):
+                    continue
 
-            # Points cloud statistical outlier removal
-            self.pc_outlier_removal_2_app = Application(
-                "point_cloud_outlier_removal",
-                cfg=used_conf.get(
-                    "point_cloud_outlier_removal.2",
-                    {"method": "statistical"},
-                ),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["point_cloud_outlier_removal.2"] = (
-                self.pc_outlier_removal_2_app.get_conf()
-            )
+                if app_conf is None:
+                    self.pc_outlier_removal_apps = {}
+                    break
+
+                if app_key in self.pc_outlier_removal_apps:
+                    msg = (
+                        f"The key {app_key} is defined twice in the input "
+                        "configuration."
+                    )
+                    logging.error(msg)
+                    raise NameError(msg)
+
+                if app_key[27:] == ".1":
+                    app_conf.setdefault("method", "small_components")
+                if app_key[27:] == ".2":
+                    app_conf.setdefault("method", "statistical")
+
+                self.pc_outlier_removal_apps[app_key] = Application(
+                    "point_cloud_outlier_removal",
+                    cfg=app_conf,
+                    scaling_coeff=scaling_coeff,
+                )
+                used_conf[app_key] = self.pc_outlier_removal_apps[
+                    app_key
+                ].get_conf()
 
         if self.save_output_dsm or self.save_output_point_cloud:
 
@@ -882,6 +854,8 @@ class UnitPipeline(PipelineTemplate):
         # check classification application parameter compare
         # to each sensors inputs classification list
         for application_key in application_conf:
+            if application_conf[application_key] is None:
+                continue
             if "classification" in application_conf[application_key]:
                 for item in inputs_conf["sensors"]:
                     if "classification" in inputs_conf["sensors"][item].keys():
@@ -1905,9 +1879,9 @@ class UnitPipeline(PipelineTemplate):
                 pair_key=pair_key,
                 disp_range_grid=self.pairs[pair_key]["disp_range_grid"],
                 compute_disparity_masks=False,
-                margins_to_keep=(
-                    self.pc_outlier_removal_1_app.get_epipolar_margin()
-                    + self.pc_outlier_removal_2_app.get_epipolar_margin()
+                margins_to_keep=sum(
+                    app.get_epipolar_margin()
+                    for _, app in self.pc_outlier_removal_apps.items()
                 ),
                 texture_bands=texture_bands_indices,
             )
@@ -1947,7 +1921,6 @@ class UnitPipeline(PipelineTemplate):
                 output_geoid_path = None
 
             depth_map_dir = None
-            last_depth_map_application = None
             if self.save_output_depth_map:
                 depth_map_dir = os.path.join(
                     self.out_dir, "depth_map", pair_key
@@ -1961,31 +1934,11 @@ class UnitPipeline(PipelineTemplate):
                 )
                 safe_makedirs(point_cloud_dir)
 
-            if self.save_output_depth_map or self.save_output_point_cloud:
-                if (
-                    self.pc_outlier_removal_2_app.used_config.get(
-                        "activated", False
-                    )
-                    is True
-                    and self.merging is False
-                ):
-                    last_depth_map_application = "pc_outlier_removal_2"
-                elif (
-                    self.pc_outlier_removal_1_app.used_config.get(
-                        "activated", False
-                    )
-                    is True
-                    and self.merging is False
-                ):
-                    last_depth_map_application = "pc_outlier_removal_1"
-                else:
-                    last_depth_map_application = "triangulation"
-
             triangulation_point_cloud_dir = (
                 point_cloud_dir
                 if (
                     point_cloud_dir
-                    and last_depth_map_application == "triangulation"
+                    and len(self.pc_outlier_removal_apps) == 0
                     and self.merging is False
                 )
                 else None
@@ -2016,8 +1969,10 @@ class UnitPipeline(PipelineTemplate):
                 ),
                 depth_map_dir=depth_map_dir,
                 point_cloud_dir=triangulation_point_cloud_dir,
-                save_output_coordinates=last_depth_map_application
-                == "triangulation",
+                save_output_coordinates=(len(self.pc_outlier_removal_apps) == 0)
+                and (
+                    self.save_output_depth_map or self.save_output_point_cloud
+                ),
                 save_output_color=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_TEXTURE],
                 save_output_classification=bool(depth_map_dir)
@@ -2038,75 +1993,43 @@ class UnitPipeline(PipelineTemplate):
             if self.merging:
                 self.list_epipolar_point_clouds.append(epipolar_point_cloud)
             else:
-                filtering_depth_map_dir = (
-                    depth_map_dir
-                    if (
-                        depth_map_dir
-                        and last_depth_map_application == "pc_outlier_removal_1"
-                    )
-                    else None
-                )
-                filtering_point_cloud_dir = (
-                    point_cloud_dir
-                    if (
-                        point_cloud_dir
-                        and last_depth_map_application == "pc_outlier_removal_1"
-                        and self.merging is False
-                    )
-                    else None
-                )
 
-                filtered_epipolar_point_cloud_1 = (
-                    self.pc_outlier_removal_1_app.run(
-                        epipolar_point_cloud,
+                filtered_epipolar_point_cloud = epipolar_point_cloud
+                for app_key, app in self.pc_outlier_removal_apps.items():
+
+                    app_key_is_last = (
+                        app_key == list(self.pc_outlier_removal_apps)[-1]
+                    )
+                    filtering_depth_map_dir = (
+                        depth_map_dir if app_key_is_last else None
+                    )
+                    filtering_point_cloud_dir = (
+                        point_cloud_dir if app_key_is_last else None
+                    )
+
+                    filtered_epipolar_point_cloud = app.run(
+                        filtered_epipolar_point_cloud,
                         depth_map_dir=filtering_depth_map_dir,
                         point_cloud_dir=filtering_point_cloud_dir,
                         dump_dir=os.path.join(
-                            self.dump_dir, "pc_outlier_removal_1", pair_key
+                            self.dump_dir,
+                            (
+                                "pc_outlier_removal"
+                                f"{str(app_key[27:]).replace('.', '_')}"
+                            ),
+                            pair_key,
                         ),
                         epsg=self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
-                )
-                if self.quit_on_app("point_cloud_outlier_removal.1"):
-                    continue  # keep iterating over pairs, but don't go further
-                filtering_depth_map_dir = (
-                    depth_map_dir
-                    if (
-                        depth_map_dir
-                        and last_depth_map_application == "pc_outlier_removal_2"
-                    )
-                    else None
-                )
-                filtering_point_cloud_dir = (
-                    point_cloud_dir
-                    if (
-                        point_cloud_dir
-                        and last_depth_map_application == "pc_outlier_removal_2"
-                        and self.merging is False
-                    )
-                    else None
-                )
-                filtered_epipolar_point_cloud_2 = (
-                    self.pc_outlier_removal_2_app.run(
-                        filtered_epipolar_point_cloud_1,
-                        depth_map_dir=filtering_depth_map_dir,
-                        point_cloud_dir=filtering_point_cloud_dir,
-                        dump_dir=os.path.join(
-                            self.dump_dir, "pc_outlier_removal_2", pair_key
-                        ),
-                        epsg=self.epsg,
-                        orchestrator=self.cars_orchestrator,
-                    )
-                )
-                if self.quit_on_app("point_cloud_outlier_removal.2"):
+                if self.quit_on_app("point_cloud_outlier_removal"):
                     continue  # keep iterating over pairs, but don't go further
 
                 # denoising available only if we'll go further in the pipeline
                 if self.save_output_dsm or self.save_output_point_cloud:
                     denoised_epipolar_point_clouds = (
                         self.pc_denoising_application.run(
-                            filtered_epipolar_point_cloud_2,
+                            filtered_epipolar_point_cloud,
                             orchestrator=self.cars_orchestrator,
                             pair_folder=os.path.join(
                                 self.dump_dir, "denoising", pair_key
@@ -2934,6 +2857,7 @@ class UnitPipeline(PipelineTemplate):
                 not any(
                     app.get("save_intermediate_data", False) is True
                     for app in self.used_conf[APPLICATIONS].values()
+                    if app is not None
                 )
                 and not self.dsms_in_inputs
             ):
