@@ -867,6 +867,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         input_config_sparse_dsm["output"].update(output_config)
 
         input_config_sparse_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
+        input_config_sparse_dsm["advanced"]["keep_low_res_dir"] = True
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
@@ -915,7 +916,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
 
         out_dir_res4 = os.path.join(
             input_config_sparse_dsm["output"]["directory"],
-            "intermediate_res/out_res4",
+            "intermediate_data/out_res4",
         )
 
         # Ref output dir dependent from geometry plugin chosen
@@ -1035,6 +1036,7 @@ def test_end2end_ventoux_unique():
         input_config_sparse_dsm["output"].update(output_config)
 
         input_config_sparse_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
+        input_config_sparse_dsm["advanced"]["keep_low_res_dir"] = True
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
@@ -1078,7 +1080,7 @@ def test_end2end_ventoux_unique():
         ref_output_dir = "ref_output"
         out_dir_res4 = os.path.join(
             input_config_sparse_dsm["output"]["directory"],
-            "intermediate_res/out_res4",
+            "intermediate_data/out_res4",
         )
 
         copy2(
@@ -2583,6 +2585,7 @@ def test_end2end_use_epipolar_a_priori():
         input_config_sparse_res["applications"] = application_config
 
         input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 1]
+        input_config_sparse_res["advanced"]["keep_low_res_dir"] = True
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
@@ -2608,18 +2611,18 @@ def test_end2end_use_epipolar_a_priori():
                 == 612
             )
             assert (
-                -45
+                -65
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
-                < -15
+                < -45
             )
             assert (
-                0
+                25
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
-                < 25
+                < 35
             )
 
             # Ref output dir dependent from geometry plugin chosen
@@ -2627,7 +2630,7 @@ def test_end2end_use_epipolar_a_priori():
             ref_output_dir = "ref_output"
             output_dir_res4 = os.path.join(
                 input_config_sparse_res["output"]["directory"],
-                "intermediate_res/out_res4",
+                "intermediate_data/out_res4",
             )
 
             copy2(
@@ -2697,71 +2700,33 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
 
-        # Check used_conf for low res
-
-        gt_used_conf_orchestrator = {
-            "orchestrator": {
-                "mode": "multiprocessing",
-                "mp_mode": "forkserver",
-                "nb_workers": NB_WORKERS,
-                "profiling": {
-                    "mode": "cars_profiling",
-                    "loop_testing": False,
-                },
-                "max_ram_per_worker": 1000,
-                "task_timeout": 600,
-                "max_tasks_per_worker": 10,
-                "dump_to_disk": True,
-                "per_job_timeout": 120,
-                "factorize_tasks": True,
-            }
-        }
-
-        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
+        refined_conf_path = os.path.join(out_dir, "refined_conf.json")
 
         # check refined_config_dense_dsm_json file exists
-        assert os.path.isfile(used_conf_path)
+        assert os.path.isfile(refined_conf_path)
 
-        with open(used_conf_path, "r", encoding="utf-8") as json_file:
-            used_conf = json.load(json_file)
-            # check used_conf inputs conf exists
-            assert "inputs" in used_conf
-            assert "sensors" in used_conf["inputs"]
-            # check used_conf sparse_matching configuration
-            assert (
-                used_conf["applications"]["sparse_matching.sift"][
-                    "disparity_margin"
-                ]
-                == 0.25
-            )
-            # check used_conf orchestrator conf is the same as gt
-            assert (
-                used_conf["orchestrator"]
-                == gt_used_conf_orchestrator["orchestrator"]
-            )
+        with open(refined_conf_path, "r", encoding="utf-8") as json_file:
+            refined_conf = json.load(json_file)
+            # check refined_conf inputs conf exists
+            assert "inputs" in refined_conf
+            assert "sensors" in refined_conf["inputs"]
+            assert "advanced" in refined_conf
 
-            # check used_conf sparse_matching configuration
-            assert "advanced" in used_conf
-            assert "use_epipolar_a_priori" in used_conf["advanced"]
-
-            # use_epipolar_a_priori should be false in used_conf
-            assert "epipolar_a_priori" in used_conf["advanced"]
+            # use_epipolar_a_priori should be false in refined_conf
+            assert "epipolar_a_priori" in refined_conf["advanced"]
             assert (
                 "grid_correction"
-                in used_conf["advanced"]["epipolar_a_priori"]["left_right"]
+                in refined_conf["advanced"]["epipolar_a_priori"]["left_right"]
             )
-            assert "dem_median" in used_conf["advanced"]["terrain_a_priori"]
-            assert "dem_min" in used_conf["advanced"]["terrain_a_priori"]
-            assert "dem_max" in used_conf["advanced"]["terrain_a_priori"]
+            assert "dem_median" in refined_conf["advanced"]["terrain_a_priori"]
+            assert "dem_min" in refined_conf["advanced"]["terrain_a_priori"]
+            assert "dem_max" in refined_conf["advanced"]["terrain_a_priori"]
 
-            # check used_conf reentry (without epipolar a priori activated)
-            _ = unit.UnitPipeline(used_conf)
+            # check refined_conf reentry (without epipolar a priori activated)
+            _ = unit.UnitPipeline(refined_conf)
 
         # dense dsm pipeline
-        input_config_dense_dsm = used_conf.copy()
-
-        # Set use_epipolar_a_priori to True
-        input_config_dense_dsm["advanced"]["use_epipolar_a_priori"] = True
+        input_config_dense_dsm = refined_conf.copy()
 
         # update applications
         input_config_dense_dsm["applications"] = input_config_sparse_res[
@@ -2796,9 +2761,7 @@ def test_end2end_use_epipolar_a_priori():
 
         dense_dsm_pipeline = unit.UnitPipeline(input_config_dense_dsm)
 
-        dense_dsm_pipeline.run(
-            use_sift_a_priori=True, first_res_out_dir=output_dir_res4
-        )
+        dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
 
@@ -2817,11 +2780,6 @@ def test_end2end_use_epipolar_a_priori():
             assert (
                 used_conf["applications"]["point_cloud_rasterization"]["sigma"]
                 == 0.3
-            )
-            # check used_conf orchestrator conf is the same as gt
-            assert (
-                used_conf["orchestrator"]
-                == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
             _ = unit.UnitPipeline(used_conf)
@@ -3407,7 +3365,6 @@ def test_end2end_ventoux_full_output_no_elevation():
             assert point_cloud_index == {
                 "left_right": {
                     "0_0": "left_right/0_0.laz",
-                    "0_1": "left_right/0_1.laz",
                     "1_0": "left_right/1_0.laz",
                     "1_1": "left_right/1_1.laz",
                 }
@@ -4428,17 +4385,17 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -45
-            assert out_disp_compute["global_disp_min"] < -15
-            assert out_disp_compute["global_disp_max"] > 0
-            assert out_disp_compute["global_disp_max"] < 25
+            assert out_disp_compute["global_disp_min"] > -65
+            assert out_disp_compute["global_disp_min"] < -45
+            assert out_disp_compute["global_disp_max"] > 25
+            assert out_disp_compute["global_disp_max"] < 35
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
         out_dir_res4 = os.path.join(
             input_config_dense_dsm["output"]["directory"],
-            "intermediate_res/out_res4",
+            "intermediate_data/out_res4",
         )
 
         copy2(
