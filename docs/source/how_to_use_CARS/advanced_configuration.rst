@@ -588,26 +588,18 @@ The structure follows this organization:
 
                 **Description**
 
-                Fill holes in dense matches map. This uses the holes detected with the HoleDetection application.
-                The holes correspond to the area masked for dense matching.
+                Fill holes in dense matches map.
+                The zero_padding method fills the disparity with zeros where the selected classification values are non-zero values.
 
                 **Configuration**
-
-                +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-                | Name                                | Description                     | Type    | Available value         | Default value      | Required |
-                +=====================================+=================================+=========+=========================+====================+==========+
-                | method                              | Method for hole detection       | string  | "zero_padding"          | "zero_padding"     | No       |
-                +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-                | save_intermediate_data              | Save disparity map              | boolean |                         | False              | No       |
-                +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-
-                **Method zero_padding:**
-
-                The zero_padding method fills the disparity with zeros where the selected classification values are non-zero values.
 
                 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
                 | Name                                | Description                     | Type      | Available value         | Default value      | Required |
                 +=====================================+=================================+===========+=========================+====================+==========+
+                | method                              | Method for hole detection       | string    | "zero_padding"          | "zero_padding"     | No       |
+                +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
+                | save_intermediate_data              | Save disparity map              | boolean   |                         | False              | No       |
+                +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
                 | classification                      | Classification band name        | List[str] |                         | None               | No       |
                 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 
