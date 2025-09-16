@@ -828,11 +828,11 @@ def assemblage(
                 # doesn't equal to the entire tile
                 x_offset = int(
                     (intersect_bounds[idx][0] - tile_bounds[0])
-                    * np.abs(src.res[0])
+                    / np.abs(src.res[0])
                 )
                 y_offset = int(
                     (tile_bounds[3] - intersect_bounds[idx][3])
-                    * np.abs(src.res[1])
+                    / np.abs(src.res[1])
                 )
 
                 if cols > 0 and rows > 0:
