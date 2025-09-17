@@ -30,8 +30,11 @@ import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Union
 
+from affine import Affine
 import numpy as np
 import rasterio as rio
+from rasterio.warp import reproject
+from rasterio.enums import Resampling
 import xarray as xr
 from json_checker import And, Checker, Or
 from scipy import interpolate
@@ -41,7 +44,7 @@ from shareloc import proj_utils
 from shareloc.geofunctions.rectification_grid import RectificationGrid
 
 from cars.core import constants as cst
-from cars.core import inputs, outputs
+from cars.core import inputs, outputs, projection
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -54,7 +57,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     available_plugins: Dict = {}
 
-    def __new__(cls, geometry_plugin_conf=None, scaling_coeff=1, **kwargs):
+    def __new__(cls, geometry_plugin_conf=None, pairs_for_roi=None, scaling_coeff=1, **kwargs):
         """
         Return the required plugin
         :raises:
@@ -100,16 +103,17 @@ class AbstractGeometry(metaclass=ABCMeta):
             )
         return super().__new__(cls)
 
+
     def __init__(
         self,
         geometry_plugin_conf,
         dem=None,
         geoid=None,
         default_alt=None,
+        pairs_for_roi=None,
         scaling_coeff=1,
         **kwargs,
     ):
-
         self.scaling_coeff = scaling_coeff
 
         config = self.check_conf(geometry_plugin_conf)
@@ -117,13 +121,142 @@ class AbstractGeometry(metaclass=ABCMeta):
         self.plugin_name = config["plugin_name"]
         self.interpolator = config["interpolator"]
         self.dem_roi_margin = config["dem_roi_margin"]
-
-        self.dem = dem
+        self.dem = None
         self.dem_roi = None
         self.dem_roi_epsg = None
         self.geoid = geoid
         self.default_alt = default_alt
+        self.elevation = default_alt
         self.kwargs = kwargs
+
+        # compute roi only when generating geometry object with dem
+        if dem is not None and pairs_for_roi is not None:
+            self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
+            self.dem_roi = self.get_roi(
+                pairs_for_roi,
+                self.dem_roi_epsg,
+                z_min=0,
+                z_max=0,
+                margin=self.dem_roi_margin,
+            )
+            self.dem = self.extend_dem_to_roi(dem)
+
+
+    def get_roi(self, pairs_for_roi, epsg, z_min=0, z_max=0, margin=0.012):
+        """
+        Compute region of interest for intersection of DEM
+
+        :param pairs_for_roi: list of pairs of images and geomodels
+        :type pairs_for_roi: List[(str, dict, str, dict)]
+        :param dem_epsg: output EPSG code for ROI
+        :type dem_epsg: int
+        :param margin: margin for ROI in degrees
+        :type margin: float
+        """
+        coords_list = []
+        for image1, geomodel1, image2, geomodel2 in pairs_for_roi:
+            # Footprint of left image with altitude z_min
+            coords_list.extend(
+                self.image_envelope(
+                    image1["main_file"], geomodel1, elevation=z_min
+                )
+            )
+            # Footprint of left image with altitude z_max
+            coords_list.extend(
+                self.image_envelope(
+                    image1["main_file"], geomodel1, elevation=z_max
+                )
+            )
+            # Footprint of right image with altitude z_min
+            coords_list.extend(
+                self.image_envelope(
+                    image2["main_file"], geomodel2, elevation=z_min
+                )
+            )
+            # Footprint of right image with altitude z_max
+            coords_list.extend(
+                self.image_envelope(
+                    image2["main_file"], geomodel2, elevation=z_max
+                )
+            )
+        lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
+        roi = [
+            min(lon_list),
+            min(lat_list),
+            max(lon_list),
+            max(lat_list),
+        ]
+        points = np.array(
+            [
+                (roi[0], roi[1], 0),
+                (roi[2], roi[3], 0),
+                (roi[0], roi[1], 0),
+                (roi[2], roi[3], 0),
+            ]
+        )
+        new_points = projection.point_cloud_conversion(points, 4326, epsg)
+        roi = [
+            min(new_points[:, 0]),
+            min(new_points[:, 1]),
+            max(new_points[:, 0]),
+            max(new_points[:, 1]),
+        ]
+
+        lon_size = roi[2] - roi[0]
+        lat_size = roi[3] - roi[1]
+
+        margin = 1.5
+        roi[0] -= margin * lon_size
+        roi[1] -= margin * lat_size
+        roi[2] += margin * lon_size
+        roi[3] += margin * lat_size
+
+        return roi
+    
+
+    def extend_dem_to_roi(self, dem):
+        """
+        """
+        with rio.open(dem) as in_dem:
+            src_dem = in_dem.read(1)
+            metadata = in_dem.meta
+            src_transform = in_dem.transform
+            crs = in_dem.crs
+            nodata = in_dem.nodata
+            bounds = in_dem.bounds
+
+        # Longitude
+        lon_res = src_transform[0]
+        lon_shift = (self.dem_roi[0] - bounds.left) / lon_res
+        dst_width = int((self.dem_roi[2] - self.dem_roi[0]) / abs(lon_res)) + 1
+        # Latitude
+        lat_res = src_transform[4]
+        lat_shift = (self.dem_roi[3] - bounds.top) / lat_res
+        dst_height = int((self.dem_roi[3] - self.dem_roi[1]) / abs(lat_res)) + 1
+
+        shift = Affine.translation(lon_shift, lat_shift)
+        dst_transform = src_transform * shift
+        dst_dem = np.zeros((dst_height, dst_width))
+        reproject(
+            source=src_dem,
+            destination=dst_dem,
+            src_transform=src_transform,
+            src_crs=crs,
+            dst_transform=dst_transform,
+            dst_crs=crs,
+            resampling=Resampling.bilinear,
+        )
+        metadata["transform"] = dst_transform
+        metadata["height"] = dst_height
+        metadata["width"] = dst_width
+
+        out_dem_path = dem.split(".")[0] + "_with_margin.tif"
+
+        with rio.open(out_dem_path, "w", **metadata) as dst:
+            dst.write(dst_dem, 1)
+
+        return out_dem_path
+
 
     @classmethod
     def register_subclass(cls, short_name: str):
@@ -573,7 +706,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         save_matches,
     ):
         """
-        get sensor matches
+        Get sensor matches
 
         :param grid_left: path to epipolar grid of image 1
         :param grid_left: path to epipolar grid of image 2

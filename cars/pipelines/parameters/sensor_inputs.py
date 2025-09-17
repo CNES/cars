@@ -398,6 +398,11 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, epipolar_resolution):
                     conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
                 )
             )
+            print(
+                inputs.rasterio_get_bounds(
+                    conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                )
+            )
             total_input_roi_epsg = inputs.rasterio_get_epsg_code(
                 conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
             )
