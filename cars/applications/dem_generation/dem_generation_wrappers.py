@@ -38,6 +38,7 @@ from rasterio.warp import calculate_default_transform, reproject
 from scipy.ndimage import median_filter
 
 from cars.core import preprocessing
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 def fit_initial_elevation_on_dem_median(
@@ -300,6 +301,7 @@ def downsample_dem(
         dst.write(dem_data, 1)
 
 
+@cars_profile(name="modify terrain bounds")
 def modify_terrain_bounds(
     bounds_poly, in_epsg, out_epsg, constant_margin, linear_margin=0
 ):

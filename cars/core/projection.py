@@ -42,6 +42,7 @@ from shapely.ops import transform
 
 from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 def compute_dem_intersection_with_poly(  # noqa: C901
@@ -529,6 +530,7 @@ def ground_polygon_from_envelopes(
     return inter, inter.bounds
 
 
+@cars_profile(name="ground intersection envelopes", interval=0.5)
 def ground_intersection_envelopes(
     sensor1,
     sensor2,

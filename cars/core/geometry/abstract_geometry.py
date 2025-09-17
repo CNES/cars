@@ -44,6 +44,7 @@ from cars.core import constants as cst
 from cars.core import inputs, outputs
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 class AbstractGeometry(metaclass=ABCMeta):
@@ -525,6 +526,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         return epipolar_positions
 
+    @cars_profile(name="transform matches", interval=0.5)
     def transform_matches_from_grids(
         self,
         sensor_matches_left,
@@ -561,6 +563,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         return new_matches_array
 
+    @cars_profile(name="get sensor matches")
     def get_sensor_matches(
         self,
         matches_array,

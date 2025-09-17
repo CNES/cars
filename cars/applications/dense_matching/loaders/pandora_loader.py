@@ -45,6 +45,7 @@ from rasterio.mask import mask
 from shapely.geometry import mapping
 
 from cars.core.projection import polygon_projection
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 class PandoraLoader:
@@ -285,6 +286,7 @@ class PandoraLoader:
 
         return self.pandora_config
 
+    @cars_profile(name="find auto conf")
     def find_auto_conf(
         self, intersection_poly, land_cover_map, classif_to_config_mapping, epsg
     ):

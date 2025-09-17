@@ -35,6 +35,7 @@ from json_checker import Checker, OptionalKey, Or
 from cars.core import inputs, preprocessing, projection, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import (
     depth_map_inputs_constants as depth_map_cst,
 )
@@ -741,6 +742,7 @@ def check_all_nbits_equal_one(nbits):
     return False
 
 
+@cars_profile(name="Generate inputs")
 def generate_inputs(conf, geometry_plugin):
     """
     Generate sensors inputs form inputs conf :
