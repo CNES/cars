@@ -138,8 +138,6 @@ The structure follows this organization:
 
                 Compute keypoints matches on pair images
 
-                **Common parameters**
-
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
                 | Name                                 | Description                                                                                    | Type        | Available value           | Default value | Required |
                 +======================================+================================================================================================+=============+===========================+===============+==========+
@@ -214,18 +212,6 @@ The structure follows this organization:
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
                 | lower_margin                         | margin (in meters) substracted from altitude of lower SIFT match retained                      | int         |                        | 500                   | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
-
-
-                .. warning::
-
-                    Because it is not possible to define twice the *application_name* on your yaml/json configuration file, we have decided to configure
-                    those two applications with :
-
-                    * *sparse_matching.sift*
-                    * *sparse_matching.pandora*
-
-                    Each one is associated to a particular *sparse_matching* method.
-                    Therefore, is it not possible to use the key *sparse_matching* and to select the method.
 
 
                 **Example**

@@ -286,7 +286,7 @@ class UnitPipeline(PipelineTemplate):
             "grid_generation": 1,  # and 5
             "resampling": 2,  # and 8
             "hole_detection": 3,
-            "sparse_matching.sift": 4,
+            "sparse_matching": 4,
             "ground_truth_reprojection": 6,
             "dense_matching": 8,
             "dense_match_filling.1": 9,
@@ -529,7 +529,7 @@ class UnitPipeline(PipelineTemplate):
                 "hole_detection",
                 "dense_match_filling.1",
                 "dense_match_filling.2",
-                "sparse_matching.sift",
+                "sparse_matching",
                 "dense_matching",
                 "triangulation",
                 "dem_generation",
@@ -685,12 +685,10 @@ class UnitPipeline(PipelineTemplate):
             # Sparse Matching
             self.sparse_mtch_sift_app = Application(
                 "sparse_matching",
-                cfg=used_conf.get("sparse_matching.sift", {"method": "sift"}),
+                cfg=used_conf.get("sparse_matching", {"method": "sift"}),
                 scaling_coeff=scaling_coeff,
             )
-            used_conf["sparse_matching.sift"] = (
-                self.sparse_mtch_sift_app.get_conf()
-            )
+            used_conf["sparse_matching"] = self.sparse_mtch_sift_app.get_conf()
 
             # Matching
             generate_performance_map = (
@@ -902,7 +900,7 @@ class UnitPipeline(PipelineTemplate):
                     "elevation_delta_upper_bound"
                 ]
             )
-        application_conf["sparse_matching.sift"] = (
+        application_conf["sparse_matching"] = (
             self.sparse_mtch_sift_app.get_conf()
         )
 
@@ -1282,7 +1280,7 @@ class UnitPipeline(PipelineTemplate):
                     self.pairs[pair_key]["grid_left"]["disp_to_alt_ratio"],
                     orchestrator=self.cars_orchestrator,
                     pair_folder=os.path.join(
-                        self.dump_dir, "sparse_matching.sift", pair_key
+                        self.dump_dir, "sparse_matching", pair_key
                     ),
                     pair_key=pair_key,
                 )
@@ -1307,7 +1305,7 @@ class UnitPipeline(PipelineTemplate):
                         orchestrator=self.cars_orchestrator,
                         pair_key=pair_key,
                         pair_folder=os.path.join(
-                            self.dump_dir, "sparse_matching.sift", pair_key
+                            self.dump_dir, "sparse_matching", pair_key
                         ),
                         save_matches=(
                             self.sparse_mtch_sift_app.get_save_matches()
@@ -1351,7 +1349,7 @@ class UnitPipeline(PipelineTemplate):
                     pair_key
                 ]["grid_left"]
 
-                if self.quit_on_app("sparse_matching.sift"):
+                if self.quit_on_app("sparse_matching"):
                     continue
 
                 # Shrink disparity intervals according to SIFT disparities
@@ -1435,7 +1433,7 @@ class UnitPipeline(PipelineTemplate):
             self.quit_on_app("grid_generation")
             or self.quit_on_app("resampling")
             or self.quit_on_app("hole_detection")
-            or self.quit_on_app("sparse_matching.sift")
+            or self.quit_on_app("sparse_matching")
         ):
             return True
 
