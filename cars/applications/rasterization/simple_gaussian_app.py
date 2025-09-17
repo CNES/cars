@@ -445,6 +445,7 @@ class SimpleGaussian(
             safe_makedirs(os.path.dirname(dsm_file_name))
 
         out_dsm_file_name = dsm_file_name
+
         if out_dsm_file_name is not None:
             self.orchestrator.update_index(
                 {

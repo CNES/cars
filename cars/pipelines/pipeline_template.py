@@ -91,14 +91,12 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         """
 
     @abstractmethod
-    def check_output(self, conf, pipeline):
+    def check_output(self, conf):
         """
         Check the output given
 
         :param conf: configuration of output
         :type conf: dict
-        :param pipeline: name of corresponding pipeline
-        :type pipeline_name: str
 
         :return overloader output
         :rtype : dict

@@ -126,11 +126,13 @@ def main_cli(args, dry_run=False):  # noqa: C901
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         out_dir = config["output"]["directory"]
 
-        cars_logging.setup_logging(
-            loglevel,
-            out_dir=os.path.join(out_dir, "logs"),
-            pipeline=pipeline_name,
-        )
+        # do not set logging if pipeline is default (already defined
+        if config.get("advanced", {}).get("pipeline", "default") != "default":
+            cars_logging.setup_logging(
+                loglevel,
+                out_dir=os.path.join(out_dir, "logs"),
+                pipeline=pipeline_name,
+            )
 
         logging.debug("Show argparse arguments: {}".format(args))
 
@@ -143,11 +145,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
             used_pipeline.run(args)
 
         # Generate summary of tasks
-        if not isinstance(
-            config.get("advanced", {}).get("epipolar_resolutions"), list
-        ):
+        if config.get("advanced", {}).get("pipeline", "default") != "default":
             log_wrapper.generate_summary(
-                out_dir, used_pipeline.used_conf, clean_worker_logs=True
+                os.path.join(out_dir, "logs"),
+                used_pipeline.used_conf,
+                clean_worker_logs=True,
             )
 
         cars_logging.add_progress_message(

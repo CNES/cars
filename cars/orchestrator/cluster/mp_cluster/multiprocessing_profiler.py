@@ -88,7 +88,7 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
         self.pool = pool
         self.out_dir = out_dir
         self.file_plot = os.path.join(
-            self.out_dir, "logs", "profiling", "memory_profiling.png"
+            self.out_dir, "profiling", "memory_profiling.png"
         )
         os.makedirs(os.path.dirname(self.file_plot), exist_ok=True)
         self.max_ram_per_worker = max_ram_per_worker

@@ -32,7 +32,6 @@ CLASSIFICATION_TO_CONFIGURATION_MAPPING = (
     "classification_to_configuration_mapping"
 )
 
-USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
 EPIPOLAR_A_PRIORI = "epipolar_a_priori"
 RESOLUTION_A_PRIORI = "resolution_a_priori"
 GROUND_TRUTH_DSM = "ground_truth_dsm"
@@ -46,14 +45,13 @@ DSM_MERGING_TILE_SIZE = "dsm_merging_tile_size"
 # inner epipolar a priori constants
 GRID_CORRECTION = "grid_correction"
 DISPARITY_RANGE = "disparity_range"
+REFERENCE_DEM = "reference_dem"
 
 TERRAIN_A_PRIORI = "terrain_a_priori"
-
+USE_ENDOGENOUS_DEM = "use_endogenous_dem"
 DEM_MEDIAN = "dem_median"
 DEM_MIN = "dem_min"
 DEM_MAX = "dem_max"
-ALTITUDE_DELTA_MAX = "altitude_delta_max"
-ALTITUDE_DELTA_MIN = "altitude_delta_min"
 
 # ground truth dsm
 INPUT_GROUND_TRUTH_DSM = "dsm"

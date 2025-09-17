@@ -84,7 +84,12 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
     # pylint: disable=too-many-instance-attributes
     @cars_profile(name="Multiprocessing orchestrator initialization")
     def __init__(
-        self, conf_cluster, out_dir, launch_worker=True, data_to_propagate=None
+        self,
+        conf_cluster,
+        out_dir,
+        log_dir,
+        launch_worker=True,
+        data_to_propagate=None,
     ):
         """
         Init function of MultiprocessingCluster
@@ -102,10 +107,12 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             logging.warning(message)
 
         self.out_dir = out_dir
+        self.log_dir = log_dir
         # call parent init
         super().__init__(
             conf_cluster,
             out_dir,
+            log_dir,
             launch_worker=launch_worker,
             data_to_propagate=data_to_propagate,
         )
@@ -202,7 +209,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
             self.profiler = MultiprocessingProfiler(
                 self.pool,
-                self.out_dir,
+                self.log_dir,
                 self.checked_conf_cluster["max_ram_per_worker"],
                 mp_dataframe=mp_dataframe,
                 timer=timer,

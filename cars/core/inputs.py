@@ -266,6 +266,21 @@ def rasterio_get_pixel_points(raster_file: str, terrain_points) -> list:
     return np.array(pixel_points)
 
 
+def rasterio_get_resolution(raster_file: str) -> Tuple[float, float]:
+    """
+    Get the resolution of raster_file
+
+    :param raster_file: Image file
+    :return: The resolution (res_x, res_y)
+    :rtype: tuple
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        transform = list(descriptor.transform)
+        res_x = transform[0]
+        res_y = transform[4]
+        return (abs(res_x), abs(res_y))
+
+
 def rasterio_get_bounds(
     raster_file: str, apply_resolution_sign=False
 ) -> Tuple[int, int]:

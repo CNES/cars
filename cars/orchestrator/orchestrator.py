@@ -84,6 +84,7 @@ class Orchestrator:
         self,
         orchestrator_conf=None,
         out_dir=None,
+        log_dir=None,
         launch_worker=True,
         out_json_path=None,
     ):
@@ -104,6 +105,11 @@ class Orchestrator:
             self.out_dir = tempfile.mkdtemp()
             self.add_to_clean(self.out_dir)
             logging.debug("No out_dir defined")
+
+        if log_dir is not None:
+            self.log_dir = log_dir
+        else:
+            self.log_dir = os.path.join(self.out_dir, "logs")
 
         self.launch_worker = launch_worker
 
@@ -137,7 +143,10 @@ class Orchestrator:
 
         # init cluster
         self.cluster = AbstractCluster(  # pylint: disable=E0110
-            orchestrator_conf, self.out_dir, launch_worker=self.launch_worker
+            orchestrator_conf,
+            self.out_dir,
+            self.log_dir,
+            launch_worker=self.launch_worker,
         )
         self.conf = self.cluster.get_conf()
 
@@ -546,6 +555,7 @@ class Orchestrator:
         self.cluster = AbstractCluster(  # pylint: disable=E0110
             self.orchestrator_conf,
             self.out_dir,
+            self.log_dir,
             launch_worker=self.launch_worker,
             data_to_propagate=data_to_propagate,
         )

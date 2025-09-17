@@ -39,7 +39,6 @@ def test_advanced_parameters_full_config():
 
     config = {
         "debug_with_roi": True,
-        "use_epipolar_a_priori": True,
         "epipolar_a_priori": {
             "left_right": {
                 "grid_correction": [
@@ -51,7 +50,9 @@ def test_advanced_parameters_full_config():
                     7.416961236000771e-05,
                 ],
                 "disparity_range": [-26.157764557028997, 26.277429517242638],
-            }
+                "reference_dem": "input/data_gizeh_crop/dump_dir/"
+                + "dem_generation/dem_median.tif",
+            },
         },
         "terrain_a_priori": {
             "dem_median": absolute_data_path(
@@ -135,7 +136,6 @@ def test_advanced_parameters_update_conf():
     # TODO: maybe move this inside update conf
     updated_config["epipolar_a_priori"] = {}
     updated_config["terrain_a_priori"] = {}
-    updated_config["use_epipolar_a_priori"] = True
     updated_config["ground_truth_dsm"] = {}
 
     # Cars level conf
@@ -145,6 +145,9 @@ def test_advanced_parameters_update_conf():
     advanced_parameters.update_conf(
         full_config,
         grid_correction_coef=[1, 2, 3, 4, 5, 6],
+        reference_dem=absolute_data_path(
+            "input/data_gizeh_crop/dump_dir/dem_generation/dem_median.tif"
+        ),
         dmin=-10,
         dmax=10,
         pair_key="pair_key",

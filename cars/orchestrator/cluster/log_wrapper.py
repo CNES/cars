@@ -26,6 +26,7 @@ Contains functions for wrapper logs
 import copy
 import cProfile
 import datetime
+import functools
 import gc
 import io
 import logging
@@ -44,6 +45,8 @@ import numpy as np
 import pandas as pd
 import psutil
 from json_checker import Checker
+from matplotlib.backends.backend_pdf import PdfPages
+from PIL import Image
 
 from cars.core import cars_logging
 from cars.core.utils import safe_makedirs
@@ -496,11 +499,37 @@ def log_delta_memory(func, memory_start, memory_end):
     log_message(func, message)
 
 
+def exception_safe(func):
+    """
+    Decorator for consistent exception handling in profiling functions
+
+    :param func: function to wrap
+    :return: wrapped function
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        """
+        Catch error
+        """
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            error_msg = (
+                f"Error in {func.__name__}: {type(exc).__name__}: {str(exc)}"
+            )
+            logging.error(error_msg)
+            cars_logging.add_profiling_message(f"ERROR - {error_msg}")
+            return None
+
+    return wrapper
+
+
+@exception_safe
 def generate_summary(out_dir, used_conf, clean_worker_logs=False):
     """
     Generate Profiling summary
     """
-
     nb_workers = 1
     if "orchestrator" not in used_conf:
         first_key = next(iter(used_conf))
@@ -510,16 +539,15 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
         if "nb_workers" in used_conf["orchestrator"]:
             nb_workers = used_conf["orchestrator"]["nb_workers"]
 
-    workers_log_dir = os.path.join(out_dir, "logs", "workers_log")
+    workers_log_dir = os.path.join(out_dir, "workers_log")
+    os.makedirs(workers_log_dir, exist_ok=True)
 
     log_file_main = os.path.join(
         workers_log_dir,
         "profiling.log",
     )
 
-    out_profiling_main = os.path.join(
-        out_dir, "logs", "profiling", "profiling.log"
-    )
+    out_profiling_main = os.path.join(out_dir, "profiling", "profiling.log")
 
     log_files = [log_file_main, out_profiling_main]
 
@@ -704,7 +732,7 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
     )
 
     (_, [pipeline_time]) = filter_lists(
-        summary_names, summary_total_time, lambda name: "pipeline" in name
+        summary_names, summary_total_time, lambda name: "unit_pipeline" in name
     )
 
     (_, [multiprocessing_time]) = filter_lists(
@@ -739,7 +767,6 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
     # file_name
     profiling_plot = os.path.join(
         out_dir,
-        "logs",
         "profiling",
         "profiling_plots.png",
     )
@@ -747,6 +774,72 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
 
     if clean_worker_logs and os.path.exists(workers_log_dir):
         shutil.rmtree(workers_log_dir)
+
+
+def generate_pdf_profiling(log_dir):
+    """
+    Generate PDF profiling summary for all res
+    """
+
+    pages_data = {}
+    resolutions = []
+
+    for item in os.listdir(log_dir):
+        item_path = os.path.join(log_dir, item)
+        if os.path.isdir(item_path) and item.startswith("res"):
+            # Get resolution
+            res = int(item[4:])
+            resolutions.append(res)
+
+            # Add paths
+            pages_data[res] = {
+                "function_profiling": os.path.join(
+                    item_path, "profiling", "profiling_plots.png"
+                ),
+                "global_profiling": os.path.join(
+                    item_path, "profiling", "memory_profiling.png"
+                ),
+            }
+
+    # ordered resolutions
+    resolutions.sort(reverse=True)
+
+    # Build pdf
+    pdf_path = os.path.join(log_dir, "profiling_summary.pdf")
+
+    with PdfPages(pdf_path) as pdf:
+        for res in resolutions:
+            # function_profiling
+            if os.path.exists(pages_data[res]["function_profiling"]):
+                img = Image.open(pages_data[res]["function_profiling"])
+                fig, axis = plt.subplots(1, 1, figsize=(11.69, 8.27), dpi=300)
+                axis.imshow(img, interpolation="none")
+                axis.set_title(
+                    f"Function Profiling - Epipolar Resolution {res}",
+                    fontsize=16,
+                    fontweight="bold",
+                )
+                axis.axis("off")
+                plt.subplots_adjust(left=0, right=1, top=0.95, bottom=0)
+                pdf.savefig(fig, bbox_inches="tight", dpi=300)
+                plt.close(fig)
+
+            # global_profiling
+            if os.path.exists(pages_data[res]["global_profiling"]):
+                img = Image.open(pages_data[res]["global_profiling"])
+                fig, axis = plt.subplots(1, 1, figsize=(11.69, 8.27), dpi=300)
+                axis.imshow(img, interpolation="none")
+                axis.set_title(
+                    f"Global Profiling - Epipolar Resolution {res}",
+                    fontsize=16,
+                    fontweight="bold",
+                )
+                axis.axis("off")
+                plt.subplots_adjust(left=0, right=1, top=0.95, bottom=0)
+                pdf.savefig(fig, bbox_inches="tight", dpi=300)
+                plt.close(fig)
+
+    logging.info("PDF profiling summary generated: {}".format(pdf_path))
 
 
 def filter_lists(names, data, cond):
