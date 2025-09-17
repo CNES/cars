@@ -146,6 +146,10 @@ class UnitPipeline(PipelineTemplate):
 
         # Check advanced parameters
         # TODO static method in the base class
+        output_dem_dir = os.path.join(
+            conf[OUTPUT][out_cst.OUT_DIRECTORY], "dump_dir", "initial_elevation"
+        )
+        safe_makedirs(output_dem_dir)
         (
             inputs,
             advanced,
@@ -157,7 +161,10 @@ class UnitPipeline(PipelineTemplate):
             self.land_cover_map,
             self.classification_to_config_mapping,
         ) = advanced_parameters.check_advanced_parameters(
-            inputs, conf.get(ADVANCED, {}), check_epipolar_a_priori=True
+            inputs,
+            conf.get(ADVANCED, {}),
+            check_epipolar_a_priori=True,
+            output_dem_dir=output_dem_dir,
         )
         self.used_conf[ADVANCED] = advanced
 
@@ -182,6 +189,9 @@ class UnitPipeline(PipelineTemplate):
         ) = self.check_output(conf[OUTPUT], self.scaling_coeff)
 
         self.used_conf[OUTPUT] = output
+        self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+        self.dump_dir = os.path.join(self.out_dir, "dump_dir")
+
         self.refined_conf[OUTPUT] = copy.deepcopy(output)
 
         prod_level = output[out_cst.PRODUCT_LEVEL]
@@ -1879,6 +1889,12 @@ class UnitPipeline(PipelineTemplate):
                     resolution=self.resolution,
                 )
 
+                if self.which_resolution not in ("final", "single"):
+                    self.terrain_bounds = dem_wrappers.modify_terrain_bounds(
+                        self.terrain_bounds,
+                        self.dem_generation_application.margin,
+                    )
+
             if self.dense_matching_app.get_method() == "auto":
                 # Copy the initial corr_config in order to keep
                 # the inputs that have already been checked
@@ -2404,11 +2420,15 @@ class UnitPipeline(PipelineTemplate):
 
             if self.used_conf[ADVANCED][USE_ENDOGENOUS_DEM]:
                 # Generate new geom plugin with dem
+                output_dem_dir = os.path.join(
+                    self.dump_dir, "initial_elevation"
+                )
                 new_geom_plugin = (
                     sensor_inputs.generate_geometry_plugin_with_dem(
                         self.geometry_plugin,
                         self.used_conf[INPUTS],
                         dem=dem_median,
+                        output_dem_dir=output_dem_dir,
                     )
                 )
 
@@ -2965,9 +2985,6 @@ class UnitPipeline(PipelineTemplate):
         Run pipeline
 
         """
-
-        self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
-        self.dump_dir = os.path.join(self.out_dir, "dump_dir")
         if log_dir is not None:
             self.log_dir = log_dir
         else:

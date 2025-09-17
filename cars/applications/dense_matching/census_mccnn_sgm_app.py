@@ -80,7 +80,7 @@ class CensusMccnnSgm(
         "mccnn_sgm",
         "auto",
     ],
-):  # pylint: disable=R0903,disable=R0902
+):  # pylint: disable=R0903,disable=R0902,disable=C0302
     """
     Census SGM & MCCNN SGM matching class
     """

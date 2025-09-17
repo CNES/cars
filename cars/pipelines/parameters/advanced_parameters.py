@@ -55,7 +55,9 @@ def get_epipolar_resolutions(conf):
     return [16, 4, 1]
 
 
-def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
+def check_advanced_parameters(
+    inputs, conf, check_epipolar_a_priori=True, output_dem_dir=None
+):
     """
     Check the advanced parameters consistency
 
@@ -177,7 +179,10 @@ def check_advanced_parameters(inputs, conf, check_epipolar_a_priori=True):
             dem_generation_roi,
             scaling_coeff,
         ) = sensor_inputs.check_geometry_plugin(
-            inputs, conf.get(adv_cst.GEOMETRY_PLUGIN, None), epipolar_resolution
+            inputs,
+            conf.get(adv_cst.GEOMETRY_PLUGIN, None),
+            epipolar_resolution,
+            output_dem_dir,
         )
     elif depth_cst.DEPTH_MAPS in inputs or dsm_cst.DSMS in inputs:
         # assume the input comes from 0.5m sensor images

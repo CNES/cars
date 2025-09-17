@@ -30,13 +30,13 @@ import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Union
 
-from affine import Affine
 import numpy as np
 import rasterio as rio
-from rasterio.warp import reproject
-from rasterio.enums import Resampling
 import xarray as xr
-from json_checker import And, Checker, Or
+from affine import Affine
+from json_checker import And, Checker
+from rasterio.enums import Resampling
+from rasterio.warp import reproject
 from scipy import interpolate
 from scipy.interpolate import LinearNDInterpolator
 from shapely.geometry import Polygon
@@ -57,7 +57,13 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     available_plugins: Dict = {}
 
-    def __new__(cls, geometry_plugin_conf=None, pairs_for_roi=None, scaling_coeff=1, **kwargs):
+    def __new__(
+        cls,
+        geometry_plugin_conf=None,
+        pairs_for_roi=None,
+        scaling_coeff=1,
+        **kwargs,
+    ):
         """
         Return the required plugin
         :raises:
@@ -103,7 +109,6 @@ class AbstractGeometry(metaclass=ABCMeta):
             )
         return super().__new__(cls)
 
-
     def __init__(
         self,
         geometry_plugin_conf,
@@ -112,6 +117,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         default_alt=None,
         pairs_for_roi=None,
         scaling_coeff=1,
+        output_dem_dir=None,
         **kwargs,
     ):
         self.scaling_coeff = scaling_coeff
@@ -127,22 +133,37 @@ class AbstractGeometry(metaclass=ABCMeta):
         self.geoid = geoid
         self.default_alt = default_alt
         self.elevation = default_alt
+        # a margin is needed for cubic interpolation
+        self.rectification_grid_margin = 0
+        if self.interpolator == "cubic":
+            self.rectification_grid_margin = 5
         self.kwargs = kwargs
 
         # compute roi only when generating geometry object with dem
-        if dem is not None and pairs_for_roi is not None:
-            self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
-            self.dem_roi = self.get_roi(
-                pairs_for_roi,
-                self.dem_roi_epsg,
-                z_min=0,
-                z_max=0,
-                margin=self.dem_roi_margin,
-            )
-            self.dem = self.extend_dem_to_roi(dem)
+        if dem is not None:
+            self.dem = dem
+            if pairs_for_roi is not None:
+                self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
+                self.dem_roi = self.get_roi(
+                    pairs_for_roi,
+                    self.dem_roi_epsg,
+                    z_min=0,
+                    z_max=0,
+                    linear_margin=self.dem_roi_margin[0],
+                    constant_margin=self.dem_roi_margin[1],
+                )
+                if output_dem_dir is not None:
+                    self.dem = self.extend_dem_to_roi(dem, output_dem_dir)
 
-
-    def get_roi(self, pairs_for_roi, epsg, z_min=0, z_max=0, margin=0.012):
+    def get_roi(
+        self,
+        pairs_for_roi,
+        epsg,
+        z_min=0,
+        z_max=0,
+        linear_margin=0,
+        constant_margin=0.012,
+    ):
         """
         Compute region of interest for intersection of DEM
 
@@ -150,8 +171,10 @@ class AbstractGeometry(metaclass=ABCMeta):
         :type pairs_for_roi: List[(str, dict, str, dict)]
         :param dem_epsg: output EPSG code for ROI
         :type dem_epsg: int
-        :param margin: margin for ROI in degrees
-        :type margin: float
+        :param linear_margin: margin for ROI (factor of initial ROI size)
+        :type linear_margin: float
+        :param constant_margin: margin for ROI in degrees
+        :type constant_margin: float
         """
         coords_list = []
         for image1, geomodel1, image2, geomodel2 in pairs_for_roi:
@@ -181,10 +204,10 @@ class AbstractGeometry(metaclass=ABCMeta):
             )
         lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
         roi = [
-            min(lon_list),
-            min(lat_list),
-            max(lon_list),
-            max(lat_list),
+            min(lon_list) - constant_margin,
+            min(lat_list) - constant_margin,
+            max(lon_list) + constant_margin,
+            max(lat_list) + constant_margin,
         ]
         points = np.array(
             [
@@ -205,24 +228,24 @@ class AbstractGeometry(metaclass=ABCMeta):
         lon_size = roi[2] - roi[0]
         lat_size = roi[3] - roi[1]
 
-        margin = 1.5
-        roi[0] -= margin * lon_size
-        roi[1] -= margin * lat_size
-        roi[2] += margin * lon_size
-        roi[3] += margin * lat_size
+        roi[0] -= linear_margin * lon_size
+        roi[1] -= linear_margin * lat_size
+        roi[2] += linear_margin * lon_size
+        roi[3] += linear_margin * lat_size
 
         return roi
-    
 
-    def extend_dem_to_roi(self, dem):
+    def extend_dem_to_roi(self, dem, output_dem_dir):
         """
+        Extend the size of the dem to the required ROI and fill
+        :param dem: path to the input DEM
+        :param output_dem_dir: path to write the output extended DEM
         """
         with rio.open(dem) as in_dem:
             src_dem = in_dem.read(1)
             metadata = in_dem.meta
             src_transform = in_dem.transform
             crs = in_dem.crs
-            nodata = in_dem.nodata
             bounds = in_dem.bounds
 
         # Longitude
@@ -237,6 +260,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         shift = Affine.translation(lon_shift, lat_shift)
         dst_transform = src_transform * shift
         dst_dem = np.zeros((dst_height, dst_width))
+
         reproject(
             source=src_dem,
             destination=dst_dem,
@@ -246,17 +270,22 @@ class AbstractGeometry(metaclass=ABCMeta):
             dst_crs=crs,
             resampling=Resampling.bilinear,
         )
+        # Fill nodata
+        dst_dem = rio.fill.fillnodata(
+            dst_dem,
+            mask=~(dst_dem == 0),
+        )
         metadata["transform"] = dst_transform
         metadata["height"] = dst_height
         metadata["width"] = dst_width
+        metadata["driver"] = "GTiff"
 
-        out_dem_path = dem.split(".")[0] + "_with_margin.tif"
+        out_dem_path = os.path.join(output_dem_dir, "initial_elevation.tif")
 
         with rio.open(out_dem_path, "w", **metadata) as dst:
             dst.write(dst_dem, 1)
 
         return out_dem_path
-
 
     @classmethod
     def register_subclass(cls, short_name: str):
@@ -302,12 +331,14 @@ class AbstractGeometry(metaclass=ABCMeta):
             "plugin_name", "SharelocGeometry"
         )
         overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
-        overloaded_conf["dem_roi_margin"] = conf.get("dem_roi_margin", 0.012)
+        overloaded_conf["dem_roi_margin"] = conf.get(
+            "dem_roi_margin", [0.5, 0.012]
+        )
 
         geometry_schema = {
             "plugin_name": str,
             "interpolator": And(str, lambda x: x in ["cubic", "linear"]),
-            "dem_roi_margin": Or(float, int),
+            "dem_roi_margin": [float],
         }
 
         # Check conf

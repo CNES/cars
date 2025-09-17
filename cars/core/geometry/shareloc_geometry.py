@@ -41,7 +41,7 @@ from shareloc.geomodels.rpc import RPC
 from shareloc.image import Image
 
 from cars.core import constants as cst
-from cars.core import inputs
+from cars.core import projection
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 
 GRID_TYPE = "GRID"
@@ -64,6 +64,7 @@ class SharelocGeometry(AbstractGeometry):
         default_alt=None,
         pairs_for_roi=None,
         scaling_coeff=1,
+        output_dem_dir=None,
     ):
 
         super().__init__(
@@ -73,24 +74,23 @@ class SharelocGeometry(AbstractGeometry):
             default_alt=default_alt,
             pairs_for_roi=pairs_for_roi,
             scaling_coeff=scaling_coeff,
+            output_dem_dir=output_dem_dir,
         )
-
-        # a margin is needed for cubic interpolation
-        self.rectification_grid_margin = 0
-        if self.interpolator == "cubic":
-            self.rectification_grid_margin = 5
 
         if dem is not None:
             # fill_nodata option should be set when dealing with void in DTM
             # see shareloc DTM limitations in sphinx doc for further detailsd
             try:
-                # From lonlat to latlon
-                roi_shareloc = [
-                    self.dem_roi[1],
-                    self.dem_roi[0],
-                    self.dem_roi[3],
-                    self.dem_roi[2],
-                ]
+                if self.dem_roi is None:
+                    roi_shareloc = None
+                else:
+                    # From (x, y) to (y, x)
+                    roi_shareloc = [
+                        self.dem_roi[1],
+                        self.dem_roi[0],
+                        self.dem_roi[3],
+                        self.dem_roi[2],
+                    ]
                 dtm_image = dtm_reader(
                     self.dem,
                     self.geoid,
@@ -121,6 +121,90 @@ class SharelocGeometry(AbstractGeometry):
         else:
             self.elevation = default_alt
 
+    def get_roi(
+        self,
+        pairs_for_roi,
+        epsg,
+        z_min=0,
+        z_max=0,
+        linear_margin=0,
+        constant_margin=0.012,
+    ):
+        """
+        Compute region of interest for intersection of DEM
+
+        :param pairs_for_roi: list of pairs of images and geomodels
+        :type pairs_for_roi: List[(str, dict, str, dict)]
+        :param dem_epsg: output EPSG code for ROI
+        :type dem_epsg: int
+        :param linear_margin: margin for ROI (factor of initial ROI size)
+        :type linear_margin: float
+        :param constant_margin: margin for ROI in degrees
+        :type constant_margin: float
+        """
+        base_roi = super().get_roi(
+            pairs_for_roi, epsg, z_min, z_max, linear_margin, constant_margin
+        )
+
+        coords_list = []
+        for image1, geomodel1, _, geomodel2 in pairs_for_roi:
+            # Footprint of rectification grid (with margins)
+            image1 = SharelocGeometry.load_image(image1["main_file"])
+            geomodel1 = self.load_geom_model(geomodel1)
+            geomodel2 = self.load_geom_model(geomodel2)
+
+            # With altitude z_min
+            epipolar_extent = rectif.get_epipolar_extent(
+                image1,
+                geomodel1,
+                geomodel2,
+                elevation=z_min,
+                grid_margin=self.rectification_grid_margin,
+            )
+            lat_min, lon_min, lat_max, lon_max = list(epipolar_extent)
+            coords_list.extend([(lon_min, lat_min), (lon_max, lat_max)])
+
+            # With altitude z_max
+            epipolar_extent = rectif.get_epipolar_extent(
+                image1,
+                geomodel1,
+                geomodel2,
+                elevation=z_max,
+                grid_margin=self.rectification_grid_margin,
+            )
+            lat_min, lon_min, lat_max, lon_max = list(epipolar_extent)
+            coords_list.extend([(lon_min, lat_min), (lon_max, lat_max)])
+        lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
+        roi = [
+            min(lon_list) - constant_margin,
+            min(lat_list) - constant_margin,
+            max(lon_list) + constant_margin,
+            max(lat_list) + constant_margin,
+        ]
+        points = np.array(
+            [
+                (roi[0], roi[1], 0),
+                (roi[2], roi[3], 0),
+                (roi[0], roi[1], 0),
+                (roi[2], roi[3], 0),
+            ]
+        )
+        new_points = projection.point_cloud_conversion(points, 4326, epsg)
+        roi = [
+            min(new_points[:, 0]),
+            min(new_points[:, 1]),
+            max(new_points[:, 0]),
+            max(new_points[:, 1]),
+        ]
+
+        roi = [
+            min(roi[0], base_roi[0]),
+            min(roi[1], base_roi[1]),
+            max(roi[2], base_roi[2]),
+            max(roi[3], base_roi[3]),
+        ]
+
+        return roi
 
     @staticmethod
     def load_geom_model(model: dict) -> Union[Grid, RPC]:

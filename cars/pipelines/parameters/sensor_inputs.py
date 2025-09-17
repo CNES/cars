@@ -297,7 +297,9 @@ def get_sensor_resolution(
     return (res_x + res_y) / 2
 
 
-def check_geometry_plugin(conf_inputs, conf_geom_plugin, epipolar_resolution):
+def check_geometry_plugin(
+    conf_inputs, conf_geom_plugin, epipolar_resolution, output_dem_dir
+):
     """
     Check the geometry plugin with inputs
 
@@ -374,8 +376,12 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, epipolar_resolution):
         ] = geomodel
 
     geom_plugin_with_dem_and_geoid = generate_geometry_plugin_with_dem(
-        conf_geom_plugin, conf_inputs, scaling_coeff=scaling_coeff
+        conf_geom_plugin,
+        conf_inputs,
+        scaling_coeff=scaling_coeff,
+        output_dem_dir=output_dem_dir,
     )
+    dem_path = geom_plugin_with_dem_and_geoid.dem
 
     # Check dem is big enough
     dem_generation_roi_poly = None
@@ -388,20 +394,10 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, epipolar_resolution):
             needed_dem_roi_poly, needed_dem_roi_epsg, 4326
         )
 
-        if (
-            conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-            is not None
-        ):
+        if dem_path is not None:
             # get dem total roi
             total_input_roi_poly = roi_tools.bounds_to_poly(
-                inputs.rasterio_get_bounds(
-                    conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-                )
-            )
-            print(
-                inputs.rasterio_get_bounds(
-                    conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-                )
+                inputs.rasterio_get_bounds(dem_path)
             )
             total_input_roi_epsg = inputs.rasterio_get_epsg_code(
                 conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
@@ -430,7 +426,7 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, epipolar_resolution):
                     # Exit, Error is certain to occur
                     raise RuntimeError(base_message)
 
-    else:
+    elif dem_path is not None:
         logging.warning(
             "Current geometry plugin doesnt compute dem roi needed "
             "for later computations. Errors related to unsufficient "
@@ -448,7 +444,12 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, epipolar_resolution):
 
 
 def generate_geometry_plugin_with_dem(
-    conf_geom_plugin, conf_inputs, dem=None, crop_dem=True, scaling_coeff=1
+    conf_geom_plugin,
+    conf_inputs,
+    dem=None,
+    crop_dem=True,
+    output_dem_dir=None,
+    scaling_coeff=1,
 ):
     """
     Generate geometry plugin with dem and geoid
@@ -492,6 +493,7 @@ def generate_geometry_plugin_with_dem(
             default_alt=sens_cst.CARS_DEFAULT_ALT,
             pairs_for_roi=pairs_for_roi,
             scaling_coeff=scaling_coeff,
+            output_dem_dir=output_dem_dir,
         )
     )
 
