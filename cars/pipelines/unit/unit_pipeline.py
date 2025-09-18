@@ -707,6 +707,8 @@ class UnitPipeline(PipelineTemplate):
 
                 if app_conf is None:
                     self.pc_outlier_removal_apps = {}
+                    # keep over multiple runs
+                    used_conf["point_cloud_outlier_removal"] = None
                     break
 
                 if app_key in self.pc_outlier_removal_apps:
@@ -768,6 +770,8 @@ class UnitPipeline(PipelineTemplate):
 
                     if app_conf is None:
                         self.dsm_filling_apps = {}
+                        # keep over multiple runs
+                        used_conf["dsm_filling"] = None
                         break
 
                     if app_key in self.dsm_filling_apps:
