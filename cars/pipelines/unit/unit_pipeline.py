@@ -2745,6 +2745,7 @@ class UnitPipeline(PipelineTemplate):
             color_file=color_file_name,
             classif_file=classif_file_name,
             dump_dir=self.dump_dir,
+            roi_epsg=self.epsg,
             sensor_inputs=self.used_conf[INPUTS].get("sensors"),
             pairing=self.used_conf[INPUTS].get("pairing"),
             geom_plugin=self.geom_plugin_with_dem_and_geoid,
