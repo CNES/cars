@@ -731,6 +731,15 @@ class UnitPipeline(PipelineTemplate):
                     app_key
                 ].get_conf()
 
+            methods_str = "\n".join(
+                f" - {k}={a.used_method}"
+                for k, a in self.pc_outlier_removal_apps.items()
+            )
+            logging.info(
+                f"{len(self.pc_outlier_removal_apps)} point cloud outlier "
+                + f"removal apps registered:\n{methods_str}"
+            )
+
         if self.save_output_dsm or self.save_output_point_cloud:
 
             # Point cloud denoising
@@ -785,7 +794,14 @@ class UnitPipeline(PipelineTemplate):
                         app_key
                     ].get_conf()
 
-                    print(app_key)
+                methods_str = "\n".join(
+                    f" - {k}={a.used_method}"
+                    for k, a in self.dsm_filling_apps.items()
+                )
+                logging.info(
+                    f"{len(self.dsm_filling_apps)} dsm filling apps "
+                    + f"registered:\n{methods_str}"
+                )
 
                 # Auxiliary filling
                 self.auxiliary_filling_application = Application(

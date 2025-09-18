@@ -56,7 +56,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.activated = self.used_config["activated"]
         self.classification = self.used_config["classification"]
         self.fill_with_geoid = self.used_config["fill_with_geoid"]
         self.interpolation_method = self.used_config["interpolation_method"]
@@ -73,7 +72,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
-        overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["classification"] = conf.get("classification", "nodata")
         if isinstance(overloaded_conf["classification"], str):
             overloaded_conf["classification"] = [
@@ -97,7 +95,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         rectification_schema = {
             "method": str,
-            "activated": bool,
             "classification": Or(None, [str]),
             "fill_with_geoid": Or(None, [str]),
             "interpolation_method": str,
@@ -132,9 +129,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             - a list of Shapely Polygons
             - a Shapely Polygon
         """
-
-        if not self.activated:
-            return
 
         if self.classification is None:
             self.classification = ["nodata"]
