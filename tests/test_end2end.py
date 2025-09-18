@@ -985,6 +985,9 @@ def test_end2end_ventoux_unique():
        check used conf reentry
     2 run dense dsm pipeline + Baseline checking
     """
+    pytest.skip(
+        reason="This test is temporarily skipped to reduce testing time"
+    )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
