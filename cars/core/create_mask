@@ -1,5 +1,0 @@
-import rasterio
-
-path = "/work/3D/cars_data/data_cars_reliability/nanterre/images/PDV10/IMG_PDV10_A_A_R1C1_bis.tif"
-
-with rasterio.open(path)
