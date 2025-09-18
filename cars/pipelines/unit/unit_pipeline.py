@@ -582,6 +582,7 @@ class UnitPipeline(PipelineTemplate):
         self.dsm_filling_1_application = None
         self.dsm_filling_2_application = None
         self.dsm_filling_3_application = None
+        self.dsm_filling_apps = {}
 
         if self.sensors_in_inputs:
             # Epipolar grid generation
@@ -751,41 +752,41 @@ class UnitPipeline(PipelineTemplate):
                 used_conf["point_cloud_rasterization"] = (
                     self.rasterization_application.get_conf()
                 )
-                # DSM filling 1 : Exogenous filling
-                self.dsm_filling_1_application = Application(
-                    "dsm_filling",
-                    cfg=conf.get(
-                        "dsm_filling.1",
-                        {"method": "exogenous_filling"},
-                    ),
-                    scaling_coeff=scaling_coeff,
-                )
-                used_conf["dsm_filling.1"] = (
-                    self.dsm_filling_1_application.get_conf()
-                )
-                # DSM filling 2 : Bulldozer
-                self.dsm_filling_2_application = Application(
-                    "dsm_filling",
-                    cfg=conf.get(
-                        "dsm_filling.2",
-                        {"method": "bulldozer"},
-                    ),
-                )
-                used_conf["dsm_filling.2"] = (
-                    self.dsm_filling_2_application.get_conf()
-                )
-                # DSM filling 3 : Border interpolation
-                self.dsm_filling_3_application = Application(
-                    "dsm_filling",
-                    cfg=conf.get(
-                        "dsm_filling.3",
-                        {"method": "border_interpolation"},
-                    ),
-                    scaling_coeff=scaling_coeff,
-                )
-                used_conf["dsm_filling.3"] = (
-                    self.dsm_filling_3_application.get_conf()
-                )
+
+                for app_key, app_conf in used_conf.items():
+                    if not app_key.startswith("dsm_filling"):
+                        continue
+
+                    if app_conf is None:
+                        self.dsm_filling_apps = {}
+                        break
+
+                    if app_key in self.dsm_filling_apps:
+                        msg = (
+                            f"The key {app_key} is defined twice in the input "
+                            "configuration."
+                        )
+                        logging.error(msg)
+                        raise NameError(msg)
+
+                    if app_key[11:] == ".1":
+                        app_conf.setdefault("method", "exogenous_filling")
+                    if app_key[11:] == ".2":
+                        app_conf.setdefault("method", "bulldozer")
+                    if app_key[11:] == ".3":
+                        app_conf.setdefault("method", "border_interpolation")
+
+                    self.dsm_filling_apps[app_key] = Application(
+                        "dsm_filling",
+                        cfg=app_conf,
+                        scaling_coeff=scaling_coeff,
+                    )
+                    used_conf[app_key] = self.dsm_filling_apps[
+                        app_key
+                    ].get_conf()
+
+                    print(app_key)
+
                 # Auxiliary filling
                 self.auxiliary_filling_application = Application(
                     "auxiliary_filling",
@@ -796,10 +797,9 @@ class UnitPipeline(PipelineTemplate):
                     self.auxiliary_filling_application.get_conf()
                 )
 
-            if (
-                self.dsm_filling_1_application.classification != ["nodata"]
-                or self.dsm_filling_2_application.classification != ["nodata"]
-                or self.dsm_filling_3_application.classification != ["nodata"]
+            if any(
+                app_obj.classification != ["nodata"]
+                for app_key, app_obj in self.dsm_filling_apps.items()
             ):
                 self.save_output_classif_for_filling = True
 
@@ -2353,10 +2353,6 @@ class UnitPipeline(PipelineTemplate):
         Fill the dsm
         """
 
-        dsm_filling_1_dump_dir = os.path.join(self.dump_dir, "dsm_filling_1")
-        dsm_filling_2_dump_dir = os.path.join(self.dump_dir, "dsm_filling_2")
-        dsm_filling_3_dump_dir = os.path.join(self.dump_dir, "dsm_filling_3")
-
         dsm_file_name = (
             os.path.join(
                 self.out_dir,
@@ -2601,38 +2597,47 @@ class UnitPipeline(PipelineTemplate):
             else:
                 self.list_intersection_poly = None
 
-        _ = self.dsm_filling_1_application.run(
-            dsm_file=dsm_file_name,
-            classif_file=classif_file_name,
-            filling_file=filling_file_name,
-            dump_dir=dsm_filling_1_dump_dir,
-            roi_polys=self.list_intersection_poly,
-            roi_epsg=self.epsg,
-            output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
-            geom_plugin=self.geom_plugin_with_dem_and_geoid,
-        )
+        dtm_file_name = None
+        for app_key, app in self.dsm_filling_apps.items():
 
-        if not self.dsm_filling_1_application.save_intermediate_data:
-            self.cars_orchestrator.add_to_clean(dsm_filling_1_dump_dir)
+            app_dump_dir = os.path.join(
+                self.dump_dir, app_key.replace(".", "_")
+            )
 
-        if self.quit_on_app("dsm_filling.1"):
-            return True
+            if app.get_conf()["method"] == "exogenous_filling":
+                _ = app.run(
+                    dsm_file=dsm_file_name,
+                    classif_file=classif_file_name,
+                    filling_file=filling_file_name,
+                    dump_dir=app_dump_dir,
+                    roi_polys=self.list_intersection_poly,
+                    roi_epsg=self.epsg,
+                    output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
+                    geom_plugin=self.geom_plugin_with_dem_and_geoid,
+                )
+            elif app.get_conf()["method"] == "bulldozer":
+                dtm_file_name = app.run(
+                    dsm_file=dsm_file_name,
+                    classif_file=classif_file_name,
+                    filling_file=filling_file_name,
+                    dump_dir=app_dump_dir,
+                    roi_polys=self.list_intersection_poly,
+                    roi_epsg=self.epsg,
+                    orchestrator=self.cars_orchestrator,
+                )
+            elif app.get_conf()["method"] == "border_interpolation":
+                _ = app.run(
+                    dsm_file=dsm_file_name,
+                    classif_file=classif_file_name,
+                    filling_file=filling_file_name,
+                    dtm_file=dtm_file_name,
+                    dump_dir=app_dump_dir,
+                    roi_polys=self.list_intersection_poly,
+                    roi_epsg=self.epsg,
+                )
 
-        dtm_file_name = self.dsm_filling_2_application.run(
-            dsm_file=dsm_file_name,
-            classif_file=classif_file_name,
-            filling_file=filling_file_name,
-            dump_dir=dsm_filling_2_dump_dir,
-            roi_polys=self.list_intersection_poly,
-            roi_epsg=self.epsg,
-            orchestrator=self.cars_orchestrator,
-        )
-
-        if not self.dsm_filling_2_application.save_intermediate_data:
-            self.cars_orchestrator.add_to_clean(dsm_filling_2_dump_dir)
-
-        if self.quit_on_app("dsm_filling.2"):
-            return True
+            if not app.save_intermediate_data:
+                self.cars_orchestrator.add_to_clean(app_dump_dir)
 
         _ = self.auxiliary_filling_application.run(
             dsm_file=dsm_file_name,
@@ -2645,26 +2650,9 @@ class UnitPipeline(PipelineTemplate):
             texture_bands=self.texture_bands,
             orchestrator=self.cars_orchestrator,
         )
-
-        if self.quit_on_app("auxiliary_filling"):
-            return True
-
         self.cars_orchestrator.breakpoint()
 
-        _ = self.dsm_filling_3_application.run(
-            dsm_file=dsm_file_name,
-            classif_file=classif_file_name,
-            filling_file=filling_file_name,
-            dtm_file=dtm_file_name,
-            dump_dir=dsm_filling_3_dump_dir,
-            roi_polys=self.list_intersection_poly,
-            roi_epsg=self.epsg,
-        )
-
-        if not self.dsm_filling_3_application.save_intermediate_data:
-            self.cars_orchestrator.add_to_clean(dsm_filling_3_dump_dir)
-
-        return self.quit_on_app("dsm_filling.3")
+        return self.quit_on_app("auxiliary_filling")
 
     @cars_profile(name="Preprocess depth maps", interval=0.5)
     def preprocess_depth_maps(self):
