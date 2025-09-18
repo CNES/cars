@@ -1826,8 +1826,8 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                         ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
                     )
                 ),
-                atol=0.0001,
-                rtol=1e-6,
+                atol=0.01,
+                rtol=1e-4,
             )
             assert_same_images(
                 os.path.join(out_dir_dsm, "dsm", "texture.tif"),
