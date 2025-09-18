@@ -61,11 +61,21 @@ def get_needed_apps(
         if save_output_dsm:
             needed_applications += [
                 "point_cloud_rasterization",
-                "dsm_filling.1",
-                "dsm_filling.2",
-                "dsm_filling.3",
                 "auxiliary_filling",
             ]
+
+            add_default_dsm_filling = True
+            for key in conf:
+                if key.startswith("dsm_filling"):
+                    add_default_dsm_filling = False
+                    needed_applications += [key]
+
+            if add_default_dsm_filling:
+                needed_applications += [
+                    "dsm_filling.1",
+                    "dsm_filling.2",
+                    "dsm_filling.3",
+                ]
 
         if merging:  # we have to merge point clouds, add merging apps
             needed_applications += ["point_cloud_fusion"]
