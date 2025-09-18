@@ -132,6 +132,7 @@ class AuxiliaryFillingFromSensors(
         color_file,
         classif_file,
         dump_dir,
+        roi_epsg,
         sensor_inputs,
         pairing,
         geom_plugin,
@@ -304,6 +305,7 @@ class AuxiliaryFillingFromSensors(
                     full_saving_info,
                     geom_plugin,
                     texture_bands,
+                    roi_epsg,
                     mode=self.used_config["mode"],
                     texture_interpolator=self.used_config[
                         "texture_interpolator"
@@ -332,6 +334,7 @@ def filling_from_sensor_wrapper(
     saving_info,
     geom_plugin,
     texture_bands,
+    roi_epsg,
     mode,
     texture_interpolator,
     use_mask,
@@ -573,6 +576,9 @@ def filling_from_sensor_wrapper(
         values,
         coords=coords,
     )
+    print(crs)
+    profile.update(crs="EPSG:" + str(roi_epsg))
+
     cars_dataset.fill_dataset(
         dataset,
         saving_info=saving_info,
