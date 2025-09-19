@@ -1,10 +1,6 @@
 ---
 applications:
-  sparse_matching.sift:
+  sparse_matching:
     method: sift
     disparity_margin: 0.01
-  sparse_matching.pandora:
-    method: pandora
-    resolution:
-    - 4
-    - 2
+
