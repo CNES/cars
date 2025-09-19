@@ -285,12 +285,10 @@ class UnitPipeline(PipelineTemplate):
         sensor_to_depth_apps = {
             "grid_generation": 1,  # and 5
             "resampling": 2,  # and 8
-            "hole_detection": 3,
             "sparse_matching.sift": 4,
             "ground_truth_reprojection": 6,
             "dense_matching": 8,
-            "dense_match_filling.1": 9,
-            "dense_match_filling.2": 10,
+            "dense_match_filling": 9,
             "triangulation": 11,
             "point_cloud_outlier_removal.1": 12,
             "point_cloud_outlier_removal.2": 13,
@@ -526,9 +524,7 @@ class UnitPipeline(PipelineTemplate):
                 "grid_generation",
                 "resampling",
                 "ground_truth_reprojection",
-                "hole_detection",
-                "dense_match_filling.1",
-                "dense_match_filling.2",
+                "dense_match_filling",
                 "sparse_matching.sift",
                 "dense_matching",
                 "triangulation",
@@ -593,9 +589,7 @@ class UnitPipeline(PipelineTemplate):
         self.epipolar_grid_generation_application = None
         self.resampling_application = None
         self.ground_truth_reprojection = None
-        self.hole_detection_app = None
-        self.dense_match_filling_1 = None
-        self.dense_match_filling_2 = None
+        self.dense_match_filling = None
         self.sparse_mtch_sift_app = None
         self.dense_matching_app = None
         self.triangulation_application = None
@@ -648,38 +642,18 @@ class UnitPipeline(PipelineTemplate):
                     cfg=used_conf.get("ground_truth_reprojection", {}),
                     scaling_coeff=scaling_coeff,
                 )
-            # holes detection
-            self.hole_detection_app = Application(
-                "hole_detection",
-                cfg=used_conf.get("hole_detection", {}),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["hole_detection"] = self.hole_detection_app.get_conf()
 
-            # disparity filling 1 plane
-            self.dense_match_filling_1 = Application(
+            # disparity filling
+            self.dense_match_filling = Application(
                 "dense_match_filling",
                 cfg=used_conf.get(
-                    "dense_match_filling.1",
-                    {"method": "plane"},
-                ),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["dense_match_filling.1"] = (
-                self.dense_match_filling_1.get_conf()
-            )
-
-            # disparity filling 2
-            self.dense_match_filling_2 = Application(
-                "dense_match_filling",
-                cfg=used_conf.get(
-                    "dense_match_filling.2",
+                    "dense_match_filling",
                     {"method": "zero_padding"},
                 ),
                 scaling_coeff=scaling_coeff,
             )
-            used_conf["dense_match_filling.2"] = (
-                self.dense_match_filling_2.get_conf()
+            used_conf["dense_match_filling"] = (
+                self.dense_match_filling.get_conf()
             )
 
             # Sparse Matching
@@ -1184,43 +1158,12 @@ class UnitPipeline(PipelineTemplate):
             if self.quit_on_app("grid_generation"):
                 continue  # keep iterating over pairs, but don't go further
 
-            # Run holes detection
-            # Get classif depending on which filling is used
-            # For now, 2 filling application can be used, and be configured
-            # with any order. the .1 will be performed before the .2
-            self.pairs[pair_key]["holes_classif"] = []
-            self.pairs[pair_key]["holes_poly_margin"] = 0
-            add_classif = False
-            if self.dense_match_filling_1.used_method == "plane":
-                self.pairs[pair_key][
-                    "holes_classif"
-                ] += self.dense_match_filling_1.get_classif()
-                self.pairs[pair_key]["holes_poly_margin"] = max(
-                    self.pairs[pair_key]["holes_poly_margin"],
-                    self.dense_match_filling_1.get_poly_margin(),
-                )
-                add_classif = True
-            if self.dense_match_filling_2.used_method == "plane":
-                self.pairs[pair_key][
-                    "holes_classif"
-                ] += self.dense_match_filling_2.get_classif()
-                self.pairs[pair_key]["holes_poly_margin"] = max(
-                    self.pairs[pair_key]["holes_poly_margin"],
-                    self.dense_match_filling_2.get_poly_margin(),
-                )
-                add_classif = True
-
-            self.pairs[pair_key]["holes_bbox_left"] = []
-            self.pairs[pair_key]["holes_bbox_right"] = []
-
-            # condition: TERRAIN_A_PRIORI pas None ou {}
-
             if self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (
                 None,
                 {},
-            ) or (len(self.pairs[pair_key]["holes_classif"]) > 0):
+            ):
                 # Run resampling only if needed:
-                # no a priori or needs to detect holes
+                # no a priori
 
                 # Get required bands of first resampling
                 required_bands = self.sparse_mtch_sift_app.get_required_bands()
@@ -1243,35 +1186,16 @@ class UnitPipeline(PipelineTemplate):
                     margins_fun=self.sparse_mtch_sift_app.get_margins_fun(),
                     tile_width=None,
                     tile_height=None,
-                    add_classif=add_classif,
                     required_bands=required_bands,
                 )
 
                 if self.quit_on_app("resampling"):
                     continue  # keep iterating over pairs, but don't go further
 
-                # Generate the holes polygons in epipolar images
-                # They are only generated if dense_match_filling
-                # applications are used later
-                (
-                    self.pairs[pair_key]["holes_bbox_left"],
-                    self.pairs[pair_key]["holes_bbox_right"],
-                ) = self.hole_detection_app.run(
-                    self.pairs[pair_key]["epipolar_image_left"],
-                    self.pairs[pair_key]["epipolar_image_right"],
-                    classification=self.pairs[pair_key]["holes_classif"],
-                    margin=self.pairs[pair_key]["holes_poly_margin"],
-                    orchestrator=self.cars_orchestrator,
-                    pair_folder=os.path.join(
-                        self.dump_dir, "hole_detection", pair_key
-                    ),
-                    pair_key=pair_key,
-                )
-
-                if self.quit_on_app("hole_detection"):
-                    continue  # keep iterating over pairs, but don't go further
-
-            if self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (None, {}):
+            if self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (
+                None,
+                {},
+            ):
                 # Run epipolar sparse_matching application
                 (
                     self.pairs[pair_key]["epipolar_matches_left"],
@@ -1434,7 +1358,6 @@ class UnitPipeline(PipelineTemplate):
         if (
             self.quit_on_app("grid_generation")
             or self.quit_on_app("resampling")
-            or self.quit_on_app("hole_detection")
             or self.quit_on_app("sparse_matching.sift")
         ):
             return True
@@ -2025,81 +1948,17 @@ class UnitPipeline(PipelineTemplate):
             if self.quit_on_app("dense_matching"):
                 continue  # keep iterating over pairs, but don't go further
 
-            # Dense matches filling
-            if self.dense_match_filling_1.used_method == "plane":
-                # Fill holes in disparity map
-                (filled_with_1_epipolar_disparity_map) = (
-                    self.dense_match_filling_1.run(
-                        epipolar_disparity_map,
-                        self.pairs[pair_key]["holes_bbox_left"],
-                        self.pairs[pair_key]["holes_bbox_right"],
-                        disp_min=self.pairs[pair_key]["disp_range_grid"][
-                            "global_min"
-                        ],
-                        disp_max=np.max(
-                            self.pairs[pair_key]["disp_range_grid"][
-                                "global_max"
-                            ]
-                        ),
-                        orchestrator=self.cars_orchestrator,
-                        pair_folder=os.path.join(
-                            self.dump_dir, "dense_match_filling_1", pair_key
-                        ),
-                        pair_key=pair_key,
-                    )
-                )
-            else:
-                # Fill with zeros
-                (filled_with_1_epipolar_disparity_map) = (
-                    self.dense_match_filling_1.run(
-                        epipolar_disparity_map,
-                        orchestrator=self.cars_orchestrator,
-                        pair_folder=os.path.join(
-                            self.dump_dir, "dense_match_filling_1", pair_key
-                        ),
-                        pair_key=pair_key,
-                    )
-                )
+            # Fill with zeros
+            (filled_epipolar_disparity_map) = self.dense_match_filling.run(
+                epipolar_disparity_map,
+                orchestrator=self.cars_orchestrator,
+                pair_folder=os.path.join(
+                    self.dump_dir, "dense_match_filling", pair_key
+                ),
+                pair_key=pair_key,
+            )
 
-            if self.quit_on_app("dense_match_filling.1"):
-                continue  # keep iterating over pairs, but don't go further
-
-            if self.dense_match_filling_2.used_method == "plane":
-                # Fill holes in disparity map
-                (filled_with_2_epipolar_disparity_map) = (
-                    self.dense_match_filling_2.run(
-                        filled_with_1_epipolar_disparity_map,
-                        self.pairs[pair_key]["holes_bbox_left"],
-                        self.pairs[pair_key]["holes_bbox_right"],
-                        disp_min=self.pairs[pair_key]["disp_range_grid"][
-                            "global_min"
-                        ],
-                        disp_max=np.max(
-                            self.pairs[pair_key]["disp_range_grid"][
-                                "global_max"
-                            ]
-                        ),
-                        orchestrator=self.cars_orchestrator,
-                        pair_folder=os.path.join(
-                            self.dump_dir, "dense_match_filling_2", pair_key
-                        ),
-                        pair_key=pair_key,
-                    )
-                )
-            else:
-                # Fill with zeros
-                (filled_with_2_epipolar_disparity_map) = (
-                    self.dense_match_filling_2.run(
-                        filled_with_1_epipolar_disparity_map,
-                        orchestrator=self.cars_orchestrator,
-                        pair_folder=os.path.join(
-                            self.dump_dir, "dense_match_filling_2", pair_key
-                        ),
-                        pair_key=pair_key,
-                    )
-                )
-
-            if self.quit_on_app("dense_match_filling.2"):
+            if self.quit_on_app("dense_match_filling"):
                 continue  # keep iterating over pairs, but don't go further
 
             if isinstance(output[sens_cst.GEOID], str):
@@ -2171,7 +2030,7 @@ class UnitPipeline(PipelineTemplate):
                 self.pairs[pair_key]["sensor_image_right"],
                 self.pairs[pair_key]["corrected_grid_left"],
                 self.pairs[pair_key]["corrected_grid_right"],
-                filled_with_2_epipolar_disparity_map,
+                filled_epipolar_disparity_map,
                 self.geom_plugin_without_dem_and_geoid,
                 new_epipolar_image_left,
                 epsg=self.epsg,
@@ -2301,8 +2160,7 @@ class UnitPipeline(PipelineTemplate):
         # pylint:disable=too-many-boolean-expressions
         if (
             self.quit_on_app("dense_matching")
-            or self.quit_on_app("dense_match_filling.1")
-            or self.quit_on_app("dense_match_filling.2")
+            or self.quit_on_app("dense_match_filling")
             or self.quit_on_app("triangulation")
             or self.quit_on_app("point_cloud_outlier_removal.1")
             or self.quit_on_app("point_cloud_outlier_removal.2")

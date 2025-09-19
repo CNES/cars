@@ -588,74 +588,24 @@ The structure follows this organization:
 
                 **Description**
 
-                Fill holes in dense matches map. This uses the holes detected with the HoleDetection application.
-                The holes correspond to the area masked for dense matching.
+                Fill holes in dense matches map.
+                The zero_padding method fills the disparity with zeros where the selected classification values are non-zero values.
 
                 **Configuration**
-
-                +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-                | Name                                | Description                     | Type    | Available value         | Default value      | Required |
-                +=====================================+=================================+=========+=========================+====================+==========+
-                | method                              | Method for hole detection       | string  | "plane", "zero_padding" | "plane"            | No       |
-                +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-                | save_intermediate_data              | Save disparity map              | boolean |                         | False              | No       |
-                +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-
-
-                **Method plane:**
-
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | Name                                | Description                     | Type        | Available value         | Default value      | Required |
-                +=====================================+=================================+=============+=========================+====================+==========+
-                | classification                      | Classification band name        | List[str]   |                         | None               | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | interpolation_type                  | Interpolation type              | string      | "pandora"               | "pandora"          | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | interpolation_method                | Method for hole interpolation   | string      | "mc_cnn"                | "mc_cnn"           | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | max_search_distance                 | Maximum search distance         | int         |                         | 100                | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | smoothing_iterations                | Number of smoothing iterations  | int         |                         | 1                  | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | ignore_nodata_at_disp_mask_borders  | Ignore nodata at borders        | boolean     |                         | false              | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | ignore_zero_fill_disp_mask_values   | Ignore zeros                    | boolean     |                         | true               | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | ignore_extrema_disp_values          | Ignore extrema values           | boolean     |                         | true               | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | nb_pix                              | Margin used for mask            | int         |                         | 20                 | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | percent_to_erode                    | Percentage to erode             | float       |                         | 0.2                | No       |
-                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-
-
-                **Method zero_padding:**
-
-                The zero_padding method fills the disparity with zeros where the selected classification values are non-zero values.
 
                 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
                 | Name                                | Description                     | Type      | Available value         | Default value      | Required |
                 +=====================================+=================================+===========+=========================+====================+==========+
+                | method                              | Method for hole detection       | string    | "zero_padding"          | "zero_padding"     | No       |
+                +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
+                | save_intermediate_data              | Save disparity map              | boolean   |                         | False              | No       |
+                +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
                 | classification                      | Classification band name        | List[str] |                         | None               | No       |
                 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 
                 .. note::
                     - The classification of second input is not given. Only the first disparity will be filled with zero value.
                     - The filled area will be considered as a valid disparity mask.
-
-                .. warning::
-
-                    There is a particular case with the *dense_match_filling* application because it is called twice.
-                    The eighth step consists of fill dense matches via two consecutive methods.
-                    So you can configure the application twice , once for the *plane*, the other for *zero_padding* method.
-                    Because it is not possible to define twice the *application_name* on your yaml/json configuration file, we have decided to configure
-                    those two applications with :
-
-                    * *dense_match_filling.1*
-                    * *dense_match_filling.2*
-
-                    Each one is associated to a particular *dense_match_filling* method*
-                    Therefore, is it not possible to use the key *dense_match_filling* and to select the method.
 
                 **Example**
 

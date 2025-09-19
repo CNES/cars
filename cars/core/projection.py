@@ -22,7 +22,7 @@
 Projection module:
 contains some general purpose functions using polygons and data projections
 """
-# pylint: disable=too-many-lines
+# pylint: disable=C0302(too-many-lines)
 
 # Standard imports
 import logging

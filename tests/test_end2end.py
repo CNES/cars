@@ -1942,8 +1942,8 @@ def test_end2end_ventoux_unique_split():
                         },
                     },
                 },
-                "dense_match_filling.1": {
-                    "method": "plane",
+                "dense_match_filling": {
+                    "method": "zero_padding",
                     "classification": ["b0"],
                 },
                 "triangulation": {
@@ -5126,7 +5126,7 @@ def test_end2end_paca_with_mask():
 
         input_config_dense_dsm["applications"]["1"].update(
             {
-                "dense_match_filling.2": {
+                "dense_match_filling": {
                     "method": "zero_padding",
                     "classification": ["b0", "b2"],
                 },
@@ -5211,7 +5211,7 @@ def test_end2end_paca_with_mask():
 
         input_config_dense_dsm["applications"]["1"].update(
             {
-                "dense_match_filling.2": {
+                "dense_match_filling": {
                     "method": "zero_padding",
                     "classification": ["b0", "b2"],
                 },
@@ -5289,8 +5289,8 @@ def test_end2end_disparity_filling():
                     "save_intermediate_data": True,
                     "use_global_disp_range": False,
                 },
-                "dense_match_filling.1": {
-                    "method": "plane",
+                "dense_match_filling": {
+                    "method": "zero_padding",
                     "save_intermediate_data": True,
                     "classification": ["b1"],
                 },
@@ -5434,7 +5434,7 @@ def test_end2end_disparity_filling_with_zeros():
                     "save_intermediate_data": True,
                     "use_global_disp_range": True,
                 },
-                "dense_match_filling.2": {
+                "dense_match_filling": {
                     "method": "zero_padding",
                     "save_intermediate_data": True,
                     "classification": ["b0"],

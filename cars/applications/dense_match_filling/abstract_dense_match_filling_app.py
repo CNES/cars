@@ -123,23 +123,10 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
         **kwargs,
     ):
         """
-        Run Refill application using plane method.
+        Run filling application.
 
         :param epipolar_disparity_map:  left disparity
         :type epipolar_disparity_map: CarsDataset
-        :param holes_bbox_left:  left holes
-        :type holes_bbox_left: CarsDataset
-        :param holes_bbox_right:  right holes
-        :type holes_bbox_right: CarsDataset
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
-        :param orchestrator: orchestrator used
-        :param pair_folder: folder used for current pair
-        :type pair_folder: str
-        :param pair_key: pair id
-        :type pair_key: str
 
         :return: filled disparity map: \
             The CarsDataset contains:

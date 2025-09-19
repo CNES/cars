@@ -27,4 +27,4 @@ from cars.applications.dense_match_filling.abstract_dense_match_filling_app impo
     DenseMatchFilling,
 )
 
-from . import plane_app, zero_padding_app
+from . import zero_padding_app
