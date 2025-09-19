@@ -76,7 +76,7 @@ def grid(
     return out_grid
 
 
-@cars_profile(name="transform four layers to two layers grid", interval=0.5)
+@cars_profile(name="Transform four layers to two layers grid", interval=0.5)
 def transform_four_layers_to_two_layers_grid(tiling_grid, terrain=False):
     """
     Transform a 4 layer grid: (N, M, 4) containing
@@ -118,7 +118,7 @@ def transform_four_layers_to_two_layers_grid(tiling_grid, terrain=False):
     return arr
 
 
-@cars_profile(name="transform disp range grid to two layers", interval=0.5)
+@cars_profile(name="Transform disp range grid to two layers", interval=0.5)
 def transform_disp_range_grid_to_two_layers(disp_min_grid, disp_max_grid):
     """
     Transform tiling disp min and max to N+1 M+1 array corresponding

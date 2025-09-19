@@ -526,7 +526,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         return epipolar_positions
 
-    @cars_profile(name="transform matches", interval=0.5)
+    @cars_profile(name="Transform matches", interval=0.5)
     def transform_matches_from_grids(
         self,
         sensor_matches_left,
@@ -563,7 +563,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         return new_matches_array
 
-    @cars_profile(name="get sensor matches")
+    @cars_profile(name="Get sensor matches")
     def get_sensor_matches(
         self,
         matches_array,

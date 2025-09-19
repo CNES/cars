@@ -286,7 +286,7 @@ class PandoraLoader:
 
         return self.pandora_config
 
-    @cars_profile(name="find auto conf")
+    @cars_profile(name="Find auto conf")
     def find_auto_conf(
         self, intersection_poly, land_cover_map, classif_to_config_mapping, epsg
     ):

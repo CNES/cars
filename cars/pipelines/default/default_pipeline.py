@@ -364,7 +364,7 @@ class DefaultPipeline(PipelineTemplate):
 
         return new_conf
 
-    @cars_profile(name="run_default_pipeline", interval=0.5)
+    @cars_profile(name="Run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
         """
         Run pipeline

@@ -141,7 +141,7 @@ def generate_epipolar_grids(
     )
 
 
-@cars_profile(name="compute epipolar grid min max", interval=0.5)
+@cars_profile(name="Compute epipolar grid min max", interval=0.5)
 def compute_epipolar_grid_min_max(
     geometry_plugin,
     grid,

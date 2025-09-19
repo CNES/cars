@@ -38,7 +38,7 @@ from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
-@cars_profile(name="get paths and bands", interval=0.5)
+@cars_profile(name="Get paths and bands", interval=0.5)
 def get_paths_and_bands(sensor_image, required_bands=None):
     """
     Reformat file paths and bands required from each file to ease reading

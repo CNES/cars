@@ -211,7 +211,7 @@ class Orchestrator:
 
         return self.conf
 
-    @cars_profile(name="add to save lists", interval=0.5)
+    @cars_profile(name="Add to save lists", interval=0.5)
     def add_to_save_lists(
         self,
         file_name,

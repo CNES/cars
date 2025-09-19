@@ -357,7 +357,7 @@ class LineOfSightIntersection(
                 optional_data=True,
             )
 
-    @cars_profile(name="fill index", interval=0.5)
+    @cars_profile(name="Fill index", interval=0.5)
     def fill_index(
         self,
         save_output_coordinates=True,

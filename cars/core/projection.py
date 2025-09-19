@@ -530,7 +530,7 @@ def ground_polygon_from_envelopes(
     return inter, inter.bounds
 
 
-@cars_profile(name="ground intersection envelopes", interval=0.5)
+@cars_profile(name="Ground intersection envelopes", interval=0.5)
 def ground_intersection_envelopes(
     sensor1,
     sensor2,

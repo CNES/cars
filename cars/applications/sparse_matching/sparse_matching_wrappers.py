@@ -170,7 +170,7 @@ def compute_disp_min_disp_max(
     return dmin, dmax
 
 
-@cars_profile(name="filter_point_cloud_matches")
+@cars_profile(name="Filter_point_cloud_matches")
 def filter_point_cloud_matches(
     pd_cloud,
     match_filter_knn=25,

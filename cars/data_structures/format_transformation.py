@@ -35,7 +35,7 @@ from cars.orchestrator.cluster.log_wrapper import cars_profile
 # CARS imports
 
 
-@cars_profile(name="grid margins 2 overlaps", interval=0.5)
+@cars_profile(name="Grid margins 2 overlaps", interval=0.5)
 def grid_margins_2_overlaps(grid, margins_fun):
     """
     Convert margins to overlap grid format used in CarsDatasets

@@ -301,7 +301,7 @@ def downsample_dem(
         dst.write(dem_data, 1)
 
 
-@cars_profile(name="modify terrain bounds")
+@cars_profile(name="Modify terrain bounds")
 def modify_terrain_bounds(
     bounds_poly, in_epsg, out_epsg, constant_margin, linear_margin=0
 ):

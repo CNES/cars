@@ -2772,7 +2772,7 @@ class UnitPipeline(PipelineTemplate):
 
         return self.quit_on_app("dsm_filling.3")
 
-    @cars_profile(name="preprocess depth maps", interval=0.5)
+    @cars_profile(name="Preprocess depth maps", interval=0.5)
     def preprocess_depth_maps(self):
         """
         Adds multiple processing steps to the depth maps :
@@ -2945,7 +2945,7 @@ class UnitPipeline(PipelineTemplate):
                 )
             )
 
-    @cars_profile(name="final cleanup", interval=0.5)
+    @cars_profile(name="Final cleanup", interval=0.5)
     def final_cleanup(self):
         """
         Clean temporary files and directory at the end of cars processing
