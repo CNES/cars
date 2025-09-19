@@ -105,6 +105,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         self.bulldozer_max_object_size = self.used_config[
             "bulldozer_max_object_size"
         ]
+        self.disable_bulldozer = self.used_config["disable_bulldozer"]
         self.compute_stats = self.used_config["compute_stats"]
         self.coregistration = self.used_config["coregistration"]
         self.coregistration_max_shift = self.used_config[
@@ -168,6 +169,9 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         overloaded_conf["bulldozer_max_object_size"] = conf.get(
             "bulldozer_max_object_size", 8
         )
+        overloaded_conf["disable_bulldozer"] = conf.get(
+            "disable_bulldozer", False
+        )
         overloaded_conf["compute_stats"] = conf.get("compute_stats", True)
         overloaded_conf["coregistration"] = conf.get("coregistration", True)
         overloaded_conf["coregistration_max_shift"] = conf.get(
@@ -192,6 +196,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             "max_dem": And(Or(int, float), lambda x: x > 0),
             "height_margin": Or(list, float, int),
             "bulldozer_max_object_size": And(int, lambda x: x > 0),
+            "disable_bulldozer": bool,
             "compute_stats": bool,
             "coregistration": bool,
             "coregistration_max_shift": And(Or(int, float), lambda x: x > 0),
@@ -403,7 +408,6 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         with rio.open(dem_max_path, "w", **profile) as out_dem:
             out_dem.write(dem_max, 1)
         dem_filled_path = os.path.join(output_dir, "dem_filled.tif")
-        print(dem_filled_path)
         with rio.open(dem_filled_path, "w", **profile) as out_dem:
             out_dem.write(dem_data, 1)
 
@@ -462,8 +466,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             )
             shutil.copy2(dem_max_path, intermediate_dem_max_path)
 
-        disable_bulldozer = False
-        if not disable_bulldozer:
+        if not self.disable_bulldozer:
             dem_min_max_res = resolution_in_meters * self.dem_min_max_downscale
             # Launch Bulldozer on dem min
             saved_transform = edit_transform(
@@ -512,6 +515,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         dem_max[dem_max == nodata] = np.nan
         if self.compute_stats:
             diff = dem_data - dem_min
+            diff = diff[dem_data != 0]
             logging.info(
                 "Statistics of difference between subsampled "
                 "DSM and DEM min (in meters)"
@@ -519,6 +523,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             compute_stats(diff)
 
             diff = dem_max - dem_data
+            diff = diff[dem_data != 0]
             logging.info(
                 "Statistics of difference between DEM max "
                 "and subsampled DSM (in meters)"
@@ -526,6 +531,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             compute_stats(diff)
 
             diff = dem_max - dem_min
+            diff = diff[dem_data != 0]
             logging.info(
                 "Statistics of difference between DEM max "
                 "and DEM min (in meters)"

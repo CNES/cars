@@ -191,8 +191,8 @@ def test_exception_roi_outside_dtm():
     assert str(excinfo.value) == (
         "The extent of the roi lies outside "
         "the extent of the initial elevation : the roi bounds are "
-        "[5.167437010423512, 44.17988354632101, 5.222003801512136, "
-        "44.232861624860234] while the dtm bounds are "
+        "[5.156013852323939, 44.15169289345662, 5.235306512180193, "
+        "44.256780712026995] while the dtm bounds are "
         "[31.099861111111114, 29.950138888888887, "
         "31.149861111111115, 30.000138888888888]"
     )

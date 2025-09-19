@@ -50,7 +50,7 @@ from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
-class AbstractGeometry(metaclass=ABCMeta):
+class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
     """
     AbstractGeometry
     """
@@ -122,11 +122,11 @@ class AbstractGeometry(metaclass=ABCMeta):
     ):
         self.scaling_coeff = scaling_coeff
 
-        config = self.check_conf(geometry_plugin_conf)
+        self.used_config = self.check_conf(geometry_plugin_conf)
 
-        self.plugin_name = config["plugin_name"]
-        self.interpolator = config["interpolator"]
-        self.dem_roi_margin = config["dem_roi_margin"]
+        self.plugin_name = self.used_config["plugin_name"]
+        self.interpolator = self.used_config["interpolator"]
+        self.dem_roi_margin = self.used_config["dem_roi_margin"]
         self.dem = None
         self.dem_roi = None
         self.dem_roi_epsg = None
@@ -142,18 +142,35 @@ class AbstractGeometry(metaclass=ABCMeta):
         # compute roi only when generating geometry object with dem
         if dem is not None:
             self.dem = dem
+            self.default_alt = self.get_dem_median_value()
+            self.elevation = self.default_alt
+            logging.info(
+                "Median value of DEM ({}) will be used as default_alt".format(
+                    self.default_alt
+                )
+            )
             if pairs_for_roi is not None:
                 self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
                 self.dem_roi = self.get_roi(
                     pairs_for_roi,
                     self.dem_roi_epsg,
-                    z_min=0,
-                    z_max=0,
+                    z_min=-1000,
+                    z_max=9000,
                     linear_margin=self.dem_roi_margin[0],
                     constant_margin=self.dem_roi_margin[1],
                 )
                 if output_dem_dir is not None:
                     self.dem = self.extend_dem_to_roi(dem, output_dem_dir)
+
+    def get_dem_median_value(self):
+        """
+        Compute dem median value
+        :param dem: path of DEM
+        """
+        with rio.open(self.dem) as dem_file:
+            dem_data = dem_file.read(1)
+            median_value = np.nanmedian(dem_data)
+        return median_value
 
     def get_roi(
         self,
@@ -346,7 +363,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         )
         overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
         overloaded_conf["dem_roi_margin"] = conf.get(
-            "dem_roi_margin", [0.75, 0.012]
+            "dem_roi_margin", [0.75, 0.02]
         )
 
         geometry_schema = {

@@ -30,7 +30,7 @@ import numpy as np
 import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
 import xarray as xr
-from json_checker import Checker
+from json_checker import And, Checker
 from shareloc.dtm_reader import dtm_reader
 from shareloc.geofunctions import localization
 from shareloc.geofunctions.rectification_grid import RectificationGrid
@@ -121,6 +121,47 @@ class SharelocGeometry(AbstractGeometry):
         else:
             self.elevation = default_alt
 
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: str or dict
+
+        :return: full dict
+        :rtype: dict
+
+        """
+
+        if conf is None:
+            raise RuntimeError("Geometry plugin configuration is None")
+
+        overloaded_conf = {}
+
+        if isinstance(conf, str):
+            conf = {"plugin_name": conf}
+
+        # overload conf
+        overloaded_conf["plugin_name"] = conf.get(
+            "plugin_name", "SharelocGeometry"
+        )
+        overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
+        overloaded_conf["dem_roi_margin"] = conf.get(
+            "dem_roi_margin", [0.25, 0.02]
+        )
+
+        geometry_schema = {
+            "plugin_name": str,
+            "interpolator": And(str, lambda x: x in ["cubic", "linear"]),
+            "dem_roi_margin": [float],
+        }
+
+        # Check conf
+        checker = Checker(geometry_schema)
+        checker.validate(overloaded_conf)
+
+        return overloaded_conf
+
     def get_roi(
         self,
         pairs_for_roi,
@@ -174,6 +215,7 @@ class SharelocGeometry(AbstractGeometry):
             )
             lat_min, lon_min, lat_max, lon_max = list(epipolar_extent)
             coords_list.extend([(lon_min, lat_min), (lon_max, lat_max)])
+
         lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
         roi = [
             min(lon_list) - constant_margin,
@@ -196,6 +238,14 @@ class SharelocGeometry(AbstractGeometry):
             max(new_points[:, 0]),
             max(new_points[:, 1]),
         ]
+
+        lon_size = roi[2] - roi[0]
+        lat_size = roi[3] - roi[1]
+
+        roi[0] -= linear_margin * lon_size
+        roi[1] -= linear_margin * lat_size
+        roi[2] += linear_margin * lon_size
+        roi[3] += linear_margin * lat_size
 
         roi = [
             min(roi[0], base_roi[0]),
