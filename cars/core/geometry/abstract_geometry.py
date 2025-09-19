@@ -195,6 +195,8 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         :type constant_margin: float
         """
         coords_list = []
+        z_min = np.array(z_min)
+        z_max = np.array(z_max)
         for image1, geomodel1, image2, geomodel2 in pairs_for_roi:
             # Footprint of left image with altitude z_min
             coords_list.extend(
