@@ -1,0 +1,6 @@
+---
+applications:
+  point_cloud_outlier_removal: # you can also just have a single filtering
+    method: statistical
+    k: 3
+    

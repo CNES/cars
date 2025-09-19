@@ -715,22 +715,26 @@ The structure follows this organization:
 
                 .. warning::
 
-                    There is a particular case with the *Point Cloud outlier removal* application because it is called twice.
-                    The ninth step consists of Filter the 3D points cloud via two consecutive filters.
-                    So you can configure the application twice , once for the *small component filters*, the other for *statistical* filter.
-                    Because it is not possible to define twice the *application_name* on your yaml/json configuration file, we have decided to configure
-                    those two applications with :
+                    There is a particular case with the *Point Cloud outlier removal* application because both methods can be used at the same time in the pipeline.
+                    The ninth step consists of Filter the 3D points cloud via N consecutive filters.
+                    So you can configure the application any number of times. By default the filtering is done twice : once with the *small_components*, once with the *statistical* filter.
+                    To use your own filters in the order you want, you can add an identifier at the end of each application key :
 
-                    * *point_cloud_outlier_removal.1*
-                    * *point_cloud_outlier_removal.2*
+                    * *point_cloud_outlier_removal.my_first_filter*
+                    * *point_cloud_outlier_removal.filter_2*
+                    * *point_cloud_outlier_removal.3*
 
-                    Each one is associated to a particular *point_cloud_outlier_removal* method*
-                    Therefore, is it not possible to use the key *point_cloud_outlier_removal* and to select the method.
+                    The filtering steps will then be executed in the order you provided them.
 
+                    Because by default the applications *point_cloud_outlier_removal.1* and *point_cloud_outlier_removal.2* are defined, to not do any filtering you must set the configuration of *point_cloud_outlier_removal* to None.
 
-                **Example**
+                **Examples**
 
-                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal_1
+                
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal_2
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal_3
 
             .. tab:: Point Cloud Rasterization
 
@@ -885,25 +889,23 @@ The structure follows this organization:
 
                 .. warning::
 
-                    There is a particular case with the *dsm_filling* application because it is called three times.
-                    Because it is not possible to define three times the *dsm_filling* on your yaml/json configuration file, we have decided to configure
-                    those three applications with :
+                    There is a particular case with the *dsm_filling* application because it can be called any number of times.
+                    Because it is not possible to define three times the *dsm_filling* in your yaml/json configuration file, you can add an identifier after *dsm_filling* to differentiate each application :
 
-                    * *dsm_filling.1*
-                    * *dsm_filling.2*
-                    * *dsm_filling.3*
+                    * *dsm_filling.border_interp*
+                    * *dsm_filling.two*
+                    * *dsm_filling.with_bulldozer*
 
-                    Each one is associated to a particular *dsm_filling* method : 
-                     - 1 : exogenous_filling
-                     - 2 : bulldozer
-                     - 3 : border_interpolation
-
-                    It is not recommended to change it, as the pipeline is designed with this order. If you just want to use a subset of these applications, just use the "activate" parameter.
                     It is recommended to run bulldozer before border_interpolation in order for border_interpolation to get a DTM. If no DTM is found, border_interpolation will use the DSM.
+                    The execution order is determined by the order of the applications in the configuration file.
 
                 **Example**
 
-                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dsm_filling
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dsm_filling_1
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dsm_filling_2
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dsm_filling_3
 
             .. tab:: Auxiliary Filling
 
