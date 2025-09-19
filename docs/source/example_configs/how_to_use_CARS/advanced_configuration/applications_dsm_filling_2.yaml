@@ -1,0 +1,9 @@
+---
+applications:
+  dsm_filling: # run single filling application
+    method: exogenous_filling
+    activated: true
+    classification:
+    - sea
+    fill_with_geoid:
+    - sea
