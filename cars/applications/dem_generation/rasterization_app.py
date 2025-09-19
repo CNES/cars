@@ -95,9 +95,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         self.postprocessing_median_filter_size = self.used_config[
             "postprocessing_median_filter_size"
         ]
-        self.dem_median_output_resolution = self.used_config[
-            "dem_median_output_resolution"
-        ]
+        self.dem_median_downscale = self.used_config["dem_median_downscale"]
+        self.dem_min_max_downscale = self.used_config["dem_min_max_downscale"]
         self.fillnodata_max_search_distance = self.used_config[
             "fillnodata_max_search_distance"
         ]
@@ -152,8 +151,11 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         overloaded_conf["postprocessing_median_filter_size"] = conf.get(
             "postprocessing_median_filter_size", 7
         )
-        overloaded_conf["dem_median_output_resolution"] = conf.get(
-            "dem_median_output_resolution", 30
+        overloaded_conf["dem_median_downscale"] = conf.get(
+            "dem_median_downscale", 10
+        )
+        overloaded_conf["dem_min_max_downscale"] = conf.get(
+            "dem_min_max_downscale", 2
         )
         overloaded_conf["fillnodata_max_search_distance"] = conf.get(
             "fillnodata_max_search_distance", 50
@@ -183,7 +185,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             "morphological_filters_size": And(int, lambda x: x > 0),
             "preprocessing_median_filter_size": And(int, lambda x: x > 0),
             "postprocessing_median_filter_size": And(int, lambda x: x > 0),
-            "dem_median_output_resolution": And(int, lambda x: x > 0),
+            "dem_median_downscale": And(int, lambda x: x > 0),
+            "dem_min_max_downscale": And(int, lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
             "min_dem": And(Or(int, float), lambda x: x < 0),
             "max_dem": And(Or(int, float), lambda x: x > 0),
@@ -202,7 +205,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         return overloaded_conf
 
     @cars_profile(name="DEM Generation")
-    def run(
+    def run(  # noqa: C901
         self,
         dsm_file_name,
         output_dir,
@@ -399,6 +402,55 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             out_dem.write(dem_median, 1)
         with rio.open(dem_max_path, "w", **profile) as out_dem:
             out_dem.write(dem_max, 1)
+        dem_filled_path = os.path.join(output_dir, "dem_filled.tif")
+        print(dem_filled_path)
+        with rio.open(dem_filled_path, "w", **profile) as out_dem:
+            out_dem.write(dem_data, 1)
+
+        if self.save_intermediate_data:
+            intermediate_dem_min_path = os.path.join(
+                output_dir, "dem_min_before_downsampling.tif"
+            )
+            shutil.copy2(dem_min_path, intermediate_dem_min_path)
+            intermediate_dem_max_path = os.path.join(
+                output_dir, "dem_max_before_downsampling.tif"
+            )
+            shutil.copy2(dem_max_path, intermediate_dem_max_path)
+
+            intermediate_dem_median_path = os.path.join(
+                output_dir, "dem_median_before_downsampling.tif"
+            )
+            shutil.copy2(dem_median_path_out, intermediate_dem_median_path)
+
+        # Downsample dems
+        downsample_dem(
+            dem_median_path_out,
+            scale=self.dem_median_downscale,
+            interpolator="median",
+            median_filter_size=self.postprocessing_median_filter_size,
+            default_alt=default_alt,
+        )
+
+        downsample_dem(
+            dem_min_path,
+            scale=self.dem_min_max_downscale,
+            interpolator="min",
+            default_alt=default_alt,
+        )
+
+        downsample_dem(
+            dem_max_path,
+            scale=self.dem_min_max_downscale,
+            interpolator="max",
+            default_alt=default_alt,
+        )
+
+        downsample_dem(
+            dem_filled_path,
+            scale=self.dem_min_max_downscale,
+            interpolator="nearest",
+            default_alt=default_alt,
+        )
 
         if self.save_intermediate_data:
             intermediate_dem_min_path = os.path.join(
@@ -410,50 +462,40 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             )
             shutil.copy2(dem_max_path, intermediate_dem_max_path)
 
-            intermediate_dem_median_path = os.path.join(
-                output_dir, "dem_median_before_downsampling.tif"
+        disable_bulldozer = False
+        if not disable_bulldozer:
+            dem_min_max_res = resolution_in_meters * self.dem_min_max_downscale
+            # Launch Bulldozer on dem min
+            saved_transform = edit_transform(
+                dem_min_path, resolution=dem_min_max_res
             )
-            shutil.copy2(dem_median_path_out, intermediate_dem_median_path)
+            logging.info("Launch Bulldozer on DEM min")
+            temp_output_path = launch_bulldozer(
+                dem_min_path,
+                os.path.join(output_dir, "dem_min_bulldozer"),
+                cars_orchestrator,
+                self.bulldozer_max_object_size,
+            )
+            if temp_output_path is not None:
+                shutil.copy2(temp_output_path, dem_min_path)
+            edit_transform(dem_min_path, transform=saved_transform)
 
-        # Downsample median dem
-        downsample_dem(
-            dem_median_path_out,
-            scale=self.dem_median_output_resolution / resolution_in_meters,
-            median_filter_size=self.postprocessing_median_filter_size,
-            default_alt=default_alt,
-        )
-
-        # Launch Bulldozer on dem min
-        saved_transform = edit_transform(
-            dem_min_path, resolution=resolution_in_meters
-        )
-        logging.info("Launch Bulldozer on DEM min")
-        temp_output_path = launch_bulldozer(
-            dem_min_path,
-            os.path.join(output_dir, "dem_min_bulldozer"),
-            cars_orchestrator,
-            self.bulldozer_max_object_size,
-        )
-        if temp_output_path is not None:
-            shutil.copy2(temp_output_path, dem_min_path)
-        edit_transform(dem_min_path, transform=saved_transform)
-
-        # Inverse dem max and launch bulldozer
-        saved_transform = edit_transform(
-            dem_max_path, resolution=resolution_in_meters
-        )
-        reverse_dem(dem_max_path)
-        logging.info("Launch Bulldozer on DEM max")
-        temp_output_path = launch_bulldozer(
-            dem_max_path,
-            os.path.join(output_dir, "dem_max_bulldozer"),
-            cars_orchestrator,
-            self.bulldozer_max_object_size,
-        )
-        if temp_output_path is not None:
-            shutil.copy2(temp_output_path, dem_max_path)
-        reverse_dem(dem_max_path)
-        edit_transform(dem_max_path, transform=saved_transform)
+            # Inverse dem max and launch bulldozer
+            saved_transform = edit_transform(
+                dem_max_path, resolution=dem_min_max_res
+            )
+            reverse_dem(dem_max_path)
+            logging.info("Launch Bulldozer on DEM max")
+            temp_output_path = launch_bulldozer(
+                dem_max_path,
+                os.path.join(output_dir, "dem_max_bulldozer"),
+                cars_orchestrator,
+                self.bulldozer_max_object_size,
+            )
+            if temp_output_path is not None:
+                shutil.copy2(temp_output_path, dem_max_path)
+            reverse_dem(dem_max_path)
+            edit_transform(dem_max_path, transform=saved_transform)
 
         # Check DEM min and max
         with rio.open(dem_min_path, "r") as in_dem:
@@ -463,6 +505,8 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         with rio.open(dem_max_path, "r") as in_dem:
             dem_max = in_dem.read()
             dem_max_metadata = in_dem.meta
+        with rio.open(dem_filled_path, "r") as in_dem:
+            dem_data = in_dem.read()
         dem_data[dem_data == nodata] = np.nan
         dem_min[dem_min == nodata] = np.nan
         dem_max[dem_max == nodata] = np.nan

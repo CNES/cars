@@ -248,6 +248,20 @@ class AbstractGeometry(metaclass=ABCMeta):
             crs = in_dem.crs
             bounds = in_dem.bounds
 
+        logging.info(
+            "DEM bounds : {}, {}, {}, {}".format(
+                bounds.left, bounds.top, bounds.right, bounds.bottom
+            )
+        )
+        logging.info(
+            "ROI bounds : {}, {}, {}, {}".format(
+                self.dem_roi[0],
+                self.dem_roi[1],
+                self.dem_roi[2],
+                self.dem_roi[3],
+            )
+        )
+
         # Longitude
         lon_res = src_transform[0]
         lon_shift = (self.dem_roi[0] - bounds.left) / lon_res
@@ -332,7 +346,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         )
         overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
         overloaded_conf["dem_roi_margin"] = conf.get(
-            "dem_roi_margin", [0.5, 0.012]
+            "dem_roi_margin", [0.75, 0.012]
         )
 
         geometry_schema = {

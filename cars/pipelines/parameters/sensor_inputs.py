@@ -32,7 +32,7 @@ import rasterio as rio
 from json_checker import Checker, OptionalKey, Or
 
 # CARS imports
-from cars.core import inputs, preprocessing, projection, roi_tools
+from cars.core import inputs, projection
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -381,64 +381,12 @@ def check_geometry_plugin(
         scaling_coeff=scaling_coeff,
         output_dem_dir=output_dem_dir,
     )
-    dem_path = geom_plugin_with_dem_and_geoid.dem
-
-    # Check dem is big enough
-    dem_generation_roi_poly = None
-    needed_dem_roi = geom_plugin_with_dem_and_geoid.dem_roi
-    needed_dem_roi_epsg = geom_plugin_with_dem_and_geoid.dem_roi_epsg
-    if needed_dem_roi is not None:
-        needed_dem_roi_poly = roi_tools.bounds_to_poly(needed_dem_roi)
-        # convert to 4326 roi
-        dem_generation_roi_poly = preprocessing.compute_roi_poly(
-            needed_dem_roi_poly, needed_dem_roi_epsg, 4326
-        )
-
-        if dem_path is not None:
-            # get dem total roi
-            total_input_roi_poly = roi_tools.bounds_to_poly(
-                inputs.rasterio_get_bounds(dem_path)
-            )
-            total_input_roi_epsg = inputs.rasterio_get_epsg_code(
-                conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-            )
-            if not isinstance(total_input_roi_epsg, int):
-                total_input_roi_epsg = total_input_roi_epsg.to_epsg()
-            total_input_roi_poly = preprocessing.compute_roi_poly(
-                total_input_roi_poly, total_input_roi_epsg, 4326
-            )
-
-            # if needed roi not inside dem, raise error
-            if not total_input_roi_poly.contains_properly(
-                dem_generation_roi_poly
-            ):
-                base_message = (
-                    "Given initial elevation ROI is not covering needed ROI: "
-                    " EPSG:4326, ROI: {}".format(dem_generation_roi_poly.bounds)
-                )
-
-                if total_input_roi_poly.intersects(dem_generation_roi_poly):
-                    logging.warning(
-                        "{}. Only a part of it intersects. "
-                        "Errors might occur".format(base_message)
-                    )
-                else:
-                    # Exit, Error is certain to occur
-                    raise RuntimeError(base_message)
-
-    elif dem_path is not None:
-        logging.warning(
-            "Current geometry plugin doesnt compute dem roi needed "
-            "for later computations. Errors related to unsufficient "
-            "dem roi might occur."
-        )
 
     return (
         overloaded_conf_inputs,
         conf_geom_plugin,
         geom_plugin_without_dem_and_geoid,
         geom_plugin_with_dem_and_geoid,
-        dem_generation_roi_poly,
         scaling_coeff,
     )
 

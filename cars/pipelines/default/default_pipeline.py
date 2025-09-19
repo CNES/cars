@@ -259,7 +259,7 @@ class DefaultPipeline(PipelineTemplate):
         :return: overridden advanced conf
         :rtype: dict
         """
-        (_, advanced, _, _, _, _, self.scaling_coeff, _, _) = (
+        (_, advanced, _, _, _, self.scaling_coeff, _, _) = (
             advanced_parameters.check_advanced_parameters(
                 conf[INPUTS],
                 conf.get(ADVANCED, {}),

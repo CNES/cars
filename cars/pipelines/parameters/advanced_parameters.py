@@ -161,7 +161,6 @@ def check_advanced_parameters(
     # Check geometry plugin
     geom_plugin_without_dem_and_geoid = None
     geom_plugin_with_dem_and_geoid = None
-    dem_generation_roi = None
 
     scaling_coeff = None
     # Get last resolution for scaling
@@ -176,7 +175,6 @@ def check_advanced_parameters(
             overloaded_conf[adv_cst.GEOMETRY_PLUGIN],
             geom_plugin_without_dem_and_geoid,
             geom_plugin_with_dem_and_geoid,
-            dem_generation_roi,
             scaling_coeff,
         ) = sensor_inputs.check_geometry_plugin(
             inputs,
@@ -266,7 +264,6 @@ def check_advanced_parameters(
         overloaded_conf[adv_cst.GEOMETRY_PLUGIN],
         geom_plugin_without_dem_and_geoid,
         geom_plugin_with_dem_and_geoid,
-        dem_generation_roi,
         scaling_coeff,
         overloaded_conf[adv_cst.LAND_COVER_MAP],
         overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],

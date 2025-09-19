@@ -246,7 +246,8 @@ def reverse_dem(input_dem):
 def downsample_dem(
     input_dem,
     scale,
-    median_filter_size=7,
+    interpolator,
+    median_filter_size=None,
     default_alt=0,
 ):
     """
@@ -271,6 +272,13 @@ def downsample_dem(
     metadata["height"] = dst_height
     metadata["width"] = dst_width
     dem_data = np.zeros((dst_height, dst_width))
+    interpolator_dict = {
+        "min": Resampling.min,
+        "median": Resampling.med,
+        "max": Resampling.max,
+        "nearest": Resampling.nearest,
+    }
+    interpolator = interpolator_dict[interpolator]
     reproject(
         data,
         dem_data,
@@ -279,13 +287,14 @@ def downsample_dem(
         dst_transform=dst_transform,
         dst_crs=crs,
         dst_nodata=nodata,
-        resampling=Resampling.med,
+        resampling=interpolator,
     )
 
     # Post-processing
 
     # Median filter
-    dem_data = median_filter(dem_data, size=median_filter_size)
+    if median_filter_size is not None:
+        dem_data = median_filter(dem_data, size=median_filter_size)
 
     # Fill nodata
     dem_data = rio.fill.fillnodata(

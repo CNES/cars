@@ -112,7 +112,6 @@ class UnitPipeline(PipelineTemplate):
             save_output_point_clouds
             geom_plugin_without_dem_and_geoid
             geom_plugin_with_dem_and_geoid
-            dem_generation_roi
 
         :param pipeline_name: name of the pipeline.
         :type pipeline_name: str
@@ -156,7 +155,6 @@ class UnitPipeline(PipelineTemplate):
             self.geometry_plugin,
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
-            self.dem_generation_roi,
             self.scaling_coeff,
             self.land_cover_map,
             self.classification_to_config_mapping,
