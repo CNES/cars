@@ -170,6 +170,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         with rio.open(self.dem) as dem_file:
             dem_data = dem_file.read(1)
             median_value = np.nanmedian(dem_data)
+        median_value = float(median_value)
         return median_value
 
     def get_roi(
