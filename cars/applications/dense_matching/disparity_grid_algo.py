@@ -288,7 +288,9 @@ def generate_disp_range_from_dem_wrapper(
         (np.max(col_range_with_margin), np.min(row_range_with_margin)),
         (np.max(col_range_with_margin), np.max(row_range_with_margin)),
     ]
-    sensor_bbox = geo_plugin.sensor_position_from_grid(grid_right, epi_bbox, interpolation_method="linear")
+    sensor_bbox = geo_plugin.sensor_position_from_grid(
+        grid_right, epi_bbox, interpolation_method="linear"
+    )
     row_sensor_bbox, col_sensor_bbox = transform_physical_point_to_index(
         trans_inv_sensor, sensor_bbox[:, 1], sensor_bbox[:, 0]
     )
@@ -400,7 +402,7 @@ def generate_disp_range_from_dem_wrapper(
                     2,
                 ),
             ),
-            interpolation_method="linear"
+            interpolation_method="linear",
         )
     )
 

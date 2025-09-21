@@ -343,7 +343,7 @@ class SharelocGeometry(AbstractGeometry):
         grid1: Union[dict, RectificationGrid],
         grid2: Union[dict, RectificationGrid],
         roi_key: Union[None, str] = None,
-        interpolation_method = None,
+        interpolation_method=None,
     ) -> np.ndarray:
         """
         Performs triangulation from cars disparity or matches dataset

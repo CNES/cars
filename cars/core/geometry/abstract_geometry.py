@@ -393,7 +393,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         grid1: str,
         grid2: str,
         roi_key: Union[None, str] = None,
-        interpolation_method = None,
+        interpolation_method=None,
     ) -> np.ndarray:
         """
         Performs triangulation from cars disparity or matches dataset
@@ -465,7 +465,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         matches_type: str,
         matches_msk: np.ndarray = None,
         ul_matches_shift: Tuple[int, int] = None,
-        interpolation_method = None,
+        interpolation_method=None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Convert matches (sparse or dense matches) given in epipolar
@@ -688,10 +688,12 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         )
         valid = np.logical_and(valid_rows, valid_cols)
 
-        if np.sum(~valid) > 1:
-            logging.warning("{} points are outside of epipolar grid".format(np.sum(~valid)))
-
-        sensor_positions[~valid, :] = np.nan
+        if np.sum(~valid) > 0:
+            logging.warning(
+                "{}/{} points are outside of epipolar grid".format(
+                    np.sum(~valid), valid.size
+                )
+            )
 
         # swap
         sensor_positions[:, [0, 1]] = sensor_positions[:, [1, 0]]
