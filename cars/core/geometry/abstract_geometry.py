@@ -393,6 +393,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         grid1: str,
         grid2: str,
         roi_key: Union[None, str] = None,
+        interpolation_method = None,
     ) -> np.ndarray:
         """
         Performs triangulation from cars disparity or matches dataset
@@ -464,6 +465,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         matches_type: str,
         matches_msk: np.ndarray = None,
         ul_matches_shift: Tuple[int, int] = None,
+        interpolation_method = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Convert matches (sparse or dense matches) given in epipolar
@@ -537,10 +539,10 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
 
         # convert epipolar matches to sensor coordinates
         sensor_pos_left = self.sensor_position_from_grid(
-            grid1, vec_epi_pos_left
+            grid1, vec_epi_pos_left, interpolation_method=interpolation_method
         )
         sensor_pos_right = self.sensor_position_from_grid(
-            grid2, vec_epi_pos_right
+            grid2, vec_epi_pos_right, interpolation_method=interpolation_method
         )
 
         if matches_type == cst.DISP_MODE:
@@ -576,6 +578,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         self,
         grid: Union[dict, RectificationGrid],
         positions: np.ndarray,
+        interpolation_method=None,
     ) -> np.ndarray:
         """
         Interpolate the positions given as inputs using the grid
@@ -648,6 +651,11 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
             min_row_idx : max_row_idx + 1, min_col_idx : max_col_idx + 1
         ]
 
+        if interpolation_method is not None:
+            method = interpolation_method
+        else:
+            method = self.interpolator
+
         # interpolate sensor positions
         interpolator = interpolate.RegularGridInterpolator(
             (cols_cropped, rows_cropped),
@@ -658,12 +666,32 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                 ),
                 axis=2,
             ),
-            method=self.interpolator,
+            method=method,
             bounds_error=False,
             fill_value=None,
         )
 
         sensor_positions = interpolator(positions)
+
+        min_row = np.min(sensor_row_positions_cropped)
+        max_row = np.max(sensor_row_positions_cropped)
+        min_col = np.min(sensor_col_positions_cropped)
+        max_col = np.max(sensor_col_positions_cropped)
+
+        valid_rows = np.logical_and(
+            sensor_positions[:, 0] > min_row,
+            sensor_positions[:, 0] < max_row,
+        )
+        valid_cols = np.logical_and(
+            sensor_positions[:, 1] > min_col,
+            sensor_positions[:, 1] < max_col,
+        )
+        valid = np.logical_and(valid_rows, valid_cols)
+
+        if np.sum(~valid) > 1:
+            logging.warning("{} points are outside of epipolar grid".format(np.sum(~valid)))
+
+        sensor_positions[~valid, :] = np.nan
 
         # swap
         sensor_positions[:, [0, 1]] = sensor_positions[:, [1, 0]]

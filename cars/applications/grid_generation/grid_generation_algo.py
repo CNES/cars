@@ -241,6 +241,7 @@ def compute_epipolar_grid_min_max(
         grid1,
         grid2,
         matches_min,
+        interpolation_method="linear",
     )
     pc_max = triangulate_matches(
         geometry_plugin,
@@ -251,6 +252,7 @@ def compute_epipolar_grid_min_max(
         grid1,
         grid2,
         matches_max,
+        interpolation_method="linear",
     )
 
     # Convert to correct EPSG
