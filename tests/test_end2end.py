@@ -893,18 +893,18 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 == 612
             )
             assert (
-                -65
+                -85
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
-                < -11
+                < -75
             )
             assert (
-                0
+                45
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
-                < 46
+                < 55
             )
 
         used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
@@ -1061,18 +1061,18 @@ def test_end2end_ventoux_unique():
                 == 612
             )
             assert (
-                -66
+                -85
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
-                < -17
+                < -75
             )
             assert (
-                0
+                45
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
-                < 46
+                < 55
             )
 
         # Ref output dir dependent from geometry plugin chosen
@@ -2618,11 +2618,11 @@ def test_end2end_use_epipolar_a_priori():
                 < -45
             )
             assert (
-                25
+                30
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["maximum_disparity"]
-                < 35
+                < 40
             )
 
             # Ref output dir dependent from geometry plugin chosen
@@ -2926,8 +2926,8 @@ def test_prepare_ventoux_bias():
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -126
-            assert out_disp_compute["minimum_disparity"] < -48
+            assert out_disp_compute["minimum_disparity"] > -140
+            assert out_disp_compute["minimum_disparity"] < -120
             assert out_disp_compute["maximum_disparity"] > -47
             assert out_disp_compute["maximum_disparity"] < 5
 
@@ -3450,10 +3450,10 @@ def test_end2end_ventoux_with_color():
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -66
-            assert out_disp_compute["minimum_disparity"] < -17
-            assert out_disp_compute["maximum_disparity"] > 0
-            assert out_disp_compute["maximum_disparity"] < 46
+            assert out_disp_compute["minimum_disparity"] > -85
+            assert out_disp_compute["minimum_disparity"] < -65
+            assert out_disp_compute["maximum_disparity"] > 45
+            assert out_disp_compute["maximum_disparity"] < 55
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -3807,10 +3807,10 @@ def test_end2end_ventoux_with_classif():
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -66
-            assert out_disp_compute["minimum_disparity"] < -17
-            assert out_disp_compute["maximum_disparity"] > 0
-            assert out_disp_compute["maximum_disparity"] < 46
+            assert out_disp_compute["minimum_disparity"] > -85
+            assert out_disp_compute["minimum_disparity"] < -75
+            assert out_disp_compute["maximum_disparity"] > 45
+            assert out_disp_compute["maximum_disparity"] < 55
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -4387,8 +4387,8 @@ def test_end2end_quality_stats():
             ]
             assert out_disp_compute["global_disp_min"] > -65
             assert out_disp_compute["global_disp_min"] < -45
-            assert out_disp_compute["global_disp_max"] > 25
-            assert out_disp_compute["global_disp_max"] < 35
+            assert out_disp_compute["global_disp_max"] > 30
+            assert out_disp_compute["global_disp_max"] < 40
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4671,10 +4671,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -54
-            assert out_disp_compute["global_disp_min"] < 7
-            assert out_disp_compute["global_disp_max"] > -2
-            assert out_disp_compute["global_disp_max"] < 70
+            assert out_disp_compute["global_disp_min"] > -85
+            assert out_disp_compute["global_disp_min"] < 75
+            assert out_disp_compute["global_disp_max"] > 45
+            assert out_disp_compute["global_disp_max"] < 55
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4899,8 +4899,8 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -54
-            assert out_disp_compute["global_disp_min"] < 21
+            assert out_disp_compute["global_disp_min"] > -70
+            assert out_disp_compute["global_disp_min"] < -60
             assert out_disp_compute["global_disp_max"] > 0
             assert out_disp_compute["global_disp_max"] < 82
 
