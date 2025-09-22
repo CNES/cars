@@ -41,7 +41,6 @@ def test_check_full_conf_exogenous_filling():
     """
     conf = {
         "method": "exogenous_filling",
-        "activated": True,
         "classification": ["cloud", "lake", "sea"],
         "fill_with_geoid": ["sea"],
         "save_intermediate_data": False,
@@ -56,7 +55,6 @@ def test_check_full_conf_bulldozer_filling():
     """
     conf = {
         "method": "bulldozer",
-        "activated": True,
         "classification": ["cloud", "lake", "sea"],
         "save_intermediate_data": False,
     }
@@ -70,7 +68,6 @@ def test_check_full_conf_border_interpolation():
     """
     conf = {
         "method": "border_interpolation",
-        "activated": True,
         "classification": ["cloud", "lake", "sea"],
         "component_min_size": 5,
         "border_size": 10,

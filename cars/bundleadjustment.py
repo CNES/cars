@@ -429,7 +429,7 @@ def new_rpcs_from_matches(
         matches_filename = os.path.join(
             sparse_matching_directory,
             "dump_dir",
-            "sparse_matching.sift",
+            "sparse_matching",
             "_".join(pair),
             "filtered_matches.npy",
         )
@@ -592,15 +592,13 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
     sparse_matching_config["output"]["product_level"] = []
     sparse_matching_config["advanced"] = {}
     sparse_matching_config["advanced"]["epipolar_resolutions"] = [1]
-    if "sparse_matching.sift" not in sparse_matching_config["applications"]:
-        sparse_matching_config["applications"]["all"] = {
-            "sparse_matching.sift": {}
-        }
-    sparse_matching_config["applications"]["all"]["sparse_matching.sift"][
+    if "sparse_matching" not in sparse_matching_config["applications"]:
+        sparse_matching_config["applications"]["all"] = {"sparse_matching": {}}
+    sparse_matching_config["applications"]["all"]["sparse_matching"][
         "save_intermediate_data"
     ] = True
 
-    sparse_matching_config["applications"]["all"]["sparse_matching.sift"][
+    sparse_matching_config["applications"]["all"]["sparse_matching"][
         "decimation_factor"
     ] = 100
 
