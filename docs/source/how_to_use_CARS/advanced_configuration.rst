@@ -289,13 +289,17 @@ The structure follows this organization:
                 +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
                 | preprocessing_median_filter_size    | Size (in pixels) of first median filter used to smooth median DEM               | int        | should be > 0   | 5                | No       |
                 +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
-                | dem_median_downsample_factor        | Downsample factor on dsm to generate median DEM                                 | int        | should be > 0   | 15               | No       |
+                | dem_median_downscale                | Downsample factor on dsm to generate median DEM                                 | int        | should be > 0   | 10               | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | dem_min_max_downscale               | Downsample factor on dsm to generate DEM min and DEM max                        | int        | should be > 0   | 10               | No       |
                 +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
                 | postprocessing_median_filter_size   | Size (in pixels) of second median filter used to smooth downsampled median DEM  | int        | should be > 0   | 7                | No       |
                 +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
                 | bulldozer_max_object_size           | Bulldozer parameter "max_object_size"                                           | int        | should be > 0   | 16               | No       |
                 +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
                 | compute_stats                       | Compute statistics of difference between DEM min/max and original DSM           | boolean    |                 | true             | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                | disable_bulldozer                   | Disable Bulldozer step to fasten the DEM generation                             | boolean    |                 | false            | No       |
                 +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
 
                 **Example**
