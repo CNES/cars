@@ -31,15 +31,15 @@ The Merge Request shall have a short description of the proposed changes. If it 
 Likewise, if you work on a branch (which is recommended), prefix the branch's name by `xx-` in order to link it to the xx issue.
 
 CARS Classical workflow is :
-* Check Licence and sign [Contributor Licence Agreement](#contribution-license-agreement) (Individual or Corporate)
-* Create an issue (or begin from an existing one)
-* Create a Merge Request from the issue: a MR is created accordingly with "WIP:", "Closes xx" and associated "xx-name-issue" branch
-* CARS hacking code from a local working directory or from the forge (less possibilities) following [Developer manual](./docs/source/developer.rst)
-* Git add, commit and push from local working clone directory or from the forge directly
+* Check Licence and sign [Contributor Licence Agreement](#contribution-license-agreement) (Individual or Corporate).
+* Create an issue (or begin from an existing one).
+* Create a Merge Request from the issue: a MR is created accordingly with "WIP:", "Closes xx" and associated "xx-name-issue" branch.
+* CARS hacking code from a local working directory or from the forge (less possibilities) following developer guide from [user guide](https://cars.readthedocs.io/).
+* Git add, commit and push from local working clone directory or from the forge directly.
 * Follow [Conventional commits](https://www.conventionalcommits.org/) specifications for commit messages
-* Beware that quality pre-commit tools are installed in continuous integration with classical quality code tools (see [Developer manual](./docs/source/developer.rst)).
-* Launch the [tests](./docs/source/developer.rst) on your modifications (or don't forget to add ones).
-* When finished, change your Merge Request name (erase "WIP:" in title ) and ask `@cars` to review the code (see below Merge request acceptation process)
+* Beware that quality pre-commit tools are installed in continuous integration with classical quality code tools (see [user guide](https://cars.readthedocs.io/)).
+* Launch the tests on your modifications (or don't forget to add ones).
+* When finished, change your Merge Request name (erase "WIP:" in title ) and ask `@cars` to review the code (see below Merge request acceptation process).
 
 
 # Contribution license agreement
@@ -66,8 +66,7 @@ file](./AUTHORS.md).
 
 The Merge Request will be merged into master after being reviewed by CARS steering committee (core committers) composed of:
 * David Youssefi (CNES)
-* Emmanuelle Sarrazin (CNES)
-* Emmanuel Dubois (CNES)
+* Valentine Bellet (CNES)
 
 Only the members of this committee can merge into master.
 
