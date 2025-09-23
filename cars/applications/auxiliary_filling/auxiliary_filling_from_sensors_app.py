@@ -610,6 +610,16 @@ def filling_from_sensor_wrapper(
         values,
         coords=coords,
     )
+
+    crs_pyproj = CRS(crs.to_wkt())
+    if crs_pyproj.is_compound:
+        horizontal = crs_pyproj.sub_crs_list[0]
+        epsg = horizontal.to_epsg()
+    else:
+        epsg = crs_pyproj.to_epsg()
+
+    profile.update(crs="EPSG:" + str(epsg))
+
     cars_dataset.fill_dataset(
         dataset,
         saving_info=saving_info,
