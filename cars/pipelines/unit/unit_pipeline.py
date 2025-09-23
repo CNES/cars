@@ -987,6 +987,10 @@ class UnitPipeline(PipelineTemplate):
                 application_conf["grid_generation"]["epi_step"] = (
                     epipolar_resolution * 5
                 )
+            else:
+                application_conf["grid_generation"]["epi_step"] = (
+                    epipolar_resolution * 30
+                )
 
         return application_conf
 
