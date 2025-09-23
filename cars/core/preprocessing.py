@@ -72,6 +72,18 @@ def get_utm_zone_as_epsg_code(lon, lat):
         )
         return 32632
 
+    if lat > 84:
+        logging.warning(
+            "Since the latitude is above 84°, the EPSG 32661 will be used."
+        )
+        return 32661
+
+    if lat < -80:
+        logging.warning(
+            "Since the latitude is under -80°, the EPSG 32761 will be used."
+        )
+        return 32761
+
     zone = utm.from_latlon(lat, lon)[2]
 
     north_south = 600 if lat >= 0 else 700
