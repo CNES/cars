@@ -312,7 +312,6 @@ class SmallComponents(
 
         :rtype: CarsDataset filled with xr.Dataset
         """
-
         if not self.activated:
             return merged_point_cloud
 

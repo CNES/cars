@@ -472,6 +472,7 @@ class CensusMccnnSgm(
             overloaded_conf["confidence_filtering"]
         )
 
+    @cars_profile(name="Get margin fun")
     def get_margins_fun(self, grid_left, disp_range_grid):
         """
         Get Margins function that generates margins needed by
@@ -1044,7 +1045,6 @@ class CensusMccnnSgm(
 
         :rtype: CarsDataset
         """
-
         # Default orchestrator
         if orchestrator is None:
             # Create default sequential orchestrator for current application
