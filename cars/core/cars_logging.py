@@ -74,7 +74,7 @@ class ProfilingFilter(logging.Filter):  # pylint: disable=R0903
     """
 
     def filter(self, record):
-        """ "
+        """
         Filter message
         """
         return "PROFILING_LOG" not in record.msg
@@ -300,7 +300,6 @@ def setup_logging(
             "filename": log_file_workers,
             "level": min(numeric_level, logging.INFO),
             "formatter": "workers",
-            "filters": ["no_profiling"],
         }
         add_handler_name(logging_config, handler_workers)
 
