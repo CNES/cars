@@ -1,7 +1,5 @@
 ---
 inputs:
   sensors:
-    one:
-      image: ext_dir/***.tif
-      geomodel: ext_dir/***.geom
-      color: color_one.tif
+    one: ext_dir/ext_000.tif
+    two : ext_dir/ext_001.tif
