@@ -85,7 +85,7 @@ def process_image_file(
         region_geometry (dict): GeoJSON-like dictionary defining the region.
         input_image_path (str): Path to the input image file.
         output_image_path (str): Path to save the output image.
-        rpb_file_path (str): Path to save the .geom file.
+        rpb_file_path (str): Path to save the .RPB file.
         rpc_options (dict): Options for GDALCreateRPCTransformer.
     """
 
@@ -176,11 +176,11 @@ def validate_bounding_box(bbx, image_dataset, rpc_options):
 
 def create_rpb_file(image_dataset, rpb_filename):
     """
-    Create and save a .geom file from a rasterio dataset
+    Create and save a .RPB file from a rasterio dataset
 
     Parameters:
         image_dataset (rio.DatasetReader): Opened image dataset.
-        geom_filename (str): Path to save the .geom file.
+        rpb_filename (str): Path to save the .RPB file.
     """
     if not image_dataset.rpcs:
         raise ValueError("Image dataset has no RPCs")
