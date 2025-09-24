@@ -200,7 +200,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                     ):
                         dsm_to_dtm(bull_conf_path)
         except Exception:
-            logging.error(
+            logging.warning(
                 "Bulldozer failed on its second execution."
                 + " The DSM could not be filled."
             )
