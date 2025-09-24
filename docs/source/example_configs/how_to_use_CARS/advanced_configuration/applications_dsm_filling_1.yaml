@@ -2,7 +2,6 @@
 applications:
   dsm_filling.1:
     method: exogenous_filling
-    activated: true
     classification:
     - sea
     fill_with_geoid:
@@ -10,13 +9,11 @@ applications:
     save_intermediate_data: true
   dsm_filling.2:
     method: bulldozer
-    activated: true
     classification:
     - cloud
     save_intermediate_data: true
   dsm_filling.3:
     method: border_interpolation
-    activated: true
     classification:
     - lake
     save_intermediate_data: true
