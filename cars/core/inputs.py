@@ -131,6 +131,8 @@ def rasterio_get_values(raster_file: str, x_list, y_list, proj_function):
         window = Window(min_pt[1], min_pt[0], height, width)
 
         data = descriptor.read(1, window=window)
+        if data.size == 0:
+            return None
 
         # read the data for all points
         max_sampled_pos = np.array(data.shape)[:2] - 1
