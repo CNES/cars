@@ -1743,6 +1743,10 @@ class UnitPipeline(PipelineTemplate):
                 )
             )
 
+            # Quick fix to reduce memory usage
+            if self.res_resamp >= 16:
+                optimum_tile_size = 200
+
             # Run third epipolar resampling
             (
                 new_epipolar_image_left,
