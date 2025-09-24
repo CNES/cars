@@ -1870,7 +1870,8 @@ class UnitPipeline(PipelineTemplate):
                 if self.which_resolution not in ("final", "single"):
                     self.terrain_bounds = dem_wrappers.modify_terrain_bounds(
                         self.terrain_bounds,
-                        self.dem_generation_application.margin,
+                        self.dem_generation_application.margin[0],
+                        self.dem_generation_application.margin[1],
                     )
 
             if self.dense_matching_app.get_method() == "auto":

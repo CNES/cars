@@ -141,7 +141,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             "resolution", float(self.scaling_coeff * 0.5)
         )
         overloaded_conf["margin"] = conf.get(
-            "margin", float(math.sqrt(self.scaling_coeff) * 500)
+            "margin", [0.2, float(math.sqrt(self.scaling_coeff) * 500)]
         )
         overloaded_conf["morphological_filters_size"] = conf.get(
             "morphological_filters_size", 30
@@ -185,7 +185,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             "method": str,
             "resolution": And(Or(float, int), lambda x: x > 0),
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
-            "margin": And(Or(float, int), lambda x: x > 0),
+            "margin": [Or(float, int)],
             "morphological_filters_size": And(int, lambda x: x > 0),
             "preprocessing_median_filter_size": And(int, lambda x: x > 0),
             "postprocessing_median_filter_size": And(int, lambda x: x > 0),

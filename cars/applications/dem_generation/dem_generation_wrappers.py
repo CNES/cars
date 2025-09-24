@@ -306,7 +306,7 @@ def downsample_dem(
         dst.write(dem_data, 1)
 
 
-def modify_terrain_bounds(terrain_bounds, margin):
+def modify_terrain_bounds(terrain_bounds, linear_margin, constant_margin):
     """
     Modify the terrain bounds
 
@@ -315,10 +315,12 @@ def modify_terrain_bounds(terrain_bounds, margin):
     :param margin: Margin of the output ROI in meters
     :type margin: int
     """
-    xmin = terrain_bounds[0] - margin
-    ymin = terrain_bounds[1] - margin
-    xmax = terrain_bounds[2] + margin
-    ymax = terrain_bounds[3] + margin
+    xsize = terrain_bounds[2] - terrain_bounds[0]
+    ysize = terrain_bounds[3] - terrain_bounds[1]
+    xmin = terrain_bounds[0] - linear_margin * xsize - constant_margin
+    ymin = terrain_bounds[1] - linear_margin * ysize - constant_margin
+    xmax = terrain_bounds[2] + linear_margin * xsize + constant_margin
+    ymax = terrain_bounds[3] + linear_margin * ysize + constant_margin
 
     terrain_bounds = [xmin, ymin, xmax, ymax]
 

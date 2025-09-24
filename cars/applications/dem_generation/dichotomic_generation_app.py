@@ -129,7 +129,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         overloaded_conf["resolution"] = conf.get("resolution", 90)
         # default margin: (z max - zmin) * tan(teta)
         # with z max = 9000, z min = 0, teta = 30 degrees
-        overloaded_conf["margin"] = conf.get("margin", 6000)
+        overloaded_conf["margin"] = conf.get("margin", [0, 6000])
         overloaded_conf["height_margin"] = conf.get("height_margin", 20)
         overloaded_conf["percentile"] = conf.get("percentile", 1)
         overloaded_conf["min_number_matches"] = conf.get(
@@ -154,7 +154,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         rectification_schema = {
             "method": str,
             "resolution": And(Or(float, int), lambda x: x > 0),
-            "margin": And(Or(float, int), lambda x: x > 0),
+            "margin": [Or(float, int)],
             "height_margin": Or(list, int),
             "percentile": And(Or(int, float), lambda x: x >= 0),
             "min_number_matches": And(int, lambda x: x > 0),
