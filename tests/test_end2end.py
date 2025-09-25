@@ -5094,20 +5094,17 @@ def test_end2end_paca_with_mask():
         # clean out dir for second run
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
+        # remove all dsm fillings, add dense match filling
         input_config_dense_dsm["applications"]["1"].update(
             {
                 "dense_match_filling": {
                     "method": "zero_padding",
                     "classification": ["b0", "b2"],
-                },
-                "dsm_filling.1": {
-                    "method": "exogenous_filling",
-                },
-                "dsm_filling.2": {
-                    "method": "bulldozer",
-                },
+                }
             }
         )
+        del input_config_dense_dsm["applications"]["1"]["dsm_filling.1"]
+        del input_config_dense_dsm["applications"]["1"]["dsm_filling.2"]
 
         dense_dsm_pipeline_matches = default.DefaultPipeline(
             input_config_dense_dsm
@@ -5186,9 +5183,6 @@ def test_end2end_paca_with_mask():
                 "dsm_filling.1": {
                     "method": "exogenous_filling",
                     "classification": ["b0", "b2"],
-                },
-                "dsm_filling.2": {
-                    "method": "bulldozer",
                 },
                 "auxiliary_filling": {"activated": False},
                 "dsm_filling.3": {
