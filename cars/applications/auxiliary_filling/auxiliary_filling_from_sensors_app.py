@@ -463,7 +463,7 @@ def filling_from_sensor_wrapper(
                 dst_crs=crs,
                 resampling=Resampling.bilinear,
             )
-            alt_values -= output_geoid_data
+            alt_values += output_geoid_data
 
     nodata_color = None
     nodata_classif = None
