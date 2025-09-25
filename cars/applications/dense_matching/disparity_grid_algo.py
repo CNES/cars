@@ -288,7 +288,9 @@ def generate_disp_range_from_dem_wrapper(
         (np.max(col_range_with_margin), np.min(row_range_with_margin)),
         (np.max(col_range_with_margin), np.max(row_range_with_margin)),
     ]
-    sensor_bbox = geo_plugin.sensor_position_from_grid(grid_right, epi_bbox)
+    sensor_bbox = geo_plugin.sensor_position_from_grid(
+        grid_right, epi_bbox, interpolation_method="linear"
+    )
     row_sensor_bbox, col_sensor_bbox = transform_physical_point_to_index(
         trans_inv_sensor, sensor_bbox[:, 1], sensor_bbox[:, 0]
     )
@@ -357,6 +359,18 @@ def generate_disp_range_from_dem_wrapper(
     dem_max_list = inputs.rasterio_get_values(
         dem_max, lon_mean, lat_mean, point_cloud_conversion
     )
+    if dem_min_list is None or dem_max_list is None:
+        logging.warning("DEM min and DEM max does not cover this tile")
+        disp_range, global_infos = empty_disparity_grids(
+            row_range_no_margin,
+            col_range_no_margin,
+            epipolar_grid_array_window,
+            raster_profile,
+            saving_info,
+            saving_info_global_infos,
+        )
+        return disp_range, global_infos
+
     nan_mask = nan_mask & ~np.isnan(dem_min_list) & ~np.isnan(dem_max_list)
 
     # filter nan value from input points
@@ -400,6 +414,7 @@ def generate_disp_range_from_dem_wrapper(
                     2,
                 ),
             ),
+            interpolation_method="linear",
         )
     )
 
@@ -412,37 +427,14 @@ def generate_disp_range_from_dem_wrapper(
 
     if len(ind_rows_sensor) < 5:
         # QH6214 needs at least 4 points for interpolation
-
-        grid_min = np.empty(
-            (len(row_range_no_margin), len(col_range_no_margin))
-        )
-        grid_max = np.empty(
-            (len(row_range_no_margin), len(col_range_no_margin))
-        )
-        grid_min[:, :] = 0
-        grid_max[:, :] = 0
-
-        disp_range = generate_disp_grids_dataset(
-            grid_min,
-            grid_max,
-            saving_info,
+        disp_range, global_infos = empty_disparity_grids(
+            row_range_no_margin,
+            col_range_no_margin,
+            epipolar_grid_array_window,
             raster_profile,
-            window=epipolar_grid_array_window,
-            row_coords=row_range_no_margin,
-            col_coords=col_range_no_margin,
+            saving_info,
+            saving_info_global_infos,
         )
-
-        # Generate infos on global min and max
-        global_infos = cars_dict.CarsDict(
-            {
-                "global_min": 0,
-                "global_max": 0,
-            }
-        )
-        cars_dataset.fill_dict(
-            global_infos, saving_info=saving_info_global_infos
-        )
-
         return disp_range, global_infos
 
     # Interpolate disparity
@@ -525,6 +517,56 @@ def generate_disp_range_from_dem_wrapper(
         {
             "global_min": np.floor(np.nanmin(grid_min)),
             "global_max": np.ceil(np.nanmax(grid_max)),
+        }
+    )
+    cars_dataset.fill_dict(global_infos, saving_info=saving_info_global_infos)
+
+    return disp_range, global_infos
+
+
+def empty_disparity_grids(
+    row_range_no_margin,
+    col_range_no_margin,
+    epipolar_grid_array_window,
+    raster_profile,
+    saving_info,
+    saving_info_global_infos,
+):
+    """
+    Return empty disparity grids
+    :param row_range_no_margin: Rows id in grid
+    :type row_range_no_margin: int
+    :param col_range_no_margin: Cols id in grid
+    :type col_range_no_margin: int
+    :param epipolar_grid_array_window: ROI of grid
+    :type epipolar_grid_array_window: dict
+    :param raster_profile: The raster profile.
+    :type raster_profile: dict
+    :param saving_info: The disp range grid saving information.
+    :type saving_info: dict
+    :param saving_info_global_infos: Global info saving infos.
+    :type saving_info_global_infos: dict
+    """
+    grid_min = np.empty((len(row_range_no_margin), len(col_range_no_margin)))
+    grid_max = np.empty((len(row_range_no_margin), len(col_range_no_margin)))
+    grid_min[:, :] = 0
+    grid_max[:, :] = 0
+
+    disp_range = generate_disp_grids_dataset(
+        grid_min,
+        grid_max,
+        saving_info,
+        raster_profile,
+        window=epipolar_grid_array_window,
+        row_coords=row_range_no_margin,
+        col_coords=col_range_no_margin,
+    )
+
+    # Generate infos on global min and max
+    global_infos = cars_dict.CarsDict(
+        {
+            "global_min": 0,
+            "global_max": 0,
         }
     )
     cars_dataset.fill_dict(global_infos, saving_info=saving_info_global_infos)

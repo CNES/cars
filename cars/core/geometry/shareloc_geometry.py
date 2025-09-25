@@ -30,7 +30,7 @@ import numpy as np
 import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
 import xarray as xr
-from json_checker import Checker
+from json_checker import And, Checker
 from shareloc.dtm_reader import dtm_reader
 from shareloc.geofunctions import localization
 from shareloc.geofunctions.rectification_grid import RectificationGrid
@@ -41,7 +41,7 @@ from shareloc.geomodels.rpc import RPC
 from shareloc.image import Image
 
 from cars.core import constants as cst
-from cars.core import inputs, projection
+from cars.core import projection
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 
 GRID_TYPE = "GRID"
@@ -64,6 +64,7 @@ class SharelocGeometry(AbstractGeometry):
         default_alt=None,
         pairs_for_roi=None,
         scaling_coeff=1,
+        output_dem_dir=None,
     ):
 
         super().__init__(
@@ -73,50 +74,27 @@ class SharelocGeometry(AbstractGeometry):
             default_alt=default_alt,
             pairs_for_roi=pairs_for_roi,
             scaling_coeff=scaling_coeff,
+            output_dem_dir=output_dem_dir,
         )
 
-        self.dem_roi = None
-        self.roi_shareloc = None
-        self.elevation = None
-
-        # a margin is needed for cubic interpolation
-        self.rectification_grid_margin = 0
-        if self.interpolator == "cubic":
-            self.rectification_grid_margin = 5
-
-        # compute roi only when generating geometry object with dem
-        # even if dem is None
-        if geoid is not None and pairs_for_roi is not None:
-            self.dem_roi_epsg = 4326
-            if dem is not None:
-                # Get dem epsg
-                self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
-
-            self.roi_shareloc = self.get_roi(
-                pairs_for_roi,
-                self.dem_roi_epsg,
-                z_min=0,
-                z_max=0,
-                margin=self.dem_roi_margin,
-            )
-            # change convention
-            self.dem_roi = [
-                self.roi_shareloc[1],
-                self.roi_shareloc[0],
-                self.roi_shareloc[3],
-                self.roi_shareloc[2],
-            ]
-
         if dem is not None:
-
             # fill_nodata option should be set when dealing with void in DTM
-            # see shareloc DTM limitations in sphinx doc for further details
-
+            # see shareloc DTM limitations in sphinx doc for further detailsd
             try:
+                if self.dem_roi is None:
+                    roi_shareloc = None
+                else:
+                    # From (x, y) to (y, x)
+                    roi_shareloc = [
+                        self.dem_roi[1],
+                        self.dem_roi[0],
+                        self.dem_roi[3],
+                        self.dem_roi[2],
+                    ]
                 dtm_image = dtm_reader(
-                    dem,
-                    geoid,
-                    roi=self.roi_shareloc,
+                    self.dem,
+                    self.geoid,
+                    roi=roi_shareloc,
                     roi_is_in_physical_space=True,
                     fill_nodata="mean",
                     fill_value=0.0,
@@ -143,7 +121,56 @@ class SharelocGeometry(AbstractGeometry):
         else:
             self.elevation = default_alt
 
-    def get_roi(self, pairs_for_roi, epsg, z_min=0, z_max=0, margin=0.012):
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: str or dict
+
+        :return: full dict
+        :rtype: dict
+
+        """
+
+        if conf is None:
+            raise RuntimeError("Geometry plugin configuration is None")
+
+        overloaded_conf = {}
+
+        if isinstance(conf, str):
+            conf = {"plugin_name": conf}
+
+        # overload conf
+        overloaded_conf["plugin_name"] = conf.get(
+            "plugin_name", "SharelocGeometry"
+        )
+        overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
+        overloaded_conf["dem_roi_margin"] = conf.get(
+            "dem_roi_margin", [0.25, 0.02]
+        )
+
+        geometry_schema = {
+            "plugin_name": str,
+            "interpolator": And(str, lambda x: x in ["cubic", "linear"]),
+            "dem_roi_margin": [float],
+        }
+
+        # Check conf
+        checker = Checker(geometry_schema)
+        checker.validate(overloaded_conf)
+
+        return overloaded_conf
+
+    def get_roi(
+        self,
+        pairs_for_roi,
+        epsg,
+        z_min=0,
+        z_max=0,
+        linear_margin=0,
+        constant_margin=0.012,
+    ):
         """
         Compute region of interest for intersection of DEM
 
@@ -151,35 +178,17 @@ class SharelocGeometry(AbstractGeometry):
         :type pairs_for_roi: List[(str, dict, str, dict)]
         :param dem_epsg: output EPSG code for ROI
         :type dem_epsg: int
-        :param margin: margin for ROI in degrees
-        :type margin: float
+        :param linear_margin: margin for ROI (factor of initial ROI size)
+        :type linear_margin: float
+        :param constant_margin: margin for ROI in degrees
+        :type constant_margin: float
         """
+        base_roi = super().get_roi(
+            pairs_for_roi, epsg, z_min, z_max, linear_margin, constant_margin
+        )
+
         coords_list = []
-        for image1, geomodel1, image2, geomodel2 in pairs_for_roi:
-            # Footprint of left image with altitude z_min
-            coords_list.extend(
-                self.image_envelope(
-                    image1["main_file"], geomodel1, elevation=z_min
-                )
-            )
-            # Footprint of left image with altitude z_max
-            coords_list.extend(
-                self.image_envelope(
-                    image1["main_file"], geomodel1, elevation=z_max
-                )
-            )
-            # Footprint of right image with altitude z_min
-            coords_list.extend(
-                self.image_envelope(
-                    image2["main_file"], geomodel2, elevation=z_min
-                )
-            )
-            # Footprint of right image with altitude z_max
-            coords_list.extend(
-                self.image_envelope(
-                    image2["main_file"], geomodel2, elevation=z_max
-                )
-            )
+        for image1, geomodel1, _, geomodel2 in pairs_for_roi:
             # Footprint of rectification grid (with margins)
             image1 = SharelocGeometry.load_image(image1["main_file"])
             geomodel1 = self.load_geom_model(geomodel1)
@@ -206,28 +215,45 @@ class SharelocGeometry(AbstractGeometry):
             )
             lat_min, lon_min, lat_max, lon_max = list(epipolar_extent)
             coords_list.extend([(lon_min, lat_min), (lon_max, lat_max)])
+
         lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
         roi = [
-            min(lat_list) - margin,
-            min(lon_list) - margin,
-            max(lat_list) + margin,
-            max(lon_list) + margin,
+            min(lon_list) - constant_margin,
+            min(lat_list) - constant_margin,
+            max(lon_list) + constant_margin,
+            max(lat_list) + constant_margin,
         ]
         points = np.array(
             [
-                (roi[1], roi[0], 0),
-                (roi[3], roi[2], 0),
-                (roi[1], roi[0], 0),
-                (roi[3], roi[2], 0),
+                (roi[0], roi[1], 0),
+                (roi[2], roi[3], 0),
+                (roi[0], roi[1], 0),
+                (roi[2], roi[3], 0),
             ]
         )
         new_points = projection.point_cloud_conversion(points, 4326, epsg)
         roi = [
-            min(new_points[:, 1]),
             min(new_points[:, 0]),
-            max(new_points[:, 1]),
+            min(new_points[:, 1]),
             max(new_points[:, 0]),
+            max(new_points[:, 1]),
         ]
+
+        lon_size = roi[2] - roi[0]
+        lat_size = roi[3] - roi[1]
+
+        roi[0] -= linear_margin * lon_size
+        roi[1] -= linear_margin * lat_size
+        roi[2] += linear_margin * lon_size
+        roi[3] += linear_margin * lat_size
+
+        roi = [
+            min(roi[0], base_roi[0]),
+            min(roi[1], base_roi[1]),
+            max(roi[2], base_roi[2]),
+            max(roi[3], base_roi[3]),
+        ]
+
         return roi
 
     @staticmethod
@@ -317,6 +343,7 @@ class SharelocGeometry(AbstractGeometry):
         grid1: Union[dict, RectificationGrid],
         grid2: Union[dict, RectificationGrid],
         roi_key: Union[None, str] = None,
+        interpolation_method=None,
     ) -> np.ndarray:
         """
         Performs triangulation from cars disparity or matches dataset

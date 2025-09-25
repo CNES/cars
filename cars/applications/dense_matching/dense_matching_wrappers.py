@@ -21,7 +21,7 @@
 This module is responsible for the dense matching algorithms:
 - thus it creates a disparity map from a pair of images
 """
-# pylint: disable=too-many-lines
+# pylint: disable=C0302
 
 # Standard imports
 import logging

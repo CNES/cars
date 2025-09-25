@@ -32,7 +32,6 @@ from __future__ import print_function
 
 import copy
 import logging
-import math
 import os
 
 import numpy as np
@@ -112,7 +111,6 @@ class UnitPipeline(PipelineTemplate):
             save_output_point_clouds
             geom_plugin_without_dem_and_geoid
             geom_plugin_with_dem_and_geoid
-            dem_generation_roi
 
         :param pipeline_name: name of the pipeline.
         :type pipeline_name: str
@@ -146,18 +144,24 @@ class UnitPipeline(PipelineTemplate):
 
         # Check advanced parameters
         # TODO static method in the base class
+        output_dem_dir = os.path.join(
+            conf[OUTPUT][out_cst.OUT_DIRECTORY], "dump_dir", "initial_elevation"
+        )
+        safe_makedirs(output_dem_dir)
         (
             inputs,
             advanced,
             self.geometry_plugin,
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
-            self.dem_generation_roi,
             self.scaling_coeff,
             self.land_cover_map,
             self.classification_to_config_mapping,
         ) = advanced_parameters.check_advanced_parameters(
-            inputs, conf.get(ADVANCED, {}), check_epipolar_a_priori=True
+            inputs,
+            conf.get(ADVANCED, {}),
+            check_epipolar_a_priori=True,
+            output_dem_dir=output_dem_dir,
         )
         self.used_conf[ADVANCED] = advanced
 
@@ -182,6 +186,9 @@ class UnitPipeline(PipelineTemplate):
         ) = self.check_output(conf[OUTPUT], self.scaling_coeff)
 
         self.used_conf[OUTPUT] = output
+        self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+        self.dump_dir = os.path.join(self.out_dir, "dump_dir")
+
         self.refined_conf[OUTPUT] = copy.deepcopy(output)
 
         prod_level = output[out_cst.PRODUCT_LEVEL]
@@ -879,25 +886,6 @@ class UnitPipeline(PipelineTemplate):
         application_conf["sparse_matching.sift"] = (
             self.sparse_mtch_sift_app.get_conf()
         )
-
-        if (
-            application_conf["dem_generation"]["method"]
-            == "bulldozer_on_raster"
-        ):
-            first_image_path = next(iter(inputs_conf["sensors"].values()))[
-                "image"
-            ]["main_file"]
-            first_image_size = rasterio_get_size(first_image_path)
-            first_image_nb_pixels = math.prod(first_image_size)
-            dem_gen_used_mem = first_image_nb_pixels / 1e8
-            if dem_gen_used_mem > 8:
-                logging.warning(
-                    "DEM generation method is 'bulldozer_on_raster'. "
-                    f"This method can use up to {dem_gen_used_mem} Gb "
-                    "of memory. If you think that it is too much for "
-                    "your computer, you can re-lauch the run using "
-                    "'dichotomic' method for DEM generation"
-                )
 
         # check classification application parameter compare
         # to each sensors inputs classification list
@@ -1880,28 +1868,11 @@ class UnitPipeline(PipelineTemplate):
                 )
 
                 if self.which_resolution not in ("final", "single"):
-                    # To get the correct size for the dem generation
-                    if self.dem_generation_roi is not None:
-                        # ROI has been computed by Shareloc
-                        self.terrain_bounds = (
-                            dem_wrappers.modify_terrain_bounds(
-                                self.dem_generation_roi.bounds,
-                                4326,
-                                self.epsg,
-                                self.dem_generation_application.margin,
-                            )
-                        )
-                    else:
-                        # ROI has not been computed
-                        self.terrain_bounds = (
-                            dem_wrappers.modify_terrain_bounds(
-                                self.terrain_bounds,
-                                self.epsg,
-                                self.epsg,
-                                self.dem_generation_application.margin,
-                                0.7,
-                            )
-                        )
+                    self.terrain_bounds = dem_wrappers.modify_terrain_bounds(
+                        self.terrain_bounds,
+                        self.dem_generation_application.margin[0],
+                        self.dem_generation_application.margin[1],
+                    )
 
             if self.dense_matching_app.get_method() == "auto":
                 # Copy the initial corr_config in order to keep
@@ -2428,11 +2399,15 @@ class UnitPipeline(PipelineTemplate):
 
             if self.used_conf[ADVANCED][USE_ENDOGENOUS_DEM]:
                 # Generate new geom plugin with dem
+                output_dem_dir = os.path.join(
+                    self.dump_dir, "initial_elevation"
+                )
                 new_geom_plugin = (
                     sensor_inputs.generate_geometry_plugin_with_dem(
                         self.geometry_plugin,
                         self.used_conf[INPUTS],
                         dem=dem_median,
+                        output_dem_dir=output_dem_dir,
                     )
                 )
 
@@ -2989,9 +2964,6 @@ class UnitPipeline(PipelineTemplate):
         Run pipeline
 
         """
-
-        self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
-        self.dump_dir = os.path.join(self.out_dir, "dump_dir")
         if log_dir is not None:
             self.log_dir = log_dir
         else:

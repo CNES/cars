@@ -33,7 +33,10 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import rasterio as rio
 import xarray as xr
-from json_checker import And, Checker, Or
+from affine import Affine
+from json_checker import And, Checker
+from rasterio.enums import Resampling
+from rasterio.warp import reproject
 from scipy import interpolate
 from scipy.interpolate import LinearNDInterpolator
 from shapely.geometry import Polygon
@@ -41,20 +44,26 @@ from shareloc import proj_utils
 from shareloc.geofunctions.rectification_grid import RectificationGrid
 
 from cars.core import constants as cst
-from cars.core import inputs, outputs
+from cars.core import inputs, outputs, projection
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
-class AbstractGeometry(metaclass=ABCMeta):
+class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
     """
     AbstractGeometry
     """
 
     available_plugins: Dict = {}
 
-    def __new__(cls, geometry_plugin_conf=None, scaling_coeff=1, **kwargs):
+    def __new__(
+        cls,
+        geometry_plugin_conf=None,
+        pairs_for_roi=None,
+        scaling_coeff=1,
+        **kwargs,
+    ):
         """
         Return the required plugin
         :raises:
@@ -106,24 +115,211 @@ class AbstractGeometry(metaclass=ABCMeta):
         dem=None,
         geoid=None,
         default_alt=None,
+        pairs_for_roi=None,
         scaling_coeff=1,
+        output_dem_dir=None,
         **kwargs,
     ):
-
         self.scaling_coeff = scaling_coeff
 
-        config = self.check_conf(geometry_plugin_conf)
+        self.used_config = self.check_conf(geometry_plugin_conf)
 
-        self.plugin_name = config["plugin_name"]
-        self.interpolator = config["interpolator"]
-        self.dem_roi_margin = config["dem_roi_margin"]
-
-        self.dem = dem
+        self.plugin_name = self.used_config["plugin_name"]
+        self.interpolator = self.used_config["interpolator"]
+        self.dem_roi_margin = self.used_config["dem_roi_margin"]
+        self.dem = None
         self.dem_roi = None
         self.dem_roi_epsg = None
         self.geoid = geoid
         self.default_alt = default_alt
+        self.elevation = default_alt
+        # a margin is needed for cubic interpolation
+        self.rectification_grid_margin = 0
+        if self.interpolator == "cubic":
+            self.rectification_grid_margin = 5
         self.kwargs = kwargs
+
+        # compute roi only when generating geometry object with dem
+        if dem is not None:
+            self.dem = dem
+            self.default_alt = self.get_dem_median_value()
+            self.elevation = self.default_alt
+            logging.info(
+                "Median value of DEM ({}) will be used as default_alt".format(
+                    self.default_alt
+                )
+            )
+            if pairs_for_roi is not None:
+                self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
+                self.dem_roi = self.get_roi(
+                    pairs_for_roi,
+                    self.dem_roi_epsg,
+                    z_min=-1000,
+                    z_max=9000,
+                    linear_margin=self.dem_roi_margin[0],
+                    constant_margin=self.dem_roi_margin[1],
+                )
+                if output_dem_dir is not None:
+                    self.dem = self.extend_dem_to_roi(dem, output_dem_dir)
+
+    def get_dem_median_value(self):
+        """
+        Compute dem median value
+        :param dem: path of DEM
+        """
+        with rio.open(self.dem) as dem_file:
+            dem_data = dem_file.read(1)
+            median_value = np.nanmedian(dem_data)
+        median_value = float(median_value)
+        return median_value
+
+    def get_roi(
+        self,
+        pairs_for_roi,
+        epsg,
+        z_min=0,
+        z_max=0,
+        linear_margin=0,
+        constant_margin=0.012,
+    ):
+        """
+        Compute region of interest for intersection of DEM
+
+        :param pairs_for_roi: list of pairs of images and geomodels
+        :type pairs_for_roi: List[(str, dict, str, dict)]
+        :param dem_epsg: output EPSG code for ROI
+        :type dem_epsg: int
+        :param linear_margin: margin for ROI (factor of initial ROI size)
+        :type linear_margin: float
+        :param constant_margin: margin for ROI in degrees
+        :type constant_margin: float
+        """
+        coords_list = []
+        z_min = np.array(z_min)
+        z_max = np.array(z_max)
+        for image1, geomodel1, image2, geomodel2 in pairs_for_roi:
+            # Footprint of left image with altitude z_min
+            coords_list.extend(
+                self.image_envelope(
+                    image1["main_file"], geomodel1, elevation=z_min
+                )
+            )
+            # Footprint of left image with altitude z_max
+            coords_list.extend(
+                self.image_envelope(
+                    image1["main_file"], geomodel1, elevation=z_max
+                )
+            )
+            # Footprint of right image with altitude z_min
+            coords_list.extend(
+                self.image_envelope(
+                    image2["main_file"], geomodel2, elevation=z_min
+                )
+            )
+            # Footprint of right image with altitude z_max
+            coords_list.extend(
+                self.image_envelope(
+                    image2["main_file"], geomodel2, elevation=z_max
+                )
+            )
+        lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
+        roi = [
+            min(lon_list) - constant_margin,
+            min(lat_list) - constant_margin,
+            max(lon_list) + constant_margin,
+            max(lat_list) + constant_margin,
+        ]
+        points = np.array(
+            [
+                (roi[0], roi[1], 0),
+                (roi[2], roi[3], 0),
+                (roi[0], roi[1], 0),
+                (roi[2], roi[3], 0),
+            ]
+        )
+        new_points = projection.point_cloud_conversion(points, 4326, epsg)
+        roi = [
+            min(new_points[:, 0]),
+            min(new_points[:, 1]),
+            max(new_points[:, 0]),
+            max(new_points[:, 1]),
+        ]
+
+        lon_size = roi[2] - roi[0]
+        lat_size = roi[3] - roi[1]
+
+        roi[0] -= linear_margin * lon_size
+        roi[1] -= linear_margin * lat_size
+        roi[2] += linear_margin * lon_size
+        roi[3] += linear_margin * lat_size
+
+        return roi
+
+    def extend_dem_to_roi(self, dem, output_dem_dir):
+        """
+        Extend the size of the dem to the required ROI and fill
+        :param dem: path to the input DEM
+        :param output_dem_dir: path to write the output extended DEM
+        """
+        with rio.open(dem) as in_dem:
+            src_dem = in_dem.read(1)
+            metadata = in_dem.meta
+            src_transform = in_dem.transform
+            crs = in_dem.crs
+            bounds = in_dem.bounds
+
+        logging.info(
+            "DEM bounds : {}, {}, {}, {}".format(
+                bounds.left, bounds.top, bounds.right, bounds.bottom
+            )
+        )
+        logging.info(
+            "ROI bounds : {}, {}, {}, {}".format(
+                self.dem_roi[0],
+                self.dem_roi[1],
+                self.dem_roi[2],
+                self.dem_roi[3],
+            )
+        )
+
+        # Longitude
+        lon_res = src_transform[0]
+        lon_shift = (self.dem_roi[0] - bounds.left) / lon_res
+        dst_width = int((self.dem_roi[2] - self.dem_roi[0]) / abs(lon_res)) + 1
+        # Latitude
+        lat_res = src_transform[4]
+        lat_shift = (self.dem_roi[3] - bounds.top) / lat_res
+        dst_height = int((self.dem_roi[3] - self.dem_roi[1]) / abs(lat_res)) + 1
+
+        shift = Affine.translation(lon_shift, lat_shift)
+        dst_transform = src_transform * shift
+        dst_dem = np.zeros((dst_height, dst_width))
+
+        reproject(
+            source=src_dem,
+            destination=dst_dem,
+            src_transform=src_transform,
+            src_crs=crs,
+            dst_transform=dst_transform,
+            dst_crs=crs,
+            resampling=Resampling.bilinear,
+        )
+        # Fill nodata
+        dst_dem = rio.fill.fillnodata(
+            dst_dem,
+            mask=~(dst_dem == 0),
+        )
+        metadata["transform"] = dst_transform
+        metadata["height"] = dst_height
+        metadata["width"] = dst_width
+        metadata["driver"] = "GTiff"
+
+        out_dem_path = os.path.join(output_dem_dir, "initial_elevation.tif")
+
+        with rio.open(out_dem_path, "w", **metadata) as dst:
+            dst.write(dst_dem, 1)
+
+        return out_dem_path
 
     @classmethod
     def register_subclass(cls, short_name: str):
@@ -169,12 +365,14 @@ class AbstractGeometry(metaclass=ABCMeta):
             "plugin_name", "SharelocGeometry"
         )
         overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
-        overloaded_conf["dem_roi_margin"] = conf.get("dem_roi_margin", 0.012)
+        overloaded_conf["dem_roi_margin"] = conf.get(
+            "dem_roi_margin", [0.75, 0.02]
+        )
 
         geometry_schema = {
             "plugin_name": str,
             "interpolator": And(str, lambda x: x in ["cubic", "linear"]),
-            "dem_roi_margin": Or(float, int),
+            "dem_roi_margin": [float],
         }
 
         # Check conf
@@ -195,6 +393,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         grid1: str,
         grid2: str,
         roi_key: Union[None, str] = None,
+        interpolation_method=None,
     ) -> np.ndarray:
         """
         Performs triangulation from cars disparity or matches dataset
@@ -266,6 +465,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         matches_type: str,
         matches_msk: np.ndarray = None,
         ul_matches_shift: Tuple[int, int] = None,
+        interpolation_method=None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Convert matches (sparse or dense matches) given in epipolar
@@ -339,10 +539,10 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         # convert epipolar matches to sensor coordinates
         sensor_pos_left = self.sensor_position_from_grid(
-            grid1, vec_epi_pos_left
+            grid1, vec_epi_pos_left, interpolation_method=interpolation_method
         )
         sensor_pos_right = self.sensor_position_from_grid(
-            grid2, vec_epi_pos_right
+            grid2, vec_epi_pos_right, interpolation_method=interpolation_method
         )
 
         if matches_type == cst.DISP_MODE:
@@ -378,6 +578,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         self,
         grid: Union[dict, RectificationGrid],
         positions: np.ndarray,
+        interpolation_method=None,
     ) -> np.ndarray:
         """
         Interpolate the positions given as inputs using the grid
@@ -450,6 +651,11 @@ class AbstractGeometry(metaclass=ABCMeta):
             min_row_idx : max_row_idx + 1, min_col_idx : max_col_idx + 1
         ]
 
+        if interpolation_method is not None:
+            method = interpolation_method
+        else:
+            method = self.interpolator
+
         # interpolate sensor positions
         interpolator = interpolate.RegularGridInterpolator(
             (cols_cropped, rows_cropped),
@@ -460,12 +666,34 @@ class AbstractGeometry(metaclass=ABCMeta):
                 ),
                 axis=2,
             ),
-            method=self.interpolator,
+            method=method,
             bounds_error=False,
             fill_value=None,
         )
 
         sensor_positions = interpolator(positions)
+
+        min_row = np.min(sensor_row_positions_cropped)
+        max_row = np.max(sensor_row_positions_cropped)
+        min_col = np.min(sensor_col_positions_cropped)
+        max_col = np.max(sensor_col_positions_cropped)
+
+        valid_rows = np.logical_and(
+            sensor_positions[:, 0] > min_row,
+            sensor_positions[:, 0] < max_row,
+        )
+        valid_cols = np.logical_and(
+            sensor_positions[:, 1] > min_col,
+            sensor_positions[:, 1] < max_col,
+        )
+        valid = np.logical_and(valid_rows, valid_cols)
+
+        if np.sum(~valid) > 0:
+            logging.warning(
+                "{}/{} points are outside of epipolar grid".format(
+                    np.sum(~valid), valid.size
+                )
+            )
 
         # swap
         sensor_positions[:, [0, 1]] = sensor_positions[:, [1, 0]]
@@ -573,7 +801,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         save_matches,
     ):
         """
-        get sensor matches
+        Get sensor matches
 
         :param grid_left: path to epipolar grid of image 1
         :param grid_left: path to epipolar grid of image 2

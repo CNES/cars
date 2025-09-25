@@ -26,7 +26,6 @@ import logging
 import os
 
 import numpy as np
-import pyproj
 import rasterio as rio
 import xdem
 
@@ -36,9 +35,6 @@ from rasterio.coords import BoundingBox
 from rasterio.enums import Resampling
 from rasterio.warp import calculate_default_transform, reproject
 from scipy.ndimage import median_filter
-
-from cars.core import preprocessing
-from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 def fit_initial_elevation_on_dem_median(
@@ -248,7 +244,8 @@ def reverse_dem(input_dem):
 def downsample_dem(
     input_dem,
     scale,
-    median_filter_size=7,
+    interpolator,
+    median_filter_size=None,
     default_alt=0,
 ):
     """
@@ -273,6 +270,13 @@ def downsample_dem(
     metadata["height"] = dst_height
     metadata["width"] = dst_width
     dem_data = np.zeros((dst_height, dst_width))
+    interpolator_dict = {
+        "min": Resampling.min,
+        "median": Resampling.med,
+        "max": Resampling.max,
+        "nearest": Resampling.nearest,
+    }
+    interpolator = interpolator_dict[interpolator]
     reproject(
         data,
         dem_data,
@@ -281,13 +285,14 @@ def downsample_dem(
         dst_transform=dst_transform,
         dst_crs=crs,
         dst_nodata=nodata,
-        resampling=Resampling.med,
+        resampling=interpolator,
     )
 
     # Post-processing
 
     # Median filter
-    dem_data = median_filter(dem_data, size=median_filter_size)
+    if median_filter_size is not None:
+        dem_data = median_filter(dem_data, size=median_filter_size)
 
     # Fill nodata
     dem_data = rio.fill.fillnodata(
@@ -301,67 +306,25 @@ def downsample_dem(
         dst.write(dem_data, 1)
 
 
-@cars_profile(name="Modify terrain bounds")
-def modify_terrain_bounds(
-    bounds_poly, in_epsg, out_epsg, constant_margin, linear_margin=0
-):
+def modify_terrain_bounds(terrain_bounds, linear_margin, constant_margin):
     """
     Modify the terrain bounds
 
-    :param bounds_poly: Input region of interest for DEM
-    :type bounds_poly: list
-    :param in_epsg: EPSG code of dem_roi_to_use
-    :type in_epsg: int
-    :param out_epsg: EPSG code of dem_roi_to_use
-    :type out_epsg: int
+    :param terrain_bounds: Input region of interest for DEM
+    :type terrain_bounds: list
     :param margin: Margin of the output ROI in meters
     :type margin: int
     """
-    # Get bounds
-    xmin = min(bounds_poly[0], bounds_poly[2])
-    xmax = max(bounds_poly[0], bounds_poly[2])
-    ymin = min(bounds_poly[1], bounds_poly[3])
-    ymax = max(bounds_poly[1], bounds_poly[3])
-
-    bounds_cloud = [xmin, ymin, xmax, ymax]
-
-    if in_epsg == 4326:
-        # Convert resolution and margin to degrees
-        utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
-        conversion_factor = preprocessing.get_conversion_factor(
-            bounds_cloud, 4326, utm_epsg
-        )
-        constant_margin *= conversion_factor
-
-    # Get borders, adding margin
-
-    xmin = xmin - constant_margin - linear_margin * (xmax - xmin)
-    ymin = ymin - constant_margin - linear_margin * (ymax - ymin)
-    xmax = xmax + constant_margin + linear_margin * (xmax - xmin)
-    ymax = ymax + constant_margin + linear_margin * (ymax - ymin)
+    xsize = terrain_bounds[2] - terrain_bounds[0]
+    ysize = terrain_bounds[3] - terrain_bounds[1]
+    xmin = terrain_bounds[0] - linear_margin * xsize - constant_margin
+    ymin = terrain_bounds[1] - linear_margin * ysize - constant_margin
+    xmax = terrain_bounds[2] + linear_margin * xsize + constant_margin
+    ymax = terrain_bounds[3] + linear_margin * ysize + constant_margin
 
     terrain_bounds = [xmin, ymin, xmax, ymax]
 
-    if out_epsg != in_epsg:
-        crs_in = pyproj.CRS.from_epsg(in_epsg)
-        crs_out = pyproj.CRS.from_epsg(out_epsg)
-
-        transformer = pyproj.Transformer.from_crs(
-            crs_in, crs_out, always_xy=True
-        )
-
-        xymin = transformer.transform(terrain_bounds[0], terrain_bounds[1])
-        xymax = transformer.transform(terrain_bounds[2], terrain_bounds[3])
-
-        xmin, ymin = xymin if isinstance(xymin, tuple) else (None, None)
-        xmax, ymax = xymax if isinstance(xymax, tuple) else (None, None)
-
-        if None in (xmin, ymin, xmax, ymax):
-            raise RuntimeError("An error occured during the projection")
-
-    new_terrain_bounds = [xmin, ymin, xmax, ymax]
-
-    return new_terrain_bounds
+    return terrain_bounds
 
 
 def reproject_dem(dsm_file_name, epsg_out, out_file_name):
