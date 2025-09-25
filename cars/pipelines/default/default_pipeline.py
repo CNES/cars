@@ -380,6 +380,7 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         previous_out_dir = None
+        updated_conf = {}
         for resolution_index, epipolar_res in enumerate(
             self.epipolar_resolutions
         ):
@@ -455,6 +456,19 @@ class DefaultPipeline(PipelineTemplate):
             log_wrapper.generate_summary(
                 current_log_dir, updated_pipeline.used_conf
             )
+
+            updated_conf[epipolar_res] = updated_pipeline.used_conf
+
+        # Generate full used_conf
+        full_used_conf = merge_used_conf(
+            updated_conf, self.epipolar_resolutions
+        )
+        # Save used_conf
+        cars_dataset.save_dict(
+            full_used_conf,
+            os.path.join(self.out_dir, "global_used_conf.json"),
+            safe_save=True,
+        )
 
         # Merge profiling in pdf
         log_wrapper.generate_pdf_profiling(os.path.join(self.out_dir, "logs"))
