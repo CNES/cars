@@ -1,13 +1,8 @@
 ---
 inputs:
   sensors:
-    one:
-      image: img1.tif
-      geomodel: img1.geom
-      color: color1.tif
-    two:
-      image: img2.tif
-      geomodel: img2.geom
+    one: img1.tif
+    two: img2.tif
 orchestrator:
   mode: multiprocessing
   nb_workers: 110

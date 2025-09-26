@@ -42,6 +42,8 @@ It can be performed with `otbcli_BundleToPerfectSensor` as explained in  :ref:`m
 
 .. include-cars-config:: ../example_configs/how_to_use_CARS/from_sensor_data_to_DSM/dimap_2
 
+The stereo matching will be performed using the first band. If you want to change that, you can use sensor loaders for inputs (cf. :ref:`advanced configuration`).
+
 .. _pleiade_roi_data:
 
 ... with a region of interest

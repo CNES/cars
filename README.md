@@ -72,14 +72,8 @@ with one configuration input file ("configfile.json") located in a "data" folder
 {
     "inputs": {
         "sensors" : {
-            "one": {
-                "image": "img1.tif",
-                "geomodel": "img1.geom"
-            },
-            "two": {
-                "image": "img2.tif",
-                "geomodel": "img2.geom"
-            }
+            "one": "img1.tif",
+            "two": "img2.tif"
         }
     },
     "output": {

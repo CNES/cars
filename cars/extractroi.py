@@ -29,6 +29,7 @@ import numpy as np
 import rasterio as rio
 from affine import Affine
 from shapely.geometry import box
+from shareloc.geomodels.rpc_writers import write_rio_rpc_as_rpb
 
 
 def is_bbx_in_image(bbx, image_dataset):
@@ -75,7 +76,7 @@ def get_slices_from_bbx(image_dataset, bbx, rpc_options):
 
 
 def process_image_file(
-    bbx, input_image_path, output_image_path, geom_file_path, rpc_options
+    bbx, input_image_path, output_image_path, rpb_file_path, rpc_options
 ):
     """
     Processes an image file by extracting a region based on the given geometry.
@@ -84,7 +85,7 @@ def process_image_file(
         region_geometry (dict): GeoJSON-like dictionary defining the region.
         input_image_path (str): Path to the input image file.
         output_image_path (str): Path to save the output image.
-        geom_file_path (str): Path to save the .geom file.
+        rpb_file_path (str): Path to save the .RPB file.
         rpc_options (dict): Options for GDALCreateRPCTransformer.
     """
 
@@ -110,7 +111,8 @@ def process_image_file(
             # copy rpc
             dst.rpcs = image_dataset.rpcs
 
-        create_geom_file(image_dataset, geom_file_path)
+        if rpb_file_path is not None:
+            create_rpb_file(image_dataset, rpb_file_path)
 
 
 def get_human_readable_bbox(image_dataset, rpc_options):
@@ -167,34 +169,23 @@ def validate_bounding_box(bbx, image_dataset, rpc_options):
             image_dataset, rpc_options
         )
         raise ValueError(
-            f"Coordinates must between "
+            f"Coordinates must be between "
             f"({min_x}, {min_y}) and ({max_x}, {max_y})"
         )
 
 
-def create_geom_file(image_dataset, geom_filename):
+def create_rpb_file(image_dataset, rpb_filename):
     """
-    Create and save a .geom file from a rasterio dataset
+    Create and save a .RPB file from a rasterio dataset
 
     Parameters:
         image_dataset (rio.DatasetReader): Opened image dataset.
-        geom_filename (str): Path to save the .geom file.
+        rpb_filename (str): Path to save the .RPB file.
     """
     if not image_dataset.rpcs:
         raise ValueError("Image dataset has no RPCs")
     rpcs_as_dict = image_dataset.rpcs.to_dict()
-    with open(geom_filename, "w", encoding="utf-8") as writer:
-        for key in rpcs_as_dict:
-            if isinstance(rpcs_as_dict[key], list):
-                for idx, coef in enumerate(rpcs_as_dict[key]):
-                    writer.write(key + "_%02d" % idx + ": " + str(coef))
-                    writer.write("\n")
-            else:
-                writer.write(key + ": " + str(rpcs_as_dict[key]))
-                writer.write("\n")
-
-        writer.write("type:  ossimRpcModel\n")
-        writer.write("polynomial_format:  B\n")
+    write_rio_rpc_as_rpb(rpcs_as_dict, rpb_filename)
 
 
 def main():
@@ -240,6 +231,12 @@ def main():
         help="Digital Elevation Model used for projection",
     )
 
+    parser.add_argument(
+        "--generate_rpb",
+        action="store_true",
+        help="Generate RPB file",
+    )
+
     args = parser.parse_args()
     if not os.path.exists(args.out):
         os.makedirs(args.out)
@@ -254,10 +251,12 @@ def main():
     # check first input in list to determine pipeline
     for idx, image_path in enumerate(args.il):
         output_image_path = os.path.join(args.out, "ext_%03d.tif" % idx)
-        geom_file_path = os.path.splitext(output_image_path)[0] + ".geom"
+        rpb_file_path = None
+        if args.generate_rpb:
+            rpb_file_path = os.path.splitext(output_image_path)[0] + ".RPB"
 
         process_image_file(
-            args.bbx, image_path, output_image_path, geom_file_path, rpc_options
+            args.bbx, image_path, output_image_path, rpb_file_path, rpc_options
         )
 
 
