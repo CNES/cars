@@ -67,7 +67,7 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import depth_map_inputs
+from cars.pipelines.parameters import application_parameters, depth_map_inputs
 from cars.pipelines.parameters import depth_map_inputs_constants as depth_cst
 from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
@@ -292,7 +292,7 @@ class UnitPipeline(PipelineTemplate):
         sensor_to_depth_apps = {
             "grid_generation": 1,  # and 5
             "resampling": 2,  # and 8
-            "sparse_matching.sift": 4,
+            "sparse_matching": 4,
             "ground_truth_reprojection": 6,
             "dense_matching": 8,
             "dense_match_filling": 9,
@@ -521,40 +521,17 @@ class UnitPipeline(PipelineTemplate):
         """
         scaling_coeff = self.scaling_coeff
 
+        needed_applications = application_parameters.get_needed_apps(
+            self.sensors_in_inputs,
+            self.save_output_dsm,
+            self.save_output_point_cloud,
+            self.merging,
+            conf,
+        )
+
         # Check if all specified applications are used
         # Application in terrain_application are note used in
         # the sensors_to_dense_depth_maps pipeline
-        needed_applications = []
-
-        if self.sensors_in_inputs:
-            needed_applications += [
-                "grid_generation",
-                "resampling",
-                "ground_truth_reprojection",
-                "dense_match_filling",
-                "sparse_matching.sift",
-                "dense_matching",
-                "triangulation",
-                "dem_generation",
-                "point_cloud_outlier_removal.1",
-                "point_cloud_outlier_removal.2",
-            ]
-
-        if self.save_output_dsm or self.save_output_point_cloud:
-            needed_applications += ["pc_denoising"]
-
-            if self.save_output_dsm:
-                needed_applications += [
-                    "point_cloud_rasterization",
-                    "dsm_filling.1",
-                    "dsm_filling.2",
-                    "dsm_filling.3",
-                    "auxiliary_filling",
-                ]
-
-            if self.merging:  # we have to merge point clouds, add merging apps
-                needed_applications += ["point_cloud_fusion"]
-
         for app_key in conf.keys():
             if app_key not in needed_applications:
                 msg = (
@@ -567,28 +544,25 @@ class UnitPipeline(PipelineTemplate):
         # Initialize used config
         used_conf = {}
 
-        for app_key in [
-            "point_cloud_outlier_removal.1",
-            "point_cloud_outlier_removal.2",
-            "auxiliary_filling",
-        ]:
-            if conf.get(app_key) is not None:
-                config_app = conf.get(app_key)
-                if "activated" not in config_app:
-                    conf[app_key]["activated"] = True
-
         for app_key in needed_applications:
             used_conf[app_key] = conf.get(app_key, {})
+            if used_conf[app_key] is None:
+                continue
             used_conf[app_key]["save_intermediate_data"] = (
                 self.save_all_intermediate_data
                 or used_conf[app_key].get("save_intermediate_data", False)
             )
 
-        for app_key in [
-            "point_cloud_fusion",
-            "pc_denoising",
-        ]:
-            if app_key in needed_applications:
+            if app_key == "auxiliary_filling":
+                if used_conf[app_key] is not None:
+                    used_conf[app_key]["activated"] = used_conf[app_key].get(
+                        "activated", True
+                    )
+
+            if app_key in [
+                "point_cloud_fusion",
+                "pc_denoising",
+            ]:
                 used_conf[app_key]["save_by_pair"] = used_conf[app_key].get(
                     "save_by_pair", self.save_all_point_clouds_by_pair
                 )
@@ -597,18 +571,18 @@ class UnitPipeline(PipelineTemplate):
         self.resampling_application = None
         self.ground_truth_reprojection = None
         self.dense_match_filling = None
-        self.sparse_mtch_sift_app = None
+        self.sparse_mtch_app = None
         self.dense_matching_app = None
         self.triangulation_application = None
         self.dem_generation_application = None
         self.pc_denoising_application = None
-        self.pc_outlier_removal_1_app = None
-        self.pc_outlier_removal_2_app = None
+        self.pc_outlier_removal_apps = {}
         self.rasterization_application = None
         self.pc_fusion_application = None
         self.dsm_filling_1_application = None
         self.dsm_filling_2_application = None
         self.dsm_filling_3_application = None
+        self.dsm_filling_apps = {}
 
         if self.sensors_in_inputs:
             # Epipolar grid generation
@@ -664,14 +638,12 @@ class UnitPipeline(PipelineTemplate):
             )
 
             # Sparse Matching
-            self.sparse_mtch_sift_app = Application(
+            self.sparse_mtch_app = Application(
                 "sparse_matching",
-                cfg=used_conf.get("sparse_matching.sift", {"method": "sift"}),
+                cfg=used_conf.get("sparse_matching", {"method": "sift"}),
                 scaling_coeff=scaling_coeff,
             )
-            used_conf["sparse_matching.sift"] = (
-                self.sparse_mtch_sift_app.get_conf()
-            )
+            used_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
             # Matching
             generate_performance_map = (
@@ -729,35 +701,45 @@ class UnitPipeline(PipelineTemplate):
                 self.dem_generation_application.get_conf()
             )
 
-            # Points cloud small component outlier removal
-            if "point_cloud_outlier_removal.1" in used_conf:
-                if "method" not in used_conf["point_cloud_outlier_removal.1"]:
-                    used_conf["point_cloud_outlier_removal.1"][
-                        "method"
-                    ] = "small_components"
-            self.pc_outlier_removal_1_app = Application(
-                "point_cloud_outlier_removal",
-                cfg=used_conf.get(
-                    "point_cloud_outlier_removal.1",
-                    {"method": "small_components"},
-                ),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["point_cloud_outlier_removal.1"] = (
-                self.pc_outlier_removal_1_app.get_conf()
-            )
+            for app_key, app_conf in used_conf.items():
+                if not app_key.startswith("point_cloud_outlier_removal"):
+                    continue
 
-            # Points cloud statistical outlier removal
-            self.pc_outlier_removal_2_app = Application(
-                "point_cloud_outlier_removal",
-                cfg=used_conf.get(
-                    "point_cloud_outlier_removal.2",
-                    {"method": "statistical"},
-                ),
-                scaling_coeff=scaling_coeff,
+                if app_conf is None:
+                    self.pc_outlier_removal_apps = {}
+                    # keep over multiple runs
+                    used_conf["point_cloud_outlier_removal"] = None
+                    break
+
+                if app_key in self.pc_outlier_removal_apps:
+                    msg = (
+                        f"The key {app_key} is defined twice in the input "
+                        "configuration."
+                    )
+                    logging.error(msg)
+                    raise NameError(msg)
+
+                if app_key[27:] == ".1":
+                    app_conf.setdefault("method", "small_components")
+                if app_key[27:] == ".2":
+                    app_conf.setdefault("method", "statistical")
+
+                self.pc_outlier_removal_apps[app_key] = Application(
+                    "point_cloud_outlier_removal",
+                    cfg=app_conf,
+                    scaling_coeff=scaling_coeff,
+                )
+                used_conf[app_key] = self.pc_outlier_removal_apps[
+                    app_key
+                ].get_conf()
+
+            methods_str = "\n".join(
+                f" - {k}={a.used_method}"
+                for k, a in self.pc_outlier_removal_apps.items()
             )
-            used_conf["point_cloud_outlier_removal.2"] = (
-                self.pc_outlier_removal_2_app.get_conf()
+            logging.info(
+                f"{len(self.pc_outlier_removal_apps)} point cloud outlier "
+                + f"removal apps registered:\n{methods_str}"
             )
 
         if self.save_output_dsm or self.save_output_point_cloud:
@@ -781,41 +763,50 @@ class UnitPipeline(PipelineTemplate):
                 used_conf["point_cloud_rasterization"] = (
                     self.rasterization_application.get_conf()
                 )
-                # DSM filling 1 : Exogenous filling
-                self.dsm_filling_1_application = Application(
-                    "dsm_filling",
-                    cfg=conf.get(
-                        "dsm_filling.1",
-                        {"method": "exogenous_filling"},
-                    ),
-                    scaling_coeff=scaling_coeff,
+
+                for app_key, app_conf in used_conf.items():
+                    if not app_key.startswith("dsm_filling"):
+                        continue
+
+                    if app_conf is None:
+                        self.dsm_filling_apps = {}
+                        # keep over multiple runs
+                        used_conf["dsm_filling"] = None
+                        break
+
+                    if app_key in self.dsm_filling_apps:
+                        msg = (
+                            f"The key {app_key} is defined twice in the input "
+                            "configuration."
+                        )
+                        logging.error(msg)
+                        raise NameError(msg)
+
+                    if app_key[11:] == ".1":
+                        app_conf.setdefault("method", "exogenous_filling")
+                    if app_key[11:] == ".2":
+                        app_conf.setdefault("method", "bulldozer")
+                    if app_key[11:] == ".3":
+                        app_conf.setdefault("method", "border_interpolation")
+
+                    self.dsm_filling_apps[app_key] = Application(
+                        "dsm_filling",
+                        cfg=app_conf,
+                        scaling_coeff=scaling_coeff,
+                    )
+                    used_conf[app_key] = self.dsm_filling_apps[
+                        app_key
+                    ].get_conf()
+
+                methods_str = "\n".join(
+                    f" - {k}={a.used_method}"
+                    for k, a in self.dsm_filling_apps.items()
                 )
-                used_conf["dsm_filling.1"] = (
-                    self.dsm_filling_1_application.get_conf()
+                logging.info(
+                    f"{len(self.dsm_filling_apps)} dsm filling apps "
+                    + f"registered:\n{methods_str}"
                 )
-                # DSM filling 2 : Bulldozer
-                self.dsm_filling_2_application = Application(
-                    "dsm_filling",
-                    cfg=conf.get(
-                        "dsm_filling.2",
-                        {"method": "bulldozer"},
-                    ),
-                )
-                used_conf["dsm_filling.2"] = (
-                    self.dsm_filling_2_application.get_conf()
-                )
-                # DSM filling 3 : Border interpolation
-                self.dsm_filling_3_application = Application(
-                    "dsm_filling",
-                    cfg=conf.get(
-                        "dsm_filling.3",
-                        {"method": "border_interpolation"},
-                    ),
-                    scaling_coeff=scaling_coeff,
-                )
-                used_conf["dsm_filling.3"] = (
-                    self.dsm_filling_3_application.get_conf()
-                )
+
                 # Auxiliary filling
                 self.auxiliary_filling_application = Application(
                     "auxiliary_filling",
@@ -826,10 +817,9 @@ class UnitPipeline(PipelineTemplate):
                     self.auxiliary_filling_application.get_conf()
                 )
 
-            if (
-                self.dsm_filling_1_application.classification != ["nodata"]
-                or self.dsm_filling_2_application.classification != ["nodata"]
-                or self.dsm_filling_3_application.classification != ["nodata"]
+            if any(
+                app_obj.classification != ["nodata"]
+                for app_key, app_obj in self.dsm_filling_apps.items()
             ):
                 self.save_output_classif_for_filling = True
 
@@ -865,31 +855,27 @@ class UnitPipeline(PipelineTemplate):
         initial_elevation = (
             inputs_conf[sens_cst.INITIAL_ELEVATION]["dem"] is not None
         )
-        if self.sparse_mtch_sift_app.elevation_delta_lower_bound is None:
-            self.sparse_mtch_sift_app.used_config[
-                "elevation_delta_lower_bound"
-            ] = (-500 if initial_elevation else -1000)
-            self.sparse_mtch_sift_app.elevation_delta_lower_bound = (
-                self.sparse_mtch_sift_app.used_config[
-                    "elevation_delta_lower_bound"
-                ]
+        if self.sparse_mtch_app.elevation_delta_lower_bound is None:
+            self.sparse_mtch_app.used_config["elevation_delta_lower_bound"] = (
+                -500 if initial_elevation else -1000
             )
-        if self.sparse_mtch_sift_app.elevation_delta_upper_bound is None:
-            self.sparse_mtch_sift_app.used_config[
-                "elevation_delta_upper_bound"
-            ] = (1000 if initial_elevation else 9000)
-            self.sparse_mtch_sift_app.elevation_delta_upper_bound = (
-                self.sparse_mtch_sift_app.used_config[
-                    "elevation_delta_upper_bound"
-                ]
+            self.sparse_mtch_app.elevation_delta_lower_bound = (
+                self.sparse_mtch_app.used_config["elevation_delta_lower_bound"]
             )
-        application_conf["sparse_matching.sift"] = (
-            self.sparse_mtch_sift_app.get_conf()
-        )
+        if self.sparse_mtch_app.elevation_delta_upper_bound is None:
+            self.sparse_mtch_app.used_config["elevation_delta_upper_bound"] = (
+                1000 if initial_elevation else 9000
+            )
+            self.sparse_mtch_app.elevation_delta_upper_bound = (
+                self.sparse_mtch_app.used_config["elevation_delta_upper_bound"]
+            )
+        application_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
         # check classification application parameter compare
         # to each sensors inputs classification list
         for application_key in application_conf:
+            if application_conf[application_key] is None:
+                continue
             if "classification" in application_conf[application_key]:
                 for item in inputs_conf["sensors"]:
                     if "classification" in inputs_conf["sensors"][item].keys():
@@ -1099,7 +1085,7 @@ class UnitPipeline(PipelineTemplate):
         # used in dem generation
         self.triangulated_matches_list = []
 
-        save_matches = self.sparse_mtch_sift_app.get_save_matches()
+        save_matches = self.sparse_mtch_app.get_save_matches()
 
         save_corrected_grid = (
             self.epipolar_grid_generation_application.get_save_grids()
@@ -1158,7 +1144,7 @@ class UnitPipeline(PipelineTemplate):
                 # no a priori
 
                 # Get required bands of first resampling
-                required_bands = self.sparse_mtch_sift_app.get_required_bands()
+                required_bands = self.sparse_mtch_app.get_required_bands()
 
                 # Run first epipolar resampling
                 (
@@ -1175,7 +1161,7 @@ class UnitPipeline(PipelineTemplate):
                         self.dump_dir, "resampling", "initial", pair_key
                     ),
                     pair_key=pair_key,
-                    margins_fun=self.sparse_mtch_sift_app.get_margins_fun(),
+                    margins_fun=self.sparse_mtch_app.get_margins_fun(),
                     tile_width=None,
                     tile_height=None,
                     required_bands=required_bands,
@@ -1192,13 +1178,13 @@ class UnitPipeline(PipelineTemplate):
                 (
                     self.pairs[pair_key]["epipolar_matches_left"],
                     _,
-                ) = self.sparse_mtch_sift_app.run(
+                ) = self.sparse_mtch_app.run(
                     self.pairs[pair_key]["epipolar_image_left"],
                     self.pairs[pair_key]["epipolar_image_right"],
                     self.pairs[pair_key]["grid_left"]["disp_to_alt_ratio"],
                     orchestrator=self.cars_orchestrator,
                     pair_folder=os.path.join(
-                        self.dump_dir, "sparse_matching.sift", pair_key
+                        self.dump_dir, "sparse_matching", pair_key
                     ),
                     pair_key=pair_key,
                 )
@@ -1206,16 +1192,14 @@ class UnitPipeline(PipelineTemplate):
             # Run cluster breakpoint to compute sifts: force computation
             self.cars_orchestrator.breakpoint()
 
-            minimum_nb_matches = (
-                self.sparse_mtch_sift_app.get_minimum_nb_matches()
-            )
+            minimum_nb_matches = self.sparse_mtch_app.get_minimum_nb_matches()
 
             # Run grid correction application
             if self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (None, {}):
                 # Estimate grid correction if no epipolar a priori
                 # Filter and save matches
                 self.pairs[pair_key]["matches_array"] = (
-                    self.sparse_mtch_sift_app.filter_matches(
+                    self.sparse_mtch_app.filter_matches(
                         self.pairs[pair_key]["epipolar_matches_left"],
                         self.pairs[pair_key]["grid_left"],
                         self.pairs[pair_key]["grid_right"],
@@ -1223,11 +1207,9 @@ class UnitPipeline(PipelineTemplate):
                         orchestrator=self.cars_orchestrator,
                         pair_key=pair_key,
                         pair_folder=os.path.join(
-                            self.dump_dir, "sparse_matching.sift", pair_key
+                            self.dump_dir, "sparse_matching", pair_key
                         ),
-                        save_matches=(
-                            self.sparse_mtch_sift_app.get_save_matches()
-                        ),
+                        save_matches=(self.sparse_mtch_app.get_save_matches()),
                     )
                 )
 
@@ -1267,7 +1249,7 @@ class UnitPipeline(PipelineTemplate):
                     pair_key
                 ]["grid_left"]
 
-                if self.quit_on_app("sparse_matching.sift"):
+                if self.quit_on_app("sparse_matching"):
                     continue
 
                 # Shrink disparity intervals according to SIFT disparities
@@ -1275,7 +1257,7 @@ class UnitPipeline(PipelineTemplate):
                     "disp_to_alt_ratio"
                 ]
                 disp_bounds_params = (
-                    self.sparse_mtch_sift_app.disparity_bounds_estimation
+                    self.sparse_mtch_app.disparity_bounds_estimation
                 )
 
                 if disp_bounds_params["activated"]:
@@ -1303,11 +1285,11 @@ class UnitPipeline(PipelineTemplate):
                     )
                 else:
                     disp_min = (
-                        -self.sparse_mtch_sift_app.elevation_delta_upper_bound
+                        -self.sparse_mtch_app.elevation_delta_upper_bound
                         / disp_to_alt_ratio
                     )
                     disp_max = (
-                        -self.sparse_mtch_sift_app.elevation_delta_lower_bound
+                        -self.sparse_mtch_app.elevation_delta_lower_bound
                         / disp_to_alt_ratio
                     )
                     logging.info(
@@ -1350,7 +1332,7 @@ class UnitPipeline(PipelineTemplate):
         if (
             self.quit_on_app("grid_generation")
             or self.quit_on_app("resampling")
-            or self.quit_on_app("sparse_matching.sift")
+            or self.quit_on_app("sparse_matching")
         ):
             return True
 
@@ -1451,7 +1433,7 @@ class UnitPipeline(PipelineTemplate):
                 # Correct grids with former matches
                 # Transform matches to new grids
 
-                save_matches = self.sparse_mtch_sift_app.get_save_matches()
+                save_matches = self.sparse_mtch_app.get_save_matches()
 
                 self.sensor_matches_left = os.path.join(
                     self.first_res_out_dir,
@@ -1572,7 +1554,7 @@ class UnitPipeline(PipelineTemplate):
                     )
                 )
 
-                dsp_marg = self.sparse_mtch_sift_app.get_disparity_margin()
+                dsp_marg = self.sparse_mtch_app.get_disparity_margin()
                 updating_infos = {
                     application_constants.APPLICATION_TAG: {
                         sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
@@ -1622,7 +1604,7 @@ class UnitPipeline(PipelineTemplate):
                         ]
 
                         # update orchestrator_out_json
-                        marg = self.sparse_mtch_sift_app.get_disparity_margin()
+                        marg = self.sparse_mtch_app.get_disparity_margin()
                         updating_infos = {
                             application_constants.APPLICATION_TAG: {
                                 sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
@@ -1917,9 +1899,9 @@ class UnitPipeline(PipelineTemplate):
                 pair_key=pair_key,
                 disp_range_grid=self.pairs[pair_key]["disp_range_grid"],
                 compute_disparity_masks=False,
-                margins_to_keep=(
-                    self.pc_outlier_removal_1_app.get_epipolar_margin()
-                    + self.pc_outlier_removal_2_app.get_epipolar_margin()
+                margins_to_keep=sum(
+                    app.get_epipolar_margin()
+                    for _, app in self.pc_outlier_removal_apps.items()
                 ),
                 texture_bands=texture_bands_indices,
             )
@@ -1959,7 +1941,6 @@ class UnitPipeline(PipelineTemplate):
                 output_geoid_path = None
 
             depth_map_dir = None
-            last_depth_map_application = None
             if self.save_output_depth_map:
                 depth_map_dir = os.path.join(
                     self.out_dir, "depth_map", pair_key
@@ -1973,31 +1954,11 @@ class UnitPipeline(PipelineTemplate):
                 )
                 safe_makedirs(point_cloud_dir)
 
-            if self.save_output_depth_map or self.save_output_point_cloud:
-                if (
-                    self.pc_outlier_removal_2_app.used_config.get(
-                        "activated", False
-                    )
-                    is True
-                    and self.merging is False
-                ):
-                    last_depth_map_application = "pc_outlier_removal_2"
-                elif (
-                    self.pc_outlier_removal_1_app.used_config.get(
-                        "activated", False
-                    )
-                    is True
-                    and self.merging is False
-                ):
-                    last_depth_map_application = "pc_outlier_removal_1"
-                else:
-                    last_depth_map_application = "triangulation"
-
             triangulation_point_cloud_dir = (
                 point_cloud_dir
                 if (
                     point_cloud_dir
-                    and last_depth_map_application == "triangulation"
+                    and len(self.pc_outlier_removal_apps) == 0
                     and self.merging is False
                 )
                 else None
@@ -2028,8 +1989,10 @@ class UnitPipeline(PipelineTemplate):
                 ),
                 depth_map_dir=depth_map_dir,
                 point_cloud_dir=triangulation_point_cloud_dir,
-                save_output_coordinates=last_depth_map_application
-                == "triangulation",
+                save_output_coordinates=(len(self.pc_outlier_removal_apps) == 0)
+                and (
+                    self.save_output_depth_map or self.save_output_point_cloud
+                ),
                 save_output_color=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_TEXTURE],
                 save_output_classification=bool(depth_map_dir)
@@ -2050,75 +2013,43 @@ class UnitPipeline(PipelineTemplate):
             if self.merging:
                 self.list_epipolar_point_clouds.append(epipolar_point_cloud)
             else:
-                filtering_depth_map_dir = (
-                    depth_map_dir
-                    if (
-                        depth_map_dir
-                        and last_depth_map_application == "pc_outlier_removal_1"
-                    )
-                    else None
-                )
-                filtering_point_cloud_dir = (
-                    point_cloud_dir
-                    if (
-                        point_cloud_dir
-                        and last_depth_map_application == "pc_outlier_removal_1"
-                        and self.merging is False
-                    )
-                    else None
-                )
 
-                filtered_epipolar_point_cloud_1 = (
-                    self.pc_outlier_removal_1_app.run(
-                        epipolar_point_cloud,
+                filtered_epipolar_point_cloud = epipolar_point_cloud
+                for app_key, app in self.pc_outlier_removal_apps.items():
+
+                    app_key_is_last = (
+                        app_key == list(self.pc_outlier_removal_apps)[-1]
+                    )
+                    filtering_depth_map_dir = (
+                        depth_map_dir if app_key_is_last else None
+                    )
+                    filtering_point_cloud_dir = (
+                        point_cloud_dir if app_key_is_last else None
+                    )
+
+                    filtered_epipolar_point_cloud = app.run(
+                        filtered_epipolar_point_cloud,
                         depth_map_dir=filtering_depth_map_dir,
                         point_cloud_dir=filtering_point_cloud_dir,
                         dump_dir=os.path.join(
-                            self.dump_dir, "pc_outlier_removal_1", pair_key
+                            self.dump_dir,
+                            (
+                                "pc_outlier_removal"
+                                f"{str(app_key[27:]).replace('.', '_')}"
+                            ),
+                            pair_key,
                         ),
                         epsg=self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
-                )
-                if self.quit_on_app("point_cloud_outlier_removal.1"):
-                    continue  # keep iterating over pairs, but don't go further
-                filtering_depth_map_dir = (
-                    depth_map_dir
-                    if (
-                        depth_map_dir
-                        and last_depth_map_application == "pc_outlier_removal_2"
-                    )
-                    else None
-                )
-                filtering_point_cloud_dir = (
-                    point_cloud_dir
-                    if (
-                        point_cloud_dir
-                        and last_depth_map_application == "pc_outlier_removal_2"
-                        and self.merging is False
-                    )
-                    else None
-                )
-                filtered_epipolar_point_cloud_2 = (
-                    self.pc_outlier_removal_2_app.run(
-                        filtered_epipolar_point_cloud_1,
-                        depth_map_dir=filtering_depth_map_dir,
-                        point_cloud_dir=filtering_point_cloud_dir,
-                        dump_dir=os.path.join(
-                            self.dump_dir, "pc_outlier_removal_2", pair_key
-                        ),
-                        epsg=self.epsg,
-                        orchestrator=self.cars_orchestrator,
-                    )
-                )
-                if self.quit_on_app("point_cloud_outlier_removal.2"):
+                if self.quit_on_app("point_cloud_outlier_removal"):
                     continue  # keep iterating over pairs, but don't go further
 
                 # denoising available only if we'll go further in the pipeline
                 if self.save_output_dsm or self.save_output_point_cloud:
                     denoised_epipolar_point_clouds = (
                         self.pc_denoising_application.run(
-                            filtered_epipolar_point_cloud_2,
+                            filtered_epipolar_point_cloud,
                             orchestrator=self.cars_orchestrator,
                             pair_folder=os.path.join(
                                 self.dump_dir, "denoising", pair_key
@@ -2442,10 +2373,6 @@ class UnitPipeline(PipelineTemplate):
         Fill the dsm
         """
 
-        dsm_filling_1_dump_dir = os.path.join(self.dump_dir, "dsm_filling_1")
-        dsm_filling_2_dump_dir = os.path.join(self.dump_dir, "dsm_filling_2")
-        dsm_filling_3_dump_dir = os.path.join(self.dump_dir, "dsm_filling_3")
-
         dsm_file_name = (
             os.path.join(
                 self.out_dir,
@@ -2690,38 +2617,47 @@ class UnitPipeline(PipelineTemplate):
             else:
                 self.list_intersection_poly = None
 
-        _ = self.dsm_filling_1_application.run(
-            dsm_file=dsm_file_name,
-            classif_file=classif_file_name,
-            filling_file=filling_file_name,
-            dump_dir=dsm_filling_1_dump_dir,
-            roi_polys=self.list_intersection_poly,
-            roi_epsg=self.epsg,
-            output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
-            geom_plugin=self.geom_plugin_with_dem_and_geoid,
-        )
+        dtm_file_name = None
+        for app_key, app in self.dsm_filling_apps.items():
 
-        if not self.dsm_filling_1_application.save_intermediate_data:
-            self.cars_orchestrator.add_to_clean(dsm_filling_1_dump_dir)
+            app_dump_dir = os.path.join(
+                self.dump_dir, app_key.replace(".", "_")
+            )
 
-        if self.quit_on_app("dsm_filling.1"):
-            return True
+            if app.get_conf()["method"] == "exogenous_filling":
+                _ = app.run(
+                    dsm_file=dsm_file_name,
+                    classif_file=classif_file_name,
+                    filling_file=filling_file_name,
+                    dump_dir=app_dump_dir,
+                    roi_polys=self.list_intersection_poly,
+                    roi_epsg=self.epsg,
+                    output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
+                    geom_plugin=self.geom_plugin_with_dem_and_geoid,
+                )
+            elif app.get_conf()["method"] == "bulldozer":
+                dtm_file_name = app.run(
+                    dsm_file=dsm_file_name,
+                    classif_file=classif_file_name,
+                    filling_file=filling_file_name,
+                    dump_dir=app_dump_dir,
+                    roi_polys=self.list_intersection_poly,
+                    roi_epsg=self.epsg,
+                    orchestrator=self.cars_orchestrator,
+                )
+            elif app.get_conf()["method"] == "border_interpolation":
+                _ = app.run(
+                    dsm_file=dsm_file_name,
+                    classif_file=classif_file_name,
+                    filling_file=filling_file_name,
+                    dtm_file=dtm_file_name,
+                    dump_dir=app_dump_dir,
+                    roi_polys=self.list_intersection_poly,
+                    roi_epsg=self.epsg,
+                )
 
-        dtm_file_name = self.dsm_filling_2_application.run(
-            dsm_file=dsm_file_name,
-            classif_file=classif_file_name,
-            filling_file=filling_file_name,
-            dump_dir=dsm_filling_2_dump_dir,
-            roi_polys=self.list_intersection_poly,
-            roi_epsg=self.epsg,
-            orchestrator=self.cars_orchestrator,
-        )
-
-        if not self.dsm_filling_2_application.save_intermediate_data:
-            self.cars_orchestrator.add_to_clean(dsm_filling_2_dump_dir)
-
-        if self.quit_on_app("dsm_filling.2"):
-            return True
+            if not app.save_intermediate_data:
+                self.cars_orchestrator.add_to_clean(app_dump_dir)
 
         _ = self.auxiliary_filling_application.run(
             dsm_file=dsm_file_name,
@@ -2734,26 +2670,9 @@ class UnitPipeline(PipelineTemplate):
             texture_bands=self.texture_bands,
             orchestrator=self.cars_orchestrator,
         )
-
-        if self.quit_on_app("auxiliary_filling"):
-            return True
-
         self.cars_orchestrator.breakpoint()
 
-        _ = self.dsm_filling_3_application.run(
-            dsm_file=dsm_file_name,
-            classif_file=classif_file_name,
-            filling_file=filling_file_name,
-            dtm_file=dtm_file_name,
-            dump_dir=dsm_filling_3_dump_dir,
-            roi_polys=self.list_intersection_poly,
-            roi_epsg=self.epsg,
-        )
-
-        if not self.dsm_filling_3_application.save_intermediate_data:
-            self.cars_orchestrator.add_to_clean(dsm_filling_3_dump_dir)
-
-        return self.quit_on_app("dsm_filling.3")
+        return self.quit_on_app("auxiliary_filling")
 
     @cars_profile(name="Preprocess depth maps", interval=0.5)
     def preprocess_depth_maps(self):
@@ -2946,6 +2865,7 @@ class UnitPipeline(PipelineTemplate):
                 not any(
                     app.get("save_intermediate_data", False) is True
                     for app in self.used_conf[APPLICATIONS].values()
+                    if app is not None
                 )
                 and not self.dsms_in_inputs
             ):

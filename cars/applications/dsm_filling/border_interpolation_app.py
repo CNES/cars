@@ -56,7 +56,6 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.activated = self.used_config["activated"]
         self.classification = self.used_config["classification"]
         self.component_min_size = self.used_config["component_min_size"]
         self.border_size = self.used_config["border_size"]
@@ -74,7 +73,6 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
-        overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["classification"] = conf.get("classification", "nodata")
         if isinstance(overloaded_conf["classification"], str):
             overloaded_conf["classification"] = [
@@ -91,7 +89,6 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         rectification_schema = {
             "method": str,
-            "activated": bool,
             "classification": Or(None, [str]),
             "component_min_size": int,
             "border_size": int,
@@ -126,9 +123,6 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             - a list of Shapely Polygons
             - a Shapely Polygon
         """
-
-        if not self.activated:
-            return
 
         if self.classification is None:
             self.classification = ["nodata"]

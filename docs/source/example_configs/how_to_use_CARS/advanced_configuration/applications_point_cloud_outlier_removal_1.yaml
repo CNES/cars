@@ -1,0 +1,9 @@
+---
+applications:
+  point_cloud_outlier_removal.one: # the identifier can be set to anything
+    method: small_components
+    on_ground_margin: 10
+    save_intermediate_data: true # the output folder will contain the identifier, to easily find it
+  point_cloud_outlier_removal.two:
+    method: statistical
+    k: 10

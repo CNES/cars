@@ -1,0 +1,3 @@
+---
+applications:
+  point_cloud_outlier_removal: null # disable any filtering

@@ -57,7 +57,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.activated = self.used_config["activated"]
         self.classification = self.used_config["classification"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
@@ -72,7 +71,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
-        overloaded_conf["activated"] = conf.get("activated", False)
         overloaded_conf["classification"] = conf.get("classification", "nodata")
 
         if isinstance(overloaded_conf["classification"], str):
@@ -86,7 +84,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         rectification_schema = {
             "method": str,
-            "activated": bool,
             "classification": Or(None, [str]),
             "save_intermediate_data": bool,
         }
@@ -118,9 +115,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             - a list of Shapely Polygons
             - a Shapely Polygon
         """
-
-        if not self.activated:
-            return None
 
         if self.classification is None:
             self.classification = ["nodata"]
@@ -206,7 +200,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                     ):
                         dsm_to_dtm(bull_conf_path)
         except Exception:
-            logging.error(
+            logging.warning(
                 "Bulldozer failed on its second execution."
                 + " The DSM could not be filled."
             )
