@@ -120,15 +120,24 @@ def rasterio_get_values(raster_file: str, x_list, y_list, proj_function):
         # convert sensor to pixel coordinates
         pix_pos = np.hstack([cloud_out, np.ones((len(cloud_out), 1))])
         pix_pos = inv_tr @ pix_pos.T
-        pix_pos = pix_pos.T[:, [1, 0]].astype(int)
+        pix_pos = pix_pos.T[:, [1, 0]].astype(
+            int
+        )  # convention (row, col) i.e. (y, x)
+
+        # crop to dem bounds
+        ul_corner = np.array([0, 0])
+        lr_corner = np.array([descriptor.height, descriptor.width])
+        pix_pos_clipped = np.clip(pix_pos, ul_corner, lr_corner)
+        out_of_bounds_pix = np.any(pix_pos != pix_pos_clipped, axis=1)
+        pix_pos = pix_pos_clipped
 
         # get the data needed
         min_pt = pix_pos.min(axis=0)
         max_pt = pix_pos.max(axis=0)
 
-        width = max_pt[0] - min_pt[0] + 1
-        height = max_pt[1] - min_pt[1] + 1
-        window = Window(min_pt[1], min_pt[0], height, width)
+        height = max_pt[0] - min_pt[0] + 1
+        width = max_pt[1] - min_pt[1] + 1
+        window = Window(min_pt[1], min_pt[0], width, height)
 
         data = descriptor.read(1, window=window)
         if data.size == 0:
@@ -144,6 +153,7 @@ def rasterio_get_values(raster_file: str, x_list, y_list, proj_function):
 
         if nodata_value is not None:
             z_list[z_list == nodata_value] = np.nan
+        z_list[out_of_bounds_pix] = np.nan
 
         return z_list
 
