@@ -573,6 +573,9 @@ def filling_from_sensor_wrapper(
         values,
         coords=coords,
     )
+
+    profile.update(crs=crs.to_wkt())
+
     cars_dataset.fill_dataset(
         dataset,
         saving_info=saving_info,
