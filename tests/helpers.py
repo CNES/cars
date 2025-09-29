@@ -191,7 +191,7 @@ def temporary_dir():
     return os.environ["CARS_TEST_TEMPORARY_DIR"]
 
 
-@check.check_func
+@check.check_func  # pylint: disable=no-member
 def assert_same_images(actual, expected, rtol=0, atol=0):
     """
     Compare two image files with assertion:
