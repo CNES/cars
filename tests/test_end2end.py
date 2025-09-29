@@ -557,7 +557,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "sparse_matching": {
-                    "decimation_factor": 100,
+                    "decimation_factor": 80,
                 },
                 "dense_matching": {
                     "method": "census_sgm_default",
@@ -571,7 +571,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "point_cloud_rasterization": {
                     "method": "simple_gaussian",
                     "dsm_radius": 3,
-                    "sigma": 0.4,
+                    "sigma": 0.3,
                     "dsm_no_data": -999,
                     "texture_no_data": 0,
                     "msk_no_data": 254,
