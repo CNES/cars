@@ -1655,7 +1655,6 @@ class UnitPipeline(PipelineTemplate):
             )
 
             # saved used configuration
-            # saved used configuration
             self.save_configurations()
 
             # end of for loop, to finish computing disparity range grids
@@ -2363,8 +2362,8 @@ class UnitPipeline(PipelineTemplate):
                             reference_dem=dem_median,
                         )
 
-            # saved used configuration
-            self.save_configurations()
+        # saved used configuration
+        self.save_configurations()
 
         return False
 

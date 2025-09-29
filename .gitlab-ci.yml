@@ -104,7 +104,7 @@ test-end2end:
     - unit-test
   # Use dedicated runner for end2end tests
   tags:
-    - ${TEST_END2END_RUNNER_TAG}
+    - ${TEST_RUNNER_TAG}
   timeout: 120 minutes
   extends:
     - .cars-python-job
