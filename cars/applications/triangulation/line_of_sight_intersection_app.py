@@ -58,6 +58,7 @@ from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
@@ -133,6 +134,7 @@ class LineOfSightIntersection(
 
         return overloaded_conf
 
+    @cars_profile(name="Save triangulation output", interval=0.5)
     def save_triangulation_output(  # noqa: C901 function is too complex
         self,
         epipolar_point_cloud,
@@ -355,6 +357,7 @@ class LineOfSightIntersection(
                 optional_data=True,
             )
 
+    @cars_profile(name="Fill index", interval=0.5)
     def fill_index(
         self,
         save_output_coordinates=True,

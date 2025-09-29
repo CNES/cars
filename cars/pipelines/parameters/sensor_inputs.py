@@ -32,9 +32,10 @@ import rasterio as rio
 from json_checker import Checker, OptionalKey, Or
 
 # CARS imports
-from cars.core import inputs, preprocessing, projection, roi_tools
+from cars.core import inputs, projection
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import (
     depth_map_inputs_constants as depth_map_cst,
 )
@@ -296,7 +297,9 @@ def get_sensor_resolution(
     return (res_x + res_y) / 2
 
 
-def check_geometry_plugin(conf_inputs, conf_geom_plugin, epipolar_resolution):
+def check_geometry_plugin(
+    conf_inputs, conf_geom_plugin, epipolar_resolution, output_dem_dir
+):
     """
     Check the geometry plugin with inputs
 
@@ -373,76 +376,28 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, epipolar_resolution):
         ] = geomodel
 
     geom_plugin_with_dem_and_geoid = generate_geometry_plugin_with_dem(
-        conf_geom_plugin, conf_inputs, scaling_coeff=scaling_coeff
+        conf_geom_plugin,
+        conf_inputs,
+        scaling_coeff=scaling_coeff,
+        output_dem_dir=output_dem_dir,
     )
-
-    # Check dem is big enough
-    dem_generation_roi_poly = None
-    needed_dem_roi = geom_plugin_with_dem_and_geoid.dem_roi
-    needed_dem_roi_epsg = geom_plugin_with_dem_and_geoid.dem_roi_epsg
-    if needed_dem_roi is not None:
-        needed_dem_roi_poly = roi_tools.bounds_to_poly(needed_dem_roi)
-        # convert to 4326 roi
-        dem_generation_roi_poly = preprocessing.compute_roi_poly(
-            needed_dem_roi_poly, needed_dem_roi_epsg, 4326
-        )
-
-        if (
-            conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-            is not None
-        ):
-            # get dem total roi
-            total_input_roi_poly = roi_tools.bounds_to_poly(
-                inputs.rasterio_get_bounds(
-                    conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-                )
-            )
-            total_input_roi_epsg = inputs.rasterio_get_epsg_code(
-                conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
-            )
-            if not isinstance(total_input_roi_epsg, int):
-                total_input_roi_epsg = total_input_roi_epsg.to_epsg()
-            total_input_roi_poly = preprocessing.compute_roi_poly(
-                total_input_roi_poly, total_input_roi_epsg, 4326
-            )
-
-            # if needed roi not inside dem, raise error
-            if not total_input_roi_poly.contains_properly(
-                dem_generation_roi_poly
-            ):
-                base_message = (
-                    "Given initial elevation ROI is not covering needed ROI: "
-                    " EPSG:4326, ROI: {}".format(dem_generation_roi_poly.bounds)
-                )
-
-                if total_input_roi_poly.intersects(dem_generation_roi_poly):
-                    logging.warning(
-                        "{}. Only a part of it intersects. "
-                        "Errors might occur".format(base_message)
-                    )
-                else:
-                    # Exit, Error is certain to occur
-                    raise RuntimeError(base_message)
-
-    else:
-        logging.warning(
-            "Current geometry plugin doesnt compute dem roi needed "
-            "for later computations. Errors related to unsufficient "
-            "dem roi might occur."
-        )
 
     return (
         overloaded_conf_inputs,
         conf_geom_plugin,
         geom_plugin_without_dem_and_geoid,
         geom_plugin_with_dem_and_geoid,
-        dem_generation_roi_poly,
         scaling_coeff,
     )
 
 
 def generate_geometry_plugin_with_dem(
-    conf_geom_plugin, conf_inputs, dem=None, crop_dem=True, scaling_coeff=1
+    conf_geom_plugin,
+    conf_inputs,
+    dem=None,
+    crop_dem=True,
+    output_dem_dir=None,
+    scaling_coeff=1,
 ):
     """
     Generate geometry plugin with dem and geoid
@@ -486,6 +441,7 @@ def generate_geometry_plugin_with_dem(
             default_alt=sens_cst.CARS_DEFAULT_ALT,
             pairs_for_roi=pairs_for_roi,
             scaling_coeff=scaling_coeff,
+            output_dem_dir=output_dem_dir,
         )
     )
 
@@ -741,6 +697,7 @@ def check_all_nbits_equal_one(nbits):
     return False
 
 
+@cars_profile(name="Generate inputs")
 def generate_inputs(conf, geometry_plugin):
     """
     Generate sensors inputs form inputs conf :

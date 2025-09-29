@@ -72,12 +72,25 @@ def get_utm_zone_as_epsg_code(lon, lat):
         )
         return 32632
 
+    if lat > 84:
+        logging.warning(
+            "Since the latitude is above 84°, the EPSG 32661 will be used."
+        )
+        return 32661
+
+    if lat < -80:
+        logging.warning(
+            "Since the latitude is under -80°, the EPSG 32761 will be used."
+        )
+        return 32761
+
     zone = utm.from_latlon(lat, lon)[2]
 
     north_south = 600 if lat >= 0 else 700
     return 32000 + north_south + zone
 
 
+@cars_profile(name="Compute terrain bbox")
 def compute_terrain_bbox(  # noqa: 751
     sensor_image_left,
     sensor_image_right,
@@ -518,6 +531,7 @@ def crop_terrain_bounds_with_roi(roi_poly, xmin, ymin, xmax, ymax):
     return new_xmin, new_ymin, new_xmax, new_ymax
 
 
+@cars_profile(name="Compute terrain bounds")
 def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     """
     Compute Terrain bounds of merged pairs

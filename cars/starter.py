@@ -44,17 +44,18 @@ def inputfilename_to_sensor(inputfilename):
     if basename.startswith("DIM") and basename.endswith("XML"):
         geomodel = os.path.join(dirname, "RPC" + basename[3:])
         if os.path.exists(geomodel) is False:
-            raise FileNotFoundError(geomodel + " does not exist")
+            geomodel = None
 
     elif basename.endswith(".tif"):
         geomodel = os.path.splitext(absfilename)[0] + ".geom"
         if os.path.exists(geomodel) is False:
-            raise FileNotFoundError(geomodel + " does not exist")
+            geomodel = None
     else:
         raise ValueError(absfilename + " not supported")
 
     sensor["image"] = absfilename
-    sensor["geomodel"] = geomodel
+    if geomodel is not None:
+        sensor["geomodel"] = geomodel
 
     return sensor
 

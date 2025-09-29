@@ -65,7 +65,7 @@ def test_fill_dsm(method):
         input_dsm_base = absolute_data_path(
             "ref_output/dsm_end2end_gizeh_crop.tif"
         )
-        input_app_conf = {"method": method, "activated": True}
+        input_app_conf = {"method": method}
 
         _, input_data = generate_input_json(
             input_json, directory, "multiprocessing"

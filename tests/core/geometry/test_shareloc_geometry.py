@@ -126,12 +126,12 @@ def test_get_roi():
         )
     )
     pairs_for_roi = [(sensor1, geomodel1, sensor2, geomodel2)]
-    roi = geo_plugin.get_roi(pairs_for_roi, 4326, margin=0.005)
+    roi = geo_plugin.get_roi(pairs_for_roi, 4326, constant_margin=0.005)
     ref_roi = [
-        44.199474,
         5.187108,
-        44.212998,
+        44.199474,
         5.202048,
+        44.212998,
     ]
     np.testing.assert_allclose(roi, ref_roi)
 
@@ -143,14 +143,14 @@ def test_get_roi():
     )
     pairs_for_roi = [(sensor1, geomodel1, sensor2, geomodel2)]
     roi = geo_plugin_with_margin_on_grid.get_roi(
-        pairs_for_roi, 4326, margin=0.005
+        pairs_for_roi, 4326, constant_margin=0.005
     )
 
     ref_roi = [
-        44.198651,
         5.185954,
-        44.21382,
+        44.198651,
         5.203201,
+        44.21382,
     ]
     # Returned ROI is the footprint of the rectification
     # It takes into account the 5 pixels margin
@@ -191,8 +191,8 @@ def test_exception_roi_outside_dtm():
     assert str(excinfo.value) == (
         "The extent of the roi lies outside "
         "the extent of the initial elevation : the roi bounds are "
-        "[5.17895428589603, 44.191651375558834, 5.210201491359669, "
-        "44.22082030288275] while the dtm bounds are "
+        "[5.156013852323939, 44.15169289345662, 5.235306512180193, "
+        "44.256780712026995] while the dtm bounds are "
         "[31.099861111111114, 29.950138888888887, "
         "31.149861111111115, 30.000138888888888]"
     )

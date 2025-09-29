@@ -43,6 +43,7 @@ from cars.applications.triangulation.triangulation_algo import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 def get_new_path(path):
@@ -140,6 +141,7 @@ def generate_epipolar_grids(
     )
 
 
+@cars_profile(name="Compute epipolar grid min max", interval=0.5)
 def compute_epipolar_grid_min_max(
     geometry_plugin,
     grid,
@@ -239,6 +241,7 @@ def compute_epipolar_grid_min_max(
         grid1,
         grid2,
         matches_min,
+        interpolation_method="linear",
     )
     pc_max = triangulate_matches(
         geometry_plugin,
@@ -249,6 +252,7 @@ def compute_epipolar_grid_min_max(
         grid1,
         grid2,
         matches_max,
+        interpolation_method="linear",
     )
 
     # Convert to correct EPSG

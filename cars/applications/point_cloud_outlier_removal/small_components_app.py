@@ -27,7 +27,6 @@ import copy
 
 # Standard imports
 import logging
-import math
 import os
 import time
 
@@ -79,7 +78,6 @@ class SmallComponents(
         self.used_method = self.used_config["method"]
 
         # small components
-        self.activated = self.used_config["activated"]
         self.on_ground_margin = self.used_config["on_ground_margin"]
         self.connection_distance = self.used_config["connection_distance"]
         self.nb_points_threshold = self.used_config["nb_points_threshold"]
@@ -121,10 +119,6 @@ class SmallComponents(
         overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
 
         # small components
-        overloaded_conf["activated"] = conf.get(
-            "activated", True
-        )  # if false, the following
-        # parameters are unused
         # on_ground_margin:
         #           margin added to the on ground region to not filter
         #           points clusters
@@ -161,7 +155,6 @@ class SmallComponents(
         point_cloud_fusion_schema = {
             "method": str,
             "save_by_pair": bool,
-            "activated": bool,
             "on_ground_margin": int,
             "connection_distance": And(float, lambda x: x > 0),
             "nb_points_threshold": And(int, lambda x: x > 0),
@@ -196,18 +189,12 @@ class SmallComponents(
         :rtype: float
 
         """
+        tot = 10000 * superposing_point_clouds / point_cloud_resolution
 
-        if not self.activated:
-            # if not activated, this tile size must not be taken into acount
-            # during the min(*tile_sizes) operations
-            tile_size = math.inf
-        else:
-            tot = 10000 * superposing_point_clouds / point_cloud_resolution
-
-            import_ = 200  # MiB
-            tile_size = int(
-                np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
-            )
+        import_ = 200  # MiB
+        tile_size = int(
+            np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
+        )
 
         logging.info(
             "Estimated optimal tile size for small"
@@ -234,11 +221,7 @@ class SmallComponents(
         :return: margin
         :rtype: int
         """
-
-        margin = 0
-
-        if self.activated:
-            margin = self.half_epipolar_size
+        margin = self.half_epipolar_size
 
         return margin
 
@@ -250,11 +233,7 @@ class SmallComponents(
         :rtype: float
 
         """
-
-        on_ground_margin = 0
-
-        if self.activated:
-            on_ground_margin = self.on_ground_margin * resolution
+        on_ground_margin = self.on_ground_margin * resolution
 
         return on_ground_margin
 
@@ -312,10 +291,6 @@ class SmallComponents(
 
         :rtype: CarsDataset filled with xr.Dataset
         """
-
-        if not self.activated:
-            return merged_point_cloud
-
         # Default orchestrator
         if orchestrator is None:
             # Create default sequential orchestrator for current application

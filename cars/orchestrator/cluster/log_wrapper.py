@@ -668,7 +668,7 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
         cars_logging.add_profiling_message(message)
 
     # Generate png
-    _, axs = plt.subplots(4, 2, figsize=(15, 15), layout="tight")
+    _, axs = plt.subplots(3, 2, figsize=(20, 20), layout="tight")
     # Fill
 
     generate_boxplot(
@@ -717,6 +717,14 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
         "calls",
     )
 
+    # file_name
+    profiling_plot = os.path.join(
+        out_dir,
+        "profiling",
+        "profiling_plots_histograms.png",
+    )
+    plt.savefig(profiling_plot)
+
     # Pie chart
 
     (name_task_workers, summary_workers) = filter_lists(
@@ -745,8 +753,10 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
 
     total_time_workers = nb_workers * multiprocessing_time
 
+    _, axs2 = plt.subplots(2, 1, figsize=(40, 40), layout="tight")
+
     generate_pie_chart(
-        axs.flat[6],
+        axs2.flat[0],
         name_task_workers,
         100 * np.array(summary_workers) / total_time_workers,
         "Total time in parallel tasks ({} workers) : {}".format(
@@ -756,7 +766,7 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
     )
 
     generate_pie_chart(
-        axs.flat[7],
+        axs2.flat[1],
         name_task_main,
         100 * np.array(summary_main) / sequential_time,
         "Total time in sequential tasks : {}".format(
@@ -764,13 +774,12 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
         ),
     )
 
-    # file_name
-    profiling_plot = os.path.join(
+    profiling_plot2 = os.path.join(
         out_dir,
         "profiling",
-        "profiling_plots.png",
+        "profiling_plots_pie_chart.png",
     )
-    plt.savefig(profiling_plot)
+    plt.savefig(profiling_plot2)
 
     if clean_worker_logs and os.path.exists(workers_log_dir):
         shutil.rmtree(workers_log_dir)
@@ -793,8 +802,11 @@ def generate_pdf_profiling(log_dir):
 
             # Add paths
             pages_data[res] = {
-                "function_profiling": os.path.join(
-                    item_path, "profiling", "profiling_plots.png"
+                "function_profiling_histo": os.path.join(
+                    item_path, "profiling", "profiling_plots_histo.png"
+                ),
+                "function_profiling_pie_chart": os.path.join(
+                    item_path, "profiling", "profiling_plots_pie_chart.png"
                 ),
                 "global_profiling": os.path.join(
                     item_path, "profiling", "memory_profiling.png"
@@ -810,12 +822,29 @@ def generate_pdf_profiling(log_dir):
     with PdfPages(pdf_path) as pdf:
         for res in resolutions:
             # function_profiling
-            if os.path.exists(pages_data[res]["function_profiling"]):
-                img = Image.open(pages_data[res]["function_profiling"])
+            if os.path.exists(pages_data[res]["function_profiling_histo"]):
+                img = Image.open(pages_data[res]["function_profiling_histo"])
                 fig, axis = plt.subplots(1, 1, figsize=(11.69, 8.27), dpi=300)
                 axis.imshow(img, interpolation="none")
                 axis.set_title(
-                    f"Function Profiling - Epipolar Resolution {res}",
+                    f"Function Profiling Histograms - "
+                    f"Epipolar Resolution {res}",
+                    fontsize=16,
+                    fontweight="bold",
+                )
+                axis.axis("off")
+                plt.subplots_adjust(left=0, right=1, top=0.95, bottom=0)
+                pdf.savefig(fig, bbox_inches="tight", dpi=300)
+                plt.close(fig)
+
+            if os.path.exists(pages_data[res]["function_profiling_pie_chart"]):
+                img = Image.open(
+                    pages_data[res]["function_profiling_pie_chart"]
+                )
+                fig, axis = plt.subplots(1, 1, figsize=(11.69, 8.27), dpi=300)
+                axis.imshow(img, interpolation="none")
+                axis.set_title(
+                    f"Function Profiling Pie Chart - Epipolar Resolution {res}",
                     fontsize=16,
                     fontweight="bold",
                 )
@@ -908,8 +937,14 @@ def generate_pie_chart(axis, names, data, title):
         data.append(others)
         names.append("other")
 
-    axis.pie(data, labels=names, autopct="%1.1f%%")
-    axis.set_title(title)
+    axis.pie(
+        data,
+        labels=names,
+        autopct="%1.1f%%",
+        labeldistance=1.1,
+        textprops={"fontsize": 30},
+    )
+    axis.set_title(title, fontsize=40)
 
 
 def cars_profile(name=None, interval=0.1):

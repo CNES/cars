@@ -260,43 +260,47 @@ The structure follows this organization:
 
                 Generates DEM min and max from percentiles of matches altitude grouped by cells of a regular grid
 
-                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
-                | Name                            | Description                                                              | Type       | Available value | Default value   | Required |
-                +=================================+==========================================================================+============+=================+=================+==========+
-                | resolution                      | Resolution of dem, in meter                                              | int, float | should be > 0   | 90              | No       |
-                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
-                | margin                          | Margin to use on the border of dem, in meter                             | int, float | should be > 0   | 6000            | No       |
-                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
-                | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata                             | int        | should be > 0   | 3               | No       |
-                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
-                | percentile                      | Percentile of matches to ignore in min and max functions                 | int        | should be > 0   | 1               | No       |
-                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
-                | min_number_matches              | Minimum number of matches needed to have a valid tile                    | int        | should be > 0   | 30              | No       |
-                +---------------------------------+--------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
+                +---------------------------------+----------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
+                | Name                            | Description                                                                | Type       | Available value | Default value   | Required |
+                +=================================+============================================================================+============+=================+=================+==========+
+                | resolution                      | Resolution of dem, in meter                                                | int, float | should be > 0   | 90              | No       |
+                +---------------------------------+----------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
+                | margin                          | Margin to use on the border of dem: [factor_of_dem_size, margin_in_meters] | list       | should be > 0   | [0, 6000]       | No       |
+                +---------------------------------+----------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
+                | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata                               | int        | should be > 0   | 3               | No       |
+                +---------------------------------+----------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
+                | percentile                      | Percentile of matches to ignore in min and max functions                   | int        | should be > 0   | 1               | No       |
+                +---------------------------------+----------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
+                | min_number_matches              | Minimum number of matches needed to have a valid tile                      | int        | should be > 0   | 30              | No       |
+                +---------------------------------+----------------------------------------------------------------------------+------------+-----------------+-----------------+----------+
 
                 **Method bulldozer_on_raster**
 
                 Rasterizes all matches on a regular grid and performs morphological operations and Bulldozer processing to compute DEM min and max
 
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
-                | Name                                | Description                                                                     | Type       | Available value | Default value    | Required |
-                +=====================================+=================================================================================+============+=================+==================+==========+
-                | margin [#scaled]_                   | Margin to use on the border of dem, in meter                                    | int, float | should be > 0   | None [#scaled]_  | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
-                | fillnodata_max_search_distance      | Max search distance for rasterio fill nodata                                    | int        | should be > 0   | 50               | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
-                | morphological_filters_size          | Size (in pixels) of erosion and dilation filters used to generate DEM           | int        | should be > 0   | 30               | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
-                | preprocessing_median_filter_size    | Size (in pixels) of first median filter used to smooth median DEM               | int        | should be > 0   | 5                | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
-                | dem_median_downsample_factor        | Downsample factor on dsm to generate median DEM                                 | int        | should be > 0   | 15               | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
-                | postprocessing_median_filter_size   | Size (in pixels) of second median filter used to smooth downsampled median DEM  | int        | should be > 0   | 7                | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
-                | bulldozer_max_object_size           | Bulldozer parameter "max_object_size"                                           | int        | should be > 0   | 16               | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
-                | compute_stats                       | Compute statistics of difference between DEM min/max and original DSM           | boolean    |                 | true             | No       |
-                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+------------------+----------+
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | Name                                | Description                                                                     | Type       | Available value | Default value           | Required |
+                +=====================================+=================================================================================+============+=================+=========================+==========+
+                | margin [#scaled]_                   | Margin to use on the border of dem: [factor_of_dem_size, margin_in_meters]      | list       | should be > 0   | [0.2, None [#scaled]_ ] | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | fillnodata_max_search_distance      | Max search distance for rasterio fill nodata                                    | int        | should be > 0   | 50                      | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | morphological_filters_size          | Size (in pixels) of erosion and dilation filters used to generate DEM           | int        | should be > 0   | 30                      | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | preprocessing_median_filter_size    | Size (in pixels) of first median filter used to smooth median DEM               | int        | should be > 0   | 5                       | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | dem_median_downscale                | Downsample factor on dsm to generate median DEM                                 | int        | should be > 0   | 10                      | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | dem_min_max_downscale               | Downsample factor on dsm to generate DEM min and DEM max                        | int        | should be > 0   | 10                      | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | postprocessing_median_filter_size   | Size (in pixels) of second median filter used to smooth downsampled median DEM  | int        | should be > 0   | 7                       | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | bulldozer_max_object_size           | Bulldozer parameter "max_object_size"                                           | int        | should be > 0   | 16                      | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | compute_stats                       | Compute statistics of difference between DEM min/max and original DSM           | boolean    |                 | true                    | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
+                | disable_bulldozer                   | Disable Bulldozer step to fasten the DEM generation                             | boolean    |                 | false                   | No       |
+                +-------------------------------------+---------------------------------------------------------------------------------+------------+-----------------+-------------------------+----------+
 
                 **Example**
 
@@ -676,8 +680,6 @@ The structure follows this organization:
                 +--------------------+-------------+---------+-----------------+---------------+----------+
                 | Name               | Description | Type    | Available value | Default value | Required |
                 +====================+=============+=========+=================+===============+==========+
-                | activated          |             | boolean |                 | True          | No       |
-                +--------------------+-------------+---------+-----------------+---------------+----------+
                 | k                  |             | int     | should be > 0   | 50            | No       |
                 +--------------------+-------------+---------+-----------------+---------------+----------+
                 | filtering_constant |             | float   | should be >= 0  | 0             | No       |
@@ -696,8 +698,6 @@ The structure follows this organization:
                 +---------------------------------+-------------+---------+-----------------+-----------------+----------+
                 | Name                            | Description | Type    | Available value | Default value   | Required |
                 +=================================+=============+=========+=================+=================+==========+
-                | activated                       |             | boolean |                 | True            | No       |
-                +---------------------------------+-------------+---------+-----------------+-----------------+----------+
                 | on_ground_margin                |             | int     |                 | 10              | No       |
                 +---------------------------------+-------------+---------+-----------------+-----------------+----------+
                 | connection_distance [#scaled]_  |             | float   |                 | None [#scaled]_ | No       |
@@ -711,22 +711,26 @@ The structure follows this organization:
 
                 .. warning::
 
-                    There is a particular case with the *Point Cloud outlier removal* application because it is called twice.
-                    The ninth step consists of Filter the 3D points cloud via two consecutive filters.
-                    So you can configure the application twice , once for the *small component filters*, the other for *statistical* filter.
-                    Because it is not possible to define twice the *application_name* on your yaml/json configuration file, we have decided to configure
-                    those two applications with :
+                    There is a particular case with the *Point Cloud outlier removal* application because both methods can be used at the same time in the pipeline.
+                    The ninth step consists of Filter the 3D points cloud via N consecutive filters.
+                    So you can configure the application any number of times. By default the filtering is done twice : once with the *small_components*, once with the *statistical* filter.
+                    To use your own filters in the order you want, you can add an identifier at the end of each application key :
 
-                    * *point_cloud_outlier_removal.1*
-                    * *point_cloud_outlier_removal.2*
+                    * *point_cloud_outlier_removal.my_first_filter*
+                    * *point_cloud_outlier_removal.filter_2*
+                    * *point_cloud_outlier_removal.3*
 
-                    Each one is associated to a particular *point_cloud_outlier_removal* method*
-                    Therefore, is it not possible to use the key *point_cloud_outlier_removal* and to select the method.
+                    The filtering steps will then be executed in the order you provided them.
 
+                    Because by default the applications *point_cloud_outlier_removal.1* and *point_cloud_outlier_removal.2* are defined, to not do any filtering you must set the configuration of *point_cloud_outlier_removal* to None.
 
-                **Example**
+                **Examples**
 
-                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal_1
+                
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal_2
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal_3
 
             .. tab:: Point Cloud Rasterization
 
@@ -836,8 +840,6 @@ The structure follows this organization:
                 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
                 | Name                                | Description                                        | Type        | Available value         | Default value      | Required |
                 +=====================================+====================================================+=============+=========================+====================+==========+
-                | activated                           | Activate this application                          | bool        |                         | False              | No       |
-                +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
                 | classification                      | Classification band name                           | List[str]   |                         | "nodata"           | No       |
                 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
                 | fill_with_geoid                     | Classes to fill with geoid                         | List[str]   |                         | None               | No       |
@@ -853,8 +855,6 @@ The structure follows this organization:
                 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
                 | Name                                | Description                     | Type      | Available value         | Default value      | Required |
                 +=====================================+=================================+===========+=========================+====================+==========+
-                | activated                           | Activate this application       | bool      |                         | False              | No       |
-                +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
                 | classification                      | Classification band name        | List[str] |                         | "nodata"           | No       |
                 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 
@@ -865,8 +865,6 @@ The structure follows this organization:
                 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
                 | Name                                | Description                              | Type      | Available value         | Default value      | Required |
                 +=====================================+==========================================+===========+=========================+====================+==========+
-                | activated                           | Activate this application                | bool      |                         | False              | No       |
-                +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
                 | classification                      | Classification band name                 | List[str] |                         | "nodata"           | No       |
                 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
                 | component_min_size                  | Minimal size (pixels) of feature to fill | int       |                         | 5                  | No       |
@@ -881,25 +879,23 @@ The structure follows this organization:
 
                 .. warning::
 
-                    There is a particular case with the *dsm_filling* application because it is called three times.
-                    Because it is not possible to define three times the *dsm_filling* on your yaml/json configuration file, we have decided to configure
-                    those three applications with :
+                    There is a particular case with the *dsm_filling* application because it can be called any number of times.
+                    Because it is not possible to define three times the *dsm_filling* in your yaml/json configuration file, you can add an identifier after *dsm_filling* to differentiate each application :
 
-                    * *dsm_filling.1*
-                    * *dsm_filling.2*
-                    * *dsm_filling.3*
+                    * *dsm_filling.border_interp*
+                    * *dsm_filling.two*
+                    * *dsm_filling.with_bulldozer*
 
-                    Each one is associated to a particular *dsm_filling* method : 
-                     - 1 : exogenous_filling
-                     - 2 : bulldozer
-                     - 3 : border_interpolation
-
-                    It is not recommended to change it, as the pipeline is designed with this order. If you just want to use a subset of these applications, just use the "activate" parameter.
                     It is recommended to run bulldozer before border_interpolation in order for border_interpolation to get a DTM. If no DTM is found, border_interpolation will use the DSM.
+                    The execution order is determined by the order of the applications in the configuration file.
 
                 **Example**
 
-                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dsm_filling
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dsm_filling_1
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dsm_filling_2
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_dsm_filling_3
 
             .. tab:: Auxiliary Filling
 
@@ -1203,15 +1199,15 @@ The structure follows this organization:
 
                 **geometry_plugin** allow user to specify other parameters, through a dictionary:
 
-                +-----------------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
-                | Name                        | Description                                                   | Type           | Default value           | Available values                      | Required |
-                +=============================+===============================================================+================+=========================+=======================================+==========+
-                | *plugin_name*               | The plugin name to use                                        | str            | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
-                +-----------------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
-                | *interpolator*              | Interpolator to use                                           | str            | "cubic"                 | "cubic" , "linear"                    | False    |
-                +-----------------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
-                | *dem_roi_margin* [#scaled]_ | Additional margin (in degrees) for ROI used to crop input DEM | float          | None [#scaled]_         |                                       | False    |
-                +-----------------------------+---------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
+                +-----------------------------+------------------------------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | Name                        | Description                                                                        | Type           | Default value           | Available values                      | Required |
+                +=============================+====================================================================================+================+=========================+=======================================+==========+
+                | *plugin_name*               | The plugin name to use                                                             | str            | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
+                +-----------------------------+------------------------------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | *interpolator*              | Interpolator to use                                                                | str            | "cubic"                 | "cubic" , "linear"                    | False    |
+                +-----------------------------+------------------------------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
+                | *dem_roi_margin*            | Additional margin for DEM : [factor_of_terrain_bounds, constant_margin_in_degrees] | list           | [0.25, 0.02]            |                                       | False    |
+                +-----------------------------+------------------------------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
 
 
                 To use Shareloc geometry library, CARS input configuration should be defined as :

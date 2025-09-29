@@ -118,6 +118,7 @@ def triangulate_matches(
     grid1,
     grid2,
     matches,
+    interpolation_method=None,
 ):
     """
     This function will perform triangulation from sift matches
@@ -162,6 +163,7 @@ def triangulate_matches(
         matches,
         grid1,
         grid2,
+        interpolation_method=interpolation_method,
     )
 
     disparity = np.array([matches[:, 2] - matches[:, 0]])

@@ -159,7 +159,7 @@ class Sift(SparseMatching, short_name=["sift"]):
 
         # minimum number of matches to continue with
         overloaded_conf["minimum_nb_matches"] = conf.get(
-            "minimum_nb_matches", 100
+            "minimum_nb_matches", 90
         )
 
         # sifts params

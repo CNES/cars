@@ -27,7 +27,6 @@ import copy
 
 # Standard imports
 import logging
-import math
 import os
 import time
 
@@ -83,7 +82,6 @@ class Statistical(
         self.used_method = self.used_config["method"]
 
         # statistical outliers
-        self.activated = self.used_config["activated"]
         self.k = self.used_config["k"]
         self.filtering_constant = self.used_config["filtering_constant"]
         self.mean_factor = self.used_config["mean_factor"]
@@ -126,10 +124,6 @@ class Statistical(
         overloaded_conf["use_median"] = conf.get("use_median", True)
 
         # statistical outlier filtering
-        overloaded_conf["activated"] = conf.get(
-            "activated", True
-        )  # if false, the following
-        # parameters are unused
         # k: number of neighbors
         overloaded_conf["k"] = conf.get("k", 50)
         # filtering_constant: constant to apply in the distance threshold
@@ -154,7 +148,6 @@ class Statistical(
         point_cloud_outlier_removal_schema = {
             "method": str,
             "save_by_pair": bool,
-            "activated": bool,
             "k": And(int, lambda x: x > 0),
             "filtering_constant": And(Or(float, int), lambda x: x >= 0),
             "mean_factor": And(Or(float, int), lambda x: x >= 0),
@@ -191,17 +184,12 @@ class Statistical(
 
         """
 
-        if not self.activated:
-            # if not activated, this tile size must not be taken into acount
-            # during the min(*tile_sizes) operations
-            tile_size = math.inf
-        else:
-            tot = 10000 * superposing_point_clouds / point_cloud_resolution
+        tot = 10000 * superposing_point_clouds / point_cloud_resolution
 
-            import_ = 200  # MiB
-            tile_size = int(
-                np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
-            )
+        import_ = 200  # MiB
+        tile_size = int(
+            np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
+        )
 
         logging.info(
             "Estimated optimal tile size for statistical "
@@ -228,11 +216,7 @@ class Statistical(
         :return: margin
         :rtype: int
         """
-
-        margin = 0
-
-        if self.activated:
-            margin = self.half_epipolar_size
+        margin = self.half_epipolar_size
 
         return margin
 
@@ -299,9 +283,6 @@ class Statistical(
 
         :rtype : CarsDataset filled with xr.Dataset
         """
-
-        if not self.activated:
-            return merged_point_cloud
 
         # Default orchestrator
         if orchestrator is None:

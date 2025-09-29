@@ -1,12 +1,7 @@
 ---
 inputs:
   sensors: # define what cars will take as input
-    one:
-      image: img1.tif
-      geomodel: img1.geom
-      color: color1.tif
-    two:
-      image: img2.tif
-      geomodel: img2.geom
+    one: img1.tif
+    two: img2.tif
 output: # define where cars should put the results
   directory: outresults
