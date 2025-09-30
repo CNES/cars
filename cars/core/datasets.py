@@ -32,6 +32,7 @@ import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
+from cars.core import inputs
 
 # TODO: refacto constants: define constants here as only concerning datasets
 
@@ -64,7 +65,9 @@ def create_im_dataset(
     if img_path is not None:
         with rio.open(img_path) as img_srs:
             img_crs = img_srs.profile["crs"]
-            img_transform = img_srs.profile["transform"]
+            img_transform = inputs.rasterio_get_transform(
+                img_path, convention="north"
+            )
 
     if img_crs is None:
         img_crs = "None"

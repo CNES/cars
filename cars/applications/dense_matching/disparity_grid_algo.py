@@ -27,7 +27,6 @@ import itertools
 import logging
 
 # Third party imports
-import affine
 import numpy as np
 import rasterio
 import xarray as xr
@@ -211,23 +210,11 @@ def generate_disp_range_from_dem_wrapper(
     """
 
     # compute reverse matrix
-    transform_sensor = rasterio.Affine(
-        *np.abs(
-            inputs.rasterio_get_transform(
-                sensor_image_right["image"]["main_file"]
-            )
-        )
+    transform_sensor = inputs.rasterio_get_transform(
+        sensor_image_right["image"]["main_file"], convention="north"
     )
 
     trans_inv_sensor = ~transform_sensor
-    # Transform to positive values
-    trans_inv_sensor = np.array(trans_inv_sensor)
-    trans_inv_sensor = np.reshape(trans_inv_sensor, (3, 3))
-    if trans_inv_sensor[0, 0] < 0:
-        trans_inv_sensor[0, :] *= -1
-    if trans_inv_sensor[1, 1] < 0:
-        trans_inv_sensor[1, :] *= -1
-    trans_inv_sensor = affine.Affine(*list(trans_inv_sensor.flatten()))
 
     # Geometry plugin
     geo_plugin = geom_plugin_with_dem_and_geoid
