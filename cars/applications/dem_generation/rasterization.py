@@ -553,7 +553,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
             dem_max,
         )
         # Rectify pixels where DEM min > DEM max - margin, to ensure that
-        # DEM min > DEM max even on filled pixels
+        # DEM min < DEM max even on filled pixels
         dem_min = np.where(
             dem_min > dem_max - self.min_height_margin,
             dem_max - self.min_height_margin,
