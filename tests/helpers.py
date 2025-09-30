@@ -45,6 +45,7 @@ from pandora.check_configuration import (
     get_config_pipeline,
 )
 from pandora.state_machine import PandoraMachine
+from pytest_check import check
 
 from cars.applications.dense_matching.loaders.pandora_loader import (
     check_input_section_custom_cars,
@@ -190,6 +191,7 @@ def temporary_dir():
     return os.environ["CARS_TEST_TEMPORARY_DIR"]
 
 
+@check.check_func  # pylint: disable=no-member
 def assert_same_images(actual, expected, rtol=0, atol=0):
     """
     Compare two image files with assertion:

@@ -39,6 +39,7 @@ from shutil import copy2  # noqa: F401 # pylint: disable=unused-import
 import pyproj
 import pytest
 import rasterio
+from pytest_check import check
 from shapely.ops import transform
 
 # CARS imports
@@ -362,30 +363,34 @@ def test_end2end_dsm_fusion():
         )
         # assertion on descriptions and classes
 
-        assert inputs.get_descriptions_bands(
-            os.path.join(out_dir, "dsm", "texture.tif")
-        ) == (None, None, None, None)
-        assert inputs.get_descriptions_bands(
-            os.path.join(out_dir, "dsm", "classification.tif")
-        ) == ("b0", "b1", "b2")
-        assert inputs.get_descriptions_bands(
-            os.path.join(out_dir, "dsm", "contributing_pair.tif")
-        ) == ("left_right",)
-        assert str(
-            inputs.rasterio_get_tags(
-                os.path.join(out_dir, "dsm", "performance_map.tif")
-            )["CLASSES"]
-        ) == str(
-            {
-                0: (0, 0.968),
-                1: (0.968, 1.13375),
-                2: (1.13375, 1.295),
-                3: (1.295, 1.604),
-                4: (1.604, 2.423),
-                5: (2.423, 3.428),
-                6: (3.428, math.inf),
-            }
-        )
+        with check:
+            assert inputs.get_descriptions_bands(
+                os.path.join(out_dir, "dsm", "texture.tif")
+            ) == (None, None, None, None)
+        with check:
+            assert inputs.get_descriptions_bands(
+                os.path.join(out_dir, "dsm", "classification.tif")
+            ) == ("b0", "b1", "b2")
+        with check:
+            assert inputs.get_descriptions_bands(
+                os.path.join(out_dir, "dsm", "contributing_pair.tif")
+            ) == ("left_right",)
+        with check:
+            assert str(
+                inputs.rasterio_get_tags(
+                    os.path.join(out_dir, "dsm", "performance_map.tif")
+                )["CLASSES"]
+            ) == str(
+                {
+                    0: (0, 0.968),
+                    1: (0.968, 1.13375),
+                    2: (1.13375, 1.295),
+                    3: (1.295, 1.604),
+                    4: (1.604, 2.423),
+                    5: (2.423, 3.428),
+                    6: (3.428, math.inf),
+                }
+            )
 
         # Run the same mergin, for only basic data
         in_dsm_base = {
@@ -875,43 +880,50 @@ def test_end2end_ventoux_sparse_dsm_8bits():
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
-        assert os.path.isfile(out_json)
+        with check:
+            assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as json_file:
             out_json = json.load(json_file)
-            assert (
-                out_json["applications"]["grid_generation"]["left_right"][
-                    "epipolar_size_x"
-                ]
-                == 612
-            )
-            assert (
-                out_json["applications"]["grid_generation"]["left_right"][
-                    "epipolar_size_y"
-                ]
-                == 612
-            )
-            assert (
-                -85
-                < out_json["applications"]["disparity_range_computation"][
-                    "left_right"
-                ]["minimum_disparity"]
-                < -75
-            )
-            assert (
-                45
-                < out_json["applications"]["disparity_range_computation"][
-                    "left_right"
-                ]["maximum_disparity"]
-                < 55
-            )
+            with check:
+                assert (
+                    out_json["applications"]["grid_generation"]["left_right"][
+                        "epipolar_size_x"
+                    ]
+                    == 612
+                )
+            with check:
+                assert (
+                    out_json["applications"]["grid_generation"]["left_right"][
+                        "epipolar_size_y"
+                    ]
+                    == 612
+                )
+            with check:
+                assert (
+                    -85
+                    < out_json["applications"]["disparity_range_computation"][
+                        "left_right"
+                    ]["minimum_disparity"]
+                    < -75
+                )
+            with check:
+                assert (
+                    45
+                    < out_json["applications"]["disparity_range_computation"][
+                        "left_right"
+                    ]["maximum_disparity"]
+                    < 55
+                )
 
         used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
         refined_conf_path = os.path.join(out_dir, "refined_conf.json")
 
         # check used_conf file exists
-        assert os.path.isfile(used_conf_path)
-        assert os.path.isfile(refined_conf_path)
+        with check:
+            assert os.path.isfile(used_conf_path)
+        with check:
+            assert os.path.isfile(refined_conf_path)
 
         out_dir_res4 = os.path.join(
             input_config_sparse_dsm["output"]["directory"],
@@ -1043,36 +1055,41 @@ def test_end2end_ventoux_unique():
         out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
-        assert os.path.isfile(out_json)
+        with check:
+            assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as json_file:
             out_json = json.load(json_file)
-            assert (
-                out_json["applications"]["grid_generation"]["left_right"][
-                    "epipolar_size_x"
-                ]
-                == 612
-            )
-            assert (
-                out_json["applications"]["grid_generation"]["left_right"][
-                    "epipolar_size_y"
-                ]
-                == 612
-            )
-            assert (
-                -85
-                < out_json["applications"]["disparity_range_computation"][
-                    "left_right"
-                ]["minimum_disparity"]
-                < -75
-            )
-            assert (
-                45
-                < out_json["applications"]["disparity_range_computation"][
-                    "left_right"
-                ]["maximum_disparity"]
-                < 55
-            )
+            with check:
+                assert (
+                    out_json["applications"]["grid_generation"]["left_right"][
+                        "epipolar_size_x"
+                    ]
+                    == 612
+                )
+            with check:
+                assert (
+                    out_json["applications"]["grid_generation"]["left_right"][
+                        "epipolar_size_y"
+                    ]
+                    == 612
+                )
+            with check:
+                assert (
+                    -85
+                    < out_json["applications"]["disparity_range_computation"][
+                        "left_right"
+                    ]["minimum_disparity"]
+                    < -75
+                )
+            with check:
+                assert (
+                    45
+                    < out_json["applications"]["disparity_range_computation"][
+                        "left_right"
+                    ]["maximum_disparity"]
+                    < 55
+                )
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -1154,23 +1171,30 @@ def test_end2end_ventoux_unique():
         used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
 
         # check used_conf file exists
-        assert os.path.isfile(used_conf_path)
+        with check:
+            assert os.path.isfile(used_conf_path)
 
         with open(used_conf_path, "r", encoding="utf-8") as json_file:
             used_conf = json.load(json_file)
             # check used_conf inputs conf exists
-            assert "inputs" in used_conf
-            assert "sensors" in used_conf["inputs"]
+            with check:
+                assert "inputs" in used_conf
+            with check:
+                assert "sensors" in used_conf["inputs"]
             # check used_conf sparse_matching configuration
-            assert (
-                used_conf["applications"]["sparse_matching"]["disparity_margin"]
-                == 0.25
-            )
+            with check:
+                assert (
+                    used_conf["applications"]["sparse_matching"][
+                        "disparity_margin"
+                    ]
+                    == 0.25
+                )
             # check used_conf orchestrator conf is the same as gt
-            assert (
-                used_conf["orchestrator"]
-                == gt_used_conf_orchestrator["orchestrator"]
-            )
+            with check:
+                assert (
+                    used_conf["orchestrator"]
+                    == gt_used_conf_orchestrator["orchestrator"]
+                )
 
             # check used_conf reentry
             _ = unit.UnitPipeline(used_conf)
@@ -1285,23 +1309,30 @@ def test_end2end_ventoux_unique():
         used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
 
         # check used_conf file exists
-        assert os.path.isfile(used_conf_path)
+        with check:
+            assert os.path.isfile(used_conf_path)
 
         with open(used_conf_path, "r", encoding="utf-8") as json_file:
             used_conf = json.load(json_file)
             # check used_conf inputs conf exists
-            assert "inputs" in used_conf
-            assert "sensors" in used_conf["inputs"]
+            with check:
+                assert "inputs" in used_conf
+            with check:
+                assert "sensors" in used_conf["inputs"]
             # check used_conf sparse_matching configuration
-            assert (
-                used_conf["applications"]["point_cloud_rasterization"]["sigma"]
-                == 0.3
-            )
+            with check:
+                assert (
+                    used_conf["applications"]["point_cloud_rasterization"][
+                        "sigma"
+                    ]
+                    == 0.3
+                )
             # check used_conf orchestrator conf is the same as gt
-            assert (
-                used_conf["orchestrator"]
-                == gt_used_conf_orchestrator["orchestrator"]
-            )
+            with check:
+                assert (
+                    used_conf["orchestrator"]
+                    == gt_used_conf_orchestrator["orchestrator"]
+                )
             # check used_conf reentry
             _ = unit.UnitPipeline(used_conf)
 
@@ -1359,7 +1390,8 @@ def test_end2end_ventoux_unique():
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+        with check:
+            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test that we have the same results without setting the texture
     input_json = absolute_data_path(
@@ -1526,7 +1558,8 @@ def test_end2end_ventoux_unique():
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+        with check:
+            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test we have the same results with multiprocessing
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -1636,7 +1669,8 @@ def test_end2end_ventoux_unique():
             ),
             rtol=0.005,
         )
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+        with check:
+            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -2582,36 +2616,41 @@ def test_end2end_use_epipolar_a_priori():
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
-        assert os.path.isfile(out_json)
+        with check:
+            assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as json_file:
             out_json = json.load(json_file)
-            assert (
-                out_json["applications"]["grid_generation"]["left_right"][
-                    "epipolar_size_x"
-                ]
-                == 612
-            )
-            assert (
-                out_json["applications"]["grid_generation"]["left_right"][
-                    "epipolar_size_y"
-                ]
-                == 612
-            )
-            assert (
-                -65
-                < out_json["applications"]["disparity_range_computation"][
-                    "left_right"
-                ]["minimum_disparity"]
-                < -45
-            )
-            assert (
-                30
-                < out_json["applications"]["disparity_range_computation"][
-                    "left_right"
-                ]["maximum_disparity"]
-                < 40
-            )
+            with check:
+                assert (
+                    out_json["applications"]["grid_generation"]["left_right"][
+                        "epipolar_size_x"
+                    ]
+                    == 612
+                )
+            with check:
+                assert (
+                    out_json["applications"]["grid_generation"]["left_right"][
+                        "epipolar_size_y"
+                    ]
+                    == 612
+                )
+            with check:
+                assert (
+                    -65
+                    < out_json["applications"]["disparity_range_computation"][
+                        "left_right"
+                    ]["minimum_disparity"]
+                    < -45
+                )
+            with check:
+                assert (
+                    30
+                    < out_json["applications"]["disparity_range_computation"][
+                        "left_right"
+                    ]["maximum_disparity"]
+                    < 40
+                )
 
             # Ref output dir dependent from geometry plugin chosen
             intermediate_output_dir = "intermediate_data"
@@ -2691,24 +2730,37 @@ def test_end2end_use_epipolar_a_priori():
         refined_conf_path = os.path.join(out_dir, "refined_conf.json")
 
         # check refined_config_dense_dsm_json file exists
-        assert os.path.isfile(refined_conf_path)
+        with check:
+            assert os.path.isfile(refined_conf_path)
 
         with open(refined_conf_path, "r", encoding="utf-8") as json_file:
             refined_conf = json.load(json_file)
             # check refined_conf inputs conf exists
-            assert "inputs" in refined_conf
-            assert "sensors" in refined_conf["inputs"]
-            assert "advanced" in refined_conf
+            with check:
+                assert "inputs" in refined_conf
+            with check:
+                assert "sensors" in refined_conf["inputs"]
+            with check:
+                assert "advanced" in refined_conf
 
             # use_epipolar_a_priori should be false in refined_conf
-            assert "epipolar_a_priori" in refined_conf["advanced"]
-            assert (
-                "grid_correction"
-                in refined_conf["advanced"]["epipolar_a_priori"]["left_right"]
-            )
-            assert "dem_median" in refined_conf["advanced"]["terrain_a_priori"]
-            assert "dem_min" in refined_conf["advanced"]["terrain_a_priori"]
-            assert "dem_max" in refined_conf["advanced"]["terrain_a_priori"]
+            with check:
+                assert "epipolar_a_priori" in refined_conf["advanced"]
+            with check:
+                assert (
+                    "grid_correction"
+                    in refined_conf["advanced"]["epipolar_a_priori"][
+                        "left_right"
+                    ]
+                )
+            with check:
+                assert (
+                    "dem_median" in refined_conf["advanced"]["terrain_a_priori"]
+                )
+            with check:
+                assert "dem_min" in refined_conf["advanced"]["terrain_a_priori"]
+            with check:
+                assert "dem_max" in refined_conf["advanced"]["terrain_a_priori"]
 
             # check refined_conf reentry (without epipolar a priori activated)
             _ = unit.UnitPipeline(refined_conf)
@@ -2757,18 +2809,24 @@ def test_end2end_use_epipolar_a_priori():
         used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
 
         # check used_conf file exists
-        assert os.path.isfile(used_conf_path)
+        with check:
+            assert os.path.isfile(used_conf_path)
 
         with open(used_conf_path, "r", encoding="utf-8") as json_file:
             used_conf = json.load(json_file)
             # check used_conf inputs conf exists
-            assert "inputs" in used_conf
-            assert "sensors" in used_conf["inputs"]
+            with check:
+                assert "inputs" in used_conf
+            with check:
+                assert "sensors" in used_conf["inputs"]
             # check used_conf sparse_matching configuration
-            assert (
-                used_conf["applications"]["point_cloud_rasterization"]["sigma"]
-                == 0.3
-            )
+            with check:
+                assert (
+                    used_conf["applications"]["point_cloud_rasterization"][
+                        "sigma"
+                    ]
+                    == 0.3
+                )
             # check used_conf reentry
             _ = unit.UnitPipeline(used_conf)
 
@@ -2836,7 +2894,8 @@ def test_end2end_use_epipolar_a_priori():
             atol=1.0e-7,
             rtol=1.0e-7,
         )
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+        with check:
+            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -2904,20 +2963,27 @@ def test_prepare_ventoux_bias():
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "metadata.json")
-        assert os.path.isfile(out_json)
+        with check:
+            assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
-            assert out_grid["epipolar_size_x"] == 612
-            assert out_grid["epipolar_size_y"] == 612
+            with check:
+                assert out_grid["epipolar_size_x"] == 612
+            with check:
+                assert out_grid["epipolar_size_y"] == 612
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -140
-            assert out_disp_compute["minimum_disparity"] < -120
-            assert out_disp_compute["maximum_disparity"] > -47
-            assert out_disp_compute["maximum_disparity"] < 5
+            with check:
+                assert out_disp_compute["minimum_disparity"] > -140
+            with check:
+                assert out_disp_compute["minimum_disparity"] < -120
+            with check:
+                assert out_disp_compute["maximum_disparity"] > -47
+            with check:
+                assert out_disp_compute["maximum_disparity"] < 5
 
 
 @pytest.mark.end2end_tests
@@ -3296,17 +3362,18 @@ def test_end2end_ventoux_full_output_no_elevation():
 
         pc_name = "0_0"
 
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "point_cloud",
-                    "left_right",
-                    pc_name + ".laz",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "point_cloud",
+                        "left_right",
+                        pc_name + ".laz",
+                    )
                 )
+                is True
             )
-            is True
-        )
 
         # Assertions on index files
         depth_map_index_path = os.path.join(out_dir, "depth_map", "index.json")
@@ -3315,48 +3382,54 @@ def test_end2end_ventoux_full_output_no_elevation():
             out_dir, "point_cloud", "index.json"
         )
 
-        assert os.path.isfile(depth_map_index_path)
-        assert os.path.isfile(dsm_index_path)
-        assert os.path.isfile(point_cloud_index_path)
+        with check:
+            assert os.path.isfile(depth_map_index_path)
+        with check:
+            assert os.path.isfile(dsm_index_path)
+        with check:
+            assert os.path.isfile(point_cloud_index_path)
 
         with open(depth_map_index_path, "r", encoding="utf-8") as json_file:
             depth_map_index = json.load(json_file)
-            assert depth_map_index == {
-                "left_right": {
-                    "x": "left_right/X.tif",
-                    "y": "left_right/Y.tif",
-                    "z": "left_right/Z.tif",
-                    "texture": "left_right/texture.tif",
-                    "mask": "left_right/mask.tif",
-                    "classification": "left_right/classification.tif",
-                    "performance_map": None,
-                    "filling": "left_right/filling.tif",
-                    "epsg": 4326,
+            with check:
+                assert depth_map_index == {
+                    "left_right": {
+                        "x": "left_right/X.tif",
+                        "y": "left_right/Y.tif",
+                        "z": "left_right/Z.tif",
+                        "texture": "left_right/texture.tif",
+                        "mask": "left_right/mask.tif",
+                        "classification": "left_right/classification.tif",
+                        "performance_map": None,
+                        "filling": "left_right/filling.tif",
+                        "epsg": 4326,
+                    }
                 }
-            }
 
         with open(dsm_index_path, "r", encoding="utf-8") as json_file:
             dsm_index = json.load(json_file)
-            assert dsm_index == {
-                "dsm": "dsm.tif",
-                "texture": "texture.tif",
-                "mask": "mask.tif",
-                "weights": "weights.tif",
-                "classification": "classification.tif",
-                "performance_map": None,
-                "contributing_pair": "contributing_pair.tif",
-                "filling": "filling.tif",
-            }
+            with check:
+                assert dsm_index == {
+                    "dsm": "dsm.tif",
+                    "texture": "texture.tif",
+                    "mask": "mask.tif",
+                    "weights": "weights.tif",
+                    "classification": "classification.tif",
+                    "performance_map": None,
+                    "contributing_pair": "contributing_pair.tif",
+                    "filling": "filling.tif",
+                }
 
         with open(point_cloud_index_path, "r", encoding="utf-8") as json_file:
             point_cloud_index = json.load(json_file)
-            assert point_cloud_index == {
-                "left_right": {
-                    "0_0": "left_right/0_0.laz",
-                    "1_0": "left_right/1_0.laz",
-                    "1_1": "left_right/1_1.laz",
+            with check:
+                assert point_cloud_index == {
+                    "left_right": {
+                        "0_0": "left_right/0_0.laz",
+                        "1_0": "left_right/1_0.laz",
+                        "1_1": "left_right/1_1.laz",
+                    }
                 }
-            }
 
 
 @pytest.mark.end2end_tests
@@ -3428,20 +3501,27 @@ def test_end2end_ventoux_with_color():
 
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
-        assert os.path.isfile(out_json)
+        with check:
+            assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
-            assert out_grid["epipolar_size_x"] == 612
-            assert out_grid["epipolar_size_y"] == 612
+            with check:
+                assert out_grid["epipolar_size_x"] == 612
+            with check:
+                assert out_grid["epipolar_size_y"] == 612
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -85
-            assert out_disp_compute["minimum_disparity"] < -65
-            assert out_disp_compute["maximum_disparity"] > 45
-            assert out_disp_compute["maximum_disparity"] < 55
+            with check:
+                assert out_disp_compute["minimum_disparity"] > -85
+            with check:
+                assert out_disp_compute["minimum_disparity"] < -65
+            with check:
+                assert out_disp_compute["maximum_disparity"] > 45
+            with check:
+                assert out_disp_compute["maximum_disparity"] < 55
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -3501,100 +3581,105 @@ def test_end2end_ventoux_with_color():
         dense_dsm_pipeline.run()
 
         out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dsm",
-                    "ambiguity.tif",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dsm",
+                        "ambiguity.tif",
+                    )
                 )
+                is True
             )
-            is True
-        )
 
         pc1 = "0_0"
         pc2 = "1_0"
 
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "triangulation",
-                    "left_right",
-                    "laz",
-                    pc1 + ".laz",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "triangulation",
+                        "left_right",
+                        "laz",
+                        pc1 + ".laz",
+                    )
                 )
+                is True
             )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "triangulation",
-                    "left_right",
-                    "csv",
-                    pc1 + ".csv",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "triangulation",
+                        "left_right",
+                        "csv",
+                        pc1 + ".csv",
+                    )
                 )
+                is True
             )
-            is True
-        )
-
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "pc_outlier_removal_1",
-                    "left_right",
-                    "laz",
-                    pc2 + ".laz",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "pc_outlier_removal_1",
+                        "left_right",
+                        "laz",
+                        pc2 + ".laz",
+                    )
                 )
+                is True
             )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "pc_outlier_removal_1",
-                    "left_right",
-                    "csv",
-                    pc2 + ".csv",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "pc_outlier_removal_1",
+                        "left_right",
+                        "csv",
+                        pc2 + ".csv",
+                    )
                 )
+                is True
             )
-            is True
-        )
-
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "pc_outlier_removal_2",
-                    "left_right",
-                    "laz",
-                    pc1 + ".laz",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "pc_outlier_removal_2",
+                        "left_right",
+                        "laz",
+                        pc1 + ".laz",
+                    )
                 )
+                is True
             )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "pc_outlier_removal_2",
-                    "left_right",
-                    "csv",
-                    pc1 + ".csv",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "pc_outlier_removal_2",
+                        "left_right",
+                        "csv",
+                        pc1 + ".csv",
+                    )
                 )
+                is True
             )
-            is True
-        )
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -3783,20 +3868,27 @@ def test_end2end_ventoux_with_classif():
 
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
-        assert os.path.isfile(out_json)
+        with check:
+            assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
-            assert out_grid["epipolar_size_x"] == 612
-            assert out_grid["epipolar_size_y"] == 612
+            with check:
+                assert out_grid["epipolar_size_x"] == 612
+            with check:
+                assert out_grid["epipolar_size_y"] == 612
             out_disp_compute = out_data["applications"][
                 "disparity_range_computation"
             ]["left_right"]
-            assert out_disp_compute["minimum_disparity"] > -85
-            assert out_disp_compute["minimum_disparity"] < -75
-            assert out_disp_compute["maximum_disparity"] > 45
-            assert out_disp_compute["maximum_disparity"] < 55
+            with check:
+                assert out_disp_compute["minimum_disparity"] > -85
+            with check:
+                assert out_disp_compute["minimum_disparity"] < -75
+            with check:
+                assert out_disp_compute["maximum_disparity"] > 45
+            with check:
+                assert out_disp_compute["maximum_disparity"] < 55
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -3855,86 +3947,90 @@ def test_end2end_ventoux_with_classif():
         out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
         pc1 = "0_0"
 
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "triangulation",
-                    "left_right",
-                    "laz",
-                    pc1 + ".laz",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "triangulation",
+                        "left_right",
+                        "laz",
+                        pc1 + ".laz",
+                    )
                 )
+                is True
             )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "triangulation",
-                    "left_right",
-                    "csv",
-                    pc1 + ".csv",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "triangulation",
+                        "left_right",
+                        "csv",
+                        pc1 + ".csv",
+                    )
                 )
+                is True
             )
-            is True
-        )
-
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "pc_outlier_removal_1",
-                    "left_right",
-                    "laz",
-                    pc1 + ".laz",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "pc_outlier_removal_1",
+                        "left_right",
+                        "laz",
+                        pc1 + ".laz",
+                    )
                 )
+                is True
             )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "pc_outlier_removal_1",
-                    "left_right",
-                    "csv",
-                    pc1 + ".csv",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "pc_outlier_removal_1",
+                        "left_right",
+                        "csv",
+                        pc1 + ".csv",
+                    )
                 )
+                is True
             )
-            is True
-        )
-
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "pc_outlier_removal_2",
-                    "left_right",
-                    "laz",
-                    pc1 + ".laz",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "pc_outlier_removal_2",
+                        "left_right",
+                        "laz",
+                        pc1 + ".laz",
+                    )
                 )
+                is True
             )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "pc_outlier_removal_2",
-                    "left_right",
-                    "csv",
-                    pc1 + ".csv",
+        with check:
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir,
+                        "dump_dir",
+                        "pc_outlier_removal_2",
+                        "left_right",
+                        "csv",
+                        pc1 + ".csv",
+                    )
                 )
+                is True
             )
-            is True
-        )
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4112,7 +4208,8 @@ def test_compute_dsm_with_roi_ventoux():
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+        with check:
+            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
         # check final bounding box
         # create reference
@@ -4134,10 +4231,14 @@ def test_compute_dsm_with_roi_ventoux():
         xmax = max(data.bounds.left, data.bounds.right)
         ymax = max(data.bounds.bottom, data.bounds.top)
 
-        assert math.floor(ref_xmin / resolution) * resolution == xmin
-        assert math.ceil(ref_xmax / resolution) * resolution == xmax
-        assert math.floor(ref_ymin / resolution) * resolution == ymin
-        assert math.ceil(ref_ymax / resolution) * resolution == ymax
+        with check:
+            assert math.floor(ref_xmin / resolution) * resolution == xmin
+        with check:
+            assert math.ceil(ref_xmax / resolution) * resolution == xmax
+        with check:
+            assert math.floor(ref_ymin / resolution) * resolution == ymin
+        with check:
+            assert math.ceil(ref_ymax / resolution) * resolution == ymax
 
 
 @pytest.mark.end2end_tests
@@ -4260,7 +4361,8 @@ def test_compute_dsm_with_snap_to_img1():
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+        with check:
+            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -4354,20 +4456,27 @@ def test_end2end_quality_stats():
         out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
-        assert os.path.isfile(out_json)
+        with check:
+            assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
-            assert out_grid["epipolar_size_x"] == 612
-            assert out_grid["epipolar_size_y"] == 612
+            with check:
+                assert out_grid["epipolar_size_x"] == 612
+            with check:
+                assert out_grid["epipolar_size_y"] == 612
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -65
-            assert out_disp_compute["global_disp_min"] < -45
-            assert out_disp_compute["global_disp_max"] > 30
-            assert out_disp_compute["global_disp_max"] < 40
+            with check:
+                assert out_disp_compute["global_disp_min"] > -65
+            with check:
+                assert out_disp_compute["global_disp_min"] < -45
+            with check:
+                assert out_disp_compute["global_disp_max"] > 30
+            with check:
+                assert out_disp_compute["global_disp_max"] < 40
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4556,7 +4665,8 @@ def test_end2end_quality_stats():
             atol=0.0001,
             rtol=1e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+        with check:
+            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -4638,20 +4748,27 @@ def test_end2end_ventoux_egm96_geoid():
         out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
-        assert os.path.isfile(out_json)
+        with check:
+            assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
-            assert out_grid["epipolar_size_x"] == 612
-            assert out_grid["epipolar_size_y"] == 612
+            with check:
+                assert out_grid["epipolar_size_x"] == 612
+            with check:
+                assert out_grid["epipolar_size_y"] == 612
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -85
-            assert out_disp_compute["global_disp_min"] < 75
-            assert out_disp_compute["global_disp_max"] > 45
-            assert out_disp_compute["global_disp_max"] < 55
+            with check:
+                assert out_disp_compute["global_disp_min"] > -85
+            with check:
+                assert out_disp_compute["global_disp_min"] < 75
+            with check:
+                assert out_disp_compute["global_disp_max"] > 45
+            with check:
+                assert out_disp_compute["global_disp_max"] < 55
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
@@ -4690,7 +4807,8 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=0.0002,
             atol=1.0e-6,
         )
-    assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+    with check:
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test that we have the same results without setting the texture1
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -4782,7 +4900,8 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+        with check:
+            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test with custom geoid
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -4862,20 +4981,27 @@ def test_end2end_ventoux_egm96_geoid():
         out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
         out_json = os.path.join(out_dir, "metadata.json")
-        assert os.path.isfile(out_json)
+        with check:
+            assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
-            assert out_grid["epipolar_size_x"] == 612
-            assert out_grid["epipolar_size_y"] == 612
+            with check:
+                assert out_grid["epipolar_size_x"] == 612
+            with check:
+                assert out_grid["epipolar_size_y"] == 612
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -70
-            assert out_disp_compute["global_disp_min"] < -60
-            assert out_disp_compute["global_disp_max"] > 0
-            assert out_disp_compute["global_disp_max"] < 82
+            with check:
+                assert out_disp_compute["global_disp_min"] > -70
+            with check:
+                assert out_disp_compute["global_disp_min"] < -60
+            with check:
+                assert out_disp_compute["global_disp_max"] > 0
+            with check:
+                assert out_disp_compute["global_disp_max"] < 82
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
