@@ -306,13 +306,12 @@ class UnitPipeline(PipelineTemplate):
         }
 
         depth_to_dsm_apps = {
-            "pc_denoising": 15,
-            "point_cloud_rasterization": 16,
-            "dem_generation": 17,
-            "dsm_filling.1": 18,
-            "dsm_filling.2": 19,
-            "dsm_filling.3": 20,
-            "auxiliary_filling": 21,
+            "point_cloud_rasterization": 15,
+            "dem_generation": 16,
+            "dsm_filling.1": 17,
+            "dsm_filling.2": 18,
+            "dsm_filling.3": 19,
+            "auxiliary_filling": 20,
         }
 
         self.app_values = {}
@@ -561,7 +560,6 @@ class UnitPipeline(PipelineTemplate):
 
             if app_key in [
                 "point_cloud_fusion",
-                "pc_denoising",
             ]:
                 used_conf[app_key]["save_by_pair"] = used_conf[app_key].get(
                     "save_by_pair", self.save_all_point_clouds_by_pair
@@ -575,7 +573,6 @@ class UnitPipeline(PipelineTemplate):
         self.dense_matching_app = None
         self.triangulation_application = None
         self.dem_generation_application = None
-        self.pc_denoising_application = None
         self.pc_outlier_removal_apps = {}
         self.rasterization_application = None
         self.pc_fusion_application = None
@@ -743,14 +740,6 @@ class UnitPipeline(PipelineTemplate):
             )
 
         if self.save_output_dsm or self.save_output_point_cloud:
-
-            # Point cloud denoising
-            self.pc_denoising_application = Application(
-                "pc_denoising",
-                cfg=used_conf.get("pc_denoising", {"method": "none"}),
-                scaling_coeff=scaling_coeff,
-            )
-            used_conf["pc_denoising"] = self.pc_denoising_application.get_conf()
 
             if self.save_output_dsm:
 
@@ -1350,13 +1339,6 @@ class UnitPipeline(PipelineTemplate):
 
         # Define param
         use_global_disp_range = self.dense_matching_app.use_global_disp_range
-
-        if self.pc_denoising_application is not None:
-            denoising_overload_fun = (
-                self.pc_denoising_application.get_triangulation_overload()
-            )
-        else:
-            denoising_overload_fun = None
 
         self.pairs_names = [
             pair_name for pair_name, _, _ in self.list_sensor_pairs
@@ -1973,7 +1955,7 @@ class UnitPipeline(PipelineTemplate):
                 self.geom_plugin_without_dem_and_geoid,
                 new_epipolar_image_left,
                 epsg=self.epsg,
-                denoising_overload_fun=denoising_overload_fun,
+                denoising_overload_fun=None,
                 source_pc_names=self.pairs_names,
                 orchestrator=self.cars_orchestrator,
                 pair_dump_dir=os.path.join(
@@ -2044,27 +2026,6 @@ class UnitPipeline(PipelineTemplate):
                 if self.quit_on_app("point_cloud_outlier_removal"):
                     continue  # keep iterating over pairs, but don't go further
 
-                # denoising available only if we'll go further in the pipeline
-                if self.save_output_dsm or self.save_output_point_cloud:
-                    denoised_epipolar_point_clouds = (
-                        self.pc_denoising_application.run(
-                            filtered_epipolar_point_cloud,
-                            orchestrator=self.cars_orchestrator,
-                            pair_folder=os.path.join(
-                                self.dump_dir, "denoising", pair_key
-                            ),
-                            pair_key=pair_key,
-                        )
-                    )
-
-                    self.list_epipolar_point_clouds.append(
-                        denoised_epipolar_point_clouds
-                    )
-
-                    if self.quit_on_app("pc_denoising"):
-                        # keep iterating over pairs, but don't go further
-                        continue
-
         # quit if any app in the loop over the pairs was the last one
         # pylint:disable=too-many-boolean-expressions
         if (
@@ -2073,7 +2034,6 @@ class UnitPipeline(PipelineTemplate):
             or self.quit_on_app("triangulation")
             or self.quit_on_app("point_cloud_outlier_removal.1")
             or self.quit_on_app("point_cloud_outlier_removal.2")
-            or self.quit_on_app("pc_denoising")
         ):
             return True
 
@@ -2677,7 +2637,7 @@ class UnitPipeline(PipelineTemplate):
     def preprocess_depth_maps(self):
         """
         Adds multiple processing steps to the depth maps :
-        Merging, denoising.
+        Merging.
         Creates the point cloud that will be rasterized in
         the last step of the pipeline.
         """
@@ -2696,13 +2656,7 @@ class UnitPipeline(PipelineTemplate):
             # as official point cloud product if save_output_point_cloud
             # is True.
 
-            last_pc_application = None
-            # denoising application will produce a point cloud, unless
-            # it uses the 'none' method.
-            if self.pc_denoising_application.used_method != "none":
-                last_pc_application = "denoising"
-            else:
-                last_pc_application = "fusion"
+            last_pc_application = "fusion"
 
             raster_app_margin = 0
             if self.rasterization_application is not None:
@@ -2728,19 +2682,8 @@ class UnitPipeline(PipelineTemplate):
             if self.quit_on_app("point_cloud_fusion"):
                 return True
 
-            # denoise point cloud
-            denoised_merged_point_clouds = self.pc_denoising_application.run(
-                merged_point_clouds,
-                orchestrator=self.cars_orchestrator,
-                save_laz_output=self.save_output_point_cloud
-                and last_pc_application == "denoising",
-            )
-
-            if self.quit_on_app("pc_denoising"):
-                return True
-
             # Rasterize merged and filtered point cloud
-            self.point_cloud_to_rasterize = denoised_merged_point_clouds
+            self.point_cloud_to_rasterize = merged_point_clouds
 
             # try getting the color type from multiple sources
             self.color_type = self.list_epipolar_point_clouds[0].attributes.get(
