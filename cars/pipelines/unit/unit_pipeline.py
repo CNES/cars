@@ -2026,6 +2026,10 @@ class UnitPipeline(PipelineTemplate):
                 if self.quit_on_app("point_cloud_outlier_removal"):
                     continue  # keep iterating over pairs, but don't go further
 
+                self.list_epipolar_point_clouds.append(
+                    filtered_epipolar_point_cloud
+                )
+
         # quit if any app in the loop over the pairs was the last one
         # pylint:disable=too-many-boolean-expressions
         if (
