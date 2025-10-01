@@ -43,7 +43,7 @@ include:
         when: never
       - if: $CI_COMMIT_REF_NAME == "cars_0_12_patches"
         when: never
-      - if: $CI_COMMIT_REF_NAME == "release_0_12_1"
+      - if: $CI_COMMIT_REF_NAME == "release_0.12.2"
         when: never
   # Second case: env should be generated on a dev branch, create a temporary
   # image
@@ -58,7 +58,7 @@ include:
       - if: $CI_COMMIT_REF_NAME == "master"
         when: never
       - if: $CI_COMMIT_REF_NAME == "cars_0_12_patches"
-      - if: $CI_COMMIT_REF_NAME == "release_0_12_1"
+      - if: $CI_COMMIT_REF_NAME == "release_0.12.2"
   # Third case: master branch pipeline: generate a "latest" image
   - local: '/ci/cars-docker-build.yml'
     inputs:

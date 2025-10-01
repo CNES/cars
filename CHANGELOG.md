@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.2  Bugfix release (October 2025)
+
+- Fix a bug where the DEM min was higher than DEM max in dem generation [#1211]
+
+
 ## 0.12.1  Bugfix release (August 2025)
 
 - Cleanup sequential orchestrator [#1123].
