@@ -69,7 +69,7 @@ def classif_to_stacked_array(disp_map, class_index):
 
 def fill_disp_using_zero_padding(
     disp_map: xr.Dataset,
-    class_index,
+    classif_tag,
     fill_valid_pixels,
 ) -> xr.Dataset:
     """
@@ -77,21 +77,32 @@ def fill_disp_using_zero_padding(
 
     :param disp_map: disparity map
     :type disp_map: xr.Dataset
-    :param class_index: class index according to the classification tag
-    :type class_index: int
+    :param classif_tag: classification tags
+    :type classif_tag: list
     :param fill_valid_pixels: option to fill valid pixels
     :type fill_valid_pixels: bool
     """
     # get index of the application class config
     # according the coords classif band
-    if cst.BAND_CLASSIF in disp_map.coords:
+    if cst.BAND_CLASSIF in disp_map.coords or "nodata" in classif_tag:
         # get index for each band classification
-        stack_index = classif_to_stacked_array(disp_map, class_index)
+        if classif_tag != ["nodata"]:
+            stack_index = classif_to_stacked_array(disp_map, classif_tag)
+        else:
+            stack_index = np.zeros(disp_map[cst.EPI_MSK].values.shape)
+        if "nodata" in classif_tag:
+            nodata_mask = np.logical_or(
+                disp_map[cst.EPI_MSK].values != 0,
+                np.isnan(disp_map["disp"].values),
+            )
+            stack_index = np.logical_or(stack_index, nodata_mask)
+
         # Exclude pixels outside of epipolar footprint
         mask = (
             disp_map[cst.EPI_MSK].values
             != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
         )
+
         if not fill_valid_pixels:
             # Exclude valid pixels
             mask = np.logical_and(mask, disp_map["disp_msk"].values == 0)
