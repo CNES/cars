@@ -1,13 +1,15 @@
 # pylint: skip-file
 # flake8: noqa
-# This file contains the CARS extension for Sphinx
 
+import html
 import json
 from pathlib import Path
 
 import yaml
 from docutils import nodes
-from docutils.statemachine import StringList
+from pygments import highlight
+from pygments.formatters import HtmlFormatter
+from pygments.lexers import get_lexer_by_name
 from sphinx.util.docutils import SphinxDirective
 
 
@@ -28,10 +30,6 @@ def convert_yaml_to_json(app, conf):
 class IncludeCarsConfigDirective(SphinxDirective):
     """
     Directive: .. include-cars-config:: path/to/myfile
-    (without extension, relative to source directory)
-
-    Example:
-        .. include-cars-config:: example_configs/config
     """
 
     required_arguments = 1
@@ -39,32 +37,52 @@ class IncludeCarsConfigDirective(SphinxDirective):
     def run(self):
         base = self.arguments[0]
 
-        # Build the reST we want to include
-        rst = f"""
-.. tabs::
+        yaml_code = self._read_file(base + ".yaml", "yaml")
+        json_code = self._read_file(base + ".json", "json")
 
-   .. tab:: YAML
-      .. literalinclude:: {base}.yaml
-         :language: yaml
+        html = f"""
+            <div class="cars-tabs">
+            <div class="cars-tabs-buttons">
+                <button class="cars-tab-btn active" onclick="carsSwitchTab(this, 'yaml')">YAML</button>
+                <button class="cars-tab-btn" onclick="carsSwitchTab(this, 'json')">JSON</button>
+                <button class="cars-tab-btn cars-copy-btn" onclick="carsCopyCode(this)">Copy</button>
+            </div>
 
-   .. tab:: JSON
-      .. literalinclude:: {base}.json
-         :language: json
-"""
+            <div class="cars-tab-content yaml active">
+                <pre class="highlight">{yaml_code}</pre>
+            </div>
 
-        # Convert to StringList for nested_parse
-        rst_lines = StringList(rst.splitlines())
+            <div class="cars-tab-content json">
+                <pre class="highlight">{json_code}</pre>
+            </div>
+            </div>
+        """
 
-        section = nodes.section()
-        section.document = self.state.document
-        self.state.nested_parse(rst_lines, 0, section)
+        raw_node = nodes.raw("", html, format="html")
+        return [raw_node]
 
-        return section.children
+    def _read_file(self, filename: str, language: str) -> str:
+        """Read file contents safely for embedding."""
+
+        src_path = Path(self.state.document.current_source).parent / filename
+        if not src_path.exists():
+            raise FileNotFoundError(f"Config file not found: {src_path}")
+        with open(src_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        lexer = get_lexer_by_name(language, stripall=False)
+        formatter = HtmlFormatter(nowrap=True)
+        return highlight(content, lexer, formatter)
 
 
 def setup(app):
     app.connect("config-inited", convert_yaml_to_json)
     app.add_directive("include-cars-config", IncludeCarsConfigDirective)
+
+    # Attach custom JS + CSS
+    app.add_css_file("css/cars_tabs.css")
+    app.add_js_file("js/cars_tabs.js")
+
     return {
         "version": "1.0",
         "parallel_read_safe": True,
