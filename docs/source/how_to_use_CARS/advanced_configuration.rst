@@ -9,10 +9,6 @@ The structure follows this organization:
 
 .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/organization_structure
 
-.. warning::
-
-    Be careful with commas to separate each section. None needed for the last json element.
-
 .. tabs::
 
     .. tab:: Applications

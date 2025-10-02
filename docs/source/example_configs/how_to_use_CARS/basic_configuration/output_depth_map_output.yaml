@@ -1,7 +1,7 @@
 ---
 one_two:
   x: one_two/X.tif
-  "y": one_two/Y.tif
+  y: one_two/Y.tif
   z: one_two/Z.tif
   texture: one_two/texture.tif
   mask: one_two/mask.tif
@@ -11,7 +11,7 @@ one_two:
   epsg: 4326
 one_three:
   x: one_three/X.tif
-  "y": one_three/Y.tif
+  y: one_three/Y.tif
   z: one_three/Z.tif
   texture: one_three/texture.tif
   mask: one_three/mask.tif

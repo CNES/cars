@@ -10,33 +10,33 @@ The structure follows this organization:
 
 .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/organization_structure
 
-.. warning::
-
-    Be careful with commas to separate each section. None needed for the last json element.
-
 .. tabs::
 
     .. tab:: Inputs
 
-        CARS can be entered either with Sensor Images or with Depth Maps. 
+        CARS can be entered either with Sensor Images or with DSM.
+
+        **Running CARS with sensor images as inputs**
         
-        Additional inputs can be provided for both types of inputs, namely a ROI and an initial elevation.
+        The standard configuration uses sensor images as inputs. Additional parameters can be used in inputs configuration :
+
+        +----------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
+        | Name                       | Description                                                         | Type                        | Default value        | Required |
+        +============================+=====================================================================+=============================+======================+==========+
+        | *sensors*                  | Stereo sensor images                                                | dict                        | No                   | Yes      |
+        +----------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
+        | *pairing*                  | Association of sensor image to create pairs                         | list of pairs of *sensors*  | No                   | Yes (*)  |
+        +----------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
+        | *initial_elevation*        | Low resolution DEM                                                  | string or dict              | No                   | No       |
+        +----------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
+        | *roi*                      | Region Of Interest: Vector file path or GeoJson dictionary          | string or dict              | None                 | No       |
+        +----------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
+
+        (*) `pairing` is required if there are more than two sensors (see pairing section below)
 
         .. tabs::
 
-            .. tab:: Sensors Images inputs
-
-                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-                | Name                       | Description                                                         | Type                  | Default value        | Required |
-                +============================+=====================================================================+=======================+======================+==========+
-                | *sensors*                  | Stereo sensor images                                                | See next section      | No                   | Yes      |
-                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-                | *pairing*                  | Association of image to create pairs                                | list of *sensors*     | No                   | Yes (*)  |
-                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
-                (*) `pairing` is required if there are more than two sensors (see pairing section below)
-
-                **Sensor**
+            .. tab:: Sensors
 
                 For each sensor image, give a particular name (what you want):
 
@@ -58,10 +58,10 @@ The structure follows this organization:
                     - *mask*: This image is a binary file. By using this file, the 1 values are not processed, only 0 values are considered as valid data.
                     - *classification*: This image is a multiband binary file.
                     - Please, see the section :ref:`convert_image_to_binary_image` to make binary *mask* image or binary *classification* image with 1 bit per band.
-                    - *geomodel*: If the geomodel file is not provided, CARS will try to use the RPC loaded with rasterio opening *image*.
+                    - *geomodel*: If the geomodel file is not provided, CARS will use the RPC loaded with rasterio opening *image*.
                     - It is possible to add sensors inputs while using depth_maps or dsm inputs
 
-                **Pairing**
+            .. tab:: Pairing
 
                 The `pairing` attribute defines the pairs to use, using sensors keys used to define sensor images.
 
@@ -69,175 +69,7 @@ The structure follows this organization:
 
                 This attribute is required when there are more than two input sensor images. If only two images ares provided, the pairing can be deduced by cars, considering the first image defined as the left image and second image as right image.
 
-
-            .. tab:: Depth Maps inputs
-
-                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-                | Name                    | Description                                                         | Type                  | Default value        | Required |
-                +=========================+=====================================================================+=======================+======================+==========+
-                | *depth_maps*            | Depth maps to rasterize                                             | dict                  | No                   | Yes      |
-                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
-
-
-                **Depth Maps**
-
-                For each depth map, give a particular name (what you want):
-
-                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_depth_maps
-
-                These input files can be generated by running CARS with `product_level: ["depth_map"]` and `auxiliary` dictionary filled with desired auxiliary files
-
-                .. note::
-
-                    To generate the performance map, the parameters `performance_map_method` and `save_intermediate_data` of the `dense_matching` application must be activated. Or activate `performance_map` in `auxiliary`, with `product_level` `depth_map`
-                    A `performance_map.tif` file will be generated if only one method is selected. If both methods are selected, two files will be generated: `performance_map_from_risk.tif` and `performance_map_from_intervals.tif`.
-                    Select the file you want to re enter with.
-
-                    It is possible to add sensors inputs while using depth_maps inputs
-                    
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | Name             | Description                                                       | Type           | Default value | Required |
-                +==================+===================================================================+================+===============+==========+
-                | *x*              | Path to the x coordinates of depth map                            | string         |               | Yes      |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *y*              | Path to the y coordinates of depth map                            | string         |               | Yes      |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *z*              | Path to the z coordinates of depth map                            | string         |               | Yes      |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *texture*        | Texture of depth map                                              | string         |               | Yes      |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *z_inf*          | Path to the z_inf coordinates of depth map                        | string         |               | No       |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *z_sup*          | Path to the z_sup coordinates of depth map                        | string         |               | No       |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *mask*           | Validity mask of depth map   : 0 values are considered valid data | string         |               | No       |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *classification* | Classification of depth map                                       | string         |               | No       |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *filling*        | Filling map of depth map                                          | string         |               | No       |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *ambiguity*      | Path to the ambiguity of depth map                                | string         |               | No       |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *epsg*           | Epsg code of depth map                                            | int            | 4326          | No       |
-                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-
-            .. tab:: DSMs inputs
-
-                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-                | Name                    | Description                                                         | Type                  | Default value        | Required |
-                +=========================+=====================================================================+=======================+======================+==========+
-                | *dsm*                   | Dsms to merge                                                       | dict                  | No                   | Yes      |
-                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
-
-
-                **DSMs**
-
-                For each DSMS, give a particular name (what you want):
-
-                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_dsms
-
-                These input files can be generated by running CARS with `product_level: ["dsm"]` and `auxiliary` dictionary filled with desired auxiliary files
-
-                .. note::
-
-                    To generate the performance map, the parameters `performance_map_method` and `save_intermediate_data` of the `dense_matching` application must be activated. Or activate `performance_map` in `auxiliary`, with `product_level` `depth_map`
-                    A `performance_map.tif` file will be generated if only one method is selected. If both methods are selected, two files will be generated: `performance_map_from_risk.tif` and `performance_map_from_intervals.tif`.
-                    Select the file you want to re enter with.
-
-                    Only one method for performance map generation should have been selected: only two dimensions rasters for `dsm_inf*.tif`, `dsm_sup*.tif`, `performance_map.tif` are supported.
-
-                    It is possible to add sensors inputs while using dsm inputs
-                    
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | Name                       | Description                                                       | Type           | Default value | Required |
-                +============================+===================================================================+================+===============+==========+
-                | *dsm*                      | Path to the dsm file                                              | string         |               | Yes      |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *weights*                  | Path to the weights file                                          | string         |               | Yes      |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *texture*                  | Path to the texture file                                          | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *classification*           | Path to the classification file                                   | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *mask*                     | Path to the mask file                                             | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *filling*                  | Path to the filling file                                          | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *performance_map*          | Path to the performance_map file                                  | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *contributing_pair*        | Path to the contributing_pair file                                | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_inf*                  | Path to the dsm_inf file                                          | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_sup*                  | Path to the dsm_sup file                                          | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_mean*                 | Path to the dsm_mean file                                         | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_std*                  | Path to the dsm_std file                                          | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_inf_mean*             | Path to the dsm_inf_mean file                                     | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_inf_std*              | Path to the dsm_inf_std file                                      | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_sup_mean*             | Path to the dsm_sup_mean file                                     | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_sup_std*              | Path to the dsm_sup_std file                                      | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_n_pts*                | Path to the dsm_n_pts file                                        | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *dsm_pts_in_cell*          | Path to the dsm_pts_in_cell file                                  | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-                | *ambiguity*	             | Path to the ambiguity                                             | string         |               | No       |
-                +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-
-            .. tab:: ROI
-
-                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-                | Name                    | Description                                                         | Type                  | Default value        | Required |
-                +=========================+=====================================================================+=======================+======================+==========+
-                | *roi*                   | Region Of Interest: Vector file path or GeoJson dictionary          | string, dict          | None                 | No       |
-                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
-                **ROI**
-
-                A terrain ROI can be provided by the user. It can be either a vector file (Shapefile for instance) path,
-                or a GeoJson dictionary. These structures must contain a single Polygon or MultiPolygon. Multi-features are
-                not supported. Instead of cropping the input images, the whole images will be used to compute grid correction
-                and terrain + epipolar a priori. Then the rest of the pipeline will use the given roi. T
-                his allow better correction of epipolar rectification grids.
-
-
-                Example of the "roi" parameter with a GeoJson dictionary containing a Polygon as feature :
-
-                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_roi_1
-
-                If the *debug_with_roi* advanced parameter (see dedicated tab) is enabled, the tiling of the entire image is kept but only the tiles intersecting
-                the ROI are computed.
-
-                MultiPolygon feature is only useful if the parameter *debug_with_roi* is activated, otherwise the total footprint of the
-                MultiPolygon will be used as ROI.
-
-                By default epsg 4326 is used. If the user has defined a polygon in a different reference system, the "crs" field must be specified.
-
-                Example of the *debug_with_roi* mode utilizing an "roi" parameter of type MultiPolygon as a feature and a specific EPSG.
-
-                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_roi_2
-
-                Example of the "roi" parameter with a Shapefile
-
-                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_roi_3
-
             .. tab:: Initial Elevation
-
-                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-                | Name                       | Description                                                         | Type                  | Default value        | Required |
-                +============================+=====================================================================+=======================+======================+==========+
-                | *initial_elevation*        | Low resolution DEM                                                  | See next section      | No                   | No       |
-                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
-                **Initial elevation**
 
                 The attribute contains all informations about initial elevation: dem path, geoid path and default altitudes. 
                 The initial elevation provided by a user will be used for the first resolution. 
@@ -274,7 +106,6 @@ The structure follows this organization:
 
                 Initial elevation can be provided as a dictionary with a field for each parameter, for example:
 
-
                 .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_initial_elevation_1
 
                 Alternatively, it can be set as a string corresponding to the DEM path, in which case default values for the geoid and the default altitude are used.
@@ -285,6 +116,108 @@ The structure follows this organization:
                 (see output parameters).
 
                 Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
+
+            .. tab:: ROI
+
+                A terrain ROI can be provided by the user. It can be either a vector file (Shapefile for instance) path,
+                or a GeoJson dictionary. These structures must contain a single Polygon or MultiPolygon. Multi-features are
+                not supported. Instead of cropping the input images, the whole images will be used to compute grid correction
+                and terrain + epipolar a priori. Then the rest of the pipeline will use the given roi. This allow better correction 
+                of epipolar rectification grids.
+
+
+                Example of the "roi" parameter with a GeoJson dictionary containing a Polygon as feature :
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_roi_1
+
+                If the *debug_with_roi* advanced parameter (see dedicated tab) is enabled, the tiling of the entire image is kept but only the tiles intersecting
+                the ROI are computed.
+
+                MultiPolygon feature is only useful if the parameter *debug_with_roi* is activated, otherwise the total footprint of the
+                MultiPolygon will be used as ROI.
+
+                By default epsg 4326 is used. If the user has defined a polygon in a different reference system, the "crs" field must be specified.
+
+                Example of the *debug_with_roi* mode utilizing an "roi" parameter of type MultiPolygon as a feature and a specific EPSG.
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_roi_2
+
+                Example of the "roi" parameter with a Shapefile
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_roi_3
+
+        **Running CARS with DSM as inputs**
+
+        CARS can also be launched with DSM as inputs. The pipeline launched is just a merging of the DSM.
+
+        +----------------------------+--------------------------------------------------------------------------------+-----------------------------+----------------------+----------+
+        | Name                       | Description                                                                    | Type                        | Default value        | Required |
+        +============================+================================================================================+=============================+======================+==========+
+        | *dsm*                      | List of DSM to merge                                                           | dict                        | No                   | Yes      |
+        +----------------------------+--------------------------------------------------------------------------------+-----------------------------+----------------------+----------+
+        | *roi*                      | Region Of Interest: Vector file path or GeoJson dictionary                     | string or dict              | None                 | No       |
+        +----------------------------+--------------------------------------------------------------------------------+-----------------------------+----------------------+----------+
+        | *initial_elevation*        | Low resolution DEM (used for DSM filling)                                      | string or dict              | No                   | No       |
+        +----------------------------+--------------------------------------------------------------------------------+-----------------------------+----------------------+----------+
+        | *sensors*                  | Stereo sensor images used to generate the DSM                                  | dict                        | No                   | No       |
+        +----------------------------+--------------------------------------------------------------------------------+-----------------------------+----------------------+----------+
+        | *pairing*                  | Association of sensor images used to generate the DSM                          | list of pairs of *sensors*  | No                   | No (*)   |
+        +----------------------------+--------------------------------------------------------------------------------+-----------------------------+----------------------+----------+
+
+        (*) `pairing` is required if `sensors` parameter is set and contains more than two sensors
+
+        For each DSMS, give a particular name (what you want):
+
+        .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/inputs_dsms
+
+        These input files can be generated by running CARS with `product_level: ["dsm"]` and `auxiliary` dictionary filled with desired auxiliary files
+
+        .. note::
+
+            Only one method for performance map generation should have been selected: only two dimensions rasters for `dsm_inf*.tif`, `dsm_sup*.tif`, `performance_map.tif` are supported.
+            
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | Name                       | Description                                                       | Type           | Default value | Required |
+        +============================+===================================================================+================+===============+==========+
+        | *dsm*                      | Path to the dsm file                                              | string         |               | Yes      |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *weights*                  | Path to the weights file                                          | string         |               | Yes      |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *image*                    | Path to the texture file                                          | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *classification*           | Path to the classification file                                   | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *mask*                     | Path to the mask file                                             | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *filling*                  | Path to the filling file                                          | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *performance_map*          | Path to the performance_map file                                  | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *contributing_pair*        | Path to the contributing_pair file                                | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_inf*                  | Path to the dsm_inf file                                          | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_sup*                  | Path to the dsm_sup file                                          | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_mean*                 | Path to the dsm_mean file                                         | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_std*                  | Path to the dsm_std file                                          | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_inf_mean*             | Path to the dsm_inf_mean file                                     | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_inf_std*              | Path to the dsm_inf_std file                                      | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_sup_mean*             | Path to the dsm_sup_mean file                                     | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_sup_std*              | Path to the dsm_sup_std file                                      | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_n_pts*                | Path to the dsm_n_pts file                                        | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *dsm_pts_in_cell*          | Path to the dsm_pts_in_cell file                                  | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+        | *ambiguity*	             | Path to the ambiguity                                             | string         |               | No       |
+        +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+
 
     .. tab:: Orchestrator
 
@@ -446,17 +379,6 @@ The structure follows this organization:
 
         .. tabs::
 
-            .. tab:: Output contents
-
-                The output directory, defined in the configuration file, contains at the end of the computation:
-
-                * the required product levels (`depth_map`, `dsm` and/or `point_cloud`)
-                * the dump directory (`dump_dir`) containing intermediate data for all applications
-                * the intermediate resolutions directory (`intermediate_res`) containing the results (and `dump_dir`) of all intermediate resolutions
-                * metadata json file (`metadata.json`) containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
-                * logs folder (`logs`) containing CARS log and profiling information
-
-
             .. tab:: Product level
 
                 The `product_level` attribute defines which product should be produced by CARS. There are three available product type: `depth_map`, `point_cloud` and `dsm`.
@@ -465,7 +387,7 @@ The structure follows this organization:
 
                 .. tabs::
 
-                    .. tab:: N pairs to 1 DSM
+                    .. tab:: DSM
 
                         This is the default behavior of CARS : a single DSM will be generated from one or several pairs of images.
 
@@ -473,34 +395,10 @@ The structure follows this organization:
 
                         .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/output_n_pairs_1_dsm
 
-                    .. tab:: N Depth Maps to 1 DSM
-
-                        A single DSM will be generated from one or several depth_maps.
-
-                        It is recommended to add the option ``"merging": true`` for this pipeline to improve performances.
-
-                        .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/output_n_depth_maps_1_dsm
-
-                    .. tab:: Sparse DSM
-
-                        In CARS, sparse DSMs are computed during the process of creating depth maps from sensor images (specifically during the `dem_generation` application). This means they cannot be created from depth maps.
-                        It also means the program should be stopped even before finishing the first part of the pipeline (sensor images to depth maps) in order not to run useless applications.
-
-                        CARS provides an easy way of customizing the step at which the pipeline should be stopped. When the key ``product_level`` of ``output`` is empty, CARS will stop after the last application
-                        whose ``save_intermediate_data`` key is set to True.
-
-                        .. note::
-                            If the sparse DSMs have already been created, they can then be re-entered in CARS through the ``terrain_a_priori`` parameter, saving computation time. File ``used_conf.json`` can be used directly by changing ``product_level`` and ``use_epipolar_a_priori`` parameters.
-                            Very useful when trying to test multiple configurations later in the pipeline !
-
-                        Applied to our current goal, this is the configuration needed to create sparse DSMs without useless applications running :
-
-                        .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/output_sparse_dsm
-
-                    .. tab:: N pairs to N Depth Maps
+                    .. tab:: Depth Maps
 
                         Depth maps are a way to represent point clouds as three images X Y and Z, each one representing the position of a pixel on its axis.
-                        They are an official product of CARS, and can thus be created more easily than sparse DSMs.
+                        They are an official product of CARS.
 
                         The ``product_level`` key in ``output`` can contain any combination of the values `dsm`, `depth_map`, and `point_cloud`.
 
@@ -508,12 +406,9 @@ The structure follows this organization:
 
                         .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/output_n_pairs_n_depth_maps
 
-                    .. tab:: N pairs to N Point clouds
+                    .. tab:: Point clouds
 
                         Just like depth maps, the point cloud is an official product of CARS. As such, all that's needed is to add `point_cloud` to ``product_level`` in order for it to be generated.
-
-                        .. note::
-                            A point cloud will be generated for each pair. If the ``merging`` parameter is activated, a single point cloud will be generated. However, this pipeline is not recommended because it uses a deprecated application.
 
                         .. include-cars-config:: ../example_configs/how_to_use_CARS/basic_configuration/output_n_pairs_n_point_clouds
 
@@ -575,7 +470,19 @@ The structure follows this organization:
 
                 If the provided file is not recognized, a WKT referencing the file directly is created instead.
 
-            .. tab:: DSM output
+        **Output contents**
+
+        The output directory, defined in the configuration file, contains at the end of the computation:
+
+        * the required product levels (`depth_map`, `dsm` and/or `point_cloud`)
+        * the dump directory (`dump_dir`) containing intermediate data for all applications
+        * the intermediate resolutions directory (`intermediate_res`) containing the results (and `dump_dir`) of all intermediate resolutions
+        * metadata json file (`metadata.json`) containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
+        * logs folder (`logs`) containing CARS log and profiling information
+
+        .. tabs::
+
+            .. tab:: DSM
 
                 If product type `dsm` is selected, a directory named `dsm` will be created with the DSM and every auxiliary product selected. The file `dsm/index.json` shows the path of every generated file. For example :
 
@@ -585,7 +492,7 @@ The structure follows this organization:
                     If `performance_map_method` in dense matching configuration is a list with more than one element, `performance_map.tif` will be a 3 dimension raster: each band contains the performance map for each method.
                     Else, it will be a two dimension raster
 
-            .. tab:: Depth map output
+            .. tab:: Depth map
 
                 If product type `depth_map` is selected, a directory named `depth_map` will be created with a subfolder for every pair. The file `depth_map/index.json` shows the path of every generated file. For example :
 
@@ -595,7 +502,7 @@ The structure follows this organization:
                     If `performance_map_method` in dense matching configuration is a list with more than one element, `performance_map_from_risk.tif` and `performance_map_from_intervals.tif` will be generated. Choose one to re enter with.
 
 
-            .. tab:: Point cloud output
+            .. tab:: Point cloud
 
                 If product type `point_cloud` is selected, a directory named `point_cloud` will be created with a subfolder for every pair.
 
