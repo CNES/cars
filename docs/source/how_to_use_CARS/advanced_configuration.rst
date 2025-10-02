@@ -590,8 +590,11 @@ The structure follows this organization:
                 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
                 | save_intermediate_data              | Save disparity map              | boolean   |                         | False              | No       |
                 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
-                | classification                      | Classification band name        | List[str] |                         | None               | No       |
+                | classification                      | Classification band name        | List[str] | band names, "nodata"    | None               | No       |
                 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
+                | fill_valid_pixels                   | Fill valid pixel if true        | bool      |                         | True               | No       |
+                +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
+
 
                 .. note::
                     - The classification of second input is not given. Only the first disparity will be filled with zero value.
@@ -727,7 +730,7 @@ The structure follows this organization:
                 **Examples**
 
                 .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal_1
-                
+
                 .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal_2
 
                 .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_outlier_removal_3

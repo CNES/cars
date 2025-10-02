@@ -94,6 +94,10 @@ class ZerosPadding(
         overloaded_conf["method"] = conf.get("method", "zero_padding")
 
         overloaded_conf["classification"] = conf.get("classification", None)
+        if isinstance(overloaded_conf["classification"], str):
+            overloaded_conf["classification"] = [
+                overloaded_conf["classification"]
+            ]
         overloaded_conf["fill_valid_pixels"] = conf.get(
             "fill_valid_pixels", True
         )
@@ -234,7 +238,7 @@ class ZerosPadding(
                                 epipolar_disparity_map[row, col],
                                 window,
                                 overlap,
-                                classif_index=self.classification,
+                                classif=self.classification,
                                 fill_valid_pixels=self.fill_valid_pixels,
                                 saving_info=full_saving_info,
                             )
@@ -253,7 +257,7 @@ def fill_disparity_zeros_wrapper(
     disp,
     window,
     overlap,
-    classif_index,
+    classif,
     fill_valid_pixels,
     saving_info=None,
 ):
@@ -266,8 +270,8 @@ def fill_disparity_zeros_wrapper(
     :type window: list
     :param overlap: overlap [row min, row max, col min col max]
     :type overlap: list
-    :param class_index: class index according to the classification tag
-    :type class_index: list
+    :param classif: classification tags
+    :type classif: list
     :param fill_valid_pixels: option to fill valid pixels
     :type fill_valid_pixels: bool
     :param saving_info: saving infos
@@ -278,7 +282,7 @@ def fill_disparity_zeros_wrapper(
     """
     # Add a band to disparity dataset to memorize which pixels are filled
     disp = fd_wrappers.add_empty_filling_band(disp, ["zeros_padding"])
-    fd_algo.fill_disp_using_zero_padding(disp, classif_index, fill_valid_pixels)
+    fd_algo.fill_disp_using_zero_padding(disp, classif, fill_valid_pixels)
     result = copy.copy(disp)
 
     # Fill with attributes
