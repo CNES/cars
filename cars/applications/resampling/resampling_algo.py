@@ -108,7 +108,9 @@ def epipolar_rectify_images(
     right_margins[3] = right_region[3] - right_roi[3]
 
     # Resample left images
-    left_img_transform = inputs.rasterio_get_transform(next(iter(left_imgs)))
+    left_img_transform = inputs.rasterio_get_transform(
+        next(iter(left_imgs)), convention="north"
+    )
 
     left_dataset = resample_image(
         left_imgs,
@@ -252,7 +254,9 @@ def resample_image(  # noqa: C901
         ]
 
     if img_transform is None:
-        img_transform = inputs.rasterio_get_transform(img_sample)
+        img_transform = inputs.rasterio_get_transform(
+            img_sample, convention="north"
+        )
 
     # Convert largest_size to int if needed
     largest_size = [int(x) for x in largest_size]

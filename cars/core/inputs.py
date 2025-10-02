@@ -35,6 +35,7 @@ import fiona
 import numpy as np
 import rasterio as rio
 import xarray as xr
+from affine import Affine
 from json_checker import Checker
 from pyproj import CRS
 from rasterio.warp import Resampling, calculate_default_transform, reproject
@@ -107,7 +108,7 @@ def rasterio_get_values(raster_file: str, x_list, y_list, proj_function):
         cloud_out = proj_function(cloud_in, 4326, file_espg)
 
         # get the transform and inverse
-        aff_tr = descriptor.transform
+        aff_tr = rasterio_get_transform(raster_file)
         np_tr = np.array(
             [
                 [aff_tr[0], aff_tr[1], aff_tr[2]],
@@ -265,15 +266,14 @@ def rasterio_get_pixel_points(raster_file: str, terrain_points) -> list:
 
     pixel_points = []
 
-    with rio.open(raster_file, "r") as descriptor:
-        for row in range(terrain_points.shape[0]):
-            pixel_points.append(
-                rio.transform.rowcol(
-                    descriptor.transform,
-                    terrain_points[row, 0],
-                    terrain_points[row, 1],
-                )
+    for row in range(terrain_points.shape[0]):
+        pixel_points.append(
+            rio.transform.rowcol(
+                rasterio_get_transform(raster_file),
+                terrain_points[row, 0],
+                terrain_points[row, 1],
             )
+        )
 
     return np.array(pixel_points)
 
@@ -286,11 +286,10 @@ def rasterio_get_resolution(raster_file: str) -> Tuple[float, float]:
     :return: The resolution (res_x, res_y)
     :rtype: tuple
     """
-    with rio.open(raster_file, "r") as descriptor:
-        transform = list(descriptor.transform)
-        res_x = transform[0]
-        res_y = transform[4]
-        return (abs(res_x), abs(res_y))
+    transform = list(rasterio_get_transform(raster_file))
+    res_x = transform[0]
+    res_y = transform[4]
+    return (abs(res_x), abs(res_y))
 
 
 def rasterio_get_bounds(
@@ -305,8 +304,7 @@ def rasterio_get_bounds(
 
     # get sign of resolution
     if apply_resolution_sign:
-        profile = rasterio_get_profile(raster_file)
-        transform = list(profile["transform"])
+        transform = list(rasterio_get_transform(raster_file))
         res_x = transform[0]
         res_y = transform[4]
         res_x /= abs(res_x)
@@ -381,15 +379,28 @@ def rasterio_get_profile(raster_file: str) -> Dict:
         return descriptor.profile
 
 
-def rasterio_get_transform(raster_file: str) -> Dict:
+def rasterio_get_transform(raster_file: str, convention: str = None) -> Dict:
     """
     Get the transform of an image file
 
     :param raster_file: Image file
+    :param convention: The convention to follow: None, "north" or "south"
     :return: The transform of the given image
     """
-    with rio.open(raster_file, "r") as descriptor:
-        return descriptor.transform
+    with rio.open(raster_file, "r") as dsc:
+        src_tr = dsc.transform
+
+        if convention == "north" and src_tr.e < 0:
+            src_tr = Affine(
+                src_tr.a, src_tr.b, src_tr.c, -src_tr.d, -src_tr.e, -src_tr.f
+            )
+
+        elif convention == "south" and src_tr.e > 0:
+            src_tr = Affine(
+                src_tr.a, src_tr.b, src_tr.c, -src_tr.d, -src_tr.e, -src_tr.f
+            )
+
+        return src_tr
 
 
 def rasterio_get_epsg(raster_file: str) -> int:
@@ -450,7 +461,7 @@ def rasterio_transform_epsg(file_name, new_epsg):
                 reproject(
                     source=rio.band(src, i),
                     destination=rio.band(dst, i),
-                    src_transform=src.transform,
+                    src_transform=rasterio_get_transform(file_name),
                     src_crs=src.crs,
                     dst_transform=transform,
                     dst_crs=new_epsg,
