@@ -122,8 +122,8 @@ test-end2end:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
        - "tests/test_end2end.py"
-       - "cars/**/*"  
-      
+       - "cars/**/*"
+
     - if: '$CI_COMMIT_REF_NAME == "master"'
 
 
