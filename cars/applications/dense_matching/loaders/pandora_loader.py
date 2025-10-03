@@ -498,7 +498,7 @@ def overload_pandora_conf_with_confidence(conf, confidence_conf):
 
     for key in confidence_conf_keys:
         if key in conf_keys:
-            logging.error("{} pandora key already in configuration".format(key))
+            logging.info("{} pandora key already in configuration".format(key))
 
     # update confidence
     out_dict.update(confidence_conf)
