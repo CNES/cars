@@ -1,5 +1,5 @@
 ---
-inputs:
+input:
   depth_maps:
     my_name_for_this_depth_map:
       x: path_to_x.tif

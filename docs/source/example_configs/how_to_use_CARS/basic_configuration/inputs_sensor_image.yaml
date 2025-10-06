@@ -1,5 +1,5 @@
 ---
-inputs:
+input:
   sensors:
     my_name_for_this_image: # at least two of these are required!
       image: path_to_image.tif

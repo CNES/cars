@@ -1,5 +1,5 @@
 ---
-inputs:
+input:
   sensors:
     one: img1.tif
     two: img2.tif
@@ -9,6 +9,3 @@ inputs:
     - two
   - - one
     - three
-# this is not required
-#advanced:
-  #merging: true

@@ -1,7 +1,6 @@
 ---
 image:
   loader: pivot
-  main_file: img1.tif
   bands:
     b0:
       path: img1.tif
@@ -15,7 +14,3 @@ image:
     b3:
       path: color1.tif
       band: 2
-  texture_bands:
-  - b1
-  - b2
-  - b3

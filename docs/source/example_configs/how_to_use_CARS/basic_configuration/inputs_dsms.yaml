@@ -1,5 +1,5 @@
 ---
-inputs:
+input:
   dsms:
     my_name_for_this_dsm:
       dsm: path_to_dsm.tif

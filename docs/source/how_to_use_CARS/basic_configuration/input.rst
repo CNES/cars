@@ -1,7 +1,7 @@
 .. _inputs:
 
-Inputs
-======
+Input
+=====
 
 CARS can be entered either with Sensor Images or with DSM.
 
@@ -35,21 +35,159 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
         | Name              | Description                                                                                                                     | Type           | Default value | Required |
         +===================+=================================================================================================================================+================+===============+==========+
-        | *image*           | Path to the image or dictionary readable by a sensor loader (see :ref:`advanced configuration`)                                 | string, dict   |               | Yes      |
+        | *image*           | Path to the image or dictionary readable by a sensor loader                                                                     | string, dict   |               | Yes      |
         +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
         | *geomodel*        | Path to the geomodel and plugin-specific attributes                                                                             | string, dict   |               | No       |
         +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
-        | *mask*            | Path to the binary mask                                                                                                         | string         | None          | No       |
+        | *mask*            | Path to the binary mask                                                                                                         | string, dict   | None          | No       |
         +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
-        | *classification*  | Path to the multiband binary classification image or dictionary readable by a sensor loader (see :ref:`advanced configuration`) | string         | None          | No       |
+        | *classification*  | Path to the classification image or dictionary readable by a sensor loader                                                      | string, dict   | None          | No       |
         +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
-        .. note::
-            - *mask*: This image is a binary file. By using this file, the 1 values are not processed, only 0 values are considered as valid data.
-            - *classification*: This image is a multiband binary file.
-            - Please, see the section :ref:`convert_image_to_binary_image` to make binary *mask* image or binary *classification* image with 1 bit per band.
-            - *geomodel*: If the geomodel file is not provided, CARS will use the RPC loaded with rasterio opening *image*.
-            - It is possible to add sensors inputs while using depth_maps or dsm inputs
+        .. tabs::
+
+            .. tab:: Image
+
+                The standard method for passing sensor images as inputs is to put only the path of the image. It works well with panchromatic images.
+
+                If you want to use multi-band images or multiple files for one image and control which band is used for correlation and which bands are used in the output orthorectified image, you can use sensor loaders.
+
+                At the moment only two sensor loaders are available in CARS : “basic” and “pivot”. To use them you juste have to pass a dictionary for the "image" parameter, with the key "loader".
+
+                **Basic loader**
+
+                The basic loader is the simplest way to define an image. The basic loader is the one used by default when only a path is given. However, it is possible to use the basic loader with a dictionary : 
+
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | Name           | Description           | Type   | Default value | Available values | Required |
+                +================+=======================+========+===============+==================+==========+
+                | *loader*       | Name of sensor loader | str    | "basic"       | "basic"          | False    |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *path*         | File path             | str    |               |                  | True     |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *no_data*      | No data value of file | int    | 0             |                  | False    |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+    
+                **Pivot loader**
+
+                The pivot loader allows the maximal level of configuration. To use the pivot loader, it is required to set the "loader" parameter in sensor loader configuration.
+
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | Name            | Description                                                                           | Type   | Default value     | Available values | Required |
+                +=================+=======================================================================================+========+===================+==================+==========+
+                | *loader*        | Name of sensor loader                                                                 | str    | "pivot"           | "pivot"          | True     |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *bands*         | Dictionary listing for every band of the image, the corresponding file and band index | dict   |                   |                  | True     |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+                | *no_data*       | No data value of file                                                                 | int    | 0                 |                  | False    |
+                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
+
+                The `bands` dictionary have keys which correspond to name of bands. The name of bands is imposed by CARS : if the image has n bands, the name of the bands must be ["b0", "b1", ..., "b{n-1}"].
+                Each key points to a dictionary with keys "path" and "band_id".
+
+                With the pivot format, an image can be composed of several files.
+
+                A full configuration example for pivot sensor loader is given below. In this case, multiple files are used for the same image : The file `img1.tif` refers to a panchromatic image 
+                and the file `color1.tif` refers to a RGB (or RGBN) image with the same size and resolution than `img1.tif`
+
+                .. include-cars-config:: ../../example_configs/how_to_use_CARS/basic_configuration/image_full_config
+
+
+            .. tab:: Geomodel
+
+                In most cases you do not need to fill this parameter because the RPC information can be found by CARS directly in the image metadata.
+                
+                If RPC information are not in the image but in a separate file like a .geom file, this parameter has to be filled with the math of this file.
+                
+                If you want to use grid models, you have to use a dictionary for the geomodel parameter and fill tge `model_type` key.
+
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | Name           | Description           | Type   | Default value | Available values | Required |
+                +================+=======================+========+===============+==================+==========+
+                | *path*         | File path             | str    |               |                  | True     |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *model_type*   | Geomodel type         | str    | RPC           | RPC, GRID        | False    |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+
+                A full configuration example is given below : 
+
+                .. include-cars-config:: ../../example_configs/how_to_use_CARS/basic_configuration/geomodel_full_config
+
+
+            .. tab:: Mask
+
+                The mask parameter is optional. A mask can be used if you want to define an area that CARS will not process.
+                
+                The mask must be a mono-band binary image. Please, see the section :ref:`convert_image_to_binary_image` to make binary *mask* image with 1 bit per band.
+                
+                As the other parameters, the file path can be given directly or you can use a dictionary to define the value of the mask where pixels are considered invalid.
+
+                +-----------------+-------------------------------------------------+--------+---------------+------------------+----------+
+                | Name            | Description                                     | Type   | Default value | Available values | Required |
+                +=================+=================================================+========+===============+==================+==========+
+                | *path*          | File path                                       | str    |               |                  | True     |
+                +-----------------+-------------------------------------------------+--------+---------------+------------------+----------+
+                | *invalid_value* | Value of the mask for which pixels are invalid  | int    | 1             | 0, 1             | False    |
+                +-----------------+-------------------------------------------------+--------+---------------+------------------+----------+
+
+                A full configuration example is given below : 
+
+                .. include-cars-config:: ../../example_configs/how_to_use_CARS/basic_configuration/mask_full_config
+
+
+            .. tab:: Classification
+
+                The classification parameter is optional. It is mainly used to define areas that has to be filled (particularly water and cloud).
+                
+                The classification must be a mono-band uint8 image.
+                
+                If the file path is given without other parameters, CARS will automatically identify wich filling method is applied for each value of the classification following this table :
+
+                +-----------------+----------------------------+---------------------------+
+                | Value           | Class                      | Filling method            |
+                +=================+============================+===========================+
+                | 0               | Undefined                  | no_editing                |
+                +-----------------+----------------------------+---------------------------+
+                | 1               | Sea                        | fill_with_geoid           |
+                +-----------------+----------------------------+---------------------------+
+                | 2               | Lake                       | interpolate_from_borders  |
+                +-----------------+----------------------------+---------------------------+
+                | 3               | River                      | fill_with_endogenous_dtm  |
+                +-----------------+----------------------------+---------------------------+
+                | 4               | Cloud                      | fill_with_exogenous_dtm   |
+                +-----------------+----------------------------+---------------------------+
+
+                If you want to change the filling method for each value, you can use the following dictionary for this parameter :
+
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+                | Name            | Description                                                        | Type   | Default value            | Available values | Required |
+                +=================+====================================================================+========+==========================+==================+==========+
+                | *path*          | File path                                                          | str    |                          |                  | True     |
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+                | *filling*       | Values of the classification corresponding to each filling method  | dict   | Given by the table above |                  | False    |
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+
+                If you do not want any filling, you can set the parameter `filling` to `none`. Otherwise it ban be filled as follows : 
+
+                +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
+                | Name                       | Description                                                                     | Type      | Default value            | Required |
+                +============================+=================================================================================+===========+==========================+==========+
+                | *fill_with_geoid*          | Value for which pixels will be filled with geoid (sea)                          | int, list | 1                        | False    |
+                +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
+                | *interpolate_from_borders* | Value for which pixels will be filled with the value on borders (lakes)         | int, list | 2                        | False    |
+                +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
+                | *fill_with_endogenous_dtm* | Value for which pixels will be filled with a DTM generated by CARS (rivers)     | int, list | 3                        | False    |
+                +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
+                | *fill_with_exogenous_dtm*  | Value for which pixels will be filled with the DTM given by the user (cloud)    | int, list | 4                        | False    |
+                +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
+
+                For each filling method, if you fill the parameter with `none` or [], the corresponding method will not be used.
+
+                A full configuration example is given below : 
+
+                .. include-cars-config:: ../../example_configs/how_to_use_CARS/basic_configuration/classif_full_config
+
+
 
     .. tab:: Pairing
 
@@ -135,6 +273,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         Example of the "roi" parameter with a Shapefile
 
         .. include-cars-config:: ../../example_configs/how_to_use_CARS/basic_configuration/inputs_roi_3
+
 
 Running CARS with DSM as inputs
 -------------------------------

@@ -1,3 +1,3 @@
 ---
-inputs:
+input:
   roi: roi_vector_file.shp

@@ -1,4 +1,0 @@
-.. _output:
-
-Output
-======
