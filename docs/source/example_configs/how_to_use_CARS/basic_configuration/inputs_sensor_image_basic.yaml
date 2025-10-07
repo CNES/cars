@@ -1,0 +1,5 @@
+---
+input:
+  sensors:
+    my_name_for_this_sensor: path_to_image.tif
+    my_name_for_that_other_sensor: path_to_other_image.tif

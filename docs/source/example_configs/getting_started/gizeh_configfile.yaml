@@ -3,5 +3,11 @@ input:
   sensors: # define what cars will take as input
     one: img1.tif
     two: img2.tif
+    three: img3.tif
+pairing: # define the pairs
+  - - one
+    - two
+  - - one
+    - three
 output: # define where cars should put the results
   directory: outresults

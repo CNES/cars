@@ -28,9 +28,15 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
     .. tab:: Sensors
 
+        **Basic configuration**
+
         For each sensor image, give a particular name (what you want):
 
-        .. include-cars-config:: ../../example_configs/how_to_use_CARS/basic_configuration/inputs_sensor_image
+        .. include-cars-config:: ../../example_configs/how_to_use_CARS/basic_configuration/inputs_sensor_image_basic
+
+        **Intermediate configuration**
+
+        For each sensor, auxiliary files can be used : mask, classification, and geomodel if needed
 
         +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
         | Name              | Description                                                                                                                     | Type           | Default value | Required |
@@ -43,6 +49,16 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
         | *classification*  | Path to the classification image or dictionary readable by a sensor loader                                                      | string, dict   | None          | No       |
         +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
+
+        In most cases, only the file path is required for each of these parameters and CARS will know how to read each file : 
+
+        .. include-cars-config:: ../../example_configs/how_to_use_CARS/basic_configuration/inputs_sensor_image_intermediate
+
+        However for each parameter it is possible to set a dictionary with additional parameters on how to read the file. 
+        
+        **Advanced configuration**
+        
+        These parameters are described on the tabs below :
 
         .. tabs::
 
@@ -95,9 +111,9 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
             .. tab:: Geomodel
 
-                In most cases you do not need to fill this parameter because the RPC information can be found by CARS directly in the image metadata.
+                In most cases you do not need to fill this parameter because the RPC information can be found by CARS directly either in the image metadata or in a .XML or .RPB file.
                 
-                If RPC information are not in the image but in a separate file like a .geom file, this parameter has to be filled with the math of this file.
+                If RPC information are not in the image but in a separate file not recognized by rasterio like a .geom file, this parameter has to be filled with the path of this file.
                 
                 If you want to use grid models, you have to use a dictionary for the geomodel parameter and fill tge `model_type` key.
 
@@ -122,13 +138,13 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 
                 As the other parameters, the file path can be given directly or you can use a dictionary to define the value of the mask where pixels are considered invalid.
 
-                +-----------------+-------------------------------------------------+--------+---------------+------------------+----------+
-                | Name            | Description                                     | Type   | Default value | Available values | Required |
-                +=================+=================================================+========+===============+==================+==========+
-                | *path*          | File path                                       | str    |               |                  | True     |
-                +-----------------+-------------------------------------------------+--------+---------------+------------------+----------+
-                | *invalid_value* | Value of the mask for which pixels are invalid  | int    | 1             | 0, 1             | False    |
-                +-----------------+-------------------------------------------------+--------+---------------+------------------+----------+
+                +-----------------+-------------------------------------------------------+--------+---------------+------------------+----------+
+                | Name            | Description                                           | Type   | Default value | Available values | Required |
+                +=================+=======================================================+========+===============+==================+==========+
+                | *path*          | File path                                             | str    |               |                  | True     |
+                +-----------------+-------------------------------------------------------+--------+---------------+------------------+----------+
+                | *invalid_value* | Value of the mask for which pixels are not processed  | int    | 1             | 0, 1             | False    |
+                +-----------------+-------------------------------------------------------+--------+---------------+------------------+----------+
 
                 A full configuration example is given below : 
 
@@ -278,7 +294,9 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 Running CARS with DSM as inputs
 -------------------------------
 
-CARS can also be launched with DSM as inputs. The pipeline launched is just a merging of the DSM.
+CARS can also be launched with DSM as inputs. The standard pipeline launched is just a merging of the DSM. 
+
+However filling steps can also be performed after the merging if the needed information are given in the configuration file (classification and initial_elevation to fill the DSM, sensors to fill the ortho image)
 
 +----------------------------+--------------------------------------------------------------------------------+-----------------------------+----------------------+----------+
 | Name                       | Description                                                                    | Type                        | Default value        | Required |
@@ -296,7 +314,7 @@ CARS can also be launched with DSM as inputs. The pipeline launched is just a me
 
 (*) `pairing` is required if `sensors` parameter is set and contains more than two sensors
 
-For each DSMS, give a particular name (what you want):
+For each DSM, give a particular name (what you want):
 
 .. include-cars-config:: ../../example_configs/how_to_use_CARS/basic_configuration/inputs_dsms
 

@@ -1,9 +1,6 @@
 ---
 output:
   directory: outresults
-  product_level:
-  - dsm
-  - depth_map
   auxiliary:
     image: [b0, b1, b2]
     weights: true

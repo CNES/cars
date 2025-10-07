@@ -9,3 +9,6 @@ input:
     - two
   - - one
     - three
+  output:
+    directory: out
+    product_level: dsm # optional because it is the default value of product_level

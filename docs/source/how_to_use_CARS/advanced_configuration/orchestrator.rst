@@ -1,7 +1,7 @@
 .. _orchestrator_advanced:
 
-Orchestrator
-============
+Orchestrator (advanced)
+=======================
 
 CARS can distribute the computations chunks by using either dask (local or distributed cluster) or multiprocessing libraries.
 The distributed cluster require centralized files storage and uses PBS scheduler.

@@ -4,5 +4,5 @@ input:
     one: img1.tif
     two: img2.tif
 output:
-  product_level:
-  - depth_map
+  directory: out
+  product_level: depth_map

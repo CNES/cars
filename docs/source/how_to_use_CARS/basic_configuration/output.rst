@@ -3,6 +3,9 @@
 Output
 ======
 
+Configuration
+-------------
+
 +-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
 | Name                    | Description                                                 | Type               | Default value         | Required |
 +=========================+=============================================================+====================+=======================+==========+
@@ -140,7 +143,8 @@ Output
 
         If the provided file is not recognized, a WKT referencing the file directly is created instead.
 
-**Output contents**
+Output directory content
+------------------------
 
 The output directory, defined in the configuration file, contains at the end of the computation:
 
