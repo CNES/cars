@@ -2663,6 +2663,7 @@ class UnitPipeline(PipelineTemplate):
             pairing=self.used_conf[INPUTS].get("pairing"),
             geom_plugin=self.geom_plugin_with_dem_and_geoid,
             texture_bands=self.texture_bands,
+            output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
             orchestrator=self.cars_orchestrator,
         )
         self.cars_orchestrator.breakpoint()

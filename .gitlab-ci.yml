@@ -81,6 +81,8 @@ unit-test:
     paths:
       - ./pytest-report.xml
       - ./coverage.xml
+      - tests/data/intermediate_data
+    when: always
     expire_in: 1 day
 
 

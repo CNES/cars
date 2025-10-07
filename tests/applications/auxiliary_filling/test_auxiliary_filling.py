@@ -137,20 +137,28 @@ def test_auxiliary_filling_paca(
             pairing=pairing,
             geom_plugin=geo_plugin,
             texture_bands=["b0"],
+            output_geoid=None,
         )
-        # Uncomment the 2 following instructions to update reference data
-        # shutil.copy2(
-        #     os.path.join(local_image_color),
-        #     absolute_data_path(
-        #             color_reference
-        #     ),
-        # )
-        # shutil.copy2(
-        #     os.path.join(local_classification_input),
-        #     absolute_data_path(
-        #             classification_reference
-        #     ),
-        # )
+
+        # Copy output to intermediate_data dir
+        intermediate_output_dir = "intermediate_data"
+        shutil.copy2(
+            os.path.join(local_image_color),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir, os.path.basename(color_reference)
+                )
+            ),
+        )
+        shutil.copy2(
+            os.path.join(local_classification_input),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    os.path.basename(classification_reference),
+                )
+            ),
+        )
         assert_same_images(
             local_image_color, absolute_data_path(color_reference)
         )
