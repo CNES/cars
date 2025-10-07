@@ -3807,6 +3807,7 @@ def test_end2end_ventoux_with_classif():
     """
     End to end processing with p+xs fusion
     and input classification to test
+    Test with pandora 3SGM
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -3814,7 +3815,7 @@ def test_end2end_ventoux_with_classif():
             "input/phr_ventoux/input_with_classif.json"
         )
         # Run sparse dsm pipeline
-        _, input_config_sparse_res = generate_input_json(
+        _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
             "multiprocessing",
@@ -3823,79 +3824,10 @@ def test_end2end_ventoux_with_classif():
                 "max_ram_per_worker": 1000,
             },
         )
-        application_config = {
-            "1": {
-                "grid_generation": {"method": "epipolar", "epi_step": 30},
-                "resampling": {
-                    "method": "bicubic",
-                    "strip_height": 80,
-                    "save_intermediate_data": True,
-                },
-                "sparse_matching": {
-                    "method": "sift",
-                    "epipolar_error_upper_bound": 43.0,
-                    "elevation_delta_lower_bound": -20.0,
-                    "elevation_delta_upper_bound": 20.0,
-                    "disparity_margin": 0.25,
-                    "save_intermediate_data": True,
-                    "decimation_factor": 80,
-                },
-                "dense_matching": {
-                    "method": "census_sgm_default",
-                    # run disp min disp max in the global pipeline
-                    "use_global_disp_range": True,
-                },
-                "dem_generation": {
-                    # save the dems in the global pipeline
-                    "save_intermediate_data": True
-                },
-            },
-        }
 
-        output_config = {
-            # reduce computation time by not going further for nothing
-            "product_level": ["depth_map"]
-        }
+        input_config_dense_dsm["output"]["directory"] = directory
+        input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
-        input_config_sparse_res["applications"] = application_config
-        input_config_sparse_res["output"].update(output_config)
-        input_config_sparse_res["advanced"]["epipolar_resolutions"] = [4, 1]
-
-        sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
-        sparse_res_pipeline.run()
-
-        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
-
-        # Check metadata.json properties
-        out_json = os.path.join(out_dir, "metadata.json")
-        with check:
-            assert os.path.isfile(out_json)
-
-        with open(out_json, "r", encoding="utf-8") as out_json_file:
-            out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["grid_generation"]["left_right"]
-            with check:
-                assert out_grid["epipolar_size_x"] == 612
-            with check:
-                assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"][
-                "disparity_range_computation"
-            ]["left_right"]
-            with check:
-                assert out_disp_compute["minimum_disparity"] > -85
-            with check:
-                assert out_disp_compute["minimum_disparity"] < -75
-            with check:
-                assert out_disp_compute["maximum_disparity"] > 45
-            with check:
-                assert out_disp_compute["maximum_disparity"] < 55
-
-        # Run dense_dsm dsm pipeline
-        # clean outdir
-        shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
-
-        # dense dsm pipeline
-        input_config_dense_dsm = input_config_sparse_res.copy()
         # update applications
         dense_dsm_applications = {
             "point_cloud_rasterization": {
@@ -3911,6 +3843,39 @@ def test_end2end_ventoux_with_classif():
                 "loader": "pandora",
                 "save_intermediate_data": True,
                 "use_global_disp_range": False,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "3sgm",
+                            "overcounting": False,
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "p2_method": "constant",
+                                "penalty_method": "sgm_penalty",
+                            },
+                            "geometric_prior": {
+                                "source": "classif",
+                                "classes": ["b0"],
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {
+                            "filter_method": "median",
+                            "filter_size": 3,
+                        },
+                    },
+                },
             },
             "triangulation": {
                 "save_intermediate_data": True,
@@ -3928,9 +3893,8 @@ def test_end2end_ventoux_with_classif():
                 "use_median": False,
             },
         }
-        input_config_dense_dsm["applications"]["1"].update(
-            dense_dsm_applications
-        )
+        input_config_dense_dsm["applications"] = {"1": dense_dsm_applications}
+
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
 
@@ -3944,8 +3908,13 @@ def test_end2end_ventoux_with_classif():
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
+        out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         pc1 = "0_0"
+
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
+        with check:
+            assert os.path.isfile(out_json)
 
         with check:
             assert (

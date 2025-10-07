@@ -32,6 +32,7 @@ from typing import Dict
 import numpy as np
 import pandora
 import rasterio
+import xarray as xr
 from json_checker import Checker, Or
 from pandora.check_configuration import (
     check_pipeline_section,
@@ -39,7 +40,6 @@ from pandora.check_configuration import (
     get_config_pipeline,
     update_conf,
 )
-from pandora.img_tools import get_metadata
 from pandora.state_machine import PandoraMachine
 from rasterio.mask import mask
 from shapely.geometry import mapping
@@ -286,6 +286,34 @@ class PandoraLoader:
 
         return self.pandora_config
 
+    def get_classif_bands(self):
+        """
+        Get the classification bands used in the pandora configuration
+
+        :return: list of classification bands
+        """
+
+        classif_bands = []
+
+        def search_classes_recursive(obj):
+            """
+            Recursive search of keys containing 'classes' in the configuration
+            """
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    if "classes" in key.lower():
+                        if isinstance(value, list):
+                            classif_bands.extend(value)
+                        elif value is not None:
+                            classif_bands.append(value)
+                    # Continue recursive search
+                    search_classes_recursive(value)
+
+        search_classes_recursive(self.pandora_config)
+
+        # Remove duplicates and return the list
+        return list(set(classif_bands))
+
     @cars_profile(name="Find auto conf")
     def find_auto_conf(
         self, intersection_poly, land_cover_map, classif_to_config_mapping, epsg
@@ -362,12 +390,10 @@ class PandoraLoader:
     def check_conf(
         self,
         user_cfg,
-        img_left,
-        img_right,
         bands_left,
         bands_right,
-        classif_left=None,
-        classif_right=None,
+        bands_classif_left=None,
+        bands_classif_right=None,
     ):
         """
         Check configuration
@@ -379,15 +405,18 @@ class PandoraLoader:
         :rtype: dict
 
         """
-
         # Import plugins before checking configuration
         pandora.import_plugin()
         # Check configuration and update the configuration with default values
         # Instantiate pandora state machine
         pandora_machine = PandoraMachine()
         # check pipeline
-        metadata_left = get_metadata(img_left, classif=classif_left)
-        metadata_right = get_metadata(img_right, classif=classif_right)
+        metadata_left = overide_pandora_get_metadata(
+            bands_left, classif_bands=bands_classif_left
+        )
+        metadata_right = overide_pandora_get_metadata(
+            bands_right, classif_bands=bands_classif_right
+        )
 
         metadata_left = metadata_left.assign_coords(band_im=bands_left)
         metadata_right = metadata_right.assign_coords(band_im=bands_right)
@@ -427,6 +456,43 @@ default_short_configuration_input_custom_cars = {
         "nodata_right": -9999,
     }
 }
+
+
+def overide_pandora_get_metadata(
+    im_bands: list, classif_bands: list = None
+) -> xr.Dataset:
+    """
+    Read metadata from image, and return the corresponding xarray.DataSet
+
+    :param im_bands: list of band names
+    :param classif_bands: list of classification band names
+    :return: partial xarray.DataSet (attributes and coordinates)
+    :rtype: xarray.DataSet
+    """
+
+    coords = {
+        "band_im": list(im_bands),
+        "row": np.arange(10),
+        "col": np.arange(10),
+    }
+
+    data_vars = {
+        "image": (["row", "col"], np.zeros((10, 10))),
+    }
+
+    if classif_bands is not None:
+        coords["band_classif"] = list(classif_bands)
+        data_vars["classif"] = (
+            ["row", "col", "band_classif"],
+            np.zeros((10, 10, len(classif_bands)), dtype=np.int32),
+        )
+
+    # create the dataset
+    dataset = xr.Dataset(data_vars=data_vars, coords=coords)
+
+    dataset.attrs["disparity_source"] = None
+
+    return dataset
 
 
 def get_config_input_custom_cars(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
