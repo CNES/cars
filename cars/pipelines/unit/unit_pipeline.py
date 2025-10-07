@@ -910,39 +910,35 @@ class UnitPipeline(PipelineTemplate):
                                 )
         for key1, key2 in inputs_conf["pairing"]:
             corr_cfg = self.dense_matching_app.loader.get_conf()
-            img_left = inputs_conf["sensors"][key1]["image"]["main_file"]
-            img_right = inputs_conf["sensors"][key2]["image"]["main_file"]
             bands_left = list(
                 inputs_conf["sensors"][key1]["image"]["bands"].keys()
             )
             bands_right = list(
                 inputs_conf["sensors"][key2]["image"]["bands"].keys()
             )
-            classif_left = None
-            classif_right = None
+            bands_classif_left = None
+            bands_classif_right = None
             if (
                 "classification" in inputs_conf["sensors"][key1]
                 and inputs_conf["sensors"][key1]["classification"] is not None
             ):
-                classif_left = inputs_conf["sensors"][key1]["classification"][
-                    "main_file"
-                ]
+                bands_classif_left = inputs_conf["sensors"][key1][
+                    "classification"
+                ]["bands"].keys()
             if (
                 "classification" in inputs_conf["sensors"][key2]
                 and inputs_conf["sensors"][key2]["classification"] is not None
             ):
-                classif_right = inputs_conf["sensors"][key2]["classification"][
-                    "main_file"
-                ]
+                bands_classif_right = inputs_conf["sensors"][key2][
+                    "classification"
+                ]["bands"].keys()
             self.dense_matching_app.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
-                    img_left,
-                    img_right,
                     bands_left,
                     bands_right,
-                    classif_left,
-                    classif_right,
+                    bands_classif_left,
+                    bands_classif_right,
                 )
             )
 

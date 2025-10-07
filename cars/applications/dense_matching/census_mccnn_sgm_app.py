@@ -312,13 +312,20 @@ class CensusMccnnSgm(
         # Get params from loader
         self.loader = pandora_loader
         self.corr_config = collections.OrderedDict(pandora_loader.get_conf())
-
         # Instantiate margins from pandora check conf
         # create the dataset
+        classif_bands = pandora_loader.get_classif_bands()
         fake_dataset = xr.Dataset(
-            data_vars={},
+            data_vars={
+                "image": (["row", "col"], np.zeros((10, 10))),
+                "classif": (
+                    ["row", "col", "band_classif"],
+                    np.zeros((10, 10, len(classif_bands)), dtype=np.int32),
+                ),
+            },
             coords={
                 "band_im": [overloaded_conf["used_band"]],
+                "band_classif": classif_bands,
                 "row": np.arange(10),
                 "col": np.arange(10),
             },
@@ -328,7 +335,6 @@ class CensusMccnnSgm(
         pandora.import_plugin()
         pandora_machine = PandoraMachine()
         corr_config_pipeline = {"pipeline": dict(self.corr_config["pipeline"])}
-
         saved_schema = copy.deepcopy(
             pandora.matching_cost.matching_cost.AbstractMatchingCost.schema
         )
@@ -418,7 +424,6 @@ class CensusMccnnSgm(
                 "Maximal disparity should be bigger than "
                 "minimal disparity for dense matching"
             )
-
         return overloaded_conf
 
     def check_conf_confidence_filtering(self, overloaded_conf):
