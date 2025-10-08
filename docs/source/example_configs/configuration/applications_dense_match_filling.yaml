@@ -1,0 +1,8 @@
+---
+applications:
+  dense_match_filling:
+    method: zero_padding
+    classification:
+    - water
+    - snow
+    save_intermediate_data: true

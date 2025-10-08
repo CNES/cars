@@ -1,0 +1,14 @@
+---
+input:
+  sensors:
+    one: img1.tif
+    two: img2.tif
+    three: img3.tif
+  pairing:
+  - - one
+    - two
+  - - one
+    - three
+  output:
+    directory: out
+    product_level: dsm # optional because it is the default value of product_level

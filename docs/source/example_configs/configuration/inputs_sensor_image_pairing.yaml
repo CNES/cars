@@ -1,0 +1,13 @@
+---
+input:
+  sensors:
+    one: img1.tif
+    two: img2.tif
+    three: img3.tif
+  pairing: # define the pairs
+  # one-two
+  - - one
+    - two
+  # one-three
+  - - one
+    - three

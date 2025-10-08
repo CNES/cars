@@ -1,0 +1,10 @@
+---
+input:
+  sensors:
+    one:
+      image: color_one.tif
+    two:
+      image: color_two.tif
+  pairing:
+  - - one
+    - two

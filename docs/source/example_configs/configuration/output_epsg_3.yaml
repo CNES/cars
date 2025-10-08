@@ -1,0 +1,5 @@
+---
+output:
+  geoid: path/to/black_sea_geoid.tif # not recognized by CARS
+  epsg: 23037+5336 # UTM zone + the black sea VCRS, creating a CompoundCRS
+  #epsg: 4978 # 3D CRS

@@ -1,0 +1,5 @@
+---
+applications:
+  grid_generation:
+    method: epipolar
+    epi_step: 35

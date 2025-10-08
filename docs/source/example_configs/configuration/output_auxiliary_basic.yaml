@@ -1,0 +1,9 @@
+---
+output:
+  directory: outresults
+  auxiliary:
+    image: false
+    weights: true
+    classification: true
+    filling: true
+    performance_map: true

@@ -1,0 +1,36 @@
+---
+input:
+  roi:
+    type: FeatureCollection
+    features:
+    - type: Feature
+      properties: {}
+      geometry:
+        coordinates:
+        - - - - 319700
+              - 3317700
+            - - 319800
+              - 3317700
+            - - 319800
+              - 3317800
+            - - 319800
+              - 3317800
+            - - 319700
+              - 3317700
+        - - - - 319900
+              - 3317900
+            - - 320000
+              - 3317900
+            - - 320000
+              - 3318000
+            - - 319900
+              - 3318000
+            - - 319900
+              - 3317900
+        type: MultiPolygon
+    crs:
+      type: name
+      properties:
+        name: EPSG:32636
+advanced:
+  debug_with_roi: true

@@ -1,0 +1,12 @@
+---
+output:
+  directory: outresults
+  auxiliary:
+    image: [b0, b1, b2]
+    weights: true
+    classification: 
+      1: [7, 8, 9] 
+      2: 3
+      5: 5
+    filling: true
+    performance_map: [0, 0.968, 1.13375, 1.295, 1.604, 2.423, 3.428]

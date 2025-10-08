@@ -1,0 +1,10 @@
+---
+applications:
+  dsm_filling.create_dtm: # the first application uses bulldozer, creating a DTM
+    method: bulldozer
+    classification:
+    - cloud
+  dsm_filling.use_dtm: # the second application used the DTM created earlier
+    method: border_interpolation
+    classification:
+    - lake

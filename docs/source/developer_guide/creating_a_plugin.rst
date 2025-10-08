@@ -66,4 +66,4 @@ The loader defines several plugin-specific parameters
 
 A sensor loader plugin is a class that overrides the `SensorLoaderTemplate` class. It must define two methods : 
  - check_conf : check the plugin-specific parameters
- - set_pivot_format : transform the input configuration into a configuration readable by CARS using pivot format and set it in class attribute `self.pivot_format`. Specifications of pivot format can be used on :ref:`advanced configuration`
+ - set_pivot_format : transform the input configuration into a configuration readable by CARS using pivot format and set it in class attribute `self.pivot_format`. Specifications of pivot format are explained on :ref:`input`.

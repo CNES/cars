@@ -1,0 +1,9 @@
+---
+classification:
+  path: classif.tif
+  filling:
+    fill_with_geoid: 7
+    interpolate_from_borders: 8
+    fill_with_endogenous_dem: [1,2]
+    fill_with_exogenous_dem: 9
+

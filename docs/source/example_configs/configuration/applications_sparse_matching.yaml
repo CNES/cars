@@ -1,0 +1,6 @@
+---
+applications:
+  sparse_matching:
+    method: sift
+    disparity_margin: 0.01
+

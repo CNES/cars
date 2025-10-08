@@ -1,0 +1,10 @@
+---
+input:
+  sensors:
+    one:
+      image: IMG_PHR1B_P_001/DIM_PHR1B_***.XML
+    two:
+      image: IMG_PHR1B_P_002/DIM_PHR1B_***.XML
+  pairing:
+  - - one
+    - two

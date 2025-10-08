@@ -1,0 +1,4 @@
+---
+output:
+  geoid: path/to/egm08.tif # recognized geoid file
+  epsg: 4326 # 3D CRS

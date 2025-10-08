@@ -1,0 +1,8 @@
+---
+input:
+  sensors:
+    one: img1.tif
+    two: img2.tif
+output:
+  directory: out
+  product_level: depth_map

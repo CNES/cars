@@ -1,0 +1,5 @@
+---
+input:
+  sensors:
+    one: ext_dir/ext_000.tif
+    two : ext_dir/ext_001.tif

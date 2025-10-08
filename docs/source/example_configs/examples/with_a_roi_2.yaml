@@ -1,0 +1,20 @@
+---
+input:
+  roi:
+    type: FeatureCollection
+    features:
+    - type: Feature
+      properties: {}
+      geometry:
+        coordinates:
+        - - - 5.194
+            - 44.2064
+          - - 5.194
+            - 44.2059
+          - - 5.195
+            - 44.2059
+          - - 5.195
+            - 44.2064
+          - - 5.194
+            - 44.2064
+        type: Polygon

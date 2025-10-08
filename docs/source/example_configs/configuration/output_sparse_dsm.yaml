@@ -1,0 +1,10 @@
+---
+input:
+  sensors:
+    one: img1.tif
+    two: img2.tif
+applications:
+  dem_generation:
+    save_intermediate_data: true
+output:
+  product_level: []

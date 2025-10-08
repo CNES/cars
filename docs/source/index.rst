@@ -28,23 +28,39 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
 **Contact:** cars@cnes.fr
 
 .. toctree::
-   :caption: Content
-   :maxdepth: 2
+   :caption: Getting started
+   :maxdepth: 1
 
-   getting_started
-   CARS overview/index.rst
-   how_to_use_CARS
-   Additional_tips
-   troubleshooting_and_faqs
-   developer_guide/index.rst
-
+   installation
+   quick_start
+   technical_foundations/index.rst
 
 .. toctree::
-   :caption: Tutorials
+   :caption: Configuration
    :maxdepth: 1
-	     
-   A high scalability satellite 3D stereo reconstruction framework with AI enhancement <https://github.com/cars-cnes/3d-stereo-with-ai>
-   Discover CNES 3D open-source tools through a realistic scenario <https://github.com/cars-cnes/discover-cnes-3d-tools#discover-cnes-3d-open-source-tools-through-a-realistic-scenario>
+
+   configuration/config_overview.rst
+   configuration/input.rst
+   configuration/output.rst
+   configuration/orchestrator.rst
+   configuration/applications.rst
+   configuration/advanced_parameters.rst
+
+.. toctree::
+   :caption: Examples
+   :maxdepth: 1
+
+   general_examples/index.rst
+   sensor_examples/index.rst
+
+.. toctree::
+   :caption: Developer guide
+   :maxdepth: 1
+
+   developer_guide/concepts/software_conception
+   developer_guide/algorithm_conception
+   developer_guide/contributing_to_cars
+   developer_guide/creating_a_plugin
 
    
 .. toctree::
@@ -54,16 +70,4 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
    glossary
    bibliography
    api_reference/index.rst
-
-
-.. toctree::
-   :caption: Related software
-   :maxdepth: 1
-   	      
-   PANDORA, stereo matching <https://github.com/cnes/pandora>
-   SHARELOC, geometric library <https://github.com/cnes/shareloc>
-   DEMCOMPARE, dem analysis <https://github.com/cnes/demcompare>
-   BULLDOZER, dsm to dtm <https://github.com/cnes/bulldozer>
-   CARS-RESAMPLE, grid resampling <https://github.com/cnes/cars-resample>
-   CARS-RASTERIZE, point cloud to dsm <https://github.com/cnes/cars-rasterize>
-   CARS-MESH, surface reconstruction <https://github.com/cnes/cars-mesh>
+   related_software
