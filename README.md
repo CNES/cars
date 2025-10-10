@@ -1,109 +1,195 @@
 <div align="center">
 <a target="_blank" href="https://github.com/CNES/cars">
 <picture>
-  <source
-    srcset="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/picto_dark.png"
-    media="(prefers-color-scheme: dark)"
-  />
   <img
-    src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/picto_light.png"
+    src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/cars_picto.svg"
     alt="CARS"
-    width="40%"
+    width="50%"
   />
 </picture>
 </a>
 
 <h4>CARS, a satellite multi view stereo framework </h4>
 
-[![Python](https://img.shields.io/badge/python-v3.9+-blue.svg)](https://www.python.org/downloads/release/python-390/)
+[![Python](https://img.shields.io/badge/python-v3.10+-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)](CONTRIBUTING.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0/)
 [![Documentation](https://readthedocs.org/projects/cars/badge/?version=latest)](https://cars.readthedocs.io/?badge=latest)
 [![Github Action](https://github.com/CNES/cars/actions/workflows/cars-ci.yml/badge.svg?branch=master)](https://github.com/CNES/cars/actions)
+[![pypi](https://badge.fury.io/py/cars.svg)](https://pypi.org/project/cars/)
 
 <p>
   <a href="#overview">Overview</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#documentation">Documentation</a> •
+  <a href="#license">License</a> •
   <a href="#contribution">Contribution</a> •
+  <a href="#help">Help</a> •
+  <a href="#credits">Credits</a> •
+  <a href="#contact">Contact</a> •
   <a href="#references">References</a>
 </p>
 </div>
 
-## Overview
+# 🌐 **Overview**
 
-From stereo images  |  CARS produces a Digital Surface Model (DSM)
-:-------------------------:|:-------------------------:
-<img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/animation_sat.gif" alt="drawing" width="100%"/> |  <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/overview_dsm_3d.gif" alt="drawing" width="100%"/>
-
+<div align="center">
+<table style="display: inline-block;">
+  <tr>
+    <td align="center">
+      <div  style="font-size:2em; margin-bottom:10px;"><strong>🎞️ From Stereo Images</strong></div><br>
+      <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/animation_sat.gif"
+           alt="Stereo images animation" width="95%"><br>
+      <em>Input stereo image pairs</em>
+    </td>
+    <td align="center">
+      <div  style="font-size:2em; margin-bottom:10px;"><strong>🌍 To Digital Surface Model (DSM)</strong></div><br>
+      <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/overview_dsm_3d.gif"
+           alt="DSM overview" width="95%"><br>
+      <em>Output 3D surface reconstruction</em>
+    </td>
+  </tr>
+</table>
+</div>
 
 **CARS** is an open source 3D tool dedicated to produce **Digital Surface Models** from satellite imaging by photogrammetry.
 This Multiview Stereo framework is intended for massive DSM production with a robust, performant and modular design.
 
 **CARS** is currently under active development and integrated into various projects & missions:
 
-- <a href="https://co3d.cnes.fr/en/co3d-0">CO3D project &nbsp;&nbsp;&nbsp;  <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo_co3D_cnes.jpg" height="20"/></a>
-- <a href="https://www.ai4geo.eu">AI4GEO project &nbsp;&nbsp;&nbsp; <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo-ai4geo.png" height="20"/> </a>
-- <a href="https://www.evo-land.eu">Evoland project &nbsp;&nbsp;&nbsp; <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo-evoland.png" height="20"/> </a>
+<div align="center">
+<p align="center">
+  <a href="https://co3d.cnes.fr/en/co3d-0" target="_blank">
+    <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo_co3D_cnes.png"
+         alt="CO3D project" height="70">
+  </a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://www.ai4geo.eu" target="_blank">
+    <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo-ai4geo.png"
+         alt="AI4GEO project" height="75">
+  </a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://www.evo-land.eu" target="_blank">
+    <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo-evoland.png"
+         alt="Evoland project" height="60">
+  </a>
+</p>
+</div>
+
+<br>
 
 Its roadmap and implemented functionalities are evolving regularly depending on specific project requirements.
 
-## Quick start
+# 🚀 **Quick start**
 
-### CARS Docker Image
 
-[![Docker Status](http://dockeri.co/image/cnes/cars)](https://hub.docker.com/r/cnes/cars)
+### △ On the way to the Pyramids...
+---
+
+You want to build the pyramids by yourself? 
+
+
+<div align="center">
+<table style="display: inline-block;">
+  <tr>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/dsm.png"
+           alt="Dsm" width="400"><br>
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/clr.png"
+           alt="Color" width="400"><br>
+    </td>
+     <td align="center">
+      <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/dsm_clr.png"
+           alt="Color" width="400"><br>
+    </td>
+  </tr>
+</table>
+</div>
+
+Download our [open licence](https://www.etalab.gouv.fr/licence-ouverte-open-licence) Pleiades [data sample](https://raw.githubusercontent.com/CNES/cars/master/tutorials/data_gizeh.tar.bz2) to give CARS a try!
+
+
+### 🐋 with Docker
+---
+
+#### 🛠 Installation
 
 CARS is available on Docker Hub and can be downloaded by:
 ``` bash
 docker pull cnes/cars
 ```
 
-### One main pipeline to generate DSM
+#### ⚙ Run CARS
 
 You only need to launch one command:
 
 ```
-docker run -w /data -v "$(pwd)"/data_gizeh:/data cnes/cars /data/configfile.json
+docker run -w /data -v "$(pwd)"/data_gizeh:/data cnes/cars /data/configfile.yaml
 ```
 
-with one configuration input file ("configfile.json") located in a "data" folder to be consistent with the previous command lines:
-```
-{
-    "inputs": {
-        "sensors" : {
-            "one": "img1.tif",
-            "two": "img2.tif"
-        }
-    },
-    "output": {
-        "directory": "outresults"
-    }
-}
+### 🐍 with pip
+---
 
+#### 🛠 Installation
+
+CARS can also be downloaded using the pip install command:
+
+``` bash 
+pip install cars 
 ```
 
-### On the way to the Pyramids...
+#### ⚙ Run CARS
 
-You want to build the pyramids by yourself? Download our [open licence](https://www.etalab.gouv.fr/licence-ouverte-open-licence) Pleiades [data sample](https://raw.githubusercontent.com/CNES/cars/master/tutorials/data_gizeh.tar.bz2) to give CARS a try!
+Once you moved to the data_gizeh directory:
 
-## Documentation
+``` bash 
+cars configfile.yaml
+```
+
+# 📚 **Documentation**
 
 Go to [CARS Main Documentation](https://cars.readthedocs.io/?badge=latest).
 
+# 📜 **License**
 
-## Contribution
+CARS is licensed under [Apache License v2.0](https://www.apache.org/licenses/LICENSE-2.0). Please refer to the [LICENSE](https://gitlab.cnes.fr/dali/cars-park/cars/-/blob/1214-mise-a-jour-du-readme-pour-la-nouvelle-version-1-0-0/LICENSE) file for more details.
 
-To do a bug report or a contribution, see the [**Contribution Guide**](https://github.com/CNES/cars/blob/master/CONTRIBUTING.md).
+# 🤝 **Contribution**
 
-For project evolution, see [**Changelog**](https://github.com/CNES/cars/blob/master/CHANGELOG.md).
+To do a contribution, see the [Contribution Guide](https://github.com/CNES/cars/blob/master/CONTRIBUTING.md).  For project evolution, see [Changelog](https://github.com/CNES/cars/blob/master/CHANGELOG.md).
 
-## Credits
+# 🆘 **Help**
+
+For issues, questions, or feature requests, please open an issue on our [GitHub Issues](https://github.com/CNES/cars/issues) page or check the [documentation](https://cars.readthedocs.io/en/stable/index.html) for additional resources.
+
+You can also ask your questions on the corresponding [slack](https://join.slack.com/t/cars-community/shared_invite/zt-2uw6usog1-~TT~m8BxO9faMXpP7tpz2Q).
+
+# ✒️ **Credits**
+
+If you use CARS in your research, please cite the following paper:
+
+```
+@INPROCEEDINGS{9324020,
+  author={Youssefi, David and Michel, Julien and Sarrazin, Emmanuelle and Buffe, Fabrice and Cournet, Myriam and Delvit, Jean-Marc and L'Helguen, Céline and Melet, Olivier and Emilien, Aurélie and Bosman, Julien},
+  booktitle={IGARSS 2020 - 2020 IEEE International Geoscience and Remote Sensing Symposium}, 
+  title={CARS: A Photogrammetry Pipeline Using Dask Graphs to Construct A Global 3D Model}, 
+  year={2020},
+  volume={},
+  number={},
+  pages={453-456},
+  keywords={Automobiles;Geometry;Three-dimensional displays;Computational modeling;Estimation;Stereo image processing;Task analysis;Image processing;Photogrammetry;Stereovision;Digital Surface Model;High Performance Computing;Cloud Computing;Dask},
+  doi={10.1109/IGARSS39084.2020.9324020}}
+```
 
 See [Authors file](https://github.com/CNES/cars/blob/master/AUTHORS.md)
 
+# ✉️ **Contact**
 
-## References
+You can contact us on the following mail adress: cars@cnes.fr
+
+# 🔗 **References**
 
 - [Youssefi D., Michel, J., Sarrazin, E., Buffe, F., Cournet, M., Delvit, J., L’Helguen, C., Melet, O., Emilien, A., Bosman, J., 2020. Cars: A photogrammetry pipeline using dask graphs to construct a global 3d model. IGARSS - IEEE International Geoscience and Remote Sensing Symposium.](https://ieeexplore.ieee.org/document/9324020)
 - [Michel, J., Sarrazin, E., Youssefi, D., Cournet, M., Buffe, F., Delvit, J., Emilien, A., Bosman, J., Melet, O., L’Helguen, C., 2020. A new satellite imagery stereo pipeline designed for scalability, robustness and performance. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.](https://www.isprs-ann-photogramm-remote-sens-spatial-inf-sci.net/V-2-2020/171/2020/)
