@@ -476,7 +476,8 @@ def oversampling_func(
             img_as_array = np.real(ifft2(ifftshift(f_filtered)))
 
         # set the nodata values back
-        img_as_array[img_nan_mask] = nodata
+        if nodata is not None:
+            img_as_array[img_nan_mask] = nodata
 
         # shift grid regarding the img extraction
         grid_as_array[0, ...] -= x_offset
