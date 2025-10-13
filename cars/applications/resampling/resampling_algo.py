@@ -457,7 +457,10 @@ def oversampling_func(
     if in_sensor:
         # Get sensor data
         img_as_array = img_reader.read(bands["band_id"], window=img_window)
+        # get the nodata mask before blurring
+        img_nan_mask = img_as_array == nodata
 
+        # blur the image to avoid moiré artefacts if downsampling
         if resolution != 1:
             fourier = fftshift(fft2(img_as_array))
 
@@ -471,6 +474,9 @@ def oversampling_func(
             f_filtered = fourier * gaussian_mask
 
             img_as_array = np.real(ifft2(ifftshift(f_filtered)))
+
+        # set the nodata values back
+        img_as_array[img_nan_mask] = nodata
 
         # shift grid regarding the img extraction
         grid_as_array[0, ...] -= x_offset
