@@ -18,14 +18,4 @@ The full structure follows this organization:
 
 .. include-cars-config:: ../example_configs/configuration/organization_structure
 
-Each section has a dedicated page where every parameter is documented : 
-
-.. toctree::
-   :caption: Sections
-   :maxdepth: 1
-
-   input
-   output
-   orchestrator
-   applications
-   advanced_parameters
+Each section has a dedicated page where every parameter is documented.

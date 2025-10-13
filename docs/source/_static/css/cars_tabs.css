@@ -1,5 +1,6 @@
 /* Layout général */
 .cars-tabs {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   display: flex;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -29,12 +30,12 @@
 }
 
 .cars-tab-btn:hover {
-  background: #e9ecef;
+  transform: scale(1.05);
 }
 
 .cars-tab-btn.active {
-  background: #2d6cdf;
-  color: white;
+  background: #dfe3e6;
+  color: black;
   font-weight: 600;
 }
 
@@ -43,7 +44,7 @@
   display: none;
   flex: 1;
   padding: 0;
-  background: #fff;  /* fond blanc */
+  background: #fffded;  /* fond jaune clair */
 }
 
 .cars-tab-content.active {
@@ -54,7 +55,7 @@
   margin: 0;
   padding: 1em;
   overflow-x: auto;
-  background: #fff;     /* fond blanc */
+  background: #fffded;     /* fond jaune clair */
   color: #2d2d2d;       /* texte foncé */
   font-family: monospace;
   font-size: 0.85em;
@@ -77,5 +78,5 @@
 }
 
 .cars-copy-btn:hover {
-  background: #dfe3e6;
+   transform: scale(1.05);
 }
