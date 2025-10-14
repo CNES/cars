@@ -124,6 +124,10 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 | *model_type*   | Geomodel type         | str    | RPC           | RPC, GRID        | False    |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
 
+
+                .. note::
+                     If the geomodel file is not provided, CARS will try to use the RPC loaded with rasterio opening *image*. RPCs are assumed to convert rows and columns into WGS84 longitude/latitude coordinates.
+                     
                 A full configuration example is given below : 
 
                 .. include-cars-config:: ../../example_configs/configuration/geomodel_full_config
