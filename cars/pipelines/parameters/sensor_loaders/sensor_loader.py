@@ -38,9 +38,7 @@ class SensorLoader:
     # sensor loaders
     available_loaders = {}
 
-    def __new__(
-        cls, app_name: str, cfg: dict, input_type: str, config_dir: str
-    ):
+    def __new__(cls, app_name: str, cfg: dict, config_dir: str):
         """
         Return the instance of sensor loader associated with the sensor loader
         name given as parameter
@@ -51,10 +49,10 @@ class SensorLoader:
         :type cfg: dictionary
         """
 
-        return cls.create_app(app_name, cfg, input_type, config_dir)
+        return cls.create_app(app_name, cfg, config_dir)
 
     @classmethod
-    def create_app(cls, name: str, cfg: dict, input_type: str, config_dir: str):
+    def create_app(cls, name: str, cfg: dict, config_dir: str):
         """
         Factory command to create the sensor loader
         Return the instance of sensor loader associated with the sensor loader
@@ -72,7 +70,7 @@ class SensorLoader:
         except KeyError:
             logging.error("No sensor loader named {0} supported".format(name))
             return None
-        loader = loader_class(cfg, input_type, config_dir)
+        loader = loader_class(cfg, config_dir)
         return loader
 
     @classmethod

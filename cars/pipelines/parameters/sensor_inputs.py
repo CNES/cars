@@ -114,12 +114,12 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             sens_cst.INPUT_IMG, None
         )
         if isinstance(image, str):
-            loader_name = "basic"
+            loader_name = "basic_image"
         elif isinstance(image, dict):
-            loader_name = image.get("loader", "basic")
+            loader_name = image.get("loader", "basic_image")
         else:
             raise TypeError(f"Image {image} is not of type str or dict")
-        image_loader = SensorLoader(loader_name, image, "image", config_dir)
+        image_loader = SensorLoader(loader_name, image, config_dir)
         image_as_pivot_format = (
             image_loader.get_pivot_format()  # pylint: disable=E1101
         )
@@ -148,14 +148,12 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         )
         if classif is not None:
             if isinstance(classif, str):
-                loader_name = "basic"
+                loader_name = "basic_classif"
             elif isinstance(classif, dict):
-                loader_name = classif.get("loader", "basic")
+                loader_name = classif.get("loader", "basic_classif")
             else:
                 raise TypeError(f"Classif {classif} is not of type str or dict")
-            classif_loader = SensorLoader(
-                loader_name, classif, "classification", config_dir
-            )
+            classif_loader = SensorLoader(loader_name, classif, config_dir)
             classif_as_pivot_format = (
                 classif_loader.get_pivot_format()  # pylint: disable=E1101
             )

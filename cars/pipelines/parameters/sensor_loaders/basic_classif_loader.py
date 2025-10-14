@@ -19,16 +19,15 @@
 # limitations under the License.
 #
 """
-this module contains the BasicSensorLoader class.
+This module contains the ClassifSensorLoader class.
 """
 
-from json_checker import Checker, Or
+from json_checker import Checker
 
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
-from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
-from cars.pipelines.parameters.sensor_loaders.pivot_sensor_loader import (
-    PivotSensorLoader,
+from cars.pipelines.parameters.sensor_loaders.pivot_classif_loader import (
+    PivotClassifSensorLoader,
 )
 from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
@@ -36,8 +35,8 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
 )
 
 
-@SensorLoader.register("basic")
-class BasicSensorLoader(SensorLoaderTemplate):
+@SensorLoader.register("basic_classif")
+class BasicClassifSensorLoader(SensorLoaderTemplate):
     """
     Default sensor loader (used when no sensor loader is specified)
     """
@@ -51,15 +50,18 @@ class BasicSensorLoader(SensorLoaderTemplate):
         :return: overloaded configuration
         :rtype: dict
         """
+        default_filling = {
+            "fill_with_geoid": "b0",
+            "interpolate_from_borders": "b1",
+            "fill_with_endogenous_dem": "b2",
+            "fill_with_exogenous_dem": "b3",
+        }
         if isinstance(conf, str):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
             overloaded_conf["path"] = image_path
-            overloaded_conf["loader"] = "basic"
-            if self.input_type == "image":
-                overloaded_conf[sens_cst.INPUT_NODATA] = 0
-            else:
-                overloaded_conf[sens_cst.INPUT_NODATA] = None
+            overloaded_conf["loader"] = "basic_classif"
+            overloaded_conf["filling"] = default_filling
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
@@ -67,16 +69,11 @@ class BasicSensorLoader(SensorLoaderTemplate):
             )
             overloaded_conf["path"] = image_path
             overloaded_conf["loader"] = conf.get("loader", "basic")
-            if self.input_type == "image":
-                overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
-                    sens_cst.INPUT_NODATA, 0
-                )
-            else:
-                overloaded_conf[sens_cst.INPUT_NODATA] = None
+            overloaded_conf["filling"] = conf.get("filling", default_filling)
         else:
-            raise TypeError(f"Input {self.input_type} is not a string ot dict")
+            raise TypeError(f"Input {conf} is not a string ot dict")
 
-        sensor_schema = {"loader": str, "path": str, "no_data": Or(None, int)}
+        sensor_schema = {"loader": str, "path": str, "filling": dict}
 
         # Check conf
         checker = Checker(sensor_schema)
@@ -89,8 +86,9 @@ class BasicSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            "loader": "pivot",
+            "loader": "pivot_classif",
             "main_file": self.used_config["path"],
+            "filling": self.used_config["filling"],
         }
         pivot_config["bands"] = {}
         for band_id in range(
@@ -102,7 +100,7 @@ class BasicSensorLoader(SensorLoaderTemplate):
                 "band": band_id,
             }
         pivot_config["texture_bands"] = None
-        pivot_sensor_loader = PivotSensorLoader(
-            pivot_config, self.input_type, self.config_dir
+        pivot_sensor_loader = PivotClassifSensorLoader(
+            pivot_config, self.config_dir
         )
         self.pivot_format = pivot_sensor_loader.get_pivot_format()

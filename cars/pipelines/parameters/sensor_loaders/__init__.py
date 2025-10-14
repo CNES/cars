@@ -22,6 +22,7 @@
 CARS application module init file
 """
 
-# Imports needed in order to register application for Application factory
-from .basic_sensor_loader import BasicSensorLoader  # noqa: F401
-from .pivot_sensor_loader import PivotSensorLoader  # noqa: F401
+from .basic_classif_loader import BasicClassifSensorLoader  # noqa: F401
+from .basic_image_loader import BasicImageSensorLoader  # noqa: F401
+from .pivot_classif_loader import PivotClassifSensorLoader  # noqa: F401
+from .pivot_image_loader import PivotImageSensorLoader  # noqa: F401

@@ -30,14 +30,12 @@ class SensorLoaderTemplate:
     Class for general specification of a sensor loader
     """
 
-    def __init__(self, conf, input_type, config_dir):
+    def __init__(self, conf, config_dir):
         """
         Init function of SensorLoaderTemplate
 
         :param conf: configuration for sensor loader
-        :param input_type: type of input : image or classification
         """
-        self.input_type = input_type
         self.config_dir = config_dir
         self.used_config = self.check_conf(conf)
 

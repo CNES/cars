@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the PivotSensorLoader class.
+this module contains the PivotImageSensorLoader class.
 """
 
 from json_checker import Checker, Or
@@ -33,10 +33,10 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
 )
 
 
-@SensorLoader.register("pivot")
-class PivotSensorLoader(SensorLoaderTemplate):
+@SensorLoader.register("pivot_image")
+class PivotImageSensorLoader(SensorLoaderTemplate):
     """
-    Pivot sensor loader : used by CARS to read inputs
+    Pivot image sensor loader : used by CARS to read inputs
     """
 
     def check_conf(self, conf):
@@ -85,15 +85,7 @@ class PivotSensorLoader(SensorLoaderTemplate):
                             band_transform,
                         )
                     )
-        overloaded_conf["main_file"] = conf.get("main_file", None)
-        if overloaded_conf["main_file"] is None:
-            overloaded_conf["main_file"] = overloaded_conf["bands"]["b0"][
-                "path"
-            ]
-        else:
-            overloaded_conf["main_file"] = make_relative_path_absolute(
-                overloaded_conf["main_file"], self.config_dir
-            )
+        overloaded_conf["main_file"] = overloaded_conf["bands"]["b0"]["path"]
         overloaded_conf["texture_bands"] = conf.get("texture_bands", None)
         if overloaded_conf["texture_bands"] is not None:
             for texture_band in overloaded_conf["texture_bands"]:
@@ -105,12 +97,9 @@ class PivotSensorLoader(SensorLoaderTemplate):
                         )
                     )
 
-        if self.input_type == "image":
-            overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
-                sens_cst.INPUT_NODATA, 0
-            )
-        else:
-            overloaded_conf[sens_cst.INPUT_NODATA] = None
+        overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
+            sens_cst.INPUT_NODATA, 0
+        )
 
         sensor_schema = {
             "loader": str,
