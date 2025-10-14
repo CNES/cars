@@ -628,6 +628,38 @@ The structure follows this organization:
 
                 .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_triangulation
 
+            .. tab:: Point Cloud fusion
+
+                **Name**: "point_cloud_fusion"
+
+                **Description**
+
+                Merge points clouds coming from each pair
+
+                Only one method is available for now: "mapping_to_terrain_tiles"
+
+                **Configuration**
+
+                +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+                | Name                         | Description                              | Type    | Available value            | Default value              | Required |
+                +==============================+==========================================+=========+============================+============================+==========+
+                | method                       | Method for fusion                        | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
+                +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+                | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                            | false                      | No       |
+                +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+                | save_by_pair                 | Enable points cloud saving by pair       | boolean |                            | false                      | No       |
+                +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+
+                **Example**
+
+
+                .. include-cars-config:: ../example_configs/how_to_use_CARS/advanced_configuration/applications_point_cloud_fusion
+
+                .. note::
+                    When `save_intermediate_data` is activated, multiple Laz and csv files are saved, corresponding to each processed terrain tiles.
+                    Please, see the section :ref:`merge_laz_files` to merge them into one single file.
+                    `save_by_pair` parameter enables saving by input pair. The csv/laz name aggregates row, col and corresponding pair key.
+
             .. tab:: Point Cloud outlier removal
 
                 **Name**: "point_cloud_outlier_removal"
@@ -877,7 +909,7 @@ The structure follows this organization:
                 Fill in the missing values of the texture and classification by using information from sensor inputs 
                 This application replaces the existing `texture.tif` and `classification.tif`.
                 
-                The application retrieves texture and classification information by performing inverse location on the input sensor images. It is therefore necessary to provide the `sensors` category in `inputs` configuration in order to use this application. The pairing information is also required: when searching for texture information, the application will always look in the first sensor of the pair and then in the second, if no information for the given pixel is found in the first sensor. The final filled value of the pixel is the average of the contribution of each pair. The classification information is a logical OR of all classifications.
+                The application retrieves texture and classification information by performing inverse location on the input sensor images. It is therefore necessary to provide the `sensors` category in `inputs` configuration in order to use this application, even when `depth_map` are provided as input. The pairing information is also required: when searching for texture information, the application will always look in the first sensor of the pair and then in the second, if no information for the given pixel is found in the first sensor. The final filled value of the pixel is the average of the contribution of each pair. The classification information is a logical OR of all classifications.
 
                 In `fill_nan` mode, only the pixels that are no-data in the auxiliary images that are valid in the reference dsm will be filled while in full mode all valid pixel from the reference dsm are filled.
 
@@ -950,6 +982,11 @@ The structure follows this organization:
               - No
             * - debug_with_roi
               - Use input ROI with the tiling of the entire image (see Inputs section)
+              - bool
+              - False
+              - No
+            * - merging
+              - Merge point clouds before rasterization (soon to be deprecated)
               - bool
               - False
               - No
