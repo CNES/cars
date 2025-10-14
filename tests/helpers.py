@@ -411,7 +411,7 @@ def create_corr_conf(user_cfg, left_input, right_input, used_band="b0"):
         user_cfg_pipeline, left_input, right_input, pandora_machine
     )
     # check a part of input section
-    user_cfg_input = get_config_input_custom_cars(user_cfg)
+    user_cfg_input = get_config_input_custom_cars(user_cfg, 0, 0)
     cfg_input = check_input_section_custom_cars(user_cfg_input)
     # concatenate updated config
     cfg = concat_conf([cfg_input, cfg_pipeline])
