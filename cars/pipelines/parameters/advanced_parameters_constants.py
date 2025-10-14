@@ -38,7 +38,6 @@ GROUND_TRUTH_DSM = "ground_truth_dsm"
 
 EPIPOLAR_RESOLUTIONS = "epipolar_resolutions"
 
-MERGING = "merging"
 DSM_MERGING_TILE_SIZE = "dsm_merging_tile_size"
 
 

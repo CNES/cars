@@ -29,6 +29,7 @@ in sub application classes
 
 # Standard imports
 import logging
+import os
 import pprint
 from abc import ABCMeta, abstractmethod
 
@@ -102,6 +103,25 @@ class ApplicationTemplate(metaclass=ABCMeta):
         """
 
         return self.used_config
+
+    def generate_unknown_dump_dir(self, orchestrator):
+        """
+        Generate dump dir from orchestrator
+
+        :param orchestrator: orchestrator
+
+        :return: dump dir
+        """
+
+        dump_dir = None
+        if orchestrator is not None:
+            orch_out_dir = orchestrator.out_dir
+            dump_dir = os.path.join(
+                orch_out_dir,
+                "unknown_dump",
+                self.__class__.__bases__[0].__name__,
+            )
+        return dump_dir
 
 
 class ScalingApplicationTemplate(ApplicationTemplate, metaclass=ABCMeta):

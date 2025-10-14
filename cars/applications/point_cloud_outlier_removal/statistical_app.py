@@ -28,7 +28,6 @@ import copy
 # Standard imports
 import logging
 import os
-import time
 
 import numpy as np
 
@@ -39,14 +38,11 @@ from pyproj import CRS
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.point_cloud_fusion import (
-    pc_fusion_algo,
-    pc_fusion_wrappers,
-)
 from cars.applications.point_cloud_outlier_removal import (
     abstract_outlier_removal_app as pc_removal,
 )
 from cars.applications.point_cloud_outlier_removal import outlier_removal_algo
+from cars.applications.triangulation import pc_transform
 from cars.applications.triangulation.triangulation_wrappers import (
     generate_point_cloud_file_names,
 )
@@ -295,261 +291,100 @@ class Statistical(
         else:
             self.orchestrator = orchestrator
 
-        if merged_point_cloud.dataset_type == "points":
-            (
-                filtered_point_cloud,
-                laz_pc_file_name,
-                csv_pc_file_name,
-                saving_info,
-            ) = self.__register_pc_dataset__(
+        if dump_dir is None:
+            dump_dir = self.generate_unknown_dump_dir(self.orchestrator)
+
+        if merged_point_cloud.dataset_type != "arrays":
+            raise RuntimeError(
+                "Only arrays is supported in statistical removal"
+            )
+
+        prefix = os.path.basename(dump_dir)
+        # Save as depth map
+        filtered_point_cloud, saving_info_epipolar = (
+            self.__register_epipolar_dataset__(
                 merged_point_cloud,
-                point_cloud_dir,
+                depth_map_dir,
                 dump_dir,
                 app_name="statistical",
+                pair_key=prefix,
             )
+        )
 
-            logging.info(
-                "Cloud filtering: Filtered points number: {}".format(
-                    filtered_point_cloud.shape[1]
-                    * filtered_point_cloud.shape[0]
+        # Save as point cloud
+        (
+            flatten_filtered_point_cloud,
+            laz_pc_dir_name,
+            csv_pc_dir_name,
+            saving_info_flatten,
+        ) = self.__register_pc_dataset__(
+            merged_point_cloud,
+            point_cloud_dir,
+            dump_dir,
+            app_name="statistical",
+        )
+
+        # initialize empty index file for point cloud product if official
+        # product is requested
+        pc_index = None
+        if point_cloud_dir:
+            pc_index = {}
+
+        # Generate rasters
+        for col in range(filtered_point_cloud.shape[1]):
+            for row in range(filtered_point_cloud.shape[0]):
+
+                # update saving infos  for potential replacement
+                full_saving_info_epipolar = ocht.update_saving_infos(
+                    saving_info_epipolar, row=row, col=col
                 )
-            )
-
-            # Generate rasters
-            for col in range(filtered_point_cloud.shape[1]):
-                for row in range(filtered_point_cloud.shape[0]):
-                    # update saving infos  for potential replacement
-                    full_saving_info = ocht.update_saving_infos(
-                        saving_info, row=row, col=col
+                full_saving_info_flatten = None
+                if saving_info_flatten is not None:
+                    full_saving_info_flatten = ocht.update_saving_infos(
+                        saving_info_flatten, row=row, col=col
                     )
-                    if merged_point_cloud.tiles[row][col] is not None:
-                        # Delayed call to cloud filtering
-                        filtered_point_cloud[
-                            row, col
-                        ] = self.orchestrator.cluster.create_task(
-                            statistical_removal_wrapper
-                        )(
-                            merged_point_cloud[row, col],
-                            self.k,
-                            self.filtering_constant,
-                            self.mean_factor,
-                            self.std_dev_factor,
-                            self.use_median,
-                            save_by_pair=(self.save_by_pair),
-                            point_cloud_csv_file_name=csv_pc_file_name,
-                            point_cloud_laz_file_name=laz_pc_file_name,
-                            saving_info=full_saving_info,
+
+                if merged_point_cloud[row][col] is not None:
+                    csv_pc_file_name, laz_pc_file_name = (
+                        generate_point_cloud_file_names(
+                            csv_pc_dir_name,
+                            laz_pc_dir_name,
+                            row,
+                            col,
+                            pc_index,
+                            pair_key=prefix,
                         )
-
-        elif merged_point_cloud.dataset_type == "arrays":
-            prefix = os.path.basename(dump_dir)
-            # Save as depth map
-            filtered_point_cloud, saving_info_epipolar = (
-                self.__register_epipolar_dataset__(
-                    merged_point_cloud,
-                    depth_map_dir,
-                    dump_dir,
-                    app_name="statistical",
-                    pair_key=prefix,
-                )
-            )
-
-            # Save as point cloud
-            (
-                flatten_filtered_point_cloud,
-                laz_pc_dir_name,
-                csv_pc_dir_name,
-                saving_info_flatten,
-            ) = self.__register_pc_dataset__(
-                merged_point_cloud,
-                point_cloud_dir,
-                dump_dir,
-                app_name="statistical",
-            )
-
-            # initialize empty index file for point cloud product if official
-            # product is requested
-            pc_index = None
-            if point_cloud_dir:
-                pc_index = {}
-
-            # Generate rasters
-            for col in range(filtered_point_cloud.shape[1]):
-                for row in range(filtered_point_cloud.shape[0]):
-
-                    # update saving infos  for potential replacement
-                    full_saving_info_epipolar = ocht.update_saving_infos(
-                        saving_info_epipolar, row=row, col=col
                     )
-                    full_saving_info_flatten = None
-                    if saving_info_flatten is not None:
-                        full_saving_info_flatten = ocht.update_saving_infos(
-                            saving_info_flatten, row=row, col=col
-                        )
+                    window = merged_point_cloud.tiling_grid[row, col]
+                    overlap = filtered_point_cloud.overlaps[row, col]
+                    # Delayed call to cloud filtering
+                    (
+                        filtered_point_cloud[row, col],
+                        flatten_filtered_point_cloud[row, col],
+                    ) = self.orchestrator.cluster.create_task(
+                        epipolar_statistical_removal_wrapper, nout=2
+                    )(
+                        merged_point_cloud[row, col],
+                        self.k,
+                        self.filtering_constant,
+                        self.mean_factor,
+                        self.std_dev_factor,
+                        self.use_median,
+                        self.half_epipolar_size,
+                        window,
+                        overlap,
+                        epsg=epsg,
+                        point_cloud_csv_file_name=csv_pc_file_name,
+                        point_cloud_laz_file_name=laz_pc_file_name,
+                        saving_info_epipolar=full_saving_info_epipolar,
+                        saving_info_flatten=full_saving_info_flatten,
+                    )
 
-                    if merged_point_cloud[row][col] is not None:
-                        csv_pc_file_name, laz_pc_file_name = (
-                            generate_point_cloud_file_names(
-                                csv_pc_dir_name,
-                                laz_pc_dir_name,
-                                row,
-                                col,
-                                pc_index,
-                                pair_key=prefix,
-                            )
-                        )
-                        window = merged_point_cloud.tiling_grid[row, col]
-                        overlap = filtered_point_cloud.overlaps[row, col]
-                        # Delayed call to cloud filtering
-                        (
-                            filtered_point_cloud[row, col],
-                            flatten_filtered_point_cloud[row, col],
-                        ) = self.orchestrator.cluster.create_task(
-                            epipolar_statistical_removal_wrapper, nout=2
-                        )(
-                            merged_point_cloud[row, col],
-                            self.k,
-                            self.filtering_constant,
-                            self.mean_factor,
-                            self.std_dev_factor,
-                            self.use_median,
-                            self.half_epipolar_size,
-                            window,
-                            overlap,
-                            epsg=epsg,
-                            point_cloud_csv_file_name=csv_pc_file_name,
-                            point_cloud_laz_file_name=laz_pc_file_name,
-                            saving_info_epipolar=full_saving_info_epipolar,
-                            saving_info_flatten=full_saving_info_flatten,
-                        )
-
-            # update point cloud index
-            if point_cloud_dir:
-                self.orchestrator.update_index(pc_index)
-
-        else:
-            logging.error(
-                "PointCloudOutlierRemoval application doesn't support"
-                "this input data "
-                "format"
-            )
+        # update point cloud index
+        if point_cloud_dir:
+            self.orchestrator.update_index(pc_index)
 
         return filtered_point_cloud
-
-
-def statistical_removal_wrapper(
-    cloud,
-    statistical_k,
-    filtering_constant,
-    mean_factor,
-    std_dev_factor,
-    use_median,
-    save_by_pair: bool = False,
-    point_cloud_csv_file_name=None,
-    point_cloud_laz_file_name=None,
-    saving_info=None,
-):
-    """
-    Statistical outlier removal
-
-    :param cloud: cloud to filter
-    :type cloud: pandas DataFrame
-    :param statistical_k: k
-    :type statistical_k: int
-    :param filtering_constant: constant applied to the threshold
-    :type filtering_constant: float
-    :param mean_factor: mean factor
-    :type mean_factor: float
-    :param std_dev_factor: std factor
-    :type std_dev_factor: float
-    :param use_median: use median and quartile instead of mean and std
-    :type use median: bool
-    :param save_by_pair: save point cloud as pair
-    :type save_by_pair: bool
-    :param point_cloud_csv_file_name: write point cloud as CSV in filename
-        (if None, the point cloud is not written as csv)
-    :type point_cloud_csv_file_name: str
-    :param point_cloud_laz_file_name: write point cloud as laz in filename
-        (if None, the point cloud is not written as laz)
-    :type point_cloud_laz_file_name: str
-    :param saving_info: saving infos
-    :type saving_info: dict
-
-    :return: filtered cloud
-    :rtype: pandas DataFrame
-
-    """
-
-    # Copy input cloud
-    new_cloud = cloud.copy()
-    new_cloud.attrs = copy.deepcopy(cloud.attrs)
-
-    # Get current epsg
-    cloud_attributes = cars_dataset.get_attributes(new_cloud)
-    cloud_epsg = cloud_attributes["epsg"]
-    current_epsg = cloud_epsg
-
-    # Check if can be used to filter
-    spatial_ref = CRS.from_epsg(cloud_epsg)
-    if spatial_ref.is_geographic:
-        logging.debug(
-            "The point cloud to filter is not in a cartographic system. "
-            "The filter's default parameters might not be adapted "
-            "to this referential. Convert the points "
-            "cloud to ECEF to ensure a proper point_cloud."
-        )
-        # Convert to epsg = 4978
-        cartographic_epsg = 4978
-        projection.point_cloud_conversion_dataframe(
-            new_cloud, current_epsg, cartographic_epsg
-        )
-        current_epsg = cartographic_epsg
-
-    # Filter point cloud
-    tic = time.process_time()
-    (new_cloud, _) = outlier_removal_algo.statistical_outlier_filtering(
-        new_cloud,
-        statistical_k,
-        filtering_constant,
-        mean_factor,
-        std_dev_factor,
-        use_median,
-    )
-    toc = time.process_time()
-    logging.debug(
-        "Statistical cloud filtering done in {} seconds".format(toc - tic)
-    )
-
-    # Conversion to UTM
-    projection.point_cloud_conversion_dataframe(
-        new_cloud, cloud_epsg, current_epsg
-    )
-    # Update attributes
-    cloud_attributes["epsg"] = current_epsg
-
-    cars_dataset.fill_dataframe(
-        new_cloud, saving_info=saving_info, attributes=cloud_attributes
-    )
-
-    # save point cloud in worker
-    if point_cloud_csv_file_name:
-        cars_dataset.run_save_points(
-            new_cloud,
-            point_cloud_csv_file_name,
-            save_by_pair=save_by_pair,
-            overwrite=True,
-            point_cloud_format="csv",
-        )
-    if point_cloud_laz_file_name:
-        cars_dataset.run_save_points(
-            new_cloud,
-            point_cloud_laz_file_name,
-            save_by_pair=save_by_pair,
-            overwrite=True,
-            point_cloud_format="laz",
-        )
-
-    return new_cloud
 
 
 def epipolar_statistical_removal_wrapper(
@@ -600,9 +435,29 @@ def epipolar_statistical_removal_wrapper(
     # Copy input cloud
     filtered_cloud = copy.copy(epipolar_ds)
 
+    # Get current epsg
+    cloud_epsg = filtered_cloud.attrs["epsg"]
+    current_epsg = cloud_epsg
+
+    # Check if can be used to filter
+    spatial_ref = CRS.from_epsg(cloud_epsg)
+    if spatial_ref.is_geographic:
+        logging.debug(
+            "The point cloud to filter is not in a cartographic system. "
+            "The filter's default parameters might not be adapted "
+            "to this referential. Please, convert the point "
+            "cloud to ECEF to ensure a proper point_cloud."
+        )
+        # Convert to epsg = 4978
+        cartographic_epsg = 4978
+
+        projection.point_cloud_conversion_dataset(
+            filtered_cloud, cartographic_epsg
+        )
+        current_epsg = cartographic_epsg
+
     outlier_removal_algo.epipolar_statistical_filtering(
         filtered_cloud,
-        epsg,
         k=statistical_k,
         filtering_constant=filtering_constant,
         mean_factor=mean_factor,
@@ -626,9 +481,11 @@ def epipolar_statistical_removal_wrapper(
     if point_cloud_csv_file_name or point_cloud_laz_file_name:
         # Convert epipolar array into point cloud
         flatten_filtered_cloud, cloud_epsg = (
-            pc_fusion_algo.create_combined_cloud([filtered_cloud], ["0"], epsg)
+            pc_transform.depth_map_dataset_to_dataframe(
+                filtered_cloud, current_epsg
+            )
         )
-        # Convert to UTM
+        # Convert to wanted epsg
         if epsg is not None and cloud_epsg != epsg:
             projection.point_cloud_conversion_dataframe(
                 flatten_filtered_cloud, cloud_epsg, epsg
@@ -636,7 +493,7 @@ def epipolar_statistical_removal_wrapper(
             cloud_epsg = epsg
 
         # Fill attributes for LAZ saving
-        color_type = pc_fusion_wrappers.get_color_type([filtered_cloud])
+        color_type = pc_transform.get_color_type([filtered_cloud])
         attributes = {
             "epsg": cloud_epsg,
             "color_type": color_type,

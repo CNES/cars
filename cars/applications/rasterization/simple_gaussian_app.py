@@ -42,7 +42,6 @@ from json_checker import Checker, Or
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.point_cloud_fusion import pc_fusion_algo
 
 # CARS imports
 from cars.applications.rasterization import rasterization_algo
@@ -53,10 +52,11 @@ from cars.applications.rasterization import rasterization_wrappers
 from cars.applications.rasterization.abstract_pc_rasterization_app import (
     PointCloudRasterization,
 )
+from cars.applications.triangulation import pc_transform
 from cars.core import constants as cst
 from cars.core import projection, tiling
 from cars.core.utils import safe_makedirs
-from cars.data_structures import cars_dataset, format_transformation
+from cars.data_structures import cars_dataset
 
 # R0903  temporary disabled for error "Too few public methods"
 # œgoing to be corrected by adding new methods as check_conf
@@ -363,21 +363,13 @@ class SimpleGaussian(
             out_dump_dir = self.orchestrator.out_dir
 
         # Check if input data is supported
-        data_valid = True
-        if isinstance(point_clouds, tuple):
-            if isinstance(point_clouds[0][0], cars_dataset.CarsDataset):
-                if point_clouds[0][0].dataset_type not in ("arrays", "points"):
-                    data_valid = False
-            else:
-                data_valid = False
-        elif isinstance(point_clouds, cars_dataset.CarsDataset):
-            if point_clouds.dataset_type != "points":
-                data_valid = False
-        else:
-            data_valid = False
-        if not data_valid:
+        if not (
+            isinstance(point_clouds, tuple)
+            and isinstance(point_clouds[0][0], cars_dataset.CarsDataset)
+            and point_clouds[0][0].dataset_type == "arrays"
+        ):
             message = (
-                "PointCloudRasterisation application doesn't support "
+                "PointCloudRasterization application doesn't support "
                 "this input data "
                 "format : type : {}".format(type(point_clouds))
             )
@@ -389,24 +381,17 @@ class SimpleGaussian(
             "arrays", name="rasterization"
         )
 
-        if isinstance(point_clouds, cars_dataset.CarsDataset):
-            # Get tiling grid
-            terrain_raster.tiling_grid = (
-                format_transformation.terrain_coords_to_pix(
-                    point_clouds, resolution
-                )
-            )
-            bounds = point_clouds.attributes["bounds"]
-        else:
-            bounds = point_clouds[1]
-            # tiling grid: all tiles from sources -> not replaceable.
-            # CarsDataset is only used for processing
-            nb_tiles = 0
-            for point_cld in point_clouds[0]:
-                nb_tiles += point_cld.shape[0] * point_cld.shape[1]
-            terrain_raster.tiling_grid = tiling.generate_tiling_grid(
-                0, 0, 1, nb_tiles, 1, 1
-            )
+        paths_data = {}
+
+        bounds = point_clouds[1]
+        # tiling grid: all tiles from sources -> not replaceable.
+        # CarsDataset is only used for processing
+        nb_tiles = 0
+        for point_cld in point_clouds[0]:
+            nb_tiles += point_cld.shape[0] * point_cld.shape[1]
+        terrain_raster.tiling_grid = tiling.generate_tiling_grid(
+            0, 0, 1, nb_tiles, 1, 1
+        )
 
         terrain_raster.generate_none_tiles()
 
@@ -467,6 +452,7 @@ class SimpleGaussian(
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm",
             )
+            paths_data[cst.RASTER_HGT] = out_dsm_file_name
 
         out_weights_file_name = weights_file_name
         if out_weights_file_name is not None:
@@ -494,6 +480,7 @@ class SimpleGaussian(
                 nodata=0,
                 cars_ds_name="dsm_weights",
             )
+            paths_data[cst.RASTER_WEIGHTS_SUM] = out_weights_file_name
 
         out_clr_file_name = color_file_name
         if out_clr_file_name is not None:
@@ -519,6 +506,7 @@ class SimpleGaussian(
                 nodata=self.texture_no_data,
                 cars_ds_name="texture",
             )
+            paths_data[cst.RASTER_COLOR_IMG] = out_clr_file_name
 
         out_classif_file_name = classif_file_name
         if out_classif_file_name is not None:
@@ -549,6 +537,7 @@ class SimpleGaussian(
                 cars_ds_name="dsm_classif",
                 optional_data=True,
             )
+            paths_data[cst.RASTER_CLASSIF] = out_classif_file_name
 
         out_msk_file_name = mask_file_name
         if out_msk_file_name is not None:
@@ -574,6 +563,7 @@ class SimpleGaussian(
                 cars_ds_name="dsm_mask",
                 optional_data=True,
             )
+            paths_data[cst.RASTER_MSK] = out_msk_file_name
 
         out_performance_map = performance_map_file_name
 
@@ -615,6 +605,7 @@ class SimpleGaussian(
                 cars_ds_name="performance_map_raw",
                 optional_data=True,
             )
+            paths_data[cst.RASTER_PERFORMANCE_MAP_RAW] = out_performance_map_raw
         if (
             out_performance_map is not None
             and performance_map_classes is not None
@@ -630,6 +621,7 @@ class SimpleGaussian(
                 cars_ds_name="performance_map",
                 optional_data=True,
             )
+            paths_data[cst.RASTER_PERFORMANCE_MAP] = out_performance_map
 
         out_ambiguity = ambiguity_file_name
         if out_ambiguity is not None:
@@ -655,6 +647,7 @@ class SimpleGaussian(
                 cars_ds_name="ambiguity",
                 optional_data=True,
             )
+            paths_data[cst.RASTER_AMBIGUITY] = out_ambiguity
 
         out_source_pc = contributing_pair_file_name
         if out_source_pc is not None:
@@ -682,6 +675,7 @@ class SimpleGaussian(
                 cars_ds_name="contributing_pair",
                 optional_data=True,
             )
+            paths_data[cst.RASTER_SOURCE_PC] = out_source_pc
 
         out_filling = filling_file_name
         if out_filling is not None:
@@ -703,6 +697,7 @@ class SimpleGaussian(
                 cars_ds_name="filling",
                 optional_data=True,
             )
+            paths_data[cst.RASTER_FILLING] = out_filling
 
         # TODO Check that intervals indeed exist!
         if save_intermediate_data:
@@ -874,53 +869,34 @@ class SimpleGaussian(
 
         self.orchestrator.update_out_info(updating_dict)
 
-        # Generate rasters
-        if not isinstance(point_clouds, tuple):
-            for col in range(terrain_raster.shape[1]):
-                for row in range(terrain_raster.shape[0]):
-                    # get corresponding point cloud
-                    # one tile in point cloud correspond
-                    # to one tile in raster
-                    # uses rasterio conventions
-                    (
-                        pc_row,
-                        pc_col,
-                    ) = format_transformation.get_corresponding_indexes(
-                        row, col
+        # Add attributrs
+        terrain_raster.attributes["paths"] = paths_data
+
+        # Add final function to apply
+        terrain_raster.final_function = raster_final_function
+        ind_tile = 0
+        for point_cloud in point_clouds[0]:
+            for row_pc in range(point_cloud.shape[0]):
+                for col_pc in range(point_cloud.shape[1]):
+                    # update saving infos  for potential replacement
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=0, col=ind_tile
                     )
-
-                    if point_clouds.tiles[pc_row][pc_col] is not None:
-                        # Get window
-                        window = cars_dataset.window_array_to_dict(
-                            terrain_raster.tiling_grid[row, col]
-                        )
-                        # update saving infos  for potential replacement
-                        full_saving_info = ocht.update_saving_infos(
-                            saving_info, row=row, col=col
-                        )
-
-                        # Get terrain region
-                        # corresponding to point cloud tile
-                        terrain_region = [
-                            point_clouds.tiling_grid[pc_row, pc_col, 0],
-                            point_clouds.tiling_grid[pc_row, pc_col, 2],
-                            point_clouds.tiling_grid[pc_row, pc_col, 1],
-                            point_clouds.tiling_grid[pc_row, pc_col, 3],
-                        ]
-
+                    if point_cloud[row_pc, col_pc] is not None:
                         # Delayed call to rasterization operations using all
                         #  required point clouds
                         terrain_raster[
-                            row, col
+                            0, ind_tile
                         ] = self.orchestrator.cluster.create_task(
                             rasterization_wrapper
                         )(
-                            point_clouds[pc_row, pc_col],
+                            point_cloud[row_pc, col_pc],
                             resolution,
                             epsg,
                             raster_profile,
-                            window=window,
-                            terrain_region=terrain_region,
+                            window=None,
+                            terrain_region=None,
+                            terrain_full_roi=bounds,
                             list_computed_layers=list_computed_layers,
                             saving_info=full_saving_info,
                             radius=self.dsm_radius,
@@ -932,44 +908,7 @@ class SimpleGaussian(
                             source_pc_names=source_pc_names,
                             performance_map_classes=performance_map_classes,
                         )
-        else:
-            # Add final function to apply
-            terrain_raster.final_function = raster_final_function
-            ind_tile = 0
-            for point_cloud in point_clouds[0]:
-                for row_pc in range(point_cloud.shape[0]):
-                    for col_pc in range(point_cloud.shape[1]):
-                        # update saving infos  for potential replacement
-                        full_saving_info = ocht.update_saving_infos(
-                            saving_info, row=0, col=ind_tile
-                        )
-                        if point_cloud[row_pc, col_pc] is not None:
-                            # Delayed call to rasterization operations using all
-                            #  required point clouds
-                            terrain_raster[
-                                0, ind_tile
-                            ] = self.orchestrator.cluster.create_task(
-                                rasterization_wrapper
-                            )(
-                                point_cloud[row_pc, col_pc],
-                                resolution,
-                                epsg,
-                                raster_profile,
-                                window=None,
-                                terrain_region=None,
-                                terrain_full_roi=bounds,
-                                list_computed_layers=list_computed_layers,
-                                saving_info=full_saving_info,
-                                radius=self.dsm_radius,
-                                sigma=self.sigma,
-                                dsm_no_data=self.dsm_no_data,
-                                texture_no_data=self.texture_no_data,
-                                color_dtype=color_dtype,
-                                msk_no_data=self.msk_no_data,
-                                source_pc_names=source_pc_names,
-                                performance_map_classes=performance_map_classes,
-                            )
-                        ind_tile += 1
+                    ind_tile += 1
 
         # Sort tiles according to rank TODO remove or implement it ?
 
@@ -1045,8 +984,8 @@ def rasterization_wrapper(  # noqa: C901
     # If the point cloud is not in the right epsg referential, it is converted
     if isinstance(cloud, xarray.Dataset):
         # Transform Dataset to Dataframe
-        cloud, cloud_epsg = pc_fusion_algo.create_combined_cloud(
-            [cloud], [attributes["cloud_id"]], epsg
+        cloud, cloud_epsg = pc_transform.depth_map_dataset_to_dataframe(
+            cloud, epsg
         )
     elif cloud is None:
         logging.warning("Input cloud is None")
@@ -1159,6 +1098,7 @@ def rasterization_wrapper(  # noqa: C901
         list_computed_layers=list_computed_layers,
         source_pc_names=source_pc_names,
         performance_map_classes=performance_map_classes,
+        cloud_global_id=attributes["cloud_id"],
     )
 
     # Fill raster

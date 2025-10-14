@@ -128,7 +128,7 @@ class AuxiliaryFillingFromSensors(
 
         return overloaded_conf
 
-    def run(
+    def run(  # noqa: C901
         self,
         dsm_file,
         color_file,
@@ -195,7 +195,7 @@ class AuxiliaryFillingFromSensors(
             os.makedirs(dump_dir)
 
         color_not_filled_file = os.path.join(dump_dir, "texture_not_filled.tif")
-        if os.path.exists(color_file):
+        if color_file is not None and os.path.exists(color_file):
             shutil.move(color_file, color_not_filled_file)
 
         classification_not_filled_file = None
@@ -240,19 +240,20 @@ class AuxiliaryFillingFromSensors(
         color_dtype = np.float32
         classif_dtype = np.uint8
 
-        if os.path.exists(color_not_filled_file):
-            with rio.open(color_not_filled_file, "r") as descriptor:
-                texture_no_data_value = descriptor.nodata
-                color_dtype = descriptor.profile.get("dtype", np.float32)
+        if color_file is not None:
+            if os.path.exists(color_not_filled_file):
+                with rio.open(color_not_filled_file, "r") as descriptor:
+                    texture_no_data_value = descriptor.nodata
+                    color_dtype = descriptor.profile.get("dtype", np.float32)
 
-        self.orchestrator.add_to_save_lists(
-            os.path.join(dump_dir, color_file),
-            cst.RASTER_COLOR_IMG,
-            aux_filled_image,
-            nodata=texture_no_data_value,
-            dtype=color_dtype,
-            cars_ds_name="filled_texture",
-        )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(dump_dir, color_file),
+                cst.RASTER_COLOR_IMG,
+                aux_filled_image,
+                nodata=texture_no_data_value,
+                dtype=color_dtype,
+                cars_ds_name="filled_texture",
+            )
 
         if classif_file is not None:
             if os.path.exists(classification_not_filled_file):
