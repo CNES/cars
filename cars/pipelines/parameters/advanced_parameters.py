@@ -30,8 +30,7 @@ import rasterio as rio
 from json_checker import And, Checker, OptionalKey, Or
 
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import depth_map_inputs
-from cars.pipelines.parameters import depth_map_inputs_constants as depth_cst
+from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -107,7 +106,6 @@ def check_advanced_parameters(
         inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] is None,
     )
 
-    overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, False)
     overloaded_conf[adv_cst.DSM_MERGING_TILE_SIZE] = conf.get(
         adv_cst.DSM_MERGING_TILE_SIZE, 4000
     )
@@ -182,7 +180,7 @@ def check_advanced_parameters(
             epipolar_resolution,
             output_dem_dir,
         )
-    elif depth_cst.DEPTH_MAPS in inputs or dsm_cst.DSMS in inputs:
+    elif dsm_cst.DSMS in inputs:
         # assume the input comes from 0.5m sensor images
         scaling_coeff = 1
         # If there's an initial elevation with
@@ -190,7 +188,7 @@ def check_advanced_parameters(
         (
             overloaded_conf[adv_cst.GEOMETRY_PLUGIN],
             geom_plugin_with_dem_and_geoid,
-        ) = depth_map_inputs.check_geometry_plugin(
+        ) = dsm_inputs.check_geometry_plugin(
             inputs, conf.get(adv_cst.GEOMETRY_PLUGIN, None)
         )
 
@@ -200,7 +198,6 @@ def check_advanced_parameters(
     # Validate inputs
     schema = {
         adv_cst.DEBUG_WITH_ROI: bool,
-        adv_cst.MERGING: bool,
         adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
         adv_cst.KEEP_LOW_RES_DIR: bool,
         adv_cst.GROUND_TRUTH_DSM: Or(dict, str),

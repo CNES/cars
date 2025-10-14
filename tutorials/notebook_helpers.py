@@ -81,6 +81,7 @@ from cars.data_structures import (  # noqa: E402
 from cars.data_structures.cars_dataset import (  # noqa: E402
     load_dict,
 )
+from cars.core import inputs  # noqa: E402
 # pylint: enable=C0413
 
 # fmt: on
@@ -157,6 +158,19 @@ def get_full_data(cars_ds, tag, nodata=-32768, band=None):
     if cars_ds.dataset_type != "arrays":
         logging.error("Not an arrays CarsDataset")
         raise RuntimeError("Not an arrays CarsDataset")
+
+    # Use dumped data if available
+    if "paths" in cars_ds.attributes:
+        if tag in cars_ds.attributes["paths"]:
+            array, _ = inputs.rasterio_read_as_array(
+                cars_ds.attributes["paths"][tag]
+            )
+            array = np.squeeze(array)
+            if len(array.shape) == 3:
+                array = np.rollaxis(array, 0, 3)
+            if np.issubdtype(array.dtype, np.floating):
+                array[array == nodata] = np.nan
+            return array
 
     list_tiles = []
     window = None

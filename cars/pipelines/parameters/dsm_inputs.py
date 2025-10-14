@@ -42,6 +42,7 @@ from cars.applications.rasterization.rasterization_wrappers import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, preprocessing, tiling
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute, safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.pipelines.parameters import sensor_inputs as sens_inp
@@ -211,6 +212,37 @@ def check_dsm_inputs(conf, config_dir=None):
         sens_inp.check_sensors(conf, overloaded_conf, config_dir)
 
     return overloaded_conf
+
+
+def check_geometry_plugin(conf_inputs, conf_geom_plugin):
+    """
+    Check the geometry plugin with inputs
+    :param conf_geom_plugin: name of geometry plugin
+    :type conf_geom_plugin: str
+    :param conf_inputs: checked configuration of inputs
+    :type conf_inputs: type
+
+    :return: geometry plugin with dem
+    """
+    if conf_geom_plugin is None:
+        conf_geom_plugin = "SharelocGeometry"
+
+    dem_path = conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+
+    if dem_path is None:
+        return conf_geom_plugin, None
+
+    # Initialize a geometry plugin with elevation information
+    geom_plugin_with_dem_and_geoid = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            conf_geom_plugin,
+            dem=dem_path,
+            geoid=conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
+            default_alt=sens_cst.CARS_DEFAULT_ALT,
+        )
+    )
+
+    return conf_geom_plugin, geom_plugin_with_dem_and_geoid
 
 
 def check_input_size(dsm, classif, color, mask):

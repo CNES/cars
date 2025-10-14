@@ -34,15 +34,16 @@ import pandas
 import pytest
 import xarray as xr
 
-from cars.applications.point_cloud_fusion import mapping_to_terrain_tiles_app
 from cars.applications.rasterization import (
     rasterization_algo,
     rasterization_wrappers,
 )
+from cars.applications.triangulation import pc_transform
 
 # CARS imports
 from cars.core import constants as cst
 from cars.core import inputs
+from cars.data_structures import cars_dataset
 from cars.pipelines.parameters import dsm_inputs
 
 # CARS Tests imports
@@ -270,7 +271,6 @@ def test_simple_rasterization_dataset_1():
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
-    cloud_id = 0
 
     xstart = 1154790
     ystart = 4927552
@@ -278,36 +278,18 @@ def test_simple_rasterization_dataset_1():
     ysize = 112
     resolution = 0.5
 
-    # equals to :
-    xmin = xstart
-    xmax = xstart + (xsize + 1) * resolution
-    ymin = ystart - (ysize + 1) * resolution
-    ymax = ystart
-
     epsg = 32630
     sigma = 0.3
     radius = 3
 
-    # Compute margin
-    on_ground_margin = 0
-    # Former computation of merged margin
-    used_margin = (on_ground_margin + radius + 1) * resolution
-
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
-    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
-        [(cloud, cloud_id)],
-        epsg,
-        xmin=xmin,
-        xmax=xmax,
-        ymin=ymin,
-        ymax=ymax,
-        margins=used_margin,
-        point_cloud_csv_file_name=None,
-        point_cloud_laz_file_name=None,
-        saving_info=None,
-        source_pc_names=["1"],
-    )
+    # transform to dataframe
+    cloud, _ = pc_transform.depth_map_dataset_to_dataframe(cloud, epsg)
+    # update attributes
+    attributes = {"number_of_pc": 1}
+    cloud.attrs = {}
+    cars_dataset.fill_dataframe(cloud, attributes=attributes)
 
     # TODO test from here -> dump cloud as test data input
 
@@ -356,7 +338,6 @@ def test_simple_rasterization_dataset_1_intervals():
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
-    cloud_id = 0
 
     xstart = 1154790
     ystart = 4927552
@@ -364,36 +345,18 @@ def test_simple_rasterization_dataset_1_intervals():
     ysize = 112
     resolution = 0.5
 
-    # equals to :
-    xmin = xstart
-    xmax = xstart + (xsize + 1) * resolution
-    ymin = ystart - (ysize + 1) * resolution
-    ymax = ystart
-
     epsg = 32630
     sigma = 0.3
     radius = 3
 
-    # Compute margin
-    on_ground_margin = 0
-    # Former computation of merged margin
-    used_margin = (on_ground_margin + radius + 1) * resolution
-
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
-    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
-        [(cloud, cloud_id)],
-        epsg,
-        xmin=xmin,
-        xmax=xmax,
-        ymin=ymin,
-        ymax=ymax,
-        margins=used_margin,
-        point_cloud_csv_file_name=False,
-        point_cloud_laz_file_name=False,
-        saving_info=None,
-        source_pc_names=["1"],
-    )
+    # transform to dataframe
+    cloud, _ = pc_transform.depth_map_dataset_to_dataframe(cloud, epsg)
+    # update attributes
+    attributes = {"number_of_pc": 1}
+    cloud.attrs = {}
+    cars_dataset.fill_dataframe(cloud, attributes=attributes)
 
     # TODO test from here -> dump cloud as test data input
 
@@ -438,19 +401,12 @@ def test_simple_rasterization_dataset_2():
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
-    cloud_id = 0
 
     xstart = None
     ystart = None
     xsize = None
     ysize = None
     resolution = 0.5
-
-    # equals to :
-    xmin = None
-    xmax = None
-    ymin = None
-    ymax = None
 
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
@@ -459,26 +415,13 @@ def test_simple_rasterization_dataset_2():
     sigma = 0.3
     radius = 3
 
-    # Compute margin
-    on_ground_margin = 0
-    # Former computation of merged margin
-    used_margin = (on_ground_margin + radius + 1) * resolution
-
-    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
-        [(cloud, cloud_id)],
-        epsg,
-        xmin=xmin,
-        xmax=xmax,
-        ymin=ymin,
-        ymax=ymax,
-        margins=used_margin,
-        point_cloud_csv_file_name=False,
-        point_cloud_laz_file_name=False,
-        saving_info=None,
-        source_pc_names=["1"],
-    )
-
     # TODO test from here -> dump cloud as test data input
+    # transform to dataframe
+    cloud, _ = pc_transform.depth_map_dataset_to_dataframe(cloud, epsg)
+    # update attributes
+    attributes = {"number_of_pc": 1}
+    cloud.attrs = {}
+    cars_dataset.fill_dataframe(cloud, attributes=attributes)
 
     raster = rasterization_algo.simple_rasterization_dataset_wrapper(
         cloud,
@@ -521,45 +464,25 @@ def test_simple_rasterization_dataset_():
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
-    cloud_id = 0
 
     xstart = 1154790
     ystart = 4927552
     xsize = 114
     ysize = 112
     resolution = 0.5
-
-    # equals to :
-    xmin = xstart
-    xmax = xstart + (xsize + 1) * resolution
-    ymin = ystart - (ysize + 1) * resolution
-    ymax = ystart
-
     epsg = 32630
     sigma = 0.3
     radius = 3
 
-    # Compute margin
-    on_ground_margin = 0
-    # Former computation of merged margin
-    used_margin = (on_ground_margin + radius + 1) * resolution
-
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
 
-    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
-        [(cloud, cloud_id)],
-        epsg,
-        xmin=xmin,
-        xmax=xmax,
-        ymin=ymin,
-        ymax=ymax,
-        margins=used_margin,
-        point_cloud_csv_file_name=False,
-        point_cloud_laz_file_name=False,
-        saving_info=None,
-        source_pc_names=["1"],
-    )
+    # transform to dataframe
+    cloud, _ = pc_transform.depth_map_dataset_to_dataframe(cloud, epsg)
+    # update attributes
+    attributes = {"number_of_pc": 1}
+    cloud.attrs = {}
+    cars_dataset.fill_dataframe(cloud, attributes=attributes)
 
     # TODO test from here -> dump cloud as test data input
 
@@ -584,192 +507,6 @@ def test_simple_rasterization_dataset_():
     raster_ref = xr.open_dataset(
         absolute_data_path(
             "ref_output_application/rasterization/rasterization_res_ref_1.nc"
-        )
-    )
-    assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
-
-
-@pytest.mark.unit_tests
-def test_simple_rasterization_multiple_datasets():
-    """
-    Test simple_rasterization_dataset_wrapper with a list of datasets
-    """
-    cloud = xr.open_dataset(
-        absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
-    )
-    cloud.attrs[cst.ROI_WITH_MARGINS] = cloud.attrs[cst.ROI]
-    cloud.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
-    color = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_color.nc")
-    )
-
-    utm1 = cloud.isel(row=range(0, 60))
-    utm2 = cloud.isel(row=range(60, 120))
-
-    color1 = color.isel(row=range(0, 60))
-    color2 = color.isel(row=range(60, 120))
-
-    utm1_id = 1
-    utm2_id = 2
-
-    # Combine datasets
-
-    utm1 = add_color(utm1, color1[cst.EPI_IMAGE].values)
-    utm2 = add_color(utm2, color2[cst.EPI_IMAGE].values)
-
-    resolution = 0.5
-
-    xstart = 1154790
-    ystart = 4927552
-    xsize = 114
-    ysize = 112
-    # equals to :
-    xmin = xstart
-    xmax = xstart + (xsize + 1) * resolution
-    ymin = ystart - (ysize + 1) * resolution
-    ymax = ystart
-
-    epsg = 32630
-    sigma = 0.3
-    radius = 3
-
-    # Compute margin
-    on_ground_margin = 0
-    # Former computation of merged margin
-    used_margin = (on_ground_margin + radius + 1) * resolution
-
-    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
-        [(utm1, utm1_id), (utm2, utm2_id)],
-        epsg,
-        xmin=xmin,
-        xmax=xmax,
-        ymin=ymin,
-        ymax=ymax,
-        margins=used_margin,
-        point_cloud_csv_file_name=False,
-        point_cloud_laz_file_name=False,
-        saving_info=None,
-        source_pc_names=["1", "2"],
-    )
-
-    # TODO test from here -> dump cloud as test data input
-    raster = rasterization_algo.simple_rasterization_dataset_wrapper(
-        cloud,
-        resolution,
-        epsg,
-        xstart=xstart,
-        ystart=ystart,
-        xsize=xsize,
-        ysize=ysize,
-        sigma=sigma,
-        radius=radius,
-    )
-
-    # Uncomment to update reference
-    # raster.to_netcdf(
-    #     absolute_data_path('ref_output_application/rasterization'
-    #     '/rasterization_multiple_res_ref.nc'),
-    # )
-
-    raster_ref = xr.open_dataset(
-        absolute_data_path(
-            "ref_output_application/rasterization"
-            "/rasterization_multiple_res_ref.nc"
-        )
-    )
-    assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
-
-
-@pytest.mark.unit_tests
-def test_simple_rasterization_multiple_datasets_with_source_map():
-    """
-    Test simple_rasterization_dataset_wrapper with a list of datasets
-    """
-    cloud = xr.open_dataset(
-        absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
-    )
-    cloud.attrs[cst.ROI_WITH_MARGINS] = cloud.attrs[cst.ROI]
-    cloud.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
-    color = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_color.nc")
-    )
-
-    utm1 = cloud.isel(row=range(0, 60))
-    utm2 = cloud.isel(row=range(60, 120))
-
-    color1 = color.isel(row=range(0, 60))
-    color2 = color.isel(row=range(60, 120))
-
-    utm1_id = 0
-    utm2_id = 1
-
-    # Combine datasets
-
-    utm1 = add_color(utm1, color1[cst.EPI_IMAGE].values)
-    utm2 = add_color(utm2, color2[cst.EPI_IMAGE].values)
-
-    resolution = 0.5
-
-    xstart = 1154790
-    ystart = 4927552
-    xsize = 114
-    ysize = 112
-    # equals to :
-    xmin = xstart
-    xmax = xstart + (xsize + 1) * resolution
-    ymin = ystart - (ysize + 1) * resolution
-    ymax = ystart
-
-    epsg = 32630
-    sigma = 0.3
-    radius = 3
-    source_pc_names = ["utm1", "utm2"]
-
-    # Compute margin
-    on_ground_margin = 0
-    # Former computation of merged margin
-    used_margin = (on_ground_margin + radius + 1) * resolution
-
-    cloud = mapping_to_terrain_tiles_app.compute_point_cloud_wrapper(
-        [(utm1, utm1_id), (utm2, utm2_id)],
-        epsg,
-        xmin=xmin,
-        xmax=xmax,
-        ymin=ymin,
-        ymax=ymax,
-        margins=used_margin,
-        point_cloud_csv_file_name=False,
-        point_cloud_laz_file_name=False,
-        saving_info=None,
-        source_pc_names=["1", "2"],
-    )
-
-    # TODO test from here -> dump cloud as test data input
-    raster = rasterization_algo.simple_rasterization_dataset_wrapper(
-        cloud,
-        resolution,
-        epsg,
-        xstart=xstart,
-        ystart=ystart,
-        xsize=xsize,
-        ysize=ysize,
-        sigma=sigma,
-        radius=radius,
-        source_pc_names=source_pc_names,
-    )
-
-    # Uncomment to update reference
-    # raster.to_netcdf(
-    #     absolute_data_path(
-    #         'ref_output_application/rasterization'
-    #         '/rasterization_multiple_with_source_res_ref.nc'
-    #     )
-    # )
-
-    raster_ref = xr.open_dataset(
-        absolute_data_path(
-            "ref_output_application/rasterization"
-            "/rasterization_multiple_with_source_res_ref.nc"
         )
     )
     assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)

@@ -48,10 +48,6 @@ from cars.applications.dem_generation import (
 )
 from cars.applications.grid_generation import grid_correction_app
 from cars.applications.grid_generation.transform_grid import transform_grid_func
-from cars.applications.point_cloud_fusion import (
-    pc_fusion_algo,
-    pc_fusion_wrappers,
-)
 from cars.core import preprocessing, projection, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import (
@@ -67,9 +63,7 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import application_parameters, depth_map_inputs
-from cars.pipelines.parameters import depth_map_inputs_constants as depth_cst
-from cars.pipelines.parameters import dsm_inputs
+from cars.pipelines.parameters import application_parameters, dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters, sensor_inputs
@@ -204,11 +198,7 @@ class UnitPipeline(PipelineTemplate):
             or self.save_output_point_cloud
         )
         self.sensors_in_inputs = sens_cst.SENSORS in self.used_conf[INPUTS]
-        self.depth_maps_in_inputs = (
-            depth_cst.DEPTH_MAPS in self.used_conf[INPUTS]
-        )
         self.dsms_in_inputs = dsm_cst.DSMS in self.used_conf[INPUTS]
-        self.merging = self.used_conf[ADVANCED][adv_cst.MERGING]
 
         self.phasing = self.used_conf[ADVANCED][adv_cst.PHASING]
 
@@ -216,7 +206,6 @@ class UnitPipeline(PipelineTemplate):
             self.sensors_in_inputs
             and (not self.output_level_none)
             and not self.dsms_in_inputs
-            and not self.depth_maps_in_inputs
         )
 
         if self.output_level_none:
@@ -251,11 +240,7 @@ class UnitPipeline(PipelineTemplate):
         # Check conf application
         application_conf = self.check_applications(conf.get(APPLICATIONS, {}))
 
-        if (
-            self.sensors_in_inputs
-            and not self.depth_maps_in_inputs
-            and not self.dsms_in_inputs
-        ):
+        if self.sensors_in_inputs and not self.dsms_in_inputs:
             # Check conf application vs inputs application
             application_conf = self.check_applications_with_inputs(
                 self.used_conf[INPUTS], application_conf, self.res_resamp
@@ -301,10 +286,6 @@ class UnitPipeline(PipelineTemplate):
             "point_cloud_outlier_removal.2": 13,
         }
 
-        depth_merge_apps = {
-            "point_cloud_fusion": 14,
-        }
-
         depth_to_dsm_apps = {
             "point_cloud_rasterization": 15,
             "dem_generation": 16,
@@ -316,7 +297,6 @@ class UnitPipeline(PipelineTemplate):
 
         self.app_values = {}
         self.app_values.update(sensor_to_depth_apps)
-        self.app_values.update(depth_merge_apps)
         self.app_values.update(depth_to_dsm_apps)
 
         app_conf = conf.get(APPLICATIONS, {})
@@ -338,11 +318,7 @@ class UnitPipeline(PipelineTemplate):
                     ).format(key)
                     logging.warning(warn_msg)
 
-                elif (
-                    self.sensors_in_inputs
-                    and not self.depth_maps_in_inputs
-                    and not self.dsms_in_inputs
-                ):
+                elif self.sensors_in_inputs and not self.dsms_in_inputs:
                     self.compute_depth_map = True
                     self.last_application_to_run = max(
                         self.last_application_to_run, self.app_values[key]
@@ -350,11 +326,7 @@ class UnitPipeline(PipelineTemplate):
 
             elif key in depth_to_dsm_apps:
 
-                if not (
-                    self.sensors_in_inputs
-                    or self.depth_maps_in_inputs
-                    or self.dsms_in_inputs
-                ):
+                if not (self.sensors_in_inputs or self.dsms_in_inputs):
                     warn_msg = (
                         "The application {} can only be used when sensor "
                         "images or depth maps are given as an input. "
@@ -363,11 +335,7 @@ class UnitPipeline(PipelineTemplate):
                     logging.warning(warn_msg)
 
                 else:
-                    if (
-                        self.sensors_in_inputs
-                        and not self.depth_maps_in_inputs
-                        and not self.dsms_in_inputs
-                    ):
+                    if self.sensors_in_inputs and not self.dsms_in_inputs:
                         self.compute_depth_map = True
 
                     # enabled to start the depth map to dsm process
@@ -377,43 +345,6 @@ class UnitPipeline(PipelineTemplate):
                         self.last_application_to_run, self.app_values[key]
                     )
 
-            elif key in depth_merge_apps:
-
-                if not self.merging:
-                    warn_msg = (
-                        "The application {} can only be used when merging "
-                        "is activated (this parameter is located in the "
-                        "'advanced' config key). "
-                        "The application's configuration will be ignored."
-                    ).format(key)
-                    logging.warning(warn_msg)
-
-                elif not (
-                    self.sensors_in_inputs
-                    or self.depth_maps_in_inputs
-                    or self.dsms_in_inputs
-                ):
-                    warn_msg = (
-                        "The application {} can only be used when sensor "
-                        "images or depth maps are given as an input. "
-                        "Its configuration will be ignored."
-                    ).format(key)
-                    logging.warning(warn_msg)
-
-                else:
-                    if (
-                        self.sensors_in_inputs
-                        and not self.depth_maps_in_inputs
-                        and not self.dsms_in_inputs
-                    ):
-                        self.compute_depth_map = True
-
-                    # enabled to start the depth map to dsm process
-                    self.save_output_point_cloud = True
-
-                    self.last_application_to_run = max(
-                        self.last_application_to_run, self.app_values[key]
-                    )
             else:
                 warn_msg = (
                     "The application {} was not recognized. Its configuration"
@@ -456,26 +387,17 @@ class UnitPipeline(PipelineTemplate):
         """
 
         output_config = {}
-        if (
-            sens_cst.SENSORS in conf
-            and depth_cst.DEPTH_MAPS not in conf
-            and dsm_cst.DSMS not in conf
-        ):
+        if sens_cst.SENSORS in conf and dsm_cst.DSMS not in conf:
             output_config = sensor_inputs.sensors_check_inputs(
                 conf, config_dir=config_dir
             )
-        elif depth_cst.DEPTH_MAPS in conf:
-            output_config = {
-                **output_config,
-                **depth_map_inputs.check_depth_maps_inputs(
-                    conf, config_dir=config_dir
-                ),
-            }
-        else:
+        elif dsm_cst.DSMS in conf:
             output_config = {
                 **output_config,
                 **dsm_inputs.check_dsm_inputs(conf, config_dir=config_dir),
             }
+        else:
+            raise RuntimeError("No sensors or dsms in inputs")
         return output_config
 
     def save_configurations(self):
@@ -524,7 +446,6 @@ class UnitPipeline(PipelineTemplate):
             self.sensors_in_inputs,
             self.save_output_dsm,
             self.save_output_point_cloud,
-            self.merging,
             conf,
         )
 
@@ -811,18 +732,6 @@ class UnitPipeline(PipelineTemplate):
                 for app_key, app_obj in self.dsm_filling_apps.items()
             ):
                 self.save_output_classif_for_filling = True
-
-            if self.merging:
-
-                # Point cloud fusion
-                self.pc_fusion_application = Application(
-                    "point_cloud_fusion",
-                    cfg=used_conf.get("point_cloud_fusion", {}),
-                    scaling_coeff=scaling_coeff,
-                )
-                used_conf["point_cloud_fusion"] = (
-                    self.pc_fusion_application.get_conf()
-                )
 
         return used_conf
 
@@ -1933,11 +1842,7 @@ class UnitPipeline(PipelineTemplate):
 
             triangulation_point_cloud_dir = (
                 point_cloud_dir
-                if (
-                    point_cloud_dir
-                    and len(self.pc_outlier_removal_apps) == 0
-                    and self.merging is False
-                )
+                if (point_cloud_dir and len(self.pc_outlier_removal_apps) == 0)
                 else None
             )
 
@@ -1987,44 +1892,40 @@ class UnitPipeline(PipelineTemplate):
             if self.quit_on_app("triangulation"):
                 continue  # keep iterating over pairs, but don't go further
 
-            if self.merging:
-                self.list_epipolar_point_clouds.append(epipolar_point_cloud)
-            else:
+            filtered_epipolar_point_cloud = epipolar_point_cloud
+            for app_key, app in self.pc_outlier_removal_apps.items():
 
-                filtered_epipolar_point_cloud = epipolar_point_cloud
-                for app_key, app in self.pc_outlier_removal_apps.items():
-
-                    app_key_is_last = (
-                        app_key == list(self.pc_outlier_removal_apps)[-1]
-                    )
-                    filtering_depth_map_dir = (
-                        depth_map_dir if app_key_is_last else None
-                    )
-                    filtering_point_cloud_dir = (
-                        point_cloud_dir if app_key_is_last else None
-                    )
-
-                    filtered_epipolar_point_cloud = app.run(
-                        filtered_epipolar_point_cloud,
-                        depth_map_dir=filtering_depth_map_dir,
-                        point_cloud_dir=filtering_point_cloud_dir,
-                        dump_dir=os.path.join(
-                            self.dump_dir,
-                            (
-                                "pc_outlier_removal"
-                                f"{str(app_key[27:]).replace('.', '_')}"
-                            ),
-                            pair_key,
-                        ),
-                        epsg=self.epsg,
-                        orchestrator=self.cars_orchestrator,
-                    )
-                if self.quit_on_app("point_cloud_outlier_removal"):
-                    continue  # keep iterating over pairs, but don't go further
-
-                self.list_epipolar_point_clouds.append(
-                    filtered_epipolar_point_cloud
+                app_key_is_last = (
+                    app_key == list(self.pc_outlier_removal_apps)[-1]
                 )
+                filtering_depth_map_dir = (
+                    depth_map_dir if app_key_is_last else None
+                )
+                filtering_point_cloud_dir = (
+                    point_cloud_dir if app_key_is_last else None
+                )
+
+                filtered_epipolar_point_cloud = app.run(
+                    filtered_epipolar_point_cloud,
+                    depth_map_dir=filtering_depth_map_dir,
+                    point_cloud_dir=filtering_point_cloud_dir,
+                    dump_dir=os.path.join(
+                        self.dump_dir,
+                        (
+                            "pc_outlier_removal"
+                            f"{str(app_key[27:]).replace('.', '_')}"
+                        ),
+                        pair_key,
+                    ),
+                    epsg=self.epsg,
+                    orchestrator=self.cars_orchestrator,
+                )
+            if self.quit_on_app("point_cloud_outlier_removal"):
+                continue  # keep iterating over pairs, but don't go further
+
+            self.list_epipolar_point_clouds.append(
+                filtered_epipolar_point_cloud
+            )
 
         # quit if any app in the loop over the pairs was the last one
         # pylint:disable=too-many-boolean-expressions
@@ -2643,152 +2544,13 @@ class UnitPipeline(PipelineTemplate):
         the last step of the pipeline.
         """
 
-        if not self.merging:
-            self.point_cloud_to_rasterize = (
-                self.list_epipolar_point_clouds,
-                self.terrain_bounds,
-            )
-            self.color_type = self.point_cloud_to_rasterize[0][
-                0
-            ].attributes.get("color_type", None)
-        else:
-            # find which application produce the final version of the
-            # point cloud. The last generated point cloud will be saved
-            # as official point cloud product if save_output_point_cloud
-            # is True.
-
-            last_pc_application = "fusion"
-
-            raster_app_margin = 0
-            if self.rasterization_application is not None:
-                raster_app_margin = self.rasterization_application.get_margins(
-                    self.resolution
-                )
-
-            merged_point_clouds = self.pc_fusion_application.run(
-                self.list_epipolar_point_clouds,
-                self.terrain_bounds,
-                self.epsg,
-                source_pc_names=(
-                    self.pairs_names if self.compute_depth_map else None
-                ),
-                orchestrator=self.cars_orchestrator,
-                margins=raster_app_margin,
-                optimal_terrain_tile_width=self.optimal_terrain_tile_width,
-                roi=(self.roi_poly if self.debug_with_roi else None),
-                save_laz_output=self.save_output_point_cloud
-                and last_pc_application == "fusion",
-            )
-
-            if self.quit_on_app("point_cloud_fusion"):
-                return True
-
-            # Rasterize merged and filtered point cloud
-            self.point_cloud_to_rasterize = merged_point_clouds
-
-            # try getting the color type from multiple sources
-            self.color_type = self.list_epipolar_point_clouds[0].attributes.get(
-                "color_type",
-                self.point_cloud_to_rasterize.attributes.get(
-                    "color_type", None
-                ),
-            )
-
-        return False
-
-    def load_input_depth_maps(self):
-        """
-        Loads all the data and creates all the variables used
-        later when processing a depth map, as if it was just computed.
-        """
-        # get epsg
-        self.epsg = self.used_conf[OUTPUT][out_cst.EPSG]
-
-        output_parameters.intialize_product_index(
-            self.cars_orchestrator,
-            self.used_conf[OUTPUT]["product_level"],
-            self.used_conf[INPUTS][depth_cst.DEPTH_MAPS].keys(),
+        self.point_cloud_to_rasterize = (
+            self.list_epipolar_point_clouds,
+            self.terrain_bounds,
         )
-
-        # compute epsg
-        epsg_cloud = pc_fusion_wrappers.compute_epsg_from_point_cloud(
-            self.used_conf[INPUTS][depth_cst.DEPTH_MAPS]
+        self.color_type = self.point_cloud_to_rasterize[0][0].attributes.get(
+            "color_type", None
         )
-        if self.epsg is None:
-            self.epsg = epsg_cloud
-
-        self.vertical_crs = projection.get_output_crs(
-            self.epsg, self.used_conf[OUTPUT]
-        )
-
-        self.resolution = self.used_conf[OUTPUT][out_cst.RESOLUTION]
-
-        # Compute roi polygon, in input EPSG
-        self.roi_poly = preprocessing.compute_roi_poly(
-            self.input_roi_poly, self.input_roi_epsg, self.epsg
-        )
-
-        if not self.merging:
-            # compute bounds
-            self.terrain_bounds = pc_fusion_wrappers.get_bounds(
-                self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
-                self.epsg,
-                roi_poly=self.roi_poly,
-            )
-
-            self.list_epipolar_point_clouds = (
-                pc_fusion_algo.generate_point_clouds(
-                    self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
-                    self.cars_orchestrator,
-                    tile_size=1000,
-                )
-            )
-        else:
-            # Compute terrain bounds and transform point clouds
-            (
-                self.terrain_bounds,
-                self.list_epipolar_point_clouds,
-            ) = pc_fusion_algo.transform_input_pc(
-                self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
-                self.epsg,
-                roi_poly=self.roi_poly,
-                epipolar_tile_size=1000,  # TODO change it
-                orchestrator=self.cars_orchestrator,
-            )
-
-            # Compute number of superposing point cloud for density
-            max_number_superposing_point_clouds = (
-                pc_fusion_wrappers.compute_max_nb_point_clouds(
-                    self.list_epipolar_point_clouds
-                )
-            )
-
-            # Compute average distance between two points
-            average_distance_point_cloud = (
-                pc_fusion_wrappers.compute_average_distance(
-                    self.list_epipolar_point_clouds
-                )
-            )
-            self.optimal_terrain_tile_width = (
-                self.rasterization_application.get_optimal_tile_size(
-                    self.cars_orchestrator.cluster.checked_conf_cluster[
-                        "max_ram_per_worker"
-                    ],
-                    superposing_point_clouds=(
-                        max_number_superposing_point_clouds
-                    ),
-                    point_cloud_resolution=average_distance_point_cloud,
-                )
-            )
-            # epsg_cloud and optimal_terrain_tile_width have the same epsg
-            self.optimal_terrain_tile_width = (
-                preprocessing.convert_optimal_tile_size_with_epsg(
-                    self.terrain_bounds,
-                    self.optimal_terrain_tile_width,
-                    self.epsg,
-                    epsg_cloud,
-                )
-            )
 
     @cars_profile(name="Final cleanup", interval=0.5)
     def final_cleanup(self):
@@ -2861,13 +2623,11 @@ class UnitPipeline(PipelineTemplate):
             if not self.dsms_in_inputs:
                 if self.compute_depth_map:
                     self.sensor_to_depth_maps()
-                else:
-                    self.load_input_depth_maps()
 
                 if self.save_output_dsm or self.save_output_point_cloud:
-                    end_pipeline = self.preprocess_depth_maps()
+                    self.preprocess_depth_maps()
 
-                    if self.save_output_dsm and not end_pipeline:
+                    if self.save_output_dsm:
                         self.rasterize_point_cloud()
                         self.filling()
             else:

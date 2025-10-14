@@ -31,7 +31,7 @@ import outlier_filter  # pylint:disable=E0401
 import pandas
 from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 
-from cars.applications.point_cloud_fusion.pc_fusion_wrappers import filter_cloud
+from cars.applications.triangulation import pc_transform
 
 # CARS imports
 from cars.core import constants as cst
@@ -82,7 +82,9 @@ def small_component_filtering(
         clusters_distance_threshold=clusters_distance_threshold_float,
     )
 
-    return filter_cloud(cloud, index_elt_to_remove, filtered_elt_pos)
+    return pc_transform.filter_cloud(
+        cloud, index_elt_to_remove, filtered_elt_pos
+    )
 
 
 def detect_small_components(
@@ -228,7 +230,9 @@ def statistical_outlier_filtering(
         use_median=use_median,
     )
 
-    return filter_cloud(cloud, index_elt_to_remove, filtered_elt_pos)
+    return pc_transform.filter_cloud(
+        cloud, index_elt_to_remove, filtered_elt_pos
+    )
 
 
 def detect_statistical_outliers(
@@ -341,7 +345,6 @@ def epipolar_small_components(
 
 def epipolar_statistical_filtering(
     epipolar_ds,
-    epsg,
     k=15,
     filtering_constant=0.0,
     mean_factor=1.0,
@@ -354,8 +357,6 @@ def epipolar_statistical_filtering(
 
     :param epipolar_ds: epipolar dataset to filter
     :type epipolar_ds: xr.Dataset
-    :param epsg: epsg code of the CRS used to compute distances
-    :type epsg: int
     :param statistical_k: k
     :type statistical_k: int
     :param std_dev_factor: std factor
@@ -369,8 +370,6 @@ def epipolar_statistical_filtering(
     :rtype:  xr.Dataset
 
     """
-
-    projection.point_cloud_conversion_dataset(epipolar_ds, epsg)
 
     if not np.all(np.isnan(epipolar_ds[cst.Z])):
 

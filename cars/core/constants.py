@@ -111,7 +111,6 @@ POINT_CLOUD_SOURCE_KEY_ROOT = "source_pc"
 POINT_CLOUD_COORD_EPI_GEOM_I = "coord_epi_geom_i"
 POINT_CLOUD_COORD_EPI_GEOM_J = "coord_epi_geom_j"
 POINT_CLOUD_ID_IM_EPI = "id_im_epi"
-POINT_CLOUD_GLOBAL_ID = "global_id"
 POINT_CLOUD_MATCHES = "point_cloud_matches"
 
 # raster fields (xarray Dataset)

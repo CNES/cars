@@ -24,7 +24,7 @@ General application configuration module
 
 
 def get_needed_apps(
-    sensors_in_inputs, save_output_dsm, save_output_point_cloud, merging, conf
+    sensors_in_inputs, save_output_dsm, save_output_point_cloud, conf
 ):
     """
     This function returns the apps needed by the CARS pipeline,
@@ -67,8 +67,5 @@ def get_needed_apps(
             for key in conf:
                 if key.startswith("dsm_filling"):
                     needed_applications += [key]
-
-        if merging:  # we have to merge point clouds, add merging apps
-            needed_applications += ["point_cloud_fusion"]
 
     return needed_applications

@@ -61,6 +61,7 @@ def simple_rasterization_dataset_wrapper(
     list_computed_layers: List[str] = None,
     source_pc_names: List[str] = None,
     performance_map_classes: List[float] = None,
+    cloud_global_id: int = None,
 ) -> xr.Dataset:
     """
     Wrapper of simple_rasterization
@@ -91,6 +92,8 @@ def simple_rasterization_dataset_wrapper(
         name of sensors pair or name of point cloud file
     :param performance_map_classes: list for step defining border of class
     :type performance_map_classes: list or None
+    :param cloud_global_id: global id of pair
+    :type cloud_global_id: int
     :return: Rasterized cloud
     """
 
@@ -129,6 +132,7 @@ def simple_rasterization_dataset_wrapper(
         list_computed_layers=list_computed_layers,
         source_pc_names=source_pc_names,
         performance_map_classes=performance_map_classes,
+        cloud_global_id=cloud_global_id,
     )
 
     return raster
@@ -144,6 +148,7 @@ def compute_vector_raster_and_stats(
     sigma: float,
     radius: int,
     list_computed_layers: List[str] = None,
+    cloud_global_id: int = None,
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -168,6 +173,7 @@ def compute_vector_raster_and_stats(
     :param sigma: Sigma for gaussian interpolation. If None, set to resolution
     :param radius: Radius for hole filling.
     :param list_computed_layers: list of computed output data
+    :param cloud_global_id: global id of pair
     :return: a tuple with rasterization results and statistics.
     """
     # get points corresponding to (X, Y positions) + data_valid
@@ -225,8 +231,8 @@ def compute_vector_raster_and_stats(
     # Fill the dataframe with additional columns :
     # each column refers to a point cloud id
     number_of_pc = cars_dataset.get_attributes(cloud)["number_of_pc"]
-    if cst.POINT_CLOUD_GLOBAL_ID in cloud.columns and (
-        (list_computed_layers is None)
+    if (cloud_global_id is not None) and (
+        list_computed_layers is None
         or rast_wrap.substring_in_list(
             list_computed_layers, cst.POINT_CLOUD_SOURCE_KEY_ROOT
         )
@@ -234,9 +240,10 @@ def compute_vector_raster_and_stats(
         for pc_id in range(number_of_pc):
             # Create binary list that indicates from each point whether it comes
             # from point cloud number "pc_id"
-            point_is_from_pc = list(
-                map(int, cloud[cst.POINT_CLOUD_GLOBAL_ID] == pc_id)
-            )
+            if pc_id == cloud_global_id:
+                point_is_from_pc = np.ones(cloud.shape[0], dtype=int)
+            else:
+                point_is_from_pc = np.zeros(cloud.shape[0], dtype=int)
             pc_key = "{}{}".format(cst.POINT_CLOUD_SOURCE_KEY_ROOT, pc_id)
             cloud[pc_key] = point_is_from_pc
 
@@ -362,6 +369,7 @@ def rasterize(
     list_computed_layers: List[str] = None,
     source_pc_names: List[str] = None,
     performance_map_classes: List[float] = None,
+    cloud_global_id: int = None,
 ) -> Union[xr.Dataset, None]:
     """
     Rasterize a point cloud with its color bands to a Dataset
@@ -385,6 +393,7 @@ def rasterize(
     :param source_pc_names: list of source pc names
     :param performance_map_classes: list for step defining border of class
     :type performance_map_classes: list or None
+    :param cloud_global_id: global id of pair
     :return: Rasterized cloud color and statistics.
     """
 
@@ -432,6 +441,7 @@ def rasterize(
         sigma,
         radius,
         list_computed_layers,
+        cloud_global_id=cloud_global_id,
     )
 
     # reshape data as a 2d grid.
