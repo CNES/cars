@@ -370,7 +370,7 @@ def test_input_dem_epsg_exit_sensors():
 
 
 @pytest.mark.unit_tests
-def test_input_basic_loader():
+def test_input_basic_image_loader():
     """
     Input configuration using basic loader
     """
@@ -381,7 +381,7 @@ def test_input_basic_loader():
         "sensors": {
             "left": {
                 "image": {
-                    "loader": "basic",
+                    "loader": "basic_image",
                     "path": "left_image.tif",
                     "no_data": -9999,
                 },
@@ -391,7 +391,7 @@ def test_input_basic_loader():
             },
             "right": {
                 "image": {
-                    "loader": "basic",
+                    "loader": "basic_image",
                     "path": "right_image.tif",
                     "no_data": -9999,
                 },
@@ -405,7 +405,7 @@ def test_input_basic_loader():
 
 
 @pytest.mark.unit_tests
-def test_input_pivot_loader():
+def test_input_pivot_image_loader():
     """
     Input configuration using pivot loader
     """
@@ -416,7 +416,7 @@ def test_input_pivot_loader():
         "sensors": {
             "left": {
                 "image": {
-                    "loader": "pivot",
+                    "loader": "pivot_image",
                     "main_file": "left_image.tif",
                     "bands": {
                         "b0": {"path": "left_image.tif", "band": 0},
@@ -432,7 +432,7 @@ def test_input_pivot_loader():
             },
             "right": {
                 "image": {
-                    "loader": "pivot",
+                    "loader": "pivot_image",
                     "main_file": "right_image.tif",
                     "bands": {"b0": {"path": "right_image.tif", "band": 0}},
                 },
@@ -457,7 +457,7 @@ def test_input_pivot_loader_fail_band_not_found():
         "sensors": {
             "left": {
                 "image": {
-                    "loader": "pivot",
+                    "loader": "pivot_image",
                     "main_file": "left_image.tif",
                     "bands": {
                         "b0": {"path": "left_image.tif", "band": 1},
@@ -473,7 +473,7 @@ def test_input_pivot_loader_fail_band_not_found():
             },
             "right": {
                 "image": {
-                    "loader": "pivot",
+                    "loader": "pivot_image",
                     "main_file": "right_image.tif",
                     "bands": {"b0": {"path": "right_image.tif", "band": 0}},
                 },
@@ -499,7 +499,7 @@ def test_input_pivot_loader_fail_undefined_texture_band():
         "sensors": {
             "left": {
                 "image": {
-                    "loader": "pivot",
+                    "loader": "pivot_image",
                     "main_file": "left_image.tif",
                     "bands": {
                         "b0": {"path": "left_image.tif", "band": 1},
@@ -515,7 +515,7 @@ def test_input_pivot_loader_fail_undefined_texture_band():
             },
             "right": {
                 "image": {
-                    "loader": "pivot",
+                    "loader": "pivot_image",
                     "main_file": "right_image.tif",
                     "bands": {"b0": {"path": "right_image.tif", "band": 0}},
                 },

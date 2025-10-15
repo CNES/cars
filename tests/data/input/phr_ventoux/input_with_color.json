@@ -3,7 +3,7 @@
         "sensors" : {
             "left": {
                 "image": {
-                    "loader": "pivot",
+                    "loader": "pivot_image",
                     "bands": {
                         "b0": {
                             "path": "left_image.tif",
