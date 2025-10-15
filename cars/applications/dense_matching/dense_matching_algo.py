@@ -144,7 +144,7 @@ def compute_disparity_grid(
     return disp_min_grid, disp_max_grid
 
 
-def compute_disparity(
+def compute_disparity(  # pylint: disable=too-many-positional-arguments
     left_dataset,
     right_dataset,
     corr_cfg,

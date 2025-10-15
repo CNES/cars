@@ -173,7 +173,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         return overloaded_conf
 
     @cars_profile(name="DEM Generation")
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         triangulated_matches_list,
         output_dir,

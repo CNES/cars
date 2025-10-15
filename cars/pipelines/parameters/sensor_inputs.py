@@ -387,6 +387,7 @@ def check_geometry_plugin(
     )
 
 
+# pylint: disable=too-many-positional-arguments
 def generate_geometry_plugin_with_dem(
     conf_geom_plugin,
     conf_inputs,

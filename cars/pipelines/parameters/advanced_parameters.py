@@ -443,7 +443,7 @@ def check_ground_truth_dsm_data(conf):
                     raise RuntimeError("interpolator does not exist")
 
 
-def update_conf(  # noqa: C901
+def update_conf(  # pylint: disable=too-many-positional-arguments  # noqa: C901
     conf,
     grid_correction_coef=None,
     reference_dem=None,

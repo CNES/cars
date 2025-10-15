@@ -208,7 +208,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             largest_epipolar_region,
         )
 
-    def run(  # noqa: C901
+    def run(  # pylint: disable=too-many-positional-arguments  # noqa: C901
         self,
         sensor_image_left,
         sensor_image_right,
@@ -625,6 +625,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         return epipolar_images_left, epipolar_images_right
 
 
+# pylint: disable=too-many-positional-arguments
 def generate_epipolar_images_wrapper(
     left_overlaps,
     right_overlaps,

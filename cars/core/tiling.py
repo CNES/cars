@@ -43,7 +43,7 @@ from shapely.geometry.multipolygon import MultiPolygon
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
-def grid(
+def grid(  # pylint: disable=too-many-positional-arguments
     xmin: float, ymin: float, xmax: float, ymax: float, xsplit: int, ysplit: int
 ) -> np.ndarray:
     """
@@ -158,7 +158,7 @@ def transform_disp_range_grid_to_two_layers(disp_min_grid, disp_max_grid):
     return disp_min, disp_max
 
 
-def generate_tiling_grid(
+def generate_tiling_grid(  # pylint: disable=too-many-positional-arguments
     row_min: float,
     col_min: float,
     row_max: float,
@@ -203,7 +203,9 @@ def generate_tiling_grid(
     return out_grid
 
 
-def split(xmin, ymin, xmax, ymax, xsplit, ysplit):
+def split(
+    xmin, ymin, xmax, ymax, xsplit, ysplit
+):  # pylint: disable=too-many-positional-arguments
     """
     Split a region defined by [xmin, xmax] x [ymin, ymax]
         in splits of xsplit x ysplit size
@@ -565,6 +567,7 @@ def region_hash_string(region: Tuple):
     return "{}_{}_{}_{}".format(region[0], region[1], region[2], region[3])
 
 
+# pylint: disable=too-many-positional-arguments
 def get_corresponding_tiles_row_col(
     terrain_tiling_grid: np.ndarray,
     row: int,

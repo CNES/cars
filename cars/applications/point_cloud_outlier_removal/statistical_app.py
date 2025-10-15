@@ -41,7 +41,9 @@ from cars.applications import application_constants
 from cars.applications.point_cloud_outlier_removal import (
     abstract_outlier_removal_app as pc_removal,
 )
-from cars.applications.point_cloud_outlier_removal import outlier_removal_algo
+from cars.applications.point_cloud_outlier_removal import (
+    outlier_removal_algo,
+)
 from cars.applications.triangulation import pc_transform
 from cars.applications.triangulation.triangulation_wrappers import (
     generate_point_cloud_file_names,
@@ -227,7 +229,7 @@ class Statistical(
 
         return 0
 
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         merged_point_cloud,
         orchestrator=None,
@@ -387,6 +389,7 @@ class Statistical(
         return filtered_point_cloud
 
 
+# pylint: disable=too-many-positional-arguments
 def epipolar_statistical_removal_wrapper(
     epipolar_ds,
     statistical_k,

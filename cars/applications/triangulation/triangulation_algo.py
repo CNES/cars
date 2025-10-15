@@ -38,7 +38,7 @@ from cars.core import constants_disparity as cst_disp
 from cars.core import projection
 
 
-def triangulate(
+def triangulate(  # pylint: disable=too-many-positional-arguments
     geometry_plugin,
     sensor1,
     sensor2,
@@ -109,7 +109,7 @@ def triangulate(
     return point_clouds
 
 
-def triangulate_matches(
+def triangulate_matches(  # pylint: disable=too-many-positional-arguments
     geometry_plugin,
     sensor1,
     sensor2,
@@ -191,7 +191,7 @@ def triangulate_matches(
     return point_cloud
 
 
-def triangulate_sparse_matches(
+def triangulate_sparse_matches(  # pylint: disable=too-many-positional-arguments
     sensor1,
     sensor2,
     geomodel1,
@@ -265,7 +265,7 @@ def triangulate_sparse_matches(
     return pd_cloud
 
 
-def compute_point_cloud(
+def compute_point_cloud(  # pylint: disable=too-many-positional-arguments
     geometry_plugin,
     sensor1,
     sensor2,

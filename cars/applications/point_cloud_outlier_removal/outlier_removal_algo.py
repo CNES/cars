@@ -190,6 +190,7 @@ def detect_small_components(
 # ##### statistical filtering ######
 
 
+# pylint: disable=too-many-positional-arguments
 def statistical_outlier_filtering(
     cloud: pandas.DataFrame,
     k: int,
@@ -343,6 +344,7 @@ def epipolar_small_components(
     return cloud
 
 
+# pylint: disable=too-many-positional-arguments
 def epipolar_statistical_filtering(
     epipolar_ds,
     k=15,

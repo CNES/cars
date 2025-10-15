@@ -72,6 +72,7 @@ class IdGenerator:
         # Check if dataset already registered
         registered = False
         allready_registered_id = None
+        returned_id = None
         for registry in self.registries:
             (
                 is_registered,

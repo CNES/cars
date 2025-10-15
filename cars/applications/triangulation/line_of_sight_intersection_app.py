@@ -131,6 +131,7 @@ class LineOfSightIntersection(
 
         return overloaded_conf
 
+    # pylint: disable=too-many-positional-arguments
     @cars_profile(name="Save triangulation output", interval=0.5)
     def save_triangulation_output(  # noqa: C901 function is too complex
         self,
@@ -355,7 +356,7 @@ class LineOfSightIntersection(
             )
 
     @cars_profile(name="Fill index", interval=0.5)
-    def fill_index(
+    def fill_index(  # pylint: disable=too-many-positional-arguments
         self,
         save_output_coordinates=True,
         save_output_color=True,
@@ -466,7 +467,7 @@ class LineOfSightIntersection(
 
         return csv_pc_dir_name, laz_pc_dir_name
 
-    def run(  # noqa: C901
+    def run(  # pylint: disable=too-many-positional-arguments  # noqa: C901
         self,
         sensor_image_left,
         sensor_image_right,
@@ -933,7 +934,7 @@ class LineOfSightIntersection(
         return epipolar_point_cloud
 
 
-def triangulation_wrapper(
+def triangulation_wrapper(  # pylint: disable=too-many-positional-arguments
     disparity_object: xr.Dataset,
     sensor1,
     sensor2,
@@ -1196,6 +1197,7 @@ def triangulation_wrapper(
     return pc_dataset, flatten_pc_dataset
 
 
+# pylint: disable=too-many-positional-arguments
 def triangulation_wrapper_matches(
     matches,
     sensor1,

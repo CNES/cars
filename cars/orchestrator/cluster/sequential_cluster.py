@@ -136,5 +136,4 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
         :param future_list: future_list list
         """
 
-        for future in future_list:
-            yield future
+        yield from future_list

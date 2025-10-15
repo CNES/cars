@@ -56,7 +56,7 @@ class SharelocGeometry(AbstractGeometry):
     Shareloc geometry class
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self,
         geometry_plugin_conf,
         dem=None,
@@ -162,7 +162,7 @@ class SharelocGeometry(AbstractGeometry):
 
         return overloaded_conf
 
-    def get_roi(
+    def get_roi(  # pylint: disable=too-many-positional-arguments
         self,
         pairs_for_roi,
         epsg,
@@ -332,7 +332,7 @@ class SharelocGeometry(AbstractGeometry):
 
         return sensor, overloaded_geomodel
 
-    def triangulate(
+    def triangulate(  # pylint: disable=too-many-positional-arguments
         self,
         sensor1,
         sensor2,
@@ -425,6 +425,7 @@ class SharelocGeometry(AbstractGeometry):
 
         return llh
 
+    # pylint: disable=too-many-positional-arguments
     def generate_epipolar_grids(
         self,
         sensor1,
@@ -508,7 +509,7 @@ class SharelocGeometry(AbstractGeometry):
             disp_to_alt_ratio,
         )
 
-    def direct_loc(
+    def direct_loc(  # pylint: disable=too-many-positional-arguments
         self,
         sensor,
         geomodel,
@@ -553,7 +554,7 @@ class SharelocGeometry(AbstractGeometry):
             )
         return latlonalt
 
-    def inverse_loc(
+    def inverse_loc(  # pylint: disable=too-many-positional-arguments
         self,
         sensor,
         geomodel,

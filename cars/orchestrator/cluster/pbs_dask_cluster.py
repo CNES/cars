@@ -108,7 +108,7 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
         logging.info("Dask cluster closed")
 
 
-def start_cluster(
+def start_cluster(  # pylint: disable=too-many-positional-arguments
     nb_workers,
     walltime,
     out_dir,

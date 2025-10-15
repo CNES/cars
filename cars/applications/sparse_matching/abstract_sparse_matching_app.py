@@ -269,7 +269,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
         return margins_wrapper
 
-    def filter_matches(
+    def filter_matches(  # pylint: disable=too-many-positional-arguments
         self,
         epipolar_matches_left,
         grid_left,

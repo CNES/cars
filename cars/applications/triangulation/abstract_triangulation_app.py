@@ -94,7 +94,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
-    def run(  # noqa: C901
+    def run(  # pylint: disable=too-many-positional-arguments  # noqa: C901
         self,
         sensor_image_left,
         sensor_image_right,

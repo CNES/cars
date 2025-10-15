@@ -281,6 +281,7 @@ def compute_cropped_roi(
     )
 
 
+# pylint: disable=too-many-positional-arguments
 def create_disp_dataset(  # noqa: C901
     disp: xr.Dataset,
     ref_dataset: xr.Dataset,
@@ -513,6 +514,7 @@ def add_crop_info(disp_ds, cropped_range):
     return disp_ds
 
 
+# pylint: disable=too-many-positional-arguments
 def estimate_right_classif_on_left(
     right_classif,
     disp_map,
@@ -752,6 +754,7 @@ def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
     )
 
 
+# pylint: disable=too-many-positional-arguments
 def optimal_tile_size_pandora_plugin_libsgm(
     disp_min: int,
     disp_max: int,

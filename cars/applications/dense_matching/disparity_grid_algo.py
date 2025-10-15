@@ -44,6 +44,7 @@ from cars.core.projection import point_cloud_conversion
 from cars.data_structures import cars_dataset, cars_dict
 
 
+# pylint: disable=too-many-positional-arguments
 def generate_disp_grids_dataset(
     grid_min,
     grid_max,
@@ -102,6 +103,7 @@ def generate_disp_grids_dataset(
     return disp_range_tile
 
 
+# pylint: disable=too-many-positional-arguments
 def generate_disp_range_const_tile_wrapper(
     row_range,
     col_range,
@@ -151,6 +153,7 @@ def generate_disp_range_const_tile_wrapper(
     return disp_range, global_infos
 
 
+# pylint: disable=too-many-positional-arguments
 def generate_disp_range_from_dem_wrapper(
     epipolar_grid_array_window,
     full_epi_row_range,
@@ -511,7 +514,7 @@ def generate_disp_range_from_dem_wrapper(
     return disp_range, global_infos
 
 
-def empty_disparity_grids(
+def empty_disparity_grids(  # pylint: disable=too-many-positional-arguments
     row_range_no_margin,
     col_range_no_margin,
     epipolar_grid_array_window,

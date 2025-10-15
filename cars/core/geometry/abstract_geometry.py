@@ -109,7 +109,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
             )
         return super().__new__(cls)
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self,
         geometry_plugin_conf,
         dem=None,
@@ -173,7 +173,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         median_value = float(median_value)
         return median_value
 
-    def get_roi(
+    def get_roi(  # pylint: disable=too-many-positional-arguments
         self,
         pairs_for_roi,
         epsg,
@@ -382,7 +382,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         return overloaded_conf
 
     @abstractmethod
-    def triangulate(
+    def triangulate(  # pylint: disable=too-many-positional-arguments
         self,
         sensor1,
         sensor2,
@@ -423,6 +423,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         :return: True if the products are readable, False otherwise
         """
 
+    # pylint: disable=too-many-positional-arguments
     @abstractmethod
     def generate_epipolar_grids(
         self, sensor1, sensor2, geomodel1, geomodel2, epipolar_step: int = 30
@@ -457,6 +458,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         """
         return geomodel
 
+    # pylint: disable=too-many-positional-arguments
     def matches_to_sensor_coords(
         self,
         grid1: Union[str, cars_dataset.CarsDataset, RectificationGrid],
@@ -792,7 +794,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         return new_matches_array
 
     @cars_profile(name="Get sensor matches")
-    def get_sensor_matches(
+    def get_sensor_matches(  # pylint: disable=too-many-positional-arguments
         self,
         matches_array,
         grid_left,
@@ -834,7 +836,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         return sensor_matches_left, sensor_matches_right
 
     @abstractmethod
-    def direct_loc(
+    def direct_loc(  # pylint: disable=too-many-positional-arguments
         self,
         sensor,
         geomodel,
@@ -856,7 +858,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         :return: Latitude, Longitude, Altitude coordinates list as a numpy array
         """
 
-    def safe_direct_loc(
+    def safe_direct_loc(  # pylint: disable=too-many-positional-arguments
         self,
         sensor,
         geomodel,
@@ -906,7 +908,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         return ground_points
 
     @abstractmethod
-    def inverse_loc(
+    def inverse_loc(  # pylint: disable=too-many-positional-arguments
         self,
         sensor,
         geomodel,
@@ -928,7 +930,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         :return: X  / Y / Z Coordinates list in input image as a numpy array
         """
 
-    def safe_inverse_loc(
+    def safe_inverse_loc(  # pylint: disable=too-many-positional-arguments
         self,
         sensor,
         geomodel,
@@ -980,7 +982,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
             image_points[:, status] = image_points_retry
         return image_points[0], image_points[1], image_points[2]
 
-    def image_envelope(
+    def image_envelope(  # pylint: disable=too-many-positional-arguments
         self,
         sensor,
         geomodel,

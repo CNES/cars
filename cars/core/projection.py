@@ -220,7 +220,7 @@ def geo_to_ecef(
     )[0]
 
 
-def ecef_to_enu(
+def ecef_to_enu(  # pylint: disable=too-many-positional-arguments
     x_ecef: np.ndarray,
     y_ecef: np.ndarray,
     z_ecef: np.ndarray,
@@ -270,7 +270,7 @@ def ecef_to_enu(
     return x_east, y_north, z_up
 
 
-def geo_to_enu(
+def geo_to_enu(  # pylint: disable=too-many-positional-arguments
     lat: np.ndarray,
     lon: np.ndarray,
     alt: np.ndarray,
@@ -319,7 +319,7 @@ def enu_to_aer(
     return azimuth, elevation, xyz_range
 
 
-def geo_to_aer(
+def geo_to_aer(  # pylint: disable=too-many-positional-arguments
     lat: np.ndarray,
     lon: np.ndarray,
     alt: np.ndarray,
@@ -530,6 +530,7 @@ def ground_polygon_from_envelopes(
     return inter, inter.bounds
 
 
+# pylint: disable=too-many-positional-arguments
 @cars_profile(name="Ground intersection envelopes", interval=0.5)
 def ground_intersection_envelopes(
     sensor1,
@@ -597,7 +598,7 @@ def ground_intersection_envelopes(
     return inter_poly, (inter_xmin, inter_ymin, inter_xmax, inter_ymax)
 
 
-def get_ground_direction(
+def get_ground_direction(  # pylint: disable=too-many-positional-arguments
     sensor,
     geomodel,
     geometry_plugin: str,
@@ -670,7 +671,7 @@ def get_ground_direction(
     return np.array([lat0, lon0, alt0, lat, lon, alt])
 
 
-def get_ground_angles(
+def get_ground_angles(  # pylint: disable=too-many-positional-arguments
     sensor1,
     sensor2,
     geomodel1,

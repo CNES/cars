@@ -37,7 +37,7 @@ from cars.core import inputs
 # TODO: refacto constants: define constants here as only concerning datasets
 
 
-def create_im_dataset(
+def create_im_dataset(  # pylint: disable=too-many-positional-arguments
     img: np.ndarray,
     region: List[int],
     largest_size: List[int],

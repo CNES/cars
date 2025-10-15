@@ -91,7 +91,7 @@ def get_utm_zone_as_epsg_code(lon, lat):
 
 
 @cars_profile(name="Compute terrain bbox")
-def compute_terrain_bbox(  # noqa: 751
+def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # noqa: 751
     sensor_image_left,
     sensor_image_right,
     epipolar_image_left,
@@ -388,7 +388,7 @@ def compute_roi_poly(input_roi_poly, input_roi_epsg, epsg):
 
 
 @cars_profile(name="Compute epsg")
-def compute_epsg(
+def compute_epsg(  # pylint: disable=too-many-positional-arguments
     sensor_image_left,
     sensor_image_right,
     grid_left,
@@ -664,7 +664,7 @@ def convert_optimal_tile_size_with_epsg(
 
 
 @cars_profile(name="Compute epipolar roi")
-def compute_epipolar_roi(
+def compute_epipolar_roi(  # pylint: disable=too-many-positional-arguments
     terrain_roi_poly,
     terrain_roi_epsg,
     geometry_plugin,

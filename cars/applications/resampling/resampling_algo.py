@@ -41,7 +41,7 @@ from cars.core import datasets, inputs, tiling
 from cars.core.geometry import abstract_geometry
 
 
-def epipolar_rectify_images(
+def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
     left_imgs,
     right_imgs,
     grid1,
@@ -203,6 +203,7 @@ def epipolar_rectify_images(
     )
 
 
+# pylint: disable=too-many-positional-arguments
 def resample_image(  # noqa: C901
     imgs,
     grid,
@@ -348,7 +349,7 @@ def resample_image(  # noqa: C901
     return dataset
 
 
-def oversampling_func(
+def oversampling_func(  # pylint: disable=too-many-positional-arguments
     grid_reader,
     img_reader,
     img_transform,

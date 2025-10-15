@@ -720,6 +720,7 @@ class CensusMccnnSgm(
         required_bands["right"] = self.required_bands
         return required_bands
 
+    # pylint: disable=too-many-positional-arguments
     @cars_profile(name="Disp Grid Generation")
     def generate_disparity_grids(  # noqa: C901
         self,
@@ -977,7 +978,7 @@ class CensusMccnnSgm(
 
         return grid_disp_range_dict
 
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         epipolar_images_left,
         epipolar_images_right,
@@ -1195,6 +1196,7 @@ class CensusMccnnSgm(
             for col in range(epipolar_disparity_map.shape[1]):
                 for row in range(epipolar_disparity_map.shape[0]):
                     use_tile = False
+                    crop_with_range = None
                     if type(None) not in (
                         type(epipolar_images_left[row, col]),
                         type(epipolar_images_right[row, col]),
@@ -1261,7 +1263,7 @@ class CensusMccnnSgm(
         return epipolar_disparity_map
 
 
-def compute_disparity_wrapper(
+def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     corr_cfg: dict,

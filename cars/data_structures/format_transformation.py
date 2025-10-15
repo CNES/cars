@@ -51,7 +51,7 @@ def grid_margins_2_overlaps(grid, margins_fun):
 
     """
 
-    def fill_overlap(
+    def fill_overlap(  # pylint: disable=too-many-positional-arguments
         cars_ds_overlaps,
         margins,
         row_up,

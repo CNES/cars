@@ -31,7 +31,9 @@ from json_checker import And, Checker
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.grid_generation import grid_generation_algo
+from cars.applications.grid_generation import (
+    grid_generation_algo,
+)
 from cars.applications.grid_generation import (
     grid_generation_constants as grid_constants,
 )
@@ -119,7 +121,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         return self.save_intermediate_data
 
     @cars_profile(name="Epi Grid Generation")
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         image_left,
         image_right,

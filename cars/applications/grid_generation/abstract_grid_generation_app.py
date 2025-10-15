@@ -104,7 +104,7 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         image_left,
         image_right,

@@ -253,6 +253,7 @@ class ZerosPadding(
         return res
 
 
+# pylint: disable=too-many-positional-arguments
 def fill_disparity_zeros_wrapper(
     disp,
     window,

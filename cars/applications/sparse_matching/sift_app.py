@@ -430,7 +430,7 @@ class Sift(SparseMatching, short_name=["sift"]):
         """
         self.decimation_factor = value
 
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         epipolar_image_left,
         epipolar_image_right,
@@ -627,7 +627,7 @@ class Sift(SparseMatching, short_name=["sift"]):
         return epipolar_disparity_map_left, None
 
 
-def compute_matches_wrapper(
+def compute_matches_wrapper(  # pylint: disable=too-many-positional-arguments
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     used_band="b0",

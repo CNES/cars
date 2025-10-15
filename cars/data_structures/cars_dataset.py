@@ -339,7 +339,7 @@ class CarsDataset:
 
         return new_window
 
-    def create_grid(
+    def create_grid(  # pylint: disable=too-many-positional-arguments
         self,
         nb_col: int,
         nb_row: int,
@@ -435,7 +435,7 @@ class CarsDataset:
                 tiles_row.append(None)
             self.tiles.append(tiles_row)
 
-    def generate_descriptor(
+    def generate_descriptor(  # pylint: disable=too-many-positional-arguments
         self, future_result, file_name, tag=None, dtype=None, nodata=None
     ):
         """
@@ -579,7 +579,7 @@ def run_save_arrays(future_result, file_name, tag=None, descriptor=None):
     )
 
 
-def run_save_points(
+def run_save_points(  # pylint: disable=too-many-positional-arguments
     future_result,
     file_name,
     overwrite=False,
@@ -840,7 +840,7 @@ def save_single_tile_dict(dict_cars, tile_path_name: str):
     dict_cars.attrs = saved_dict_cars_attrs
 
 
-def fill_dataset(
+def fill_dataset(  # pylint: disable=too-many-positional-arguments
     dataset,
     saving_info=None,
     window=None,
@@ -939,7 +939,7 @@ def fill_dict(data_dict, saving_info=None, attributes=None):
             data_dict.attrs[SAVING_INFO] = saving_info
 
 
-def save_all_dataframe(
+def save_all_dataframe(  # pylint: disable=too-many-positional-arguments
     dataframe,
     file_name,
     save_by_pair=False,

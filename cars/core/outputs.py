@@ -110,7 +110,7 @@ def write_vector(polys, path_to_file, epsg, driver="GPKG"):
             vector_file.write(poly_dict)
 
 
-def rasterio_write_georaster(
+def rasterio_write_georaster(  # pylint: disable=too-many-positional-arguments
     raster_file: str,
     data: np.ndarray,
     profile: dict = None,

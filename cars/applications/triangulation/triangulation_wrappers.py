@@ -161,6 +161,7 @@ def geoid_offset(points, geoid_path):
     return out_pc
 
 
+# pylint: disable=too-many-positional-arguments
 def generate_point_cloud_file_names(
     csv_dir: str,
     laz_dir: str,

@@ -45,6 +45,7 @@ from cars.core import constants as cst
 from cars.data_structures import cars_dataset
 
 
+# pylint: disable=too-many-positional-arguments
 def simple_rasterization_dataset_wrapper(
     cloud: pandas.DataFrame,
     resolution: float,
@@ -138,6 +139,7 @@ def simple_rasterization_dataset_wrapper(
     return raster
 
 
+# pylint: disable=too-many-positional-arguments
 def compute_vector_raster_and_stats(
     cloud: pandas.DataFrame,
     x_start: float,
@@ -353,7 +355,7 @@ def compute_vector_raster_and_stats(
     )
 
 
-def rasterize(
+def rasterize(  # pylint: disable=too-many-positional-arguments
     cloud: pandas.DataFrame,
     resolution: float,
     epsg: int,

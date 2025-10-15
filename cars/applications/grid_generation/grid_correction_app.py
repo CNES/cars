@@ -37,7 +37,9 @@ from scipy.spatial import Delaunay  # pylint: disable=E0611
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.grid_generation import grid_generation_algo
+from cars.applications.grid_generation import (
+    grid_generation_algo,
+)
 from cars.applications.grid_generation import (
     grid_generation_constants as grid_constants,
 )
@@ -165,6 +167,7 @@ def correct_grid(grid, grid_correction, pair_folder, save_grid=None):
     return corrected_grid_right
 
 
+# pylint: disable=too-many-positional-arguments
 @cars_profile(name="Grid correction estimation")
 def estimate_right_grid_correction(
     matches,

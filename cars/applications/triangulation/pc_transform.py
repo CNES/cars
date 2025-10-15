@@ -57,6 +57,7 @@ def filter_cloud_with_mask(crop_cloud, crop_terrain_tile_data_msk):
     return crop_cloud
 
 
+# pylint: disable=too-many-positional-arguments
 def compute_terrain_msk(
     dsm_epsg,
     xmin,
@@ -165,6 +166,7 @@ def create_point_cloud_index(cloud_sample):
     return cloud_indexes_with_types
 
 
+# pylint: disable=too-many-positional-arguments
 def add_information_to_cloud(
     input_cloud, cloud_indexes, bbox, target_cloud, input_array, output_column
 ):
@@ -290,6 +292,7 @@ def filter_cloud(
     return cloud, removed_elt_pos_infos
 
 
+# pylint: disable=too-many-positional-arguments
 def depth_map_dataset_to_dataframe(  # noqa: C901
     cloud_dataset: xr.Dataset,
     dsm_epsg: int,

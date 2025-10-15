@@ -37,7 +37,7 @@ from cars.applications.sparse_matching.sparse_matching_wrappers import (
 )
 
 
-def compute_matches(
+def compute_matches(  # pylint: disable=too-many-positional-arguments
     left: np.ndarray,
     right: np.ndarray,
     left_mask: np.ndarray = None,
@@ -191,6 +191,7 @@ def compute_matches(
                 right_id_offset = left_id
             else:
                 right_descr_block = []
+                right_id_offset = 0
         else:
             right_descr_block = right_descr
             right_id_offset = 0
@@ -253,7 +254,7 @@ def compute_matches(
     return matches
 
 
-def dataset_matching(
+def dataset_matching(  # pylint: disable=too-many-positional-arguments
     ds1,
     ds2,
     used_band,

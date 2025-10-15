@@ -107,7 +107,7 @@ def write_grid(grid, fname, origin, spacing):
         dst.write_band(2, grid[:, :, 1])
 
 
-def generate_epipolar_grids(
+def generate_epipolar_grids(  # pylint: disable=too-many-positional-arguments
     sensor1, sensor2, geomodel1, geomodel2, geometry_plugin, epipolar_step
 ):
     """
@@ -141,6 +141,7 @@ def generate_epipolar_grids(
     )
 
 
+# pylint: disable=too-many-positional-arguments
 @cars_profile(name="Compute epipolar grid min max", interval=0.5)
 def compute_epipolar_grid_min_max(
     geometry_plugin,
@@ -282,7 +283,7 @@ def compute_epipolar_grid_min_max(
     return grid_min, grid_max
 
 
-def terrain_region_to_epipolar(
+def terrain_region_to_epipolar(  # pylint: disable=too-many-positional-arguments
     region,
     sensor1,
     sensor2,

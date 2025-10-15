@@ -30,7 +30,7 @@ import warnings
 from datetime import timedelta
 
 
-def init_cluster_variables(
+def init_cluster_variables(  # pylint: disable=too-many-positional-arguments
     nb_workers,
     walltime,
     out_dir,

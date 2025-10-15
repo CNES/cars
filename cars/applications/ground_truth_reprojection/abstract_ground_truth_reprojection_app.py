@@ -97,7 +97,7 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         sensor_left,
         sensor_right,

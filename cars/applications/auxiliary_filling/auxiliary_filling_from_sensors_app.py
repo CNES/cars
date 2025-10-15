@@ -96,10 +96,11 @@ class AuxiliaryFillingFromSensors(
         overloaded_conf["mode"] = conf.get("mode", "fill_nan")
 
         if overloaded_conf["mode"] not in ["fill_nan", "full"]:
+            # pylint: disable=inconsistent-quotes
             raise RuntimeError(
                 f"Invalid mode {overloaded_conf['mode']} for "
-                "AuxiliaryFilling, supported modes are fill_nan "
-                "and full"
+                f"AuxiliaryFilling, supported modes are fill_nan "
+                f"and full"
             )
 
         overloaded_conf["texture_interpolator"] = conf.get(
@@ -128,6 +129,7 @@ class AuxiliaryFillingFromSensors(
 
         return overloaded_conf
 
+    # pylint: disable=too-many-positional-arguments
     def run(  # noqa: C901
         self,
         dsm_file,
@@ -328,6 +330,7 @@ class AuxiliaryFillingFromSensors(
         return aux_filled_image
 
 
+# pylint: disable=too-many-positional-arguments
 def filling_from_sensor_wrapper(
     dsm_file,
     color_file,

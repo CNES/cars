@@ -88,7 +88,7 @@ dev = [
     "flake8-comprehensions>=3.4.0",   # Check list/dict/set
     "flake8-bugbear>=21.4.3,<24.0.0", # Add some rules to flake8
     "jupyter_contrib_nbextensions",   # Clean notebooks
-    "pylint>=2.8.12,<3.0.0",          # General linter with more rules
+    "pylint>=2.8.12,<4.0.0",          # General linter with more rules
     "setuptools_scm",                 # version from git tag
     "virtualenv",
     "configupdater",
@@ -107,12 +107,12 @@ dev = [
 
 # [docs] mode dependencies
 docs = [
-    "astroid<3.0.0",
+    "astroid",
     "sphinx",
     "sphinx-rtd-theme",
     "sphinx_autoapi",
     "graphviz",
-    "sphinx_tabs==3.4.0",
+    "sphinx_tabs",
     "sphinx-copybutton",
 ]
 

@@ -83,10 +83,11 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         )
 
         if overloaded_conf["interpolation_method"] not in ["bilinear", "cubic"]:
+            # pylint: disable=inconsistent-quotes
             raise RuntimeError(
-                "Invalid interpolation method"
+                f"Invalid interpolation method"
                 f"{overloaded_conf['interpolation_method']}, "
-                "supported modes are bilinear and cubic."
+                f"supported modes are bilinear and cubic."
             )
 
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -108,7 +109,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         return overloaded_conf
 
     @cars_profile(name="Exogeneous filling")
-    def run(  # noqa C901
+    def run(  # pylint: disable=too-many-positional-arguments  # noqa C901
         self,
         dsm_file,
         classif_file,

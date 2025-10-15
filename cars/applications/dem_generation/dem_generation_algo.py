@@ -108,7 +108,7 @@ def launch_bulldozer(
     return output_dem
 
 
-def multi_res_rec(
+def multi_res_rec(  # pylint: disable=too-many-positional-arguments
     pd_pc,
     list_fun,
     x_grid,

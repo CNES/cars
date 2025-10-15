@@ -126,6 +126,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
         """
 
+    # pylint: disable=too-many-positional-arguments
     @abstractmethod
     def generate_disparity_grids(
         self,
@@ -184,7 +185,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         epipolar_images_left,
         epipolar_images_right,

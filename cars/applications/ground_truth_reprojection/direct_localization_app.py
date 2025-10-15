@@ -117,7 +117,7 @@ class DirectLocalization(
 
         return overloaded_conf
 
-    def run(  # noqa: C901
+    def run(  # pylint: disable=too-many-positional-arguments  # noqa: C901
         self,
         sensor_left,
         sensor_right,
@@ -495,7 +495,7 @@ class DirectLocalization(
                     )
 
 
-def maps_generation_wrapper(
+def maps_generation_wrapper(  # pylint: disable=too-many-positional-arguments
     sensor_left,
     grid_left,
     geom_plugin,

@@ -28,7 +28,7 @@ import rasterio as rio
 from scipy import interpolate
 
 
-def fill_auxiliary(
+def fill_auxiliary(  # pylint: disable=too-many-positional-arguments
     sensor_inputs,
     pairing,
     longitudes,
@@ -156,7 +156,7 @@ def fill_auxiliary(
     return filled_color, filled_classif
 
 
-def fill_from_one_sensor(  # noqa C901
+def fill_from_one_sensor(  # pylint: disable=too-many-positional-arguments  # noqa C901
     sensor,
     filled_color,
     filled_classif,
