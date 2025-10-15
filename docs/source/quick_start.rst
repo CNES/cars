@@ -4,10 +4,11 @@
 Quick start
 ===========
 
+-------------
 Download data
 -------------
 
-* Get and extract data samples from CARS repository:
+Get and extract data samples from CARS repository:
 
 .. note::
 
@@ -20,21 +21,33 @@ Download data
     md5sum --status -c data_gizeh.tar.bz2.md5sum
     tar xvfj data_gizeh.tar.bz2
 
-
+--------
 Run CARS
 --------
 
-* Launch CARS for img1+img2 and img1+img3 pairs:
+To launch CARS, a single configuration file is required. One is available in the data_gizeh folder: 
+
+.. include-cars-config:: example_configs/getting_started/gizeh_configfile
+
+With a pip installation
+-----------------------
+
+If you installed CARS with pip, the command to use is:
 
 .. code-block:: console
 
     cars data_gizeh/configfile.yaml
 
-* Configuration example (configfile.yaml or configfile.json) for data_gizeh:
+With a Docker installation
+--------------------------
 
-.. include-cars-config:: example_configs/getting_started/gizeh_configfile
+If you installed CARS with Docker, the command to use is:
 
+.. code-block:: console
 
+    docker run -w /data -v "$(pwd)"/data_gizeh:/data cnes/cars /data/configfile.yaml
+
+----------------
 Open the results 
 ----------------
 
