@@ -53,7 +53,6 @@ dependencies = [
     "Shapely",
     "Fiona",
     "pyproj",
-    "pytest-check",
     "utm",
     "pandas",
     "urllib3<2.0,>=1.21.1",
@@ -80,6 +79,7 @@ Repository = "https://github.com/CNES/cars"
 dev = [
     "pytest",
     "pytest-cov",
+    "pytest-check",
     "pre-commit",
     "isort>=5.8.0",                   # Check imports
     "black>=24.1a1",                  # PEP8 format code
