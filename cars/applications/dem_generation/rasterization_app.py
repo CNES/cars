@@ -210,7 +210,7 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         return overloaded_conf
 
     @cars_profile(name="DEM Generation")
-    def run(  # noqa: C901
+    def run(  # pylint: disable=too-many-positional-arguments # noqa: C901
         self,
         dsm_file_name,
         output_dir,

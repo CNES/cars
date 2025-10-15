@@ -95,7 +95,7 @@ def acquisition_direction(
     return time_direction_vector, vec1, vec2
 
 
-def get_time_ground_direction(
+def get_time_ground_direction(  # pylint: disable=too-many-positional-arguments
     sensor,
     geomodel,
     geometry_plugin,
@@ -180,6 +180,7 @@ def project_coordinates_on_line(
     return dist_to_origin * np.cos(proj_angle)
 
 
+# pylint: disable=too-many-positional-arguments
 def lowres_initial_dem_splines_fit(
     lowres_dsm_from_matches: xr.Dataset,
     lowres_initial_dem: xr.Dataset,
@@ -379,7 +380,7 @@ def read_lowres_dsm(srtm_path, startx, starty, endx, endy):
     return dsm_as_ds, newstartx, newstarty, sizex, sizey, resolution
 
 
-def compute_splines(
+def compute_splines(  # pylint: disable=too-many-positional-arguments
     sensor1,
     geomodel1,
     sensor2,
@@ -507,7 +508,7 @@ def compute_splines(
     }
 
 
-def cars_devibrate(
+def cars_devibrate(  # pylint: disable=too-many-positional-arguments
     used_conf,
     srtm_path,
     geoid_path,
@@ -594,6 +595,8 @@ def cars_devibrate(
         )
 
         x_values_2d, y_values_2d = np.meshgrid(x_values_1d, y_values_1d)
+
+        positions = None
         if src.crs != "EPSG:4326":
             transformer = pyproj.Transformer.from_crs(
                 src.crs, "EPSG:4326", always_xy=True

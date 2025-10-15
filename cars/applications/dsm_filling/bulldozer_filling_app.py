@@ -95,7 +95,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         return overloaded_conf
 
     @cars_profile(name="Bulldozer filling")
-    def run(  # noqa C901
+    def run(  # pylint: disable=too-many-positional-arguments # noqa C901
         self,
         dsm_file,
         classif_file,

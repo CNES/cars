@@ -54,7 +54,7 @@ class PandoraLoader:
 
     """
 
-    def __init__(  # noqa: C901
+    def __init__(  # pylint: disable=too-many-positional-arguments  # noqa: C901
         self,
         conf=None,
         method_name=None,
@@ -387,7 +387,7 @@ class PandoraLoader:
 
         return conf
 
-    def check_conf(
+    def check_conf(  # pylint: disable=too-many-positional-arguments
         self,
         user_cfg,
         bands_left,

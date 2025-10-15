@@ -86,7 +86,7 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
         cls.available_applications[short_name] = cls
 
     @abstractmethod
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         dsm_file,
         color_file,

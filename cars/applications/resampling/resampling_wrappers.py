@@ -94,7 +94,7 @@ def get_sensors_bounds(sensor_image_left, sensor_image_right):
     return left_sensor_bounds, right_sensor_bounds
 
 
-def check_tiles_in_sensor(
+def check_tiles_in_sensor(  # pylint: disable=too-many-positional-arguments
     sensor_image_left,
     sensor_image_right,
     image_tiling,

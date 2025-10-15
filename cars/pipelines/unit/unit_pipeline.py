@@ -656,8 +656,9 @@ class UnitPipeline(PipelineTemplate):
                 for k, a in self.pc_outlier_removal_apps.items()
             )
             logging.info(
-                f"{len(self.pc_outlier_removal_apps)} point cloud outlier "
-                + f"removal apps registered:\n{methods_str}"
+                "{} point cloud outlier removal apps registered:\n{}".format(
+                    len(self.pc_outlier_removal_apps), methods_str
+                )
             )
 
         if self.save_output_dsm or self.save_output_point_cloud:
@@ -713,8 +714,9 @@ class UnitPipeline(PipelineTemplate):
                     for k, a in self.dsm_filling_apps.items()
                 )
                 logging.info(
-                    f"{len(self.dsm_filling_apps)} dsm filling apps "
-                    + f"registered:\n{methods_str}"
+                    "{} dsm filling apps registered:\n{}".format(
+                        len(self.dsm_filling_apps), methods_str
+                    )
                 )
 
                 # Auxiliary filling
@@ -1911,8 +1913,8 @@ class UnitPipeline(PipelineTemplate):
                     point_cloud_dir=filtering_point_cloud_dir,
                     dump_dir=os.path.join(
                         self.dump_dir,
-                        (
-                            "pc_outlier_removal"
+                        (  # pylint: disable=inconsistent-quotes
+                            f"pc_outlier_removal"
                             f"{str(app_key[27:]).replace('.', '_')}"
                         ),
                         pair_key,
@@ -2577,7 +2579,7 @@ class UnitPipeline(PipelineTemplate):
                 self.cars_orchestrator.add_to_clean(self.dump_dir)
 
     @cars_profile(name="run_unit_pipeline", interval=0.5)
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         generate_dems=False,
         which_resolution="single",

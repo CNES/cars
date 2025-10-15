@@ -193,7 +193,7 @@ def test_snap_to_grid():
         ],
     ],
 )
-def test_tiles_pairing(
+def test_tiles_pairing(  # pylint: disable=too-many-positional-arguments
     terrain_tile_size,
     epipolar_tile_size,
     nb_corresp_tiles,

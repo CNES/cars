@@ -32,7 +32,7 @@ from cars.core.projection import point_cloud_conversion
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
-def get_ground_truth(
+def get_ground_truth(  # pylint: disable=too-many-positional-arguments
     geom_plugin,
     grid,
     sensor,
@@ -76,6 +76,7 @@ def get_ground_truth(
 
     (positions_col, positions_row) = np.meshgrid(cols, rows)
 
+    direct_loc = None
     if target == "epipolar":
 
         positions = np.stack([positions_col, positions_row], axis=2)

@@ -350,6 +350,7 @@ def check_phasing(dsm_dict):
             raise RuntimeError(f"DSM {dsm_key} and {ref_key} are not phased")
 
 
+# pylint: disable=too-many-positional-arguments
 def merge_dsm_infos(  # noqa: C901 function is too complex
     dict_path,
     orchestrator,
@@ -410,6 +411,9 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
     terrain_raster = cars_dataset.CarsDataset("arrays", name="rasterization")
 
     # find the global bounds of the dataset
+    dsm_nodata = None
+    epsg = None
+    resolution = None
     for index, path in enumerate(dict_path["dsm"]):
         with rasterio.open(path) as src:
             if index == 0:
@@ -576,7 +580,7 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
     return terrain_raster
 
 
-def dsm_merging_wrapper(  # noqa C901
+def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa C901
     dict_path,
     tile_bounds,
     resolution,
@@ -776,7 +780,7 @@ def dsm_merging_wrapper(  # noqa C901
     return dataset
 
 
-def assemblage(
+def assemblage(  # pylint: disable=too-many-positional-arguments
     out,
     current_weights,
     method,

@@ -83,7 +83,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
     # pylint: disable=too-many-instance-attributes
     @cars_profile(name="Multiprocessing orchestrator initialization")
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self,
         conf_cluster,
         out_dir,
@@ -466,6 +466,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         return object_future
 
+    # pylint: disable=too-many-positional-arguments
     @staticmethod  # noqa: C901
     def refresh_task_cache(  # noqa: C901
         pool,

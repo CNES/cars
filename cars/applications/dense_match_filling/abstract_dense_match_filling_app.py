@@ -143,7 +143,7 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
 
         """
 
-    def __register_dataset__(
+    def __register_dataset__(  # pylint: disable=too-many-positional-arguments
         self,
         epipolar_disparity_map,
         save_intermediate_data,

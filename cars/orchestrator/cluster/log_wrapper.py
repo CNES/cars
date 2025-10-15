@@ -898,7 +898,7 @@ def generate_boxplot(axis, names, data_full, title, data_type):
     axis.set_title(title)
 
 
-def generate_histo(
+def generate_histo(  # pylint: disable=too-many-positional-arguments
     axis, names, data, title, data_type, data_min_err=None, data_max_err=None
 ):
     """
@@ -1054,15 +1054,14 @@ class CarsMemProf(Thread):
                 # Get memory
                 current_mem = self.process.memory_info().rss
 
-                if current_mem > max_mem:
-                    max_mem = current_mem
+                max_mem = max(max_mem, current_mem)
 
                 # Get cpu max
                 current_cpu = self.process.cpu_percent(
                     interval=self.cpu_interval
                 )
-                if current_cpu > max_cpu:
-                    max_cpu = current_cpu
+
+                max_cpu = max(max_cpu, current_cpu)
 
                 if stop:
                     break

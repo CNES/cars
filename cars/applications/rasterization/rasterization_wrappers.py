@@ -154,6 +154,7 @@ def find_indexes_in_point_cloud(
     return indexes
 
 
+# pylint: disable=too-many-positional-arguments
 def create_raster_dataset(  # noqa: C901
     raster: np.ndarray,
     weights_sum: np.ndarray,
@@ -548,7 +549,7 @@ def update_weights(old_weights, weights):
     return new_weights
 
 
-def update_data(
+def update_data(  # pylint: disable=too-many-positional-arguments
     old_data, current_data, weights, old_weights, nodata, method="basic"
 ):
     """

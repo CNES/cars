@@ -48,7 +48,7 @@ class AbstractCluster(metaclass=ABCMeta):
     # cluster mode output directory
     out_dir: str
 
-    def __new__(  # pylint: disable=W0613
+    def __new__(  # pylint: disable=too-many-positional-arguments
         cls,
         conf_cluster,
         out_dir,
@@ -103,7 +103,7 @@ class AbstractCluster(metaclass=ABCMeta):
 
         return decorator
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self,
         conf_cluster,
         out_dir,

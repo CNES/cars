@@ -58,7 +58,7 @@ from ..helpers import (
 
 
 @pytest.mark.unit_tests
-def test_epipolar_pipeline(
+def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
     images_and_grids_conf,
     color1_conf,  # pylint: disable=redefined-outer-name
     no_data_conf,

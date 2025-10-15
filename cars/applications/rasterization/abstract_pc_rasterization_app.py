@@ -127,7 +127,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         point_clouds,
         epsg,

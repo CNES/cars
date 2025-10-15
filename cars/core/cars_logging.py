@@ -141,7 +141,7 @@ class LogSender:  # pylint: disable=R0903
             unlock(file)
 
 
-def setup_logging(
+def setup_logging(  # pylint: disable=too-many-positional-arguments
     loglevel="PROGRESS",
     out_dir=None,
     log_dir=None,

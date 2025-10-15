@@ -158,7 +158,7 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
             else:
                 logging.debug("Future result tile is None -> not saved")
 
-    def add_file_to_save(
+    def add_file_to_save(  # pylint: disable=too-many-positional-arguments
         self,
         file_name,
         cars_ds,
@@ -247,7 +247,7 @@ class SingleCarsDatasetSaver:
         self.count = 0
         self.folder_name = None
 
-    def add_file(
+    def add_file(  # pylint: disable=too-many-positional-arguments
         self,
         file_name,
         tag=None,

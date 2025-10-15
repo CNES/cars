@@ -103,7 +103,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         return overloaded_conf
 
     @cars_profile(name="Border interpolation filling")
-    def run(  # noqa C901
+    def run(  # pylint: disable=too-many-positional-arguments  # noqa C901
         self,
         dsm_file,
         classif_file,

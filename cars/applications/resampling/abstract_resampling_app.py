@@ -95,7 +95,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         sensor_image_left,
         sensor_image_right,

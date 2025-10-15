@@ -160,6 +160,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
 
         """
 
+    # pylint: disable=too-many-positional-arguments
     def __register_epipolar_dataset__(
         self,
         epipolar_point_cloud,
@@ -350,7 +351,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         merged_point_cloud,
         orchestrator=None,

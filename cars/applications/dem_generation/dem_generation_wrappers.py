@@ -133,7 +133,7 @@ def add_margin(bbox, ratio=1):
     return new_bbox
 
 
-def generate_grid(
+def generate_grid(  # pylint: disable=too-many-positional-arguments
     pd_pc, resolution, xmin=None, xmax=None, ymin=None, ymax=None
 ):
     """

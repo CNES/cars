@@ -80,7 +80,7 @@ class Orchestrator:
     # pylint: disable=too-many-instance-attributes
 
     # flake8: noqa: C901
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self,
         orchestrator_conf=None,
         out_dir=None,
@@ -212,7 +212,7 @@ class Orchestrator:
         return self.conf
 
     @cars_profile(name="Add to save lists", interval=0.5)
-    def add_to_save_lists(
+    def add_to_save_lists(  # pylint: disable=too-many-positional-arguments
         self,
         file_name,
         tag,

@@ -407,7 +407,7 @@ def write_rpcs_as_geom(refined_rpcs, out_dir):
     return geoms_filenames
 
 
-def new_rpcs_from_matches(
+def new_rpcs_from_matches(  # pylint: disable=too-many-positional-arguments
     sensors,
     config_directory,
     sparse_matching_directory,

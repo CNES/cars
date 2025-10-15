@@ -73,7 +73,7 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
     Used to profile memory in processes
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self, pool, out_dir, max_ram_per_worker, mp_dataframe=None, timer=None
     ):
         """

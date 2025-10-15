@@ -44,11 +44,15 @@ import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 
 # CARS imports
-from cars.applications.rasterization import rasterization_algo
+from cars.applications.rasterization import (
+    rasterization_algo,
+)
 from cars.applications.rasterization import (
     rasterization_constants as raster_cst,
 )
-from cars.applications.rasterization import rasterization_wrappers
+from cars.applications.rasterization import (
+    rasterization_wrappers,
+)
 from cars.applications.rasterization.abstract_pc_rasterization_app import (
     PointCloudRasterization,
 )
@@ -204,6 +208,7 @@ class SimpleGaussian(
         )
         return tile_size
 
+    # pylint: disable=too-many-positional-arguments
     def run(  # noqa: C901 function is too complex
         self,
         point_clouds,
@@ -915,6 +920,7 @@ class SimpleGaussian(
         return terrain_raster
 
 
+# pylint: disable=too-many-positional-arguments
 def rasterization_wrapper(  # noqa: C901
     cloud,
     resolution,

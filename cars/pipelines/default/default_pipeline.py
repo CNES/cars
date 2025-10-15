@@ -501,6 +501,7 @@ def extract_applications(current_applications_conf, res, default_conf_for_res):
     return new_application_conf
 
 
+# pylint: disable=too-many-positional-arguments
 def extract_conf_with_resolution(
     current_conf,
     res,
