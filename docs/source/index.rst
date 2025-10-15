@@ -45,6 +45,7 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
    configuration/orchestrator.rst
    configuration/applications.rst
    configuration/advanced_parameters.rst
+   configuration/full_config.rst
 
 .. toctree::
    :caption: Examples

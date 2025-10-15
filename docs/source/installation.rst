@@ -13,7 +13,7 @@ With pip
 
 CARS is available on Pypi and can be installed with pip.
 
-It is recommended to use a virtual environnement :
+It is recommended to use a virtual environment :
 
 .. code-block:: console
 
@@ -49,6 +49,12 @@ Install CARS with the Makefile :
 .. code-block:: console
 
     make install
+
+Then activate the environment : 
+
+.. code-block:: console
+
+    source venv/bin/activate
 
 
 
