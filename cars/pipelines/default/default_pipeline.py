@@ -45,6 +45,7 @@ from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
+from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -132,6 +133,15 @@ class DefaultPipeline(PipelineTemplate):
         conf[ADVANCED] = self.check_advanced(conf)
         # check output
         conf[OUTPUT] = self.check_output(conf)
+
+        if dsm_cst.DSMS in conf[INPUTS] and len(self.epipolar_resolutions) != 1:
+            logging.info(
+                "For the use of those pipelines, "
+                "you have to give only one resolution"
+            )
+            # overide epipolar resolutions
+            # TODO: delete with external dsm pipeline (refactoring)
+            self.epipolar_resolutions = [1]
 
         used_configurations = {}
         self.unit_pipelines = {}
