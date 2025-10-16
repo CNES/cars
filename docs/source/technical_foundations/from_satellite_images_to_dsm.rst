@@ -115,7 +115,7 @@ Generate a DSM step by step
 | |rasterization|         |br| |                                             |
 +------------------------------+---------------------------------------------+
 
-To obtain a raster image, the final process projects each point into a 2D grid: altitudes and colors (see :ref:`below<rasterization>`) .
+To obtain a raster image, the final process projects each point into a 2D grid: altitudes and colors (see :ref:`below<rasterization>`).
 
 .. _rasterization:
 
