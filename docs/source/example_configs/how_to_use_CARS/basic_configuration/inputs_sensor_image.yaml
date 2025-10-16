@@ -1,7 +1,0 @@
----
-inputs:
-  sensors:
-    my_name_for_this_image: # at least two of these are required!
-      image: path_to_image.tif
-      mask: path_to_mask.tif
-      classification: path_to_classification.tif

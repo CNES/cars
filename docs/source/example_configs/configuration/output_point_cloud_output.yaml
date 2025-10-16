@@ -1,0 +1,7 @@
+---
+one_two:
+  '0_0': one_two/0_0.laz
+  '0_1': one_two/0_1.laz
+one_three:
+  '0_0': one_three/0_0.laz
+  '0_1': one_three/0_1.laz

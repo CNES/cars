@@ -1,0 +1,82 @@
+/* Layout général */
+.cars-tabs {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1.5em 0;
+  background: white;
+}
+
+/* Boutons à gauche */
+.cars-tabs-buttons {
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+}
+
+.cars-tab-btn {
+  padding: 0.6em 1em;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9em;
+  font-weight: 500;
+  color: #444;
+  transition: background 0.2s;
+}
+
+.cars-tab-btn:hover {
+  transform: scale(1.05);
+}
+
+.cars-tab-btn.active {
+  background: #dfe3e6;
+  color: black;
+  font-weight: 600;
+}
+
+/* Zone de code */
+.cars-tab-content {
+  display: none;
+  flex: 1;
+  padding: 0;
+  background: #fffded;  /* fond jaune clair */
+}
+
+.cars-tab-content.active {
+  display: block;
+}
+
+.cars-tab-content pre.highlight {
+  margin: 0;
+  padding: 1em;
+  overflow-x: auto;
+  background: #fffded;     /* fond jaune clair */
+  color: #2d2d2d;       /* texte foncé */
+  font-family: monospace;
+  font-size: 0.85em;
+  line-height: 1.5em;
+  white-space: pre;
+}
+
+/* Bouton copier */
+.cars-copy-btn {
+  margin-top: auto;        /* pousse en bas de la colonne */
+  padding: 0.6em 1em;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9em;
+  font-weight: 500;
+  color: #444;
+  transition: background 0.2s;
+}
+
+.cars-copy-btn:hover {
+   transform: scale(1.05);
+}

@@ -1,9 +1,0 @@
----
-output:
-  directory: outresults
-  product_level:
-  - dsm
-  - depth_map
-  auxiliary: # enable mask and classification as an output of CARS
-    mask: true
-    classification: true

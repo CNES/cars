@@ -1,0 +1,5 @@
+---
+applications:
+  resampling:
+    method: bicubic
+    epi_tile_size: 600

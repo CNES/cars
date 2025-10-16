@@ -1,0 +1,6 @@
+---
+applications:
+  point_cloud_fusion:
+    method: mapping_to_terrain_tiles
+    save_intermediate_data: true
+    save_by_pair: true
