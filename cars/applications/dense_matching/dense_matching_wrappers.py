@@ -25,6 +25,7 @@ This module is responsible for the dense matching algorithms:
 
 # Standard imports
 import logging
+import math
 import warnings
 from typing import Dict
 
@@ -779,7 +780,7 @@ def optimal_tile_size_pandora_plugin_libsgm(
     """
 
     memory = max_ram_per_worker
-    disp = disp_max - disp_min
+    disp = max(3, abs(disp_max - disp_min))
 
     image = 32 * 2
     disp_ref = 32
@@ -809,12 +810,16 @@ def optimal_tile_size_pandora_plugin_libsgm(
         # but sqrt(nb_pixels + (disp/2)**2) - disp/2
         tile_size = np.sqrt(row_or_col + (disp / 2) ** 2) - disp / 2
         tile_size = (1.0 - margin / 100.0) * tile_size
-        tile_size = tile_size_rounding * int(tile_size / tile_size_rounding)
+
+    if math.isinf(tile_size):
+        logging.warning("Tile size infinite")
 
     if tile_size > max_tile_size:
         tile_size = max_tile_size
     elif tile_size < min_tile_size:
         tile_size = min_tile_size
+
+    tile_size = tile_size_rounding * int(tile_size / tile_size_rounding)
 
     return tile_size
 
