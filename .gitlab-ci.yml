@@ -35,15 +35,13 @@ include:
     rules:
       # do not trigger this case if env has changed(see second case)
       - changes:
-        - "ci/cars-deps-env/Dockerfile"
-        - "pyproject.toml"
+          compare_to: 'refs/heads/master'
+          paths:
+            - "ci/cars-deps-env/Dockerfile"
+            - "pyproject.toml"
         when: never
       # do not trigger this case on master (see third case)
       - if: $CI_COMMIT_REF_NAME == "master"
-        when: never
-      - if: $CI_COMMIT_REF_NAME == "cars_0_12_patches"
-        when: never
-      - if: $CI_COMMIT_REF_NAME == "0.12.3-fix-infinite-tile-size"
         when: never
   # Second case: env should be generated on a dev branch, create a temporary
   # image
@@ -52,13 +50,13 @@ include:
       tag: ${CI_COMMIT_REF_NAME}
     rules:
       - changes:
-        - "ci/cars-deps-env/Dockerfile"
-        - "pyproject.toml"
+          compare_to: 'refs/heads/master'
+          paths:
+            - "ci/cars-deps-env/Dockerfile"
+            - "pyproject.toml"
       # do not trigger this case on master (see third case)
       - if: $CI_COMMIT_REF_NAME == "master"
         when: never
-      - if: $CI_COMMIT_REF_NAME == "cars_0_12_patches"
-      - if: $CI_COMMIT_REF_NAME == "0.12.3-fix-infinite-tile-size"
   # Third case: master branch pipeline: generate a "latest" image
   - local: '/ci/cars-docker-build.yml'
     inputs:
