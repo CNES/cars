@@ -810,6 +810,8 @@ class UnitPipeline(PipelineTemplate):
                                 )
         for key1, key2 in inputs_conf["pairing"]:
             corr_cfg = self.dense_matching_app.loader.get_conf()
+            nodata_left = inputs_conf["sensors"][key2]["image"]["no_data"]
+            nodata_right = inputs_conf["sensors"][key2]["image"]["no_data"]
             bands_left = list(
                 inputs_conf["sensors"][key1]["image"]["bands"].keys()
             )
@@ -835,6 +837,8 @@ class UnitPipeline(PipelineTemplate):
             self.dense_matching_app.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
+                    nodata_left,
+                    nodata_right,
                     bands_left,
                     bands_right,
                     bands_classif_left,

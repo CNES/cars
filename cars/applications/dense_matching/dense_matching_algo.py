@@ -257,19 +257,53 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
         right_dataset = right_dataset.drop_vars([cst.EPI_MSK])
         right_dataset[cst.EPI_MSK] = right_msk
 
-    # Instantiate pandora state machine
-    pandora_machine = PandoraMachine()
+    # Check that the datasets are not full of nan (would crash later)
+    if left_dataset["msk"].all() or right_dataset["msk"].all():
+        height = left_dataset.sizes["row"]
+        width = left_dataset.sizes["col"]
+        ref = xr.Dataset(
+            coords={
+                "row": left_dataset.coords["row"],
+                "col": left_dataset.coords["col"],
+                "indicator": [
+                    "confidence_from_ambiguity.cars_1",
+                    "confidence_from_risk_max.cars_2",
+                    "confidence_from_risk_min.cars_2",
+                    "confidence_from_disp_sup_from_risk.cars_2",
+                    "confidence_from_disp_inf_from_risk.cars_2",
+                    "confidence_from_interval_bounds_inf.cars_3",
+                    "confidence_from_interval_bounds_sup.cars_3",
+                    "confidence_from_left_right_consistency",
+                ],
+            },
+            data_vars={
+                "disparity_map": (
+                    ("row", "col"),
+                    np.full((height, width), np.nan, dtype=np.float32),
+                ),
+                "validity_mask": (
+                    ("row", "col"),
+                    np.ones((height, width), dtype=np.int64),
+                ),
+                "confidence_measure": (
+                    ("row", "col", "indicator"),
+                    np.full((height, width, 8), np.nan, dtype=np.float32),
+                ),
+            },
+        )
+    else:
+        # Instantiate pandora state machine
+        pandora_machine = PandoraMachine()
+        # check datasets
+        check_datasets(left_dataset, right_dataset)
 
-    # check datasets
-    check_datasets(left_dataset, right_dataset)
-
-    # Run the Pandora pipeline
-    ref, _ = pandora.run(
-        pandora_machine,
-        left_dataset,
-        right_dataset,
-        corr_cfg,
-    )
+        # Run the Pandora pipeline
+        ref, _ = pandora.run(
+            pandora_machine,
+            left_dataset,
+            right_dataset,
+            corr_cfg,
+        )
 
     disp_dataset = dm_wrap.create_disp_dataset(
         ref,

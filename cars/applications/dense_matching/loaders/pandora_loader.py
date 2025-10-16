@@ -390,6 +390,8 @@ class PandoraLoader:
     def check_conf(  # pylint: disable=too-many-positional-arguments
         self,
         user_cfg,
+        nodata_left,
+        nodata_right,
         bands_left,
         bands_right,
         bands_classif_left=None,
@@ -433,7 +435,9 @@ class PandoraLoader:
             saved_schema
         )
         # check a part of input section
-        user_cfg_input = get_config_input_custom_cars(user_cfg)
+        user_cfg_input = get_config_input_custom_cars(
+            user_cfg, nodata_left, nodata_right
+        )
         cfg_input = check_input_section_custom_cars(user_cfg_input)
         # concatenate updated config
         cfg = concat_conf([cfg_input, cfg_pipeline])
@@ -495,7 +499,9 @@ def overide_pandora_get_metadata(
     return dataset
 
 
-def get_config_input_custom_cars(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
+def get_config_input_custom_cars(
+    user_cfg: Dict[str, dict], nodata_left, nodata_right
+) -> Dict[str, dict]:
     """
     Get the input configuration
 
@@ -512,9 +518,13 @@ def get_config_input_custom_cars(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
         if "nodata_left" in user_cfg["input"]:
             cfg["input"]["nodata_left"] = user_cfg["input"]["nodata_left"]
+        else:
+            cfg["input"]["nodata_left"] = nodata_left
 
         if "nodata_right" in user_cfg["input"]:
             cfg["input"]["nodata_right"] = user_cfg["input"]["nodata_right"]
+        else:
+            cfg["input"]["nodata_right"] = nodata_right
 
     return cfg
 
