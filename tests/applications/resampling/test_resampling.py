@@ -423,7 +423,7 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
 
                 data["sensor_image_left"] = {
                     "image": {
-                        "loader": "pivot",
+                        "loader": "pivot_image",
                         "main_file": data["sensor_image_left"]["image"][
                             "main_file"
                         ],
@@ -448,7 +448,7 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
 
                 data["sensor_image_right"] = {
                     "image": {
-                        "loader": "pivot",
+                        "loader": "pivot_image",
                         "main_file": data["sensor_image_right"]["image"][
                             "main_file"
                         ],
