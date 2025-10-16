@@ -64,7 +64,7 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
         # Check consistency between files
         b0_path = overloaded_conf["bands"]["b0"]["path"]
         b0_size = inputs.rasterio_get_size(b0_path)
-        b0_transform = inputs.rasterio_get_size(b0_path)
+        b0_transform = inputs.rasterio_get_transform(b0_path)
         for band in overloaded_conf["bands"]:
             band_path = overloaded_conf["bands"][band]["path"]
             band_id = overloaded_conf["bands"][band]["band"]
@@ -76,7 +76,7 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
                 )
             if band_path != b0_path:
                 band_size = inputs.rasterio_get_size(band_path)
-                band_transform = inputs.rasterio_get_size(band_path)
+                band_transform = inputs.rasterio_get_transform(band_path)
                 if b0_size != band_size:
                     raise RuntimeError(
                         "The files {} and {} do not have the same size"
