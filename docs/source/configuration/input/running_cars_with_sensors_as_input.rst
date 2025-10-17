@@ -76,7 +76,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +----------------+-----------------------+--------+---------------+------------------+----------+
                 | Name           | Description           | Type   | Default value | Available values | Required |
                 +================+=======================+========+===============+==================+==========+
-                | *loader*       | Name of sensor loader | str    | "basic"       | "basic"          | False    |
+                | *loader*       | Name of sensor loader | str    | "basic_image" | "basic_image"    | False    |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
                 | *path*         | File path             | str    |               |                  | True     |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
@@ -90,7 +90,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
                 | Name            | Description                                                                           | Type   | Default value     | Available values | Required |
                 +=================+=======================================================================================+========+===================+==================+==========+
-                | *loader*        | Name of sensor loader                                                                 | str    | "pivot"           | "pivot"          | True     |
+                | *loader*        | Name of sensor loader                                                                 | str    | "pivot_image"     | "pivot_image"    | True     |
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
                 | *bands*         | Dictionary listing for every band of the image, the corresponding file and band index | dict   |                   |                  | True     |
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
