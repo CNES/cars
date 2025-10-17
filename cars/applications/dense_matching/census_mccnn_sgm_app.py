@@ -79,6 +79,7 @@ class CensusMccnnSgm(
         "census_sgm_homogeneous",
         "mccnn_sgm",
         "auto",
+        "custom",
     ],
 ):  # pylint: disable=R0903,disable=R0902,disable=C0302
     """
@@ -169,7 +170,6 @@ class CensusMccnnSgm(
         :rtype: dict
 
         """
-
         # init conf
         if conf is not None:
             overloaded_conf = conf.copy()
@@ -178,9 +178,21 @@ class CensusMccnnSgm(
             overloaded_conf = {}
 
         # Overload conf
+        # check loader
+        loader_conf = conf.get("loader_conf", None)
+        default_method = "auto"
+        if loader_conf is not None:
+            default_method = "custom"
+        loader = conf.get("loader", "pandora")
         overloaded_conf["method"] = conf.get(
-            "method", "auto"
+            "method", default_method
         )  # change it if census_sgm is not default
+        if overloaded_conf["method"] == "auto" and loader_conf is not None:
+            raise RuntimeError(
+                "It's not possible to use auto method with custom "
+                "loader configuration"
+            )
+
         # method called in abstract_dense_matching_app.py
         overloaded_conf["min_epi_tile_size"] = conf.get(
             "min_epi_tile_size", 300
@@ -279,10 +291,6 @@ class CensusMccnnSgm(
 
         overloaded_conf["performance_map_method"] = perf_map_method
 
-        # check loader
-        loader_conf = conf.get("loader_conf", None)
-        loader = conf.get("loader", "pandora")
-
         if overloaded_conf["use_cross_validation"] is True:
             overloaded_conf["use_cross_validation"] = "fast"
 
@@ -347,7 +355,11 @@ class CensusMccnnSgm(
         )
         self.margins = pandora_machine.margins.global_margins
 
-        overloaded_conf["loader_conf"] = self.corr_config
+        if overloaded_conf["method"] != "auto":
+            # not final configuration
+            overloaded_conf["loader_conf"] = self.corr_config
+        else:
+            overloaded_conf["loader_conf"] = None
 
         application_schema = {
             "method": str,
