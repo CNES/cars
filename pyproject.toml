@@ -107,7 +107,7 @@ dev = [
 
 # [docs] mode dependencies
 docs = [
-    "astroid",
+    "astroid<4.0.0",
     "sphinx",
     "sphinx-rtd-theme",
     "sphinx_autoapi",
