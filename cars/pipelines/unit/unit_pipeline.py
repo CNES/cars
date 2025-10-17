@@ -1765,9 +1765,12 @@ class UnitPipeline(PipelineTemplate):
                 # the dense matching app
                 # Because we kept the information regarding the ambiguity,
                 # performance_map calculus..
-                self.used_conf["applications"]["dense_matching"]["loader_conf"][
-                    "pipeline"
-                ] = conf["pipeline"]
+                self.used_conf["applications"]["dense_matching"][
+                    "loader_conf"
+                ] = conf
+                self.used_conf["applications"]["dense_matching"][
+                    "method"
+                ] = "custom"
 
                 # Re initialization of the dense matching application
                 self.dense_matching_app = Application(
