@@ -9,6 +9,9 @@ The output directory, defined in the configuration file, contains at the end of 
 * metadata json file (`metadata.json`) containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
 * logs folder (`logs`) containing CARS log and profiling information
 
+.. note:: 
+    DSMs and point cloud are referenced to the local UTM zone with WGS4 ellipsoid as datum (but you can use another epsg code if you need to {"output": {"epsg": MY_EPSG_CODE}}).
+
 .. tabs::
 
     .. tab:: DSM
@@ -38,6 +41,9 @@ The output directory, defined in the configuration file, contains at the end of 
         The point cloud output product consists of a collection of laz files, each containing a tile of the point cloud.
 
         The point cloud found in the product the highest level point cloud produced by CARS. For exemple, if outlier removal and point cloud denoising are deactivated, the point cloud will correspond to the output of triangulation. If only the first application of outlier removal is activated, this will be the output point cloud.
+
+         .. note::
+               The resolution has no effect on the point cloud. The point cloud contains the positions calculated for each point in epipolar geometry (approximately at full sensor resolution).
 
         The file `point_cloud/index.json` shows the path of every generated file. For example :
 
