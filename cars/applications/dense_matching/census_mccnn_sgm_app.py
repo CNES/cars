@@ -139,6 +139,9 @@ class CensusMccnnSgm(
         self.threshold_disp_range_to_borders = self.used_config[
             "threshold_disp_range_to_borders"
         ]
+        self.filter_incomplete_disparity_range = self.used_config[
+            "filter_incomplete_disparity_range"
+        ]
 
         # init orchestrator
         self.orchestrator = None
@@ -260,6 +263,9 @@ class CensusMccnnSgm(
         overloaded_conf["used_band"] = conf.get("used_band", "b0")
         overloaded_conf["threshold_disp_range_to_borders"] = conf.get(
             "threshold_disp_range_to_borders", False
+        )
+        overloaded_conf["filter_incomplete_disparity_range"] = conf.get(
+            "filter_incomplete_disparity_range", True
         )
 
         # Saving files
@@ -395,6 +401,7 @@ class CensusMccnnSgm(
             "loader": str,
             "confidence_filtering": dict,
             "threshold_disp_range_to_borders": bool,
+            "filter_incomplete_disparity_range": bool,
         }
 
         # Check conf
@@ -1265,6 +1272,9 @@ class CensusMccnnSgm(
                             threshold_disp_range_to_borders=(
                                 self.threshold_disp_range_to_borders
                             ),
+                            filter_incomplete_disparity_range=(
+                                self.filter_incomplete_disparity_range
+                            ),
                         )
 
         else:
@@ -1290,6 +1300,7 @@ def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
     texture_bands=None,
     conf_filtering=None,
     threshold_disp_range_to_borders=False,
+    filter_incomplete_disparity_range=True,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1403,6 +1414,7 @@ def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
         margins_to_keep=margins_to_keep,
         classification_fusion_margin=classification_fusion_margin,
         texture_bands=texture_bands,
+        filter_incomplete_disparity_range=filter_incomplete_disparity_range,
     )
 
     mask = disp_dataset["disp_msk"].values

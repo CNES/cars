@@ -156,6 +156,7 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
     margins_to_keep=0,
     classification_fusion_margin=-1,
     texture_bands=None,
+    filter_incomplete_disparity_range=True,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will compute disparity.
@@ -316,6 +317,7 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
         margins_to_keep=margins_to_keep,
         classification_fusion_margin=classification_fusion_margin,
         texture_bands=texture_bands,
+        filter_incomplete_disparity_range=filter_incomplete_disparity_range,
     )
 
     return disp_dataset

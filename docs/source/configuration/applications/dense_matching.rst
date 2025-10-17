@@ -179,6 +179,12 @@ Compute the disparity map from stereo-rectified pair images
       - see below
       - see below
       - No
+    * - filter_incomplete_disparity_range
+      - Removes pixels whose disparity range is not fully valid pixels
+      - bool
+      -
+      - True
+      - No
 
         
 See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
