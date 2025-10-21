@@ -15,7 +15,5 @@ authors:
     email: valentine.bellet@cnes.fr
     affiliation: CNES
     orcid: 'https://orcid.org/0000-0003-3679-3631'
-identifiers:
-  - type: doi
-    value: 10.5281/zenodo.17406459
-    description: 'CARS (all versions): 10.5281/zenodo.17406459'
+doi: 10.5281/zenodo.17406459
+url: https://github.com/cnes/cars
