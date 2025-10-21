@@ -2581,6 +2581,11 @@ class UnitPipeline(PipelineTemplate):
         """
 
         with rasterio.open(classif_path) as src:
+            nb_bands = src.count
+
+            if nb_bands == 1:
+                return False
+
             classif_multi_bands = src.read()
             bands_names = src.descriptions
             band_dict = {name: i for i, name in enumerate(bands_names)}
@@ -2603,6 +2608,8 @@ class UnitPipeline(PipelineTemplate):
         profile.update(count=1, dtype=classif_mono_band.dtype)
         with rasterio.open(classif_path, "w", **profile) as src:
             src.write(classif_mono_band, 1)
+
+        return True
 
     @cars_profile(name="Preprocess depth maps", interval=0.5)
     def preprocess_depth_maps(self):
