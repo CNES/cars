@@ -266,40 +266,42 @@ def check_classification_parameter(inputs, overloaded_conf):
 
     if inputs[sens_cst.SENSORS] is not None:
         first_key = list(inputs[sens_cst.SENSORS].keys())[0]
-        classif = inputs[sens_cst.SENSORS][first_key][
-            sens_cst.INPUT_CLASSIFICATION
-        ]
-        bands_classif = sorted(set(classif["bands"].keys()))
 
-        if isinstance(classification_formatting, list):
-            overloaded_conf[output_constants.AUXILIARY][
-                output_constants.AUX_CLASSIFICATION
-            ] = {val: str(val) for val in classification_formatting}
+        if "classification" in inputs[sens_cst.SENSORS][first_key]:
+            classif = inputs[sens_cst.SENSORS][first_key][
+                sens_cst.INPUT_CLASSIFICATION
+            ]
+            bands_classif = sorted(set(classif["bands"].keys()))
 
-            for elem in classification_formatting:
-                if not isinstance(elem, int):
-                    raise RuntimeError(
-                        "The image parameter of auxiliary should "
-                        "be a boolean, a string or a list of int"
-                    )
+            if isinstance(classification_formatting, list):
+                overloaded_conf[output_constants.AUXILIARY][
+                    output_constants.AUX_CLASSIFICATION
+                ] = {val: str(val) for val in classification_formatting}
 
-                if elem > len(bands_classif):
-                    raise RuntimeError(
-                        f"If you want to use {elem} as a band num, "
-                        f"you should use a dictionary, not a list"
-                    )
-        elif classification_formatting is True:
-            overloaded_conf[output_constants.AUXILIARY][
-                output_constants.AUX_CLASSIFICATION
-            ] = {val + 1: name for val, name in enumerate(bands_classif)}
-        elif isinstance(classification_formatting, dict):
-            for _, value in classification_formatting.items():
-                if value not in bands_classif:
-                    raise RuntimeError(
-                        f"The band {value} is "
-                        f"not an existing band of "
-                        f"the input classification"
-                    )
+                for elem in classification_formatting:
+                    if not isinstance(elem, int):
+                        raise RuntimeError(
+                            "The image parameter of auxiliary should "
+                            "be a boolean, a string or a list of int"
+                        )
+
+                    if elem > len(bands_classif):
+                        raise RuntimeError(
+                            f"If you want to use {elem} as a band num, "
+                            f"you should use a dictionary, not a list"
+                        )
+            elif classification_formatting is True:
+                overloaded_conf[output_constants.AUXILIARY][
+                    output_constants.AUX_CLASSIFICATION
+                ] = {val + 1: name for val, name in enumerate(bands_classif)}
+            elif isinstance(classification_formatting, dict):
+                for _, value in classification_formatting.items():
+                    if value not in bands_classif:
+                        raise RuntimeError(
+                            f"The band {value} is "
+                            f"not an existing band of "
+                            f"the input classification"
+                        )
 
 
 def check_performance_classes(overloaded_conf):
