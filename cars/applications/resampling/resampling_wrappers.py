@@ -39,7 +39,7 @@ from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
 @cars_profile(name="Get paths and bands", interval=0.5)
-def get_paths_and_bands(sensor_image, required_bands=None):
+def get_paths_and_bands_from_image(sensor_image, required_bands=None):
     """
     Reformat file paths and bands required from each file to ease reading
 
@@ -60,6 +60,17 @@ def get_paths_and_bands(sensor_image, required_bands=None):
             paths[file_path]["band_name"].append(band)
         else:
             paths[file_path] = {"band_id": [band_id], "band_name": [band]}
+    return paths
+
+
+def get_path_and_values_from_classif(sensor_classif):
+    """
+    Reformat file paths and bands required from each file to ease reading
+
+    :param sensor_classif: input configuration of a classif
+    :type sensor_image: dict
+    """
+    paths = {sensor_classif["path"]: {"values": sensor_classif["values"]}}
     return paths
 
 

@@ -818,22 +818,22 @@ class UnitPipeline(PipelineTemplate):
             bands_right = list(
                 inputs_conf["sensors"][key2]["image"]["bands"].keys()
             )
-            bands_classif_left = None
-            bands_classif_right = None
+            values_classif_left = None
+            values_classif_right = None
             if (
                 "classification" in inputs_conf["sensors"][key1]
                 and inputs_conf["sensors"][key1]["classification"] is not None
             ):
-                bands_classif_left = inputs_conf["sensors"][key1][
+                values_classif_left = inputs_conf["sensors"][key1][
                     "classification"
-                ]["bands"].keys()
+                ]["values"]
             if (
                 "classification" in inputs_conf["sensors"][key2]
                 and inputs_conf["sensors"][key2]["classification"] is not None
             ):
-                bands_classif_right = inputs_conf["sensors"][key2][
+                values_classif_right = inputs_conf["sensors"][key2][
                     "classification"
-                ]["bands"].keys()
+                ]["values"]
             self.dense_matching_app.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
@@ -841,8 +841,8 @@ class UnitPipeline(PipelineTemplate):
                     nodata_right,
                     bands_left,
                     bands_right,
-                    bands_classif_left,
-                    bands_classif_right,
+                    values_classif_left,
+                    values_classif_right,
                 )
             )
 

@@ -19,8 +19,8 @@
 # limitations under the License.
 #
 """
-this module contains the constants used in sensor_to_full_resolution
- pipeline.
+This module contains the constants used in sensor_to_full_resolution
+pipeline.
 """
 
 # Sensor input
@@ -45,5 +45,8 @@ INPUT_GEO_MODEL_TYPE = "geomodel_type"
 INPUT_GEO_MODEL_FILTER = "geomodel_filters"
 INPUT_NODATA = "no_data"
 MAIN_FILE = "main_file"
+PATH = "path"
+FILLING = "filling"
+VALUES = "values"
 
 CARS_DEFAULT_ALT = 0  # Default altitude used in cars pipelines

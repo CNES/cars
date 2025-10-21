@@ -95,20 +95,15 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            sens_cst.INPUT_LOADER: "pivot_classif",
-            sens_cst.MAIN_FILE: self.used_config["path"],
-            sens_cst.INPUT_FILLING: self.used_config[sens_cst.INPUT_FILLING],
+            "loader": "pivot_classif",
+            "path": self.used_config["path"],
+            "filling": self.used_config["filling"],
         }
-        pivot_config["bands"] = {}
-        for band_id in range(
-            inputs.rasterio_get_nb_bands(self.used_config["path"])
-        ):
-            band_name = "b" + str(band_id)
-            pivot_config["bands"][band_name] = {
-                "path": self.used_config["path"],
-                "band": band_id,
-            }
-        pivot_config["texture_bands"] = None
+        pivot_config["values"] = inputs.rasterio_get_unique_values(
+            self.used_config["path"]
+        )
+        # Remove value 0 because it corresponds to nodata
+        pivot_config["values"].remove(0)
         pivot_sensor_loader = PivotClassifSensorLoader(
             pivot_config, self.config_dir
         )

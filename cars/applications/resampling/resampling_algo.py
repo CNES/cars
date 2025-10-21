@@ -283,7 +283,16 @@ def resample_image(  # noqa: C901
     nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
     for img in imgs:
         bands = imgs[img]
-        nb_bands = len(bands["band_id"])
+        if "band_id" in bands:
+            nb_bands = len(bands["band_id"])
+        elif "values" in bands:
+            nb_bands = len(bands["values"])
+        else:
+            raise ValueError(
+                "File {} not recognised as an image or classif file".format(
+                    bands
+                )
+            )
         # Initialize outputs of the entire tile
         resamp = np.empty(
             (nb_bands, region[3] - region[1], region[2] - region[0]),
@@ -328,7 +337,16 @@ def resample_image(  # noqa: C901
                     xstart += xsize
 
                 ystart += ysize
-        band_names += bands["band_name"]
+        if "band_id" in bands:
+            band_names += bands["band_name"]
+        elif "values" in bands:
+            band_names += list(map(str, bands["values"]))
+        else:
+            raise ValueError(
+                "File {} not recognised as an image or classif file".format(
+                    bands
+                )
+            )
         data_types += [inputs.rasterio_get_image_type(img)] * nb_bands
         resampled_images_list.append(resamp)
         resampled_masks_list.append(msk)
@@ -447,7 +465,7 @@ def oversampling_func(  # pylint: disable=too-many-positional-arguments
     img_window = img_window.round_offsets()
     img_window = img_window.round_lengths()
 
-    # Compute offset
+    # compute offset
     res_x = float(abs(transform[0]))
     res_y = float(abs(transform[4]))
     tile_bounds = list(bounds(img_window, transform))
@@ -456,13 +474,24 @@ def oversampling_func(  # pylint: disable=too-many-positional-arguments
     y_offset = min(tile_bounds[1], tile_bounds[3])
 
     if in_sensor:
-        # Get sensor data
-        img_as_array = img_reader.read(bands["band_id"], window=img_window)
+        # get sensor data
+        if "band_id" in bands:
+            # image
+            img_as_array = img_reader.read(bands["band_id"], window=img_window)
+        elif "values" in bands:
+            # classification
+            img_as_array = img_reader.read([1], window=img_window)
+        else:
+            raise ValueError(
+                "File {} not recognised as an image or classif file".format(
+                    bands
+                )
+            )
         # get the nodata mask before blurring
         img_nan_mask = img_as_array == nodata
 
         # blur the image to avoid moiré artefacts if downsampling
-        if resolution != 1:
+        if resolution != 1 and interpolator_img == "bicubic":
             fourier = fftshift(fft2(img_as_array))
 
             _, rows, cols = img_as_array.shape
@@ -495,6 +524,7 @@ def oversampling_func(  # pylint: disable=too-many-positional-arguments
             interpolator=interpolator_img,
             nodata=0,
         ).astype(np.float32)
+
         if interpolator_img == "bicubic" and band_coords == cst.BAND_CLASSIF:
             block_resamp = np.where(
                 block_resamp >= 0.5,
@@ -509,6 +539,20 @@ def oversampling_func(  # pylint: disable=too-many-positional-arguments
             ext_region[1] : ext_region[3] - 1,
             ext_region[0] : ext_region[2] - 1,
         ]
+
+        if "values" in bands:
+            # Extract binary bands from mono-band classification
+            multiband_block_resamp = np.zeros(
+                (
+                    nb_bands,
+                    block_region[3] - block_region[1],
+                    block_region[2] - block_region[0],
+                )
+            )
+            for band_id, value in enumerate(bands["values"]):
+                multiband_block_resamp[band_id] = block_resamp == value
+            block_resamp = multiband_block_resamp
+
     else:
         block_resamp = np.zeros(
             (

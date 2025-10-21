@@ -170,6 +170,18 @@ def rasterio_get_nb_bands(raster_file: str) -> int:
         return descriptor.count
 
 
+def rasterio_get_unique_values(raster_file: str) -> int:
+    """
+    Get the number of bands in an image file
+
+    :param raster_file: Image file
+    :return: The number of bands
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        array = descriptor.read()
+        return list(np.unique(array))
+
+
 def rasterio_get_tags(raster_file: str) -> dict:
     """
     Get the tags in an image file
@@ -538,7 +550,7 @@ def get_descriptions_bands(sensor) -> Dict:
         with rio.open(sensor, "r") as descriptor:
             return descriptor.descriptions
     elif isinstance(sensor, dict):
-        if "bands" in sensor:
-            return list(sensor["bands"].keys())
+        if "values" in sensor:
+            return sensor["values"]
         raise RuntimeError("Sensor {} cannot be read".format(sensor))
     raise TypeError("Sensor {} is not str or dict".format(sensor))
