@@ -191,7 +191,7 @@ def check_output_parameters(  # noqa: C901 : too complex
     auxiliary_schema = {
         output_constants.AUX_IMAGE: Or(bool, str, list),
         output_constants.AUX_WEIGHTS: bool,
-        output_constants.AUX_CLASSIFICATION: bool,
+        output_constants.AUX_CLASSIFICATION: Or(bool, dict, list),
         output_constants.AUX_PERFORMANCE_MAP: Or(bool, list),
         output_constants.AUX_CONTRIBUTING_PAIR: bool,
         output_constants.AUX_FILLING: bool,
@@ -201,7 +201,35 @@ def check_output_parameters(  # noqa: C901 : too complex
         output_constants.AUX_DEM_MEDIAN: bool,
     }
 
+    # Check and overload classification parameter
+    check_classification_parameter(inputs, overloaded_conf)
+
     # Check and overload image parameter
+    check_texture_bands(inputs, overloaded_conf)
+
+    # Check and overload performance_map parameter
+    check_performance_classes(overloaded_conf)
+
+    checker_auxiliary = Checker(auxiliary_schema)
+    checker_auxiliary.validate(overloaded_conf[output_constants.AUXILIARY])
+
+    if "epsg" in overloaded_conf and overloaded_conf["epsg"]:
+        spatial_ref = CRS.from_epsg(overloaded_conf["epsg"])
+        if spatial_ref.is_geographic:
+            if overloaded_conf[output_constants.RESOLUTION] > 10e-3:
+                logging.warning(
+                    "The resolution of the "
+                    + "point_cloud_rasterization should be "
+                    + "fixed according to the epsg"
+                )
+
+    return overloaded_conf, overloaded_scaling_coeff
+
+
+def check_texture_bands(inputs, overloaded_conf):
+    """
+    Check and overload texture bands
+    """
     texture_bands = overloaded_conf[output_constants.AUXILIARY][
         output_constants.AUX_IMAGE
     ]
@@ -227,7 +255,57 @@ def check_output_parameters(  # noqa: C901 : too complex
                 output_constants.AUX_IMAGE
             ] = sorted(bands)
 
-    # Check and overload performance_map parameter
+
+def check_classification_parameter(inputs, overloaded_conf):
+    """
+    Check and overload classification parameter
+    """
+    classification_formatting = overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_CLASSIFICATION
+    ]
+
+    if inputs[sens_cst.SENSORS] is not None:
+        first_key = list(inputs[sens_cst.SENSORS].keys())[0]
+        classif = inputs[sens_cst.SENSORS][first_key][
+            sens_cst.INPUT_CLASSIFICATION
+        ]
+        bands_classif = sorted(set(classif["bands"].keys()))
+
+        if isinstance(classification_formatting, list):
+            overloaded_conf[output_constants.AUXILIARY][
+                output_constants.AUX_CLASSIFICATION
+            ] = {val: str(val) for val in classification_formatting}
+
+            for elem in classification_formatting:
+                if not isinstance(elem, int):
+                    raise RuntimeError(
+                        "The image parameter of auxiliary should "
+                        "be a boolean, a string or a list of int"
+                    )
+
+                if elem > len(bands_classif):
+                    raise RuntimeError(
+                        f"If you want to use {elem} as a band num, "
+                        f"you should use a dictionary, not a list"
+                    )
+        elif classification_formatting is True:
+            overloaded_conf[output_constants.AUXILIARY][
+                output_constants.AUX_CLASSIFICATION
+            ] = {val + 1: name for val, name in enumerate(bands_classif)}
+        elif isinstance(classification_formatting, dict):
+            for _, value in classification_formatting.items():
+                if value not in bands_classif:
+                    raise RuntimeError(
+                        f"The band {value} is "
+                        f"not an existing band of "
+                        f"the input classification"
+                    )
+
+
+def check_performance_classes(overloaded_conf):
+    """
+    Check performance classes
+    """
     performance_map_classes = overloaded_conf[output_constants.AUXILIARY][
         output_constants.AUX_PERFORMANCE_MAP
     ]
@@ -237,8 +315,22 @@ def check_output_parameters(  # noqa: C901 : too complex
             if not isinstance(elem, (int, float)):
                 raise RuntimeError(
                     "The performance_map parameter of auxiliary should"
-                    "be a boolean or a list of string"
+                    "be a boolean or a list of float/int"
                 )
+        if len(performance_map_classes) < 2:
+            raise RuntimeError("Not enough step for performance_map_classes")
+        if performance_map_classes:
+            previous_step = -1
+            for step in performance_map_classes:
+                if step < 0:
+                    raise RuntimeError(
+                        "All step in performance_map_classes must be >=0"
+                    )
+                if step <= previous_step:
+                    raise RuntimeError(
+                        "performance_map_classes list must be ordered."
+                    )
+                previous_step = step
     elif performance_map_classes is True:
         # default classes, in meters:
         default_performance_classes = [
@@ -254,52 +346,6 @@ def check_output_parameters(  # noqa: C901 : too complex
         overloaded_conf[output_constants.AUXILIARY][
             output_constants.AUX_PERFORMANCE_MAP
         ] = default_performance_classes
-
-    if performance_map_classes:
-        check_performance_classes(
-            overloaded_conf[output_constants.AUXILIARY][
-                output_constants.AUX_PERFORMANCE_MAP
-            ]
-        )
-
-    checker_auxiliary = Checker(auxiliary_schema)
-    checker_auxiliary.validate(overloaded_conf[output_constants.AUXILIARY])
-
-    if "epsg" in overloaded_conf and overloaded_conf["epsg"]:
-        spatial_ref = CRS.from_epsg(overloaded_conf["epsg"])
-        if spatial_ref.is_geographic:
-            if overloaded_conf[output_constants.RESOLUTION] > 10e-3:
-                logging.warning(
-                    "The resolution of the "
-                    + "point_cloud_rasterization should be "
-                    + "fixed according to the epsg"
-                )
-
-    return overloaded_conf, overloaded_scaling_coeff
-
-
-def check_performance_classes(performance_map_classes):
-    """
-    Check performance classes
-
-    :param performance_map_classes: list for step defining border of class
-    :type performance_map_classes: list or None
-    """
-    if not isinstance(performance_map_classes, bool):
-        if len(performance_map_classes) < 2:
-            raise RuntimeError("Not enough step for performance_map_classes")
-        if performance_map_classes:
-            previous_step = -1
-            for step in performance_map_classes:
-                if step < 0:
-                    raise RuntimeError(
-                        "All step in performance_map_classes must be >=0"
-                    )
-                if step <= previous_step:
-                    raise RuntimeError(
-                        "performance_map_classes list must be ordered."
-                    )
-                previous_step = step
 
 
 def intialize_product_index(orchestrator, product_levels, input_pairs):

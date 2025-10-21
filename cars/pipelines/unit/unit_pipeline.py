@@ -36,6 +36,7 @@ import os
 from collections import OrderedDict
 
 import numpy as np
+import rasterio
 from pyproj import CRS
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
@@ -2563,7 +2564,45 @@ class UnitPipeline(PipelineTemplate):
         )
         self.cars_orchestrator.breakpoint()
 
+        if classif_file_name is not None:
+            self.merge_classif_bands(
+                classif_file_name,
+                self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_CLASSIFICATION
+                ],
+            )
+
         return self.quit_on_app("auxiliary_filling")
+
+    @cars_profile(name="merge classif bands", interval=0.5)
+    def merge_classif_bands(self, classif_path, aux_classif):
+        """
+        Merge classif bands to get mono band in output
+        """
+
+        with rasterio.open(classif_path) as src:
+            classif_multi_bands = src.read()
+            bands_names = src.descriptions
+            band_dict = {name: i for i, name in enumerate(bands_names)}
+            classif_mono_band = np.zeros(classif_multi_bands.shape[1:3])
+            profile = src.profile
+
+            for key, value in aux_classif.items():
+                if isinstance(value, str):
+                    num_band = band_dict[value]
+                    mask_1 = classif_mono_band == 0
+                    mask_2 = classif_multi_bands[num_band, :, :] == 1
+                    classif_mono_band[mask_1 & mask_2] = key
+                elif isinstance(value, list):
+                    for elem in value:
+                        num_band = band_dict[elem]
+                        mask_1 = classif_mono_band == 0
+                        mask_2 = classif_multi_bands[num_band, :, :] == 1
+                        classif_mono_band[mask_1 & mask_2] = key
+
+        profile.update(count=1, dtype=classif_mono_band.dtype)
+        with rasterio.open(classif_path, "w", **profile) as src:
+            src.write(classif_mono_band, 1)
 
     @cars_profile(name="Preprocess depth maps", interval=0.5)
     def preprocess_depth_maps(self):
