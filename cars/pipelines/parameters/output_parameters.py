@@ -267,7 +267,11 @@ def check_classification_parameter(inputs, overloaded_conf):
     if inputs[sens_cst.SENSORS] is not None:
         first_key = list(inputs[sens_cst.SENSORS].keys())[0]
 
-        if "classification" in inputs[sens_cst.SENSORS][first_key]:
+        if (
+            "classification" in inputs[sens_cst.SENSORS][first_key]
+            and inputs[sens_cst.SENSORS][first_key]["classification"]
+            is not None
+        ):
             classif = inputs[sens_cst.SENSORS][first_key][
                 sens_cst.INPUT_CLASSIFICATION
             ]
