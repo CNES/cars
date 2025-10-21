@@ -18,6 +18,7 @@
 [![Github Action](https://github.com/CNES/cars/actions/workflows/cars-ci.yml/badge.svg?branch=master)](https://github.com/CNES/cars/actions)
 [![pypi](https://badge.fury.io/py/cars.svg)](https://pypi.org/project/cars/)
 [![Docker pulls](https://img.shields.io/badge/dynamic/json?formatter=metric&color=blue&label=Docker%20pull&query=%24.pull_count&url=https://hub.docker.com/v2/repositories/cnes/cars)](https://hub.docker.com/r/cnes/cars)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17406459.svg)](https://doi.org/10.5281/zenodo.17406459)
 
 <p>
   <a href="#overview">Overview</a> •
