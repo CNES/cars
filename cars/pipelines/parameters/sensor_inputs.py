@@ -178,7 +178,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             sensor_image[sens_cst.INPUT_MSK],
             sensor_image[sens_cst.INPUT_CLASSIFICATION],
         )
-        # check band nbits of msk and classification
+        # check band nbits of msk
         check_nbits(
             sensor_image[sens_cst.INPUT_MSK],
         )
@@ -676,40 +676,43 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
     """
     classif1 = sensors[key1][sensor_type]
     classif2 = sensors[key2][sensor_type]
-    values1 = classif1[sens_cst.VALUES]
-    values2 = classif2[sens_cst.VALUES]
-    all_values = list(set(values1) | set(values2))
-    classif1[sens_cst.VALUES] = all_values
-    classif2[sens_cst.VALUES] = all_values
-    filling1 = sensors[key1][sensor_type][sens_cst.FILLING]
-    filling2 = sensors[key2][sensor_type][sens_cst.FILLING]
-    if filling1 != filling2:
-        raise ValueError(
-            "Filling rules of {} are not the same as filling "
-            "rules of {} but they belong to the same pair".format(
-                classif1[sens_cst.PATH],
-                classif2[sens_cst.PATH],
-            )
-        )
-    filling = filling1
-    filling_methods_to_delete = []
-    for filling_method in filling:
-        value = filling[filling_method]
-        if value not in all_values:
-            logging.warning(
-                "Value {} on which filling {} must be applied does "
-                "not exist on classifications {} or {}".format(
-                    value,
-                    filling_method,
+    if classif1 is not None and classif2 is not None:
+        values1 = classif1[sens_cst.VALUES]
+        values2 = classif2[sens_cst.VALUES]
+        all_values = list(set(values1) | set(values2))
+        classif1[sens_cst.VALUES] = all_values
+        classif2[sens_cst.VALUES] = all_values
+        filling1 = sensors[key1][sensor_type][sens_cst.FILLING]
+        filling2 = sensors[key2][sensor_type][sens_cst.FILLING]
+        if filling1 != filling2:
+            raise ValueError(
+                "Filling rules of {} are not the same as filling "
+                "rules of {} but they belong to the same pair".format(
                     classif1[sens_cst.PATH],
                     classif2[sens_cst.PATH],
                 )
             )
-            logging.warning("Filling {} is deactivated".format(filling_method))
-            filling_methods_to_delete.append(filling_method)
-    for filling_method in filling_methods_to_delete:
-        del filling1[filling_method]
-        del filling2[filling_method]
+        filling = filling1
+        filling_methods_to_delete = []
+        for filling_method in filling:
+            value = filling[filling_method]
+            if value not in all_values:
+                logging.warning(
+                    "Value {} on which filling {} must be applied does "
+                    "not exist on classifications {} or {}".format(
+                        value,
+                        filling_method,
+                        classif1[sens_cst.PATH],
+                        classif2[sens_cst.PATH],
+                    )
+                )
+                logging.warning(
+                    "Filling {} is deactivated".format(filling_method)
+                )
+                filling_methods_to_delete.append(filling_method)
+        for filling_method in filling_methods_to_delete:
+            del filling1[filling_method]
+            del filling2[filling_method]
 
 
 def check_all_nbits_equal_one(nbits):

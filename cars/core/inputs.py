@@ -179,7 +179,7 @@ def rasterio_get_unique_values(raster_file: str) -> int:
     """
     with rio.open(raster_file, "r") as descriptor:
         array = descriptor.read()
-        return list(np.unique(array))
+        return list(map(int, np.unique(array)))
 
 
 def rasterio_get_tags(raster_file: str) -> dict:
@@ -551,6 +551,6 @@ def get_descriptions_bands(sensor) -> Dict:
             return descriptor.descriptions
     elif isinstance(sensor, dict):
         if "values" in sensor:
-            return sensor["values"]
+            return list(map(str, sensor["values"]))
         raise RuntimeError("Sensor {} cannot be read".format(sensor))
     raise TypeError("Sensor {} is not str or dict".format(sensor))

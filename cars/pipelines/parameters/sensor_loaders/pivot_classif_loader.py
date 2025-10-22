@@ -26,6 +26,7 @@ import logging
 
 from json_checker import Checker
 
+from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
@@ -79,6 +80,24 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
                         overloaded_conf["path"],
                     )
                 )
+        # Check dtype and number of bands
+        classif_file = overloaded_conf["path"]
+        classif_dtype = inputs.rasterio_get_dtype(classif_file)
+        if classif_dtype != "uint8":
+            raise TypeError(
+                "Classification file {} has type {} which is not supported "
+                "for classification : type must be uint8".format(
+                    classif_file, classif_dtype
+                )
+            )
+        classif_nb_bands = inputs.rasterio_get_nb_bands(classif_file)
+        if classif_nb_bands != 1:
+            raise TypeError(
+                "Classification file {} has {} bands but only mono-band "
+                "classification is allowed".format(
+                    classif_file, classif_nb_bands
+                )
+            )
 
         sensor_schema = {
             "loader": str,
