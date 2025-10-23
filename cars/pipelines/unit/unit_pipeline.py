@@ -827,6 +827,7 @@ class UnitPipeline(PipelineTemplate):
                 values_classif_left = inputs_conf["sensors"][key1][
                     "classification"
                 ]["values"]
+                values_classif_left = list(map(str, values_classif_left))
             if (
                 "classification" in inputs_conf["sensors"][key2]
                 and inputs_conf["sensors"][key2]["classification"] is not None
@@ -834,6 +835,7 @@ class UnitPipeline(PipelineTemplate):
                 values_classif_right = inputs_conf["sensors"][key2][
                     "classification"
                 ]["values"]
+                values_classif_right = list(map(str, values_classif_right))
             self.dense_matching_app.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
