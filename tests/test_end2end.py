@@ -373,7 +373,7 @@ def test_end2end_dsm_fusion():
         with check:
             assert inputs.get_descriptions_bands(
                 os.path.join(out_dir, "dsm", "classification.tif")
-            ) == ("b0", "b1", "b2")
+            ) == ("3", "5")
         with check:
             assert inputs.get_descriptions_bands(
                 os.path.join(out_dir, "dsm", "contributing_pair.tif")
@@ -3142,7 +3142,7 @@ def test_end2end_ventoux_with_classif():
                             },
                             "geometric_prior": {
                                 "source": "classif",
-                                "classes": ["b0"],
+                                "classes": ["3"],
                             },
                         },
                         "disparity": {
@@ -4631,7 +4631,7 @@ def test_end2end_disparity_filling_with_zeros():
                 "dense_match_filling": {
                     "method": "zero_padding",
                     "save_intermediate_data": True,
-                    "classification": ["b0"],
+                    "classification": ["1"],
                 },
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
