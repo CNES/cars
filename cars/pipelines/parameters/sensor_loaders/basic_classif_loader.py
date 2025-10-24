@@ -69,12 +69,8 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
                 conf["path"], self.config_dir
             )
             overloaded_conf["path"] = image_path
-            overloaded_conf[sens_cst.INPUT_LOADER] = conf.get(
-                sens_cst.INPUT_LOADER, "basic"
-            )
-            overloaded_conf[sens_cst.INPUT_FILLING] = conf.get(
-                sens_cst.INPUT_FILLING, default_filling
-            )
+            overloaded_conf["loader"] = conf.get("loader", "basic_classif")
+            overloaded_conf["filling"] = conf.get("filling", default_filling)
         else:
             raise TypeError(f"Input {conf} is not a string ot dict")
 

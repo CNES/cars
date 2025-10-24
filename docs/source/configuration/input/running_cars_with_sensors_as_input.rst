@@ -76,11 +76,11 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +----------------+-----------------------+--------+---------------+------------------+----------+
                 | Name           | Description           | Type   | Default value | Available values | Required |
                 +================+=======================+========+===============+==================+==========+
-                | *loader*       | Name of sensor loader | str    | "basic_image" | "basic_image"    | False    |
+                | *loader*       | Name of sensor loader | str    | "basic_image" | "basic_image"    | No       |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
-                | *path*         | File path             | str    |               |                  | True     |
+                | *path*         | File path             | str    |               |                  | Yes      |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
-                | *no_data*      | No data value of file | int    | 0             |                  | False    |
+                | *no_data*      | No data value of file | int    | 0             |                  | No       |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
     
                 **Pivot loader**
@@ -90,11 +90,11 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
                 | Name            | Description                                                                           | Type   | Default value     | Available values | Required |
                 +=================+=======================================================================================+========+===================+==================+==========+
-                | *loader*        | Name of sensor loader                                                                 | str    | "pivot_image"     | "pivot_image"    | True     |
+                | *loader*        | Name of sensor loader                                                                 | str    | "basic_image"     | "pivot_image"    | Yes      |
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
-                | *bands*         | Dictionary listing for every band of the image, the corresponding file and band index | dict   |                   |                  | True     |
+                | *bands*         | Dictionary listing for every band of the image, the corresponding file and band index | dict   |                   |                  | Yes      |
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
-                | *no_data*       | No data value of file                                                                 | int    | 0                 |                  | False    |
+                | *no_data*       | No data value of file                                                                 | int    | 0                 |                  | No       |
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
 
                 The `bands` dictionary have keys which correspond to name of bands. The name of bands is imposed by CARS : if the image has n bands, the name of the bands must be ["b0", "b1", ..., "b{n-1}"].
@@ -119,9 +119,9 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +----------------+-----------------------+--------+---------------+------------------+----------+
                 | Name           | Description           | Type   | Default value | Available values | Required |
                 +================+=======================+========+===============+==================+==========+
-                | *path*         | File path             | str    |               |                  | True     |
+                | *path*         | File path             | str    |               |                  | Yes      |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
-                | *model_type*   | Geomodel type         | str    | RPC           | RPC, GRID        | False    |
+                | *model_type*   | Geomodel type         | str    | RPC           | RPC, GRID        | No       |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
 
 
@@ -139,73 +139,85 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 
                 The mask must be a mono-band binary image. Please, see the section :ref:`convert_image_to_binary_image` to make binary *mask* image with 1 bit per band.
                 
-                As the other parameters, the file path can be given directly or you can use a dictionary to define the value of the mask where pixels are considered invalid.
+                The file path must be given directly as a string parameter.
 
-                +-----------------+-------------------------------------------------------+--------+---------------+------------------+----------+
-                | Name            | Description                                           | Type   | Default value | Available values | Required |
-                +=================+=======================================================+========+===============+==================+==========+
-                | *path*          | File path                                             | str    |               |                  | True     |
-                +-----------------+-------------------------------------------------------+--------+---------------+------------------+----------+
-                | *invalid_value* | Value of the mask for which pixels are not processed  | int    | 1             | 0, 1             | False    |
-                +-----------------+-------------------------------------------------------+--------+---------------+------------------+----------+
-
-                A full configuration example is given below : 
+                A configuration example is given below : 
 
                 .. include-cars-config:: ../../example_configs/configuration/mask_full_config
 
 
             .. tab:: Classification
 
-                The classification parameter is optional. It is mainly used to define areas that has to be filled (particularly water and cloud).
+                The classification parameter is optional. It can be used to define areas that has to be filled (particularly water and cloud).
                 
                 The classification must be a mono-band uint8 image.
                 
-                If the file path is given without other parameters, CARS will automatically identify which filling method is applied for each value of the classification following this table :
+                If the file path is given without other parameters, CARS will not perform any filling.
 
-                +-----------------+----------------------------+---------------------------+
-                | Value           | Class                      | Filling method            |
-                +=================+============================+===========================+
-                | 0               | Undefined                  | no_editing                |
-                +-----------------+----------------------------+---------------------------+
-                | 1               | Sea                        | fill_with_geoid           |
-                +-----------------+----------------------------+---------------------------+
-                | 2               | Lake                       | interpolate_from_borders  |
-                +-----------------+----------------------------+---------------------------+
-                | 3               | River                      | fill_with_endogenous_dtm  |
-                +-----------------+----------------------------+---------------------------+
-                | 4               | Cloud                      | fill_with_exogenous_dtm   |
-                +-----------------+----------------------------+---------------------------+
+                As the image parameter, the classification parameter can use sensor loaders : 
 
-                If you want to change the filling method for each value, you can use the following dictionary for this parameter :
+                **Basic loader**
+
+                If you want to define a filling method for each value, you can use the following dictionary for this parameter :
 
                 +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
                 | Name            | Description                                                        | Type   | Default value            | Available values | Required |
                 +=================+====================================================================+========+==========================+==================+==========+
-                | *path*          | File path                                                          | str    |                          |                  | True     |
+                | *loader*        | Name of sensor loader                                              | str    | "basic_classif"          | "basic_classif"  | No       |
                 +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
-                | *filling*       | Values of the classification corresponding to each filling method  | dict   | Given by the table above |                  | False    |
+                | *path*          | File path                                                          | str    |                          |                  | Yes      |
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+                | *filling*       | Values of the classification corresponding to each filling method  | dict   | Given by the table above |                  | No       |
                 +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
 
-                If you do not want any filling, you can set the parameter `filling` to `none`. Otherwise it ban be filled as follows : 
+                And fill the *filling* parameter as follows : 
 
                 +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
                 | Name                       | Description                                                                     | Type      | Default value            | Required |
                 +============================+=================================================================================+===========+==========================+==========+
-                | *fill_with_geoid*          | Value for which pixels will be filled with geoid (sea)                          | int, list | 1                        | False    |
+                | *fill_with_geoid*          | Value(s) for which pixels will be filled with geoid (sea)                       | int, list | None                     | No       |
                 +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
-                | *interpolate_from_borders* | Value for which pixels will be filled with the value on borders (lakes)         | int, list | 2                        | False    |
+                | *interpolate_from_borders* | Value(s) for which pixels will be filled with the value on borders (lakes)      | int, list | None                     | No       |
                 +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
-                | *fill_with_endogenous_dtm* | Value for which pixels will be filled with a DTM generated by CARS (rivers)     | int, list | 3                        | False    |
+                | *fill_with_endogenous_dtm* | Value(s) for which pixels will be filled with a DTM generated by CARS (rivers)  | int, list | None                     | No       |
                 +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
-                | *fill_with_exogenous_dtm*  | Value for which pixels will be filled with the DTM given by the user (cloud)    | int, list | 4                        | False    |
+                | *fill_with_exogenous_dtm*  | Value(s) for which pixels will be filled with the DTM given by the user (cloud) | int, list | None                     | No       |
                 +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
 
                 For each filling method, if you fill the parameter with `none` or [], the corresponding method will not be used.
 
                 A full configuration example is given below : 
 
-                .. include-cars-config:: ../../example_configs/configuration/classif_full_config
+                .. include-cars-config:: ../../example_configs/configuration/classif_basic_loader_config
 
+                **SLURP loader**
+
+                The SLURP loader is useful if the classification used comes from `SLURP tool <https://github.com/CNES/slurp>`_
+                The loader automatically fills the *filling* dictionary according to the SLURP convention. It follows this table : 
+
+                +-----------------+----------------------------+---------------------------+
+                | Value           | Class                      | Filling method            |
+                +=================+============================+===========================+
+                | 8               | Sea                        | fill_with_geoid           |
+                +-----------------+----------------------------+---------------------------+
+                | 9               | Lake                       | interpolate_from_borders  |
+                +-----------------+----------------------------+---------------------------+
+                | 10              | River                      | fill_with_endogenous_dtm  |
+                +-----------------+----------------------------+---------------------------+
+                | 6               | Cloud                      | fill_with_exogenous_dtm   |
+                +-----------------+----------------------------+---------------------------+
+
+                To use the SLURP sensor loader, simply add a *loader* parameter with the key "slurp_classif" :
+
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+                | Name            | Description                                                        | Type   | Default value            | Available values | Required |
+                +=================+====================================================================+========+==========================+==================+==========+
+                | *loader*        | Name of sensor loader                                              | str    | "basic_classif"          | "slurp_classif"  | Yes      |
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+                | *path*          | File path                                                          | str    |                          |                  | Yes      |
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+
+                .. include-cars-config:: ../../example_configs/configuration/classif_slurp_loader_config
 
 
     .. tab:: Pairing

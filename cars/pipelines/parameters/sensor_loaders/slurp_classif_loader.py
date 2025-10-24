@@ -22,6 +22,8 @@
 This module contains the ClassifSensorLoader class.
 """
 
+import logging
+
 from json_checker import Checker
 
 from cars.core import inputs
@@ -50,26 +52,25 @@ class SlurpClassifSensorLoader(SensorLoaderTemplate):
         :return: overloaded configuration
         :rtype: dict
         """
-        default_filling = {
+        slurp_filling = {
             "fill_with_geoid": 8,
             "interpolate_from_borders": 9,
             "fill_with_endogenous_dem": 10,
             "fill_with_exogenous_dem": 6,
         }
-        if isinstance(conf, str):
-            overloaded_conf = {}
-            image_path = make_relative_path_absolute(conf, self.config_dir)
-            overloaded_conf["path"] = image_path
-            overloaded_conf["loader"] = "basic_classif"
-            overloaded_conf["filling"] = default_filling
-        elif isinstance(conf, dict):
+        if isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
                 conf["path"], self.config_dir
             )
             overloaded_conf["path"] = image_path
-            overloaded_conf["loader"] = conf.get("loader", "basic")
-            overloaded_conf["filling"] = conf.get("filling", default_filling)
+            if "filling" in conf:
+                logging.warning(
+                    "A filling dictionary has been defined but "
+                    "the slurp_classif loader is selected : filling "
+                    "values will be overriden according to SLURP conventions"
+                )
+            overloaded_conf["filling"] = slurp_filling
         else:
             raise TypeError(f"Input {conf} is not a string ot dict")
 

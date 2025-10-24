@@ -1,4 +1,2 @@
 ---
-mask:
-  path: mask1.tif
-  invalid_value: 1
+mask: mask1.tif
