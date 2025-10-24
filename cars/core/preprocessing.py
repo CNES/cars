@@ -200,8 +200,8 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
         inter_xmax,
         inter_ymax,
     ) = projection.ground_intersection_envelopes(
-        sensor1["main_file"],
-        sensor2["main_file"],
+        sensor1["bands"]["b0"]["path"],
+        sensor2["bands"]["b0"]["path"],
         geomodel1,
         geomodel2,
         geometry_plugin,

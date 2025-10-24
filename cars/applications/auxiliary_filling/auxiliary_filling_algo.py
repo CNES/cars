@@ -212,7 +212,7 @@ def fill_from_one_sensor(  # pylint: disable=too-many-positional-arguments  # no
     """
 
     # Check if the sensor has color or classification
-    reference_sensor_image = sensor["image"]["main_file"]
+    reference_sensor_image = sensor["image"]["bands"]["b0"]["path"]
 
     output_not_interpolated_mask = np.ones(len(altitudes), dtype=bool)
     all_values = np.zeros((number_of_color_bands, len(altitudes)))
@@ -316,7 +316,9 @@ def fill_from_one_sensor(  # pylint: disable=too-many-positional-arguments  # no
         if all(
             band_name in sensor["image"]["bands"] for band_name in texture_bands
         ):
-            with rio.open(sensor["image"]["main_file"]) as sensor_color_image:
+            with rio.open(
+                sensor["image"]["bands"]["b0"]["path"]
+            ) as sensor_color_image:
                 first_row = np.floor(
                     max(
                         np.min(ind_rows_sensor) - texture_interpolator_margin, 0

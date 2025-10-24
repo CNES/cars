@@ -214,7 +214,7 @@ def generate_disp_range_from_dem_wrapper(
 
     # compute reverse matrix
     transform_sensor = inputs.rasterio_get_transform(
-        sensor_image_right["image"]["main_file"], convention="north"
+        sensor_image_right["image"]["bands"]["b0"]["path"], convention="north"
     )
 
     trans_inv_sensor = ~transform_sensor
@@ -286,7 +286,7 @@ def generate_disp_range_from_dem_wrapper(
     )
 
     terrain_bbox = geo_plugin.safe_direct_loc(
-        sensor_image_right["image"]["main_file"],
+        sensor_image_right["image"]["bands"]["b0"]["path"],
         sensor_image_right["geomodel"],
         col_sensor_bbox,
         row_sensor_bbox,
@@ -376,7 +376,7 @@ def generate_disp_range_from_dem_wrapper(
         ind_rows_sensor,
         _,
     ) = geom_plugin_with_dem_and_geoid.safe_inverse_loc(
-        sensor_image_right["image"]["main_file"],
+        sensor_image_right["image"]["bands"]["b0"]["path"],
         sensor_image_right["geomodel"],
         lat_mean,
         lon_mean,

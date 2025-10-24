@@ -376,7 +376,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             )
         else:
             im_type = inputs.rasterio_get_image_type(
-                sensor_image_left[sens_cst.INPUT_IMG]["main_file"]
+                sensor_image_left[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
             )
 
         # update attributes

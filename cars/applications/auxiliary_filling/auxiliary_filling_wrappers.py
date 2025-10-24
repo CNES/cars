@@ -49,7 +49,7 @@ def compute_sensor_bounds(sensor_inputs, geom_plugin, output_crs):
     sensor_bounds = {}
 
     for sensor_name, sensor in sensor_inputs.items():
-        reference_sensor_image = sensor["image"]["main_file"]
+        reference_sensor_image = sensor["image"]["bands"]["b0"]["path"]
         # no data for this sensor, no need to compute its bounds
         if reference_sensor_image is None:
             continue

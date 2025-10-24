@@ -432,8 +432,10 @@ def adapt_path_for_test_dir(data, input_path):
     Adapt path of source for the test dir
     """
     for primary_key in data:
-        image_path = os.path.basename(data[primary_key]["image"]["main_file"])
-        data[primary_key]["image"]["main_file"] = os.path.join(
+        image_path = os.path.basename(
+            data[primary_key]["image"]["bands"]["b0"]["path"]
+        )
+        data[primary_key]["image"]["bands"]["b0"]["path"] = os.path.join(
             input_path, image_path
         )
         geomodel_path = os.path.basename(data[primary_key]["geomodel"]["path"])

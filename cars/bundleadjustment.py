@@ -488,8 +488,13 @@ def new_rpcs_from_matches(  # pylint: disable=too-many-positional-arguments
 
     images = {}
     for key in sensors_keys:
-        images[key] = sensors[key]["image"]["main_file"] = os.path.abspath(
-            os.path.join(config_directory, sensors[key]["image"]["main_file"])
+        images[key] = sensors[key]["image"]["bands"]["b0"]["path"] = (
+            os.path.abspath(
+                os.path.join(
+                    config_directory,
+                    sensors[key]["image"]["bands"]["b0"]["path"],
+                )
+            )
         )
 
     grid_step = step * 25

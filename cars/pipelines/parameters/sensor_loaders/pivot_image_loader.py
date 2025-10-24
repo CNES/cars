@@ -85,9 +85,6 @@ class PivotImageSensorLoader(SensorLoaderTemplate):
                             band_transform,
                         )
                     )
-        overloaded_conf[sens_cst.MAIN_FILE] = overloaded_conf["bands"]["b0"][
-            "path"
-        ]
         overloaded_conf["texture_bands"] = conf.get("texture_bands", None)
         if overloaded_conf["texture_bands"] is not None:
             for texture_band in overloaded_conf["texture_bands"]:
