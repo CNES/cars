@@ -693,10 +693,9 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
                 )
             )
         filling = filling1
-        filling_methods_to_delete = []
         for filling_method in filling:
             value = filling[filling_method]
-            if value not in all_values:
+            if value is not None and value not in all_values:
                 logging.warning(
                     "Value {} on which filling {} must be applied does "
                     "not exist on classifications {} or {}".format(
@@ -709,10 +708,7 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
                 logging.warning(
                     "Filling {} is deactivated".format(filling_method)
                 )
-                filling_methods_to_delete.append(filling_method)
-        for filling_method in filling_methods_to_delete:
-            del filling1[filling_method]
-            del filling2[filling_method]
+                filling[filling_method] = None
 
 
 def check_all_nbits_equal_one(nbits):
