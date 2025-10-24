@@ -417,7 +417,6 @@ def test_input_pivot_image_loader():
             "left": {
                 "image": {
                     "loader": "pivot_image",
-                    "main_file": "left_image.tif",
                     "bands": {
                         "b0": {"path": "left_image.tif", "band": 0},
                         "b1": {"path": "color_image.tif", "band": 0},
@@ -433,7 +432,6 @@ def test_input_pivot_image_loader():
             "right": {
                 "image": {
                     "loader": "pivot_image",
-                    "main_file": "right_image.tif",
                     "bands": {"b0": {"path": "right_image.tif", "band": 0}},
                 },
                 "geomodel": {"path": "right_image.geom"},
@@ -458,7 +456,6 @@ def test_input_pivot_loader_fail_band_not_found():
             "left": {
                 "image": {
                     "loader": "pivot_image",
-                    "main_file": "left_image.tif",
                     "bands": {
                         "b0": {"path": "left_image.tif", "band": 1},
                         "b1": {"path": "color_image.tif", "band": 0},
@@ -474,7 +471,6 @@ def test_input_pivot_loader_fail_band_not_found():
             "right": {
                 "image": {
                     "loader": "pivot_image",
-                    "main_file": "right_image.tif",
                     "bands": {"b0": {"path": "right_image.tif", "band": 0}},
                 },
                 "geomodel": {"path": "right_image.geom"},
@@ -500,7 +496,6 @@ def test_input_pivot_loader_fail_undefined_texture_band():
             "left": {
                 "image": {
                     "loader": "pivot_image",
-                    "main_file": "left_image.tif",
                     "bands": {
                         "b0": {"path": "left_image.tif", "band": 1},
                         "b1": {"path": "color_image.tif", "band": 0},
@@ -516,7 +511,6 @@ def test_input_pivot_loader_fail_undefined_texture_band():
             "right": {
                 "image": {
                     "loader": "pivot_image",
-                    "main_file": "right_image.tif",
                     "bands": {"b0": {"path": "right_image.tif", "band": 0}},
                 },
                 "geomodel": {"path": "right_image.geom"},

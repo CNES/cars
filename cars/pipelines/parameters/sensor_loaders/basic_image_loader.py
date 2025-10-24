@@ -89,8 +89,7 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            sens_cst.INPUT_LOADER: "pivot_image",
-            sens_cst.MAIN_FILE: self.used_config["path"],
+            "loader": "pivot_image",
         }
         pivot_config["bands"] = {}
         for band_id in range(

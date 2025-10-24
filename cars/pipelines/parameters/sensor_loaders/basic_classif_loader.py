@@ -95,10 +95,10 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
             "path": self.used_config["path"],
             "filling": self.used_config["filling"],
         }
-        pivot_config["values"] = inputs.rasterio_get_unique_values(
+        pivot_config["values"] = inputs.rasterio_get_classif_values(
             self.used_config["path"]
         )
-        # Remove value 0 because it corresponds to nodata
+        # Remove value 0 because it corresponds to unclassified data
         pivot_config["values"].remove(0)
         pivot_sensor_loader = PivotClassifSensorLoader(
             pivot_config, self.config_dir

@@ -90,14 +90,14 @@ def get_sensors_bounds(sensor_image_left, sensor_image_right):
 
     left_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE],
+            sensor_image_left[sens_cst.INPUT_IMG]["bands"]["b0"]["path"],
             apply_resolution_sign=True,
         )
     )
 
     right_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_right[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE],
+            sensor_image_right[sens_cst.INPUT_IMG]["bands"]["b0"]["path"],
             apply_resolution_sign=True,
         )
     )

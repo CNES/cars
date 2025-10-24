@@ -373,7 +373,7 @@ def test_end2end_dsm_fusion():
         with check:
             assert inputs.get_descriptions_bands(
                 os.path.join(out_dir, "dsm", "classification.tif")
-            ) == ("3", "5")
+            ) == ("1", "2", "3", "4", "5")
         with check:
             assert inputs.get_descriptions_bands(
                 os.path.join(out_dir, "dsm", "contributing_pair.tif")

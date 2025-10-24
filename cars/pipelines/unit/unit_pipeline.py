@@ -853,8 +853,8 @@ class UnitPipeline(PipelineTemplate):
         # with a small step
         # For the higher ones, a step at 30 should be better
         first_image_path = next(iter(inputs_conf["sensors"].values()))["image"][
-            "main_file"
-        ]
+            "bands"
+        ]["b0"]["path"]
         first_image_size = rasterio_get_size(first_image_path)
         size_low_res_img_row = first_image_size[0] // epipolar_resolution
         size_low_res_img_col = first_image_size[1] // epipolar_resolution
@@ -2457,11 +2457,11 @@ class UnitPipeline(PipelineTemplate):
                     )
 
                     inter_poly, _ = projection.ground_intersection_envelopes(
-                        sensor_image_left[sens_cst.INPUT_IMG][
-                            sens_cst.MAIN_FILE
+                        sensor_image_left[sens_cst.INPUT_IMG]["bands"]["b0"][
+                            "path"
                         ],
-                        sensor_image_right[sens_cst.INPUT_IMG][
-                            sens_cst.MAIN_FILE
+                        sensor_image_right[sens_cst.INPUT_IMG]["bands"]["b0"][
+                            "path"
                         ],
                         sensor_image_left[sens_cst.INPUT_GEO_MODEL],
                         sensor_image_right[sens_cst.INPUT_GEO_MODEL],

@@ -170,7 +170,7 @@ def rasterio_get_nb_bands(raster_file: str) -> int:
         return descriptor.count
 
 
-def rasterio_get_unique_values(raster_file: str) -> int:
+def rasterio_get_classif_values(raster_file: str) -> int:
     """
     Get the number of bands in an image file
 
@@ -178,8 +178,20 @@ def rasterio_get_unique_values(raster_file: str) -> int:
     :return: The number of bands
     """
     with rio.open(raster_file, "r") as descriptor:
+        max_value = int(descriptor.stats()[0].max)
+        if max_value <= 10:
+            logging.info("Max value of classif is {}")
+            values = list(range(max_value + 1))
+            logging.info("Classes are {}".format(values))
+            return values
+        logging.warning(
+            "Input classif has classes over 10"
+            "Classification file will be read to determine exact values"
+        )
         array = descriptor.read()
-        return list(map(int, np.unique(array)))
+        values = list(map(int, np.unique(array)))
+        logging.info("Classes are {}".format(values))
+        return values
 
 
 def rasterio_get_tags(raster_file: str) -> dict:

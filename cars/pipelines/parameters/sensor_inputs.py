@@ -122,7 +122,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_IMG
         ] = image_as_pivot_format
-        image_path = image_as_pivot_format[sens_cst.MAIN_FILE]
+        image_path = image_as_pivot_format["bands"]["b0"]["path"]
 
         geomodel = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             "geomodel",
@@ -253,7 +253,7 @@ def get_sensor_resolution(
     :return: average resolution in meters/pixel along x and y
     :rtype: float
     """
-    width, height = inputs.rasterio_get_size(sensor_path[sens_cst.MAIN_FILE])
+    width, height = inputs.rasterio_get_size(sensor_path["bands"]["b0"]["path"])
 
     upper_left = (0.5, 0.5)
     upper_right = (width - 0.5, 0.5)
@@ -261,19 +261,19 @@ def get_sensor_resolution(
 
     # get geodetic coordinates
     lat_ul, lon_ul, _ = geom_plugin.direct_loc(
-        sensor_path[sens_cst.MAIN_FILE],
+        sensor_path["bands"]["b0"]["path"],
         geomodel,
         np.array([upper_left[0]]),
         np.array([upper_left[1]]),
     )
     lat_ur, lon_ur, _ = geom_plugin.direct_loc(
-        sensor_path[sens_cst.MAIN_FILE],
+        sensor_path["bands"]["b0"]["path"],
         geomodel,
         np.array([upper_right[0]]),
         np.array([upper_right[1]]),
     )
     lat_bl, lon_bl, _ = geom_plugin.direct_loc(
-        sensor_path[sens_cst.MAIN_FILE],
+        sensor_path["bands"]["b0"]["path"],
         geomodel,
         np.array([bottom_left[0]]),
         np.array([bottom_left[1]]),
@@ -596,7 +596,7 @@ def check_input_size(image, mask, classif):
     :param classif: classif path
     :type classif: str
     """
-    image = image[sens_cst.MAIN_FILE]
+    image = image["bands"]["b0"]["path"]
     if classif is not None:
         classif = classif[sens_cst.PATH]
 
@@ -648,10 +648,10 @@ def compare_image_type(sensors, sensor_type, key1, key2):
     :type key2: str
     """
     dtype1 = inputs.rasterio_get_image_type(
-        sensors[key1][sensor_type][sens_cst.MAIN_FILE]
+        sensors[key1][sensor_type]["bands"]["b0"]["path"]
     )
     dtype2 = inputs.rasterio_get_image_type(
-        sensors[key2][sensor_type][sens_cst.MAIN_FILE]
+        sensors[key2][sensor_type]["bands"]["b0"]["path"]
     )
     if dtype1 != dtype2:
         raise RuntimeError(
@@ -695,7 +695,9 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
         filling = filling1
         for filling_method in filling:
             filling_values = filling[filling_method]
-            if not all(isinstance(val, int) for val in filling_values):
+            if filling_values is not None and not all(
+                isinstance(val, int) for val in filling_values
+            ):
                 raise TypeError(
                     "Not all values defined for "
                     "filling {} are int : {}".format(

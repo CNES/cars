@@ -1,7 +1,12 @@
 {
   "sensor_image_left": {
     "image": {
-      "main_file": "/cars/tests/data/input/test_application/img1.tif"
+        "bands": {
+            "b0": {
+                "path": "/cars/tests/data/input/test_application/img1.tif",
+                "band": 0
+            }
+        }
     },
     "geomodel": {
       "path": "/cars/tests/data/input/test_application/img1.geom"
@@ -9,7 +14,12 @@
   },
   "sensor_image_right": {
     "image": {
-      "main_file": "/cars/tests/data/input/test_application/img2.tif"
+        "bands": {
+            "b0": {
+                "path": "/cars/tests/data/input/test_application/img2.tif",
+                "band": 0
+            }
+        }
     },
     "geomodel": {
       "path": "/cars/tests/data/input/test_application/img2.geom"

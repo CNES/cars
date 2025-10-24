@@ -82,6 +82,10 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +----------------+-----------------------+--------+---------------+------------------+----------+
                 | *no_data*      | No data value of file | int    | 0             |                  | No       |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
+
+                An example is given below : 
+
+                .. include-cars-config:: ../../example_configs/configuration/image_basic_loader_config
     
                 **Pivot loader**
 
@@ -105,7 +109,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 A full configuration example for pivot sensor loader is given below. In this case, multiple files are used for the same image : The file `img1.tif` refers to a panchromatic image 
                 and the file `color1.tif` refers to a RGB (or RGBN) image with the same size and resolution than `img1.tif`
 
-                .. include-cars-config:: ../../example_configs/configuration/image_full_config
+                .. include-cars-config:: ../../example_configs/configuration/image_pivot_loader_config
 
 
             .. tab:: Geomodel
@@ -167,7 +171,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
                 | *path*          | File path                                                          | str    |                          |                  | Yes      |
                 +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
-                | *filling*       | Values of the classification corresponding to each filling method  | dict   | Given by the table above |                  | No       |
+                | *filling*       | Values of the classification corresponding to each filling method  | dict   | Given by the table below |                  | No       |
                 +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
 
                 And fill the *filling* parameter as follows : 
@@ -183,6 +187,10 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
                 | *fill_with_exogenous_dtm*  | Value(s) for which pixels will be filled with the DTM given by the user (cloud) | int, list | None                     | No       |
                 +----------------------------+---------------------------------------------------------------------------------+-----------+--------------------------+----------+
+
+                .. warning::
+
+                    The value 0 cannot be used as a value to fill because pixels labeled 0 in classification are considered as unclassified pixels.
 
                 For each filling method, if you fill the parameter with `none` or [], the corresponding method will not be used.
 
@@ -217,7 +225,33 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 | *path*          | File path                                                          | str    |                          |                  | Yes      |
                 +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
 
+                For example :
+
                 .. include-cars-config:: ../../example_configs/configuration/classif_slurp_loader_config
+
+                **Pivot loader**
+
+                The pivot loader is the full parametrization of the classification. It can be used to optimize the reading of classification file.
+
+                The pivot loader looks like the basic loader but with the *values* parameter added : 
+
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+                | Name            | Description                                                        | Type   | Default value            | Available values | Required |
+                +=================+====================================================================+========+==========================+==================+==========+
+                | *loader*        | Name of sensor loader                                              | str    | "basic_classif"          | "pivot_classif"  | No       |
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+                | *path*          | File path                                                          | str    |                          |                  | Yes      |
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+                | *filling*       | Values of the classification corresponding to each filling method  | dict   | Same as basic loader     |                  | No       |
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+                | *values*        | List of values read in the classification file                     | list   | []                       |                  | Yes      |
+                +-----------------+--------------------------------------------------------------------+--------+--------------------------+------------------+----------+
+
+                With the basic loader, classes are automatically defined from statistics of the input file. But with the pivot loader, the classes must be given in the *values* parameter.
+
+                An example is given below : 
+
+                .. include-cars-config:: ../../example_configs/configuration/classif_pivot_loader_config
 
 
     .. tab:: Pairing
