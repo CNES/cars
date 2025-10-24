@@ -708,7 +708,8 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
                 logging.warning(
                     "Filling {} is deactivated".format(filling_method)
                 )
-                filling[filling_method] = None
+                filling1[filling_method] = None
+                filling2[filling_method] = None
 
 
 def check_all_nbits_equal_one(nbits):
