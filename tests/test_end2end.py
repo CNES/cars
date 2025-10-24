@@ -33,7 +33,6 @@ import math
 import os
 import shutil
 import tempfile
-from shutil import copy2  # noqa: F401 # pylint: disable=unused-import
 
 # Third party imports
 import pyproj
@@ -51,6 +50,9 @@ from cars.pipelines.unit import unit_pipeline as unit
 from .helpers import (
     absolute_data_path,
     assert_same_images,
+)
+from .helpers import cars_copy2 as copy2
+from .helpers import (
     generate_input_json,
     temporary_dir,
 )

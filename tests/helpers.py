@@ -34,6 +34,8 @@ import os
 import tempfile
 
 # Third party imports
+from shutil import copy2
+
 import numpy as np
 import pandas
 import pandora
@@ -46,6 +48,7 @@ from pandora.check_configuration import (
 )
 from pandora.state_machine import PandoraMachine
 from pytest_check import check
+from scipy.ndimage import zoom
 
 from cars.applications.dense_matching.loaders.pandora_loader import (
     check_input_section_custom_cars,
@@ -71,6 +74,78 @@ def cars_path():
     One level down from tests
     """
     return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+
+
+def cars_copy2(in_data, out_data):
+    """
+    Copy raster file from in_data to out_data,
+    adding overviews to out_data
+    """
+
+    with rio.open(in_data, "r+") as src:
+        data = src.read()
+        nodata = src.nodata
+
+        nb_bands = data.shape[0]
+        if nb_bands == 1:
+            selected_data = np.concatenate([data, data, data], axis=0)
+        elif nb_bands == 2:
+            selected_data = np.concatenate([data, data[1:2]], axis=0)
+        else:
+            selected_data = data[:3]
+
+        # Create mask for valid data
+        if nodata is not None:
+            valid_mask = selected_data != nodata
+        else:
+            valid_mask = ~np.isnan(selected_data)
+
+        # Only process valid data for normalization
+        valid_data = selected_data[valid_mask]
+
+        if len(valid_data) > 0:
+            # Normalize only valid data to uint8 range
+            data_min = np.nanmin(valid_data)
+            data_max = np.nanmax(valid_data)
+
+            if data_max > data_min:
+                data_uint8 = np.full_like(selected_data, 0, dtype="uint8")
+                # Normalize valid data
+                normalized = (
+                    (selected_data - data_min) / (data_max - data_min) * 254
+                ).astype("uint8")
+                data_uint8[valid_mask] = normalized[valid_mask]
+                # Set nodata pixels to 255 (valid range for uint8)
+                data_uint8[~valid_mask] = 255
+            else:
+                # All valid pixels have the same value
+                data_uint8 = np.full_like(selected_data, 127, dtype="uint8")
+                data_uint8[~valid_mask] = 255
+        else:
+            # No valid data
+            data_uint8 = np.full_like(selected_data, 255, dtype="uint8")
+
+    # downsample for overview
+    zoom_factor = (1, 0.25, 0.25)
+    data_uint8 = zoom(data_uint8, zoom_factor, order=1)
+
+    # Save as PNG overview
+    base_name = os.path.splitext(out_data)[0]
+    png_path = f"{base_name}_overview.png"
+
+    png_profile = {
+        "driver": "PNG",
+        "height": src.height,
+        "width": src.width,
+        "count": data_uint8.shape[0],
+        "dtype": "uint8",
+    }
+
+    with rio.open(png_path, "w", **png_profile) as png_dst:
+        png_dst.write(data_uint8)
+
+    # Copy file
+    copy2(in_data, out_data)
 
 
 def generate_input_json(
