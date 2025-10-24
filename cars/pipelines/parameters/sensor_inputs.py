@@ -694,12 +694,22 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
             )
         filling = filling1
         for filling_method in filling:
-            value = filling[filling_method]
-            if value is not None and value not in all_values:
+            filling_values = filling[filling_method]
+            if not all(isinstance(val, int) for val in filling_values):
+                raise TypeError(
+                    "Not all values defined for "
+                    "filling {} are int : {}".format(
+                        filling_method,
+                        filling_values,
+                    )
+                )
+            if filling_values is not None and not set(filling_values) <= set(
+                all_values
+            ):
                 logging.warning(
-                    "Value {} on which filling {} must be applied does "
-                    "not exist on classifications {} or {}".format(
-                        value,
+                    "One of the values {} on which filling {} must be applied "
+                    "does not exist on classifications {} and {}".format(
+                        filling_values,
                         filling_method,
                         classif1[sens_cst.PATH],
                         classif2[sens_cst.PATH],

@@ -70,12 +70,19 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
                 raise ValueError(
                     "Filling method {} does not exists".format(filling_method)
                 )
-            value = overloaded_conf["filling"][filling_method]
-            if value is not None and value not in overloaded_conf["values"]:
+            if isinstance(overloaded_conf["filling"][filling_method], int):
+                # Convert int to list
+                overloaded_conf["filling"][filling_method] = [
+                    overloaded_conf["filling"][filling_method]
+                ]
+            filling_values = overloaded_conf["filling"][filling_method]
+            if filling_values is not None and not set(filling_values) <= set(
+                overloaded_conf["values"]
+            ):
                 logging.warning(
-                    "Value {} on which filling {} must be applied does "
-                    "not exist on classification {}".format(
-                        value,
+                    "One of the values {} on which filling {} must be applied "
+                    "does not exist on classification {}".format(
+                        filling_values,
                         filling_method,
                         overloaded_conf["path"],
                     )
