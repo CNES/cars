@@ -1,6 +1,6 @@
 ---
 classification:
-  loader: pivot_classif
+  loader: pivot_classification
   path: classif.tif
   values: [3, 4, 6, 8, 9, 10]
   filling:
