@@ -4477,7 +4477,7 @@ def test_end2end_paca_with_mask():
         input_fill_geoid = copy.deepcopy(input_config_dense_dsm)
         classif_dict = {
             "filling": {
-                "fill_with_geoid": "b0",
+                "fill_with_geoid": 8,
                 "interpolate_from_borders": None,
                 "fill_with_endogenous_dem": None,
                 "fill_with_exogenous_dem": None,
@@ -4561,7 +4561,7 @@ def test_end2end_paca_with_mask():
         classif_dict = {
             "filling": {
                 "fill_with_geoid": None,
-                "interpolate_from_borders": "b0",
+                "interpolate_from_borders": 8,
                 "fill_with_endogenous_dem": None,
                 "fill_with_exogenous_dem": None,
             }
