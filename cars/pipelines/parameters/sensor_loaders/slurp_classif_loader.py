@@ -38,7 +38,7 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
 )
 
 
-@SensorLoader.register("slurp_classif")
+@SensorLoader.register("slurp_classification")
 class SlurpClassifSensorLoader(SensorLoaderTemplate):
     """
     Default sensor loader (used when no sensor loader is specified)
@@ -68,7 +68,7 @@ class SlurpClassifSensorLoader(SensorLoaderTemplate):
             if sens_cst.INPUT_FILLING in conf:
                 logging.warning(
                     "A filling dictionary has been defined but "
-                    "the slurp_classif loader is selected : filling "
+                    "the slurp_classification loader is selected : filling "
                     "values will be overriden according to SLURP conventions"
                 )
             overloaded_conf[sens_cst.INPUT_FILLING] = slurp_filling
@@ -92,7 +92,7 @@ class SlurpClassifSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            sens_cst.INPUT_LOADER: "pivot_classif",
+            sens_cst.INPUT_LOADER: "basic_classification",
             sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
             sens_cst.INPUT_FILLING: self.used_config[sens_cst.INPUT_FILLING],
         }

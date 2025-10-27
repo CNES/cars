@@ -36,7 +36,7 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
 )
 
 
-@SensorLoader.register("basic_classif")
+@SensorLoader.register("basic_classification")
 class BasicClassifSensorLoader(SensorLoaderTemplate):
     """
     Default sensor loader (used when no sensor loader is specified)
@@ -61,7 +61,7 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
             overloaded_conf[sens_cst.INPUT_PATH] = image_path
-            overloaded_conf[sens_cst.INPUT_LOADER] = "basic_classif"
+            overloaded_conf[sens_cst.INPUT_LOADER] = "basic_classification"
             overloaded_conf[sens_cst.INPUT_FILLING] = default_filling
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
@@ -70,7 +70,7 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
             )
             overloaded_conf[sens_cst.INPUT_PATH] = image_path
             overloaded_conf[sens_cst.INPUT_LOADER] = conf.get(
-                sens_cst.INPUT_LOADER, "basic_classif"
+                sens_cst.INPUT_LOADER, "basic_classification"
             )
             overloaded_conf[sens_cst.INPUT_FILLING] = conf.get(
                 sens_cst.INPUT_FILLING, default_filling
@@ -95,7 +95,7 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            sens_cst.INPUT_LOADER: "pivot_classif",
+            sens_cst.INPUT_LOADER: "pivot_classification",
             sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
             sens_cst.INPUT_FILLING: self.used_config[sens_cst.INPUT_FILLING],
         }

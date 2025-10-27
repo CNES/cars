@@ -144,11 +144,13 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         )
         if classif is not None:
             if isinstance(classif, str):
-                loader_name = "basic_classif"
+                loader_name = "basic_classification"
             elif isinstance(classif, dict):
-                loader_name = classif.get("loader", "basic_classif")
+                loader_name = classif.get("loader", "basic_classification")
             else:
-                raise TypeError(f"Classif {classif} is not of type str or dict")
+                raise TypeError(
+                    f"Classification {classif} is not of type str or dict"
+                )
             classif_loader = SensorLoader(loader_name, classif, config_dir)
             classif_as_pivot_format = (
                 classif_loader.get_pivot_format()  # pylint: disable=E1101

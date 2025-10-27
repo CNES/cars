@@ -35,7 +35,7 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
 )
 
 
-@SensorLoader.register("pivot_classif")
+@SensorLoader.register("basic_classification")
 class PivotClassifSensorLoader(SensorLoaderTemplate):
     """
     Pivot image sensor loader : used by CARS to read inputs
