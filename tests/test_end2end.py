@@ -28,6 +28,7 @@ TODO: Refactor in several files and remove too-many-lines
 # Standard imports
 from __future__ import absolute_import
 
+import copy
 import json
 import math
 import os
@@ -4469,20 +4470,27 @@ def test_end2end_paca_with_mask():
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
         # remove all dsm fillings, add dense match filling
-        input_config_dense_dsm["applications"]["1"].update(
-            {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": ["b0", "b2"],
-                }
-            }
-        )
         del input_config_dense_dsm["applications"]["1"]["dsm_filling.1"]
         del input_config_dense_dsm["applications"]["1"]["dsm_filling.2"]
 
-        dense_dsm_pipeline_matches = default.DefaultPipeline(
-            input_config_dense_dsm
+        # Generate new conf with fill with geoid
+        input_fill_geoid = copy.deepcopy(input_config_dense_dsm)
+        classif_dict = {
+            "filling": {
+                "fill_with_geoid": "b0",
+                "interpolate_from_borders": None,
+                "fill_with_endogenous_dem": None,
+                "fill_with_exogenous_dem": None,
+            }
+        }
+        input_fill_geoid["inputs"]["sensors"]["left"]["classification"].update(
+            classif_dict
         )
+        input_fill_geoid["inputs"]["sensors"]["right"]["classification"].update(
+            classif_dict
+        )
+
+        dense_dsm_pipeline_matches = default.DefaultPipeline(input_fill_geoid)
 
         dense_dsm_pipeline_matches.run()
 
@@ -4548,26 +4556,25 @@ def test_end2end_paca_with_mask():
         # clean out dir for second run
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        input_config_dense_dsm["applications"]["1"].update(
-            {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": ["b0", "b2"],
-                },
-                "dsm_filling.1": {
-                    "method": "exogenous_filling",
-                    "classification": ["b0", "b2"],
-                },
-                "auxiliary_filling": {"activated": False},
-                "dsm_filling.3": {
-                    "method": "border_interpolation",
-                    "classification": ["b0", "b2"],
-                },
+        # Generate new conf with fill with geoid
+        input_fill_border = copy.deepcopy(input_config_dense_dsm)
+        classif_dict = {
+            "filling": {
+                "fill_with_geoid": None,
+                "interpolate_from_borders": "b0",
+                "fill_with_endogenous_dem": None,
+                "fill_with_exogenous_dem": None,
             }
+        }
+        input_fill_border["inputs"]["sensors"]["left"]["classification"].update(
+            classif_dict
         )
+        input_fill_border["inputs"]["sensors"]["right"][
+            "classification"
+        ].update(classif_dict)
 
         dense_dsm_pipeline_border_interpolation = default.DefaultPipeline(
-            input_config_dense_dsm
+            input_fill_border
         )
 
         dense_dsm_pipeline_border_interpolation.run()

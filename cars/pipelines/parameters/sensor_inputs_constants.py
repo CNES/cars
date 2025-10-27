@@ -37,6 +37,8 @@ DEM_PATH = "dem"
 
 INPUT_IMG = "image"
 INPUT_MSK = "mask"
+INPUT_FILLING = "filling"
+INPUT_LOADER = "loader"
 INPUT_CLASSIFICATION = "classification"
 INPUT_GEO_MODEL = "geomodel"
 INPUT_GEO_MODEL_TYPE = "geomodel_type"

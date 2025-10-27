@@ -55,7 +55,7 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
             overloaded_conf["path"] = image_path
-            overloaded_conf["loader"] = "basic_image"
+            overloaded_conf[sens_cst.INPUT_LOADER] = "basic_image"
             overloaded_conf[sens_cst.INPUT_NODATA] = 0
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
@@ -63,14 +63,20 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
                 conf["path"], self.config_dir
             )
             overloaded_conf["path"] = image_path
-            overloaded_conf["loader"] = conf.get("loader", "basic_image")
+            overloaded_conf[sens_cst.INPUT_LOADER] = conf.get(
+                sens_cst.INPUT_LOADER, "basic_image"
+            )
             overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
                 sens_cst.INPUT_NODATA, 0
             )
         else:
             raise TypeError(f"Input {conf} is not a string ot dict")
 
-        sensor_schema = {"loader": str, "path": str, "no_data": Or(None, int)}
+        sensor_schema = {
+            sens_cst.INPUT_LOADER: str,
+            "path": str,
+            "no_data": Or(None, int),
+        }
 
         # Check conf
         checker = Checker(sensor_schema)
@@ -83,8 +89,8 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            "loader": "pivot_image",
-            "main_file": self.used_config["path"],
+            sens_cst.INPUT_LOADER: "pivot_image",
+            sens_cst.MAIN_FILE: self.used_config["path"],
         }
         pivot_config["bands"] = {}
         for band_id in range(
