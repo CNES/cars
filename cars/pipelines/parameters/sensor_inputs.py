@@ -465,8 +465,10 @@ def modify_to_absolute_path(config_dir, overloaded_conf):
             sens_cst.INPUT_GEO_MODEL,
         ]:
             if isinstance(sensor_image[tag], dict):
-                sensor_image[tag][sens_cst.PATH] = make_relative_path_absolute(
-                    sensor_image[tag][sens_cst.PATH], config_dir
+                sensor_image[tag][sens_cst.INPUT_PATH] = (
+                    make_relative_path_absolute(
+                        sensor_image[tag][sens_cst.INPUT_PATH], config_dir
+                    )
                 )
             elif sensor_image[tag] is not None:
                 sensor_image[tag] = make_relative_path_absolute(
@@ -598,7 +600,7 @@ def check_input_size(image, mask, classif):
     """
     image = image["bands"]["b0"]["path"]
     if classif is not None:
-        classif = classif[sens_cst.PATH]
+        classif = classif[sens_cst.INPUT_PATH]
 
     if mask is not None:
         if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(mask):
@@ -677,19 +679,19 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
     classif1 = sensors[key1][sensor_type]
     classif2 = sensors[key2][sensor_type]
     if classif1 is not None and classif2 is not None:
-        values1 = classif1[sens_cst.VALUES]
-        values2 = classif2[sens_cst.VALUES]
+        values1 = classif1[sens_cst.INPUT_VALUES]
+        values2 = classif2[sens_cst.INPUT_VALUES]
         all_values = list(set(values1) | set(values2))
-        classif1[sens_cst.VALUES] = all_values
-        classif2[sens_cst.VALUES] = all_values
-        filling1 = sensors[key1][sensor_type][sens_cst.FILLING]
-        filling2 = sensors[key2][sensor_type][sens_cst.FILLING]
+        classif1[sens_cst.INPUT_VALUES] = all_values
+        classif2[sens_cst.INPUT_VALUES] = all_values
+        filling1 = sensors[key1][sensor_type][sens_cst.INPUT_FILLING]
+        filling2 = sensors[key2][sensor_type][sens_cst.INPUT_FILLING]
         if filling1 != filling2:
             raise ValueError(
                 "Filling rules of {} are not the same as filling "
                 "rules of {} but they belong to the same pair".format(
-                    classif1[sens_cst.PATH],
-                    classif2[sens_cst.PATH],
+                    classif1[sens_cst.INPUT_PATH],
+                    classif2[sens_cst.INPUT_PATH],
                 )
             )
         filling = filling1
@@ -713,8 +715,8 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
                     "does not exist on classifications {} and {}".format(
                         filling_values,
                         filling_method,
-                        classif1[sens_cst.PATH],
-                        classif2[sens_cst.PATH],
+                        classif1[sens_cst.INPUT_PATH],
+                        classif2[sens_cst.INPUT_PATH],
                     )
                 )
                 logging.warning(

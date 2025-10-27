@@ -62,22 +62,30 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
         overloaded_conf["path"] = make_relative_path_absolute(
             overloaded_conf["path"], self.config_dir
         )
-        overloaded_conf["values"] = conf.get("values", [])
-        overloaded_conf["filling"] = conf.get("filling", default_filling)
+        overloaded_conf[sens_cst.INPUT_VALUES] = conf.get(
+            sens_cst.INPUT_VALUES, []
+        )
+        overloaded_conf[sens_cst.INPUT_FILLING] = conf.get(
+            sens_cst.INPUT_FILLING, default_filling
+        )
         # Check filling is defined on existing values
-        for filling_method in overloaded_conf["filling"]:
+        for filling_method in overloaded_conf[sens_cst.INPUT_FILLING]:
             if filling_method not in available_filling_methods:
                 raise ValueError(
                     "Filling method {} does not exists".format(filling_method)
                 )
-            if isinstance(overloaded_conf["filling"][filling_method], int):
+            if isinstance(
+                overloaded_conf[sens_cst.INPUT_FILLING][filling_method], int
+            ):
                 # Convert int to list
-                overloaded_conf["filling"][filling_method] = [
-                    overloaded_conf["filling"][filling_method]
+                overloaded_conf[sens_cst.INPUT_FILLING][filling_method] = [
+                    overloaded_conf[sens_cst.INPUT_FILLING][filling_method]
                 ]
-            filling_values = overloaded_conf["filling"][filling_method]
+            filling_values = overloaded_conf[sens_cst.INPUT_FILLING][
+                filling_method
+            ]
             if filling_values is not None and not set(filling_values) <= set(
-                overloaded_conf["values"]
+                overloaded_conf[sens_cst.INPUT_VALUES]
             ):
                 logging.warning(
                     "One of the values {} on which filling {} must be applied "
@@ -107,10 +115,10 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
             )
 
         sensor_schema = {
-            "loader": str,
-            "path": str,
-            "values": list,
-            "filling": dict,
+            sens_cst.INPUT_LOADER: str,
+            sens_cst.INPUT_PATH: str,
+            sens_cst.INPUT_VALUES: list,
+            sens_cst.INPUT_FILLING: dict,
         }
 
         # Check conf

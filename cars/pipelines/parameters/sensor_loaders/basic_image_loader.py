@@ -54,15 +54,15 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         if isinstance(conf, str):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
-            overloaded_conf["path"] = image_path
+            overloaded_conf[sens_cst.INPUT_PATH] = image_path
             overloaded_conf[sens_cst.INPUT_LOADER] = "basic_image"
             overloaded_conf[sens_cst.INPUT_NODATA] = 0
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
-                conf["path"], self.config_dir
+                conf[sens_cst.INPUT_PATH], self.config_dir
             )
-            overloaded_conf["path"] = image_path
+            overloaded_conf[sens_cst.INPUT_PATH] = image_path
             overloaded_conf[sens_cst.INPUT_LOADER] = conf.get(
                 sens_cst.INPUT_LOADER, "basic_image"
             )
@@ -74,8 +74,8 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
 
         sensor_schema = {
             sens_cst.INPUT_LOADER: str,
-            "path": str,
-            "no_data": Or(None, int),
+            sens_cst.INPUT_PATH: str,
+            sens_cst.INPUT_NODATA: Or(None, int),
         }
 
         # Check conf
@@ -93,11 +93,11 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         }
         pivot_config["bands"] = {}
         for band_id in range(
-            inputs.rasterio_get_nb_bands(self.used_config["path"])
+            inputs.rasterio_get_nb_bands(self.used_config[sens_cst.INPUT_PATH])
         ):
             band_name = "b" + str(band_id)
             pivot_config["bands"][band_name] = {
-                "path": self.used_config["path"],
+                sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
                 "band": band_id,
             }
         pivot_config["texture_bands"] = None

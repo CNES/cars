@@ -60,23 +60,27 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
         if isinstance(conf, str):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
-            overloaded_conf["path"] = image_path
+            overloaded_conf[sens_cst.INPUT_PATH] = image_path
             overloaded_conf[sens_cst.INPUT_LOADER] = "basic_classif"
             overloaded_conf[sens_cst.INPUT_FILLING] = default_filling
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
-                conf["path"], self.config_dir
+                conf[sens_cst.INPUT_PATH], self.config_dir
             )
-            overloaded_conf["path"] = image_path
-            overloaded_conf["loader"] = conf.get("loader", "basic_classif")
-            overloaded_conf["filling"] = conf.get("filling", default_filling)
+            overloaded_conf[sens_cst.INPUT_PATH] = image_path
+            overloaded_conf[sens_cst.INPUT_LOADER] = conf.get(
+                sens_cst.INPUT_LOADER, "basic_classif"
+            )
+            overloaded_conf[sens_cst.INPUT_FILLING] = conf.get(
+                sens_cst.INPUT_FILLING, default_filling
+            )
         else:
             raise TypeError(f"Input {conf} is not a string ot dict")
 
         sensor_schema = {
             sens_cst.INPUT_LOADER: str,
-            "path": str,
+            sens_cst.INPUT_PATH: str,
             sens_cst.INPUT_FILLING: dict,
         }
 
@@ -91,12 +95,12 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            "loader": "pivot_classif",
-            "path": self.used_config["path"],
-            "filling": self.used_config["filling"],
+            sens_cst.INPUT_LOADER: "pivot_classif",
+            sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
+            sens_cst.INPUT_FILLING: self.used_config[sens_cst.INPUT_FILLING],
         }
         pivot_config["values"] = inputs.rasterio_get_classif_values(
-            self.used_config["path"]
+            self.used_config[sens_cst.INPUT_PATH]
         )
         # Remove value 0 because it corresponds to unclassified data
         pivot_config["values"].remove(0)
