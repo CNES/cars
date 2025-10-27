@@ -26,6 +26,7 @@ from json_checker import Checker, Or
 
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
     SensorLoaderTemplate,
@@ -48,10 +49,10 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
         :rtype: dict
         """
         default_filling = {
-            "fill_with_geoid": "b0",
-            "interpolate_from_borders": "b1",
-            "fill_with_endogenous_dem": "b2",
-            "fill_with_exogenous_dem": "b3",
+            "fill_with_geoid": None,
+            "interpolate_from_borders": None,
+            "fill_with_endogenous_dem": None,
+            "fill_with_exogenous_dem": None,
         }
         overloaded_conf = conf.copy()
         # Make relative paths absolutes
@@ -90,8 +91,12 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
                             band_transform,
                         )
                     )
-        overloaded_conf["main_file"] = overloaded_conf["bands"]["b0"]["path"]
-        overloaded_conf["filling"] = conf.get("filling", default_filling)
+        overloaded_conf[sens_cst.MAIN_FILE] = overloaded_conf["bands"]["b0"][
+            "path"
+        ]
+        overloaded_conf[sens_cst.INPUT_FILLING] = conf.get(
+            sens_cst.INPUT_FILLING, default_filling
+        )
         overloaded_conf["texture_bands"] = conf.get("texture_bands", None)
         if overloaded_conf["texture_bands"] is not None:
             for texture_band in overloaded_conf["texture_bands"]:
@@ -104,10 +109,10 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
                     )
 
         sensor_schema = {
-            "loader": str,
-            "main_file": str,
+            sens_cst.INPUT_LOADER: str,
+            sens_cst.MAIN_FILE: str,
             "bands": dict,
-            "filling": dict,
+            sens_cst.INPUT_FILLING: dict,
             "texture_bands": Or(None, [str]),
         }
 

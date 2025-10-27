@@ -35,6 +35,7 @@ import json
 import logging
 import os
 import shutil
+from collections import OrderedDict
 from datetime import datetime
 
 # CARS imports
@@ -49,6 +50,7 @@ from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
+from cars.pipelines.parameters.sensor_inputs_constants import SENSORS
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
@@ -477,9 +479,23 @@ class DefaultPipeline(PipelineTemplate):
             self.cleanup_low_res_dir()
 
 
-def extract_applications(current_applications_conf, res, default_conf_for_res):
+def extract_applications(
+    current_applications_conf, res, default_conf_for_res, filling_applications
+):
     """
     Extract applications for current resolution
+
+    :param current_applications_conf: current applications configuration
+    :type current_applications_conf: dict
+    :param res: resolution to extract
+    :type res: int
+    :param default_conf_for_res: default configuration for resolution
+    :type default_conf_for_res: dict
+    :param filling_applications: filling applications configuration
+    :type filling_applications: dict
+
+    :return: configuration for the given resolution
+    :rtype: dict
     """
 
     # "all" : applied to all conf
@@ -497,7 +513,13 @@ def extract_applications(current_applications_conf, res, default_conf_for_res):
 
     res_conf = current_applications_conf.get(key, {})
 
+    # Overide all conf with current res conf
     new_application_conf = overide_pipeline_conf(all_conf, res_conf)
+
+    # Overide with filling applications
+    new_application_conf = overide_pipeline_conf(
+        new_application_conf, filling_applications, append_classification=True
+    )
     return new_application_conf
 
 
@@ -562,11 +584,20 @@ def extract_conf_with_resolution(
         with open(PIPELINE_CONFS[FINAL_RES], "r", encoding="utf-8") as file:
             overiding_conf = json.load(file)
 
+    if last_res and dsm_cst.DSMS not in current_conf[INPUTS]:
+        # Use filling applications only for last resolution
+        filling_applications = generate_filling_applications(
+            current_conf[INPUTS]
+        )
+    else:
+        filling_applications = {}
+
     # extract application
     new_conf[APPLICATIONS] = extract_applications(
         current_conf.get(APPLICATIONS, {}),
         res,
         overiding_conf.get(APPLICATIONS, {}),
+        filling_applications,
     )
 
     # Overide output to not compute data
@@ -607,7 +638,117 @@ def extract_conf_with_resolution(
     return new_conf
 
 
-def overide_pipeline_conf(conf, overiding_conf):
+def generate_filling_applications(inputs_conf):
+    """
+    Generate filling applications configuration according to inputs
+
+    :param inputs_conf: inputs configuration
+    :type inputs_conf: dict
+    """
+
+    filling_applications = {}
+
+    # Get filling bands
+    filling_bands = {
+        "fill_with_geoid": [],
+        "interpolate_from_borders": [],
+        "fill_with_endogenous_dem": [],
+        "fill_with_exogenous_dem": [],
+    }
+    if SENSORS not in inputs_conf or inputs_conf[SENSORS] is None:
+        raise RuntimeError("No sensors in inputs configuration")
+
+    for _sensor_key, sensor_conf in inputs_conf[SENSORS].items():
+        if sens_cst.INPUT_CLASSIFICATION in sensor_conf:
+            sens_classif = sensor_conf[sens_cst.INPUT_CLASSIFICATION]
+            if sens_classif is None:
+                continue
+            if sens_cst.INPUT_FILLING in sens_classif:
+                for filling_name, classif_values in sens_classif[
+                    sens_cst.INPUT_FILLING
+                ].items():
+                    # Add new value to filling bands
+                    if classif_values is not None:
+                        if isinstance(classif_values, str):
+                            classif_values = [classif_values]
+                        filling_bands[filling_name] = list(
+                            OrderedDict.fromkeys(
+                                filling_bands[filling_name] + classif_values
+                            )
+                        )
+
+    # Generate applications configuration
+    for filling_name, classif_values in filling_bands.items():
+        # No filling
+        if len(classif_values) == 0:
+            continue
+
+        # Update application configuration
+        if filling_name == "fill_with_geoid":
+            new_filling_conf = {
+                "dense_match_filling": {
+                    "method": "zero_padding",
+                    "classification": classif_values,
+                },
+                "dsm_filling.1": {
+                    "method": "exogenous_filling",
+                    "classification": classif_values,
+                    "fill_with_geoid": classif_values,
+                },
+            }
+        elif filling_name == "interpolate_from_borders":
+            new_filling_conf = {
+                "dense_match_filling": {
+                    "method": "zero_padding",
+                    "classification": classif_values,
+                },
+                "dsm_filling.2": {
+                    "method": "bulldozer",
+                    "classification": classif_values,
+                },
+                "dsm_filling.3": {
+                    "method": "border_interpolation",
+                    "classification": classif_values,
+                },
+            }
+        elif filling_name == "fill_with_endogenous_dem":
+            new_filling_conf = {
+                "dense_match_filling": {
+                    "method": "zero_padding",
+                    "classification": classif_values,
+                },
+                "dsm_filling.1": {
+                    "method": "exogenous_filling",
+                    "classification": classif_values,
+                },
+                "dsm_filling.2": {
+                    "method": "bulldozer",
+                    "classification": classif_values,
+                },
+            }
+        elif filling_name == "fill_with_exogenous_dem":
+            new_filling_conf = {
+                "dense_match_filling": {
+                    "method": "zero_padding",
+                    "classification": classif_values,
+                },
+                "dsm_filling.2": {
+                    "method": "bulldozer",
+                    "classification": classif_values,
+                },
+            }
+        else:
+            new_filling_conf = {}
+
+        # Update application configuration
+        filling_applications = overide_pipeline_conf(
+            filling_applications, new_filling_conf, append_classification=True
+        )
+
+    return filling_applications
+
+
+def overide_pipeline_conf(conf, overiding_conf, append_classification=False):
     """
     Merge two dictionaries recursively without removing keys from the base conf.
 
@@ -631,6 +772,17 @@ def overide_pipeline_conf(conf, overiding_conf):
                 and isinstance(value, dict)
             ):
                 merge_recursive(base_dict[key], value)
+            elif (
+                append_classification
+                and key in base_dict
+                and isinstance(base_dict[key], list)
+                and isinstance(value, list)
+                and key == "classification"
+            ):
+                # extend list, avoiding duplicates
+                base_dict[key] = list(
+                    OrderedDict.fromkeys(base_dict[key] + value)
+                )
             else:
                 base_dict[key] = value
 

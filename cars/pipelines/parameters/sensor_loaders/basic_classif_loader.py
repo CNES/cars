@@ -26,6 +26,7 @@ from json_checker import Checker
 
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_loaders.pivot_classif_loader import (
     PivotClassifSensorLoader,
 )
@@ -51,29 +52,37 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
         :rtype: dict
         """
         default_filling = {
-            "fill_with_geoid": "b0",
-            "interpolate_from_borders": "b1",
-            "fill_with_endogenous_dem": "b2",
-            "fill_with_exogenous_dem": "b3",
+            "fill_with_geoid": None,
+            "interpolate_from_borders": None,
+            "fill_with_endogenous_dem": None,
+            "fill_with_exogenous_dem": None,
         }
         if isinstance(conf, str):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
             overloaded_conf["path"] = image_path
-            overloaded_conf["loader"] = "basic_classif"
-            overloaded_conf["filling"] = default_filling
+            overloaded_conf[sens_cst.INPUT_LOADER] = "basic_classif"
+            overloaded_conf[sens_cst.INPUT_FILLING] = default_filling
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
                 conf["path"], self.config_dir
             )
             overloaded_conf["path"] = image_path
-            overloaded_conf["loader"] = conf.get("loader", "basic")
-            overloaded_conf["filling"] = conf.get("filling", default_filling)
+            overloaded_conf[sens_cst.INPUT_LOADER] = conf.get(
+                sens_cst.INPUT_LOADER, "basic"
+            )
+            overloaded_conf[sens_cst.INPUT_FILLING] = conf.get(
+                sens_cst.INPUT_FILLING, default_filling
+            )
         else:
             raise TypeError(f"Input {conf} is not a string ot dict")
 
-        sensor_schema = {"loader": str, "path": str, "filling": dict}
+        sensor_schema = {
+            sens_cst.INPUT_LOADER: str,
+            "path": str,
+            sens_cst.INPUT_FILLING: dict,
+        }
 
         # Check conf
         checker = Checker(sensor_schema)
@@ -86,9 +95,9 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            "loader": "pivot_classif",
-            "main_file": self.used_config["path"],
-            "filling": self.used_config["filling"],
+            sens_cst.INPUT_LOADER: "pivot_classif",
+            sens_cst.MAIN_FILE: self.used_config["path"],
+            sens_cst.INPUT_FILLING: self.used_config[sens_cst.INPUT_FILLING],
         }
         pivot_config["bands"] = {}
         for band_id in range(
