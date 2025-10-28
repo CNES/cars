@@ -9,3 +9,34 @@
 .wy-nav-content {
     max-width: 100% !important;
 }
+
+
+.cars-config-scrollable {
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 0.5em;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #f8f8f8;
+}
+
+/* Surligner uniquement la clé sélectionnée */
+.key {
+    background-color: #fff3b0;  /* couleur jaune clair */
+}
+
+.applications-block details details{
+  margin: 0.5em 0;
+  padding-left: 1em;
+}
+
+.admonition > .admonition-title {
+  display: none;
+}
+
+details summary {
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 0.5em;
+}
+

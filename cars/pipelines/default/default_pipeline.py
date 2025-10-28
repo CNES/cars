@@ -56,6 +56,7 @@ from cars.pipelines.pipeline_constants import (
     ADVANCED,
     APPLICATIONS,
     INPUTS,
+    ORCHESTRATOR,
     OUTPUT,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
@@ -801,6 +802,9 @@ def merge_used_conf(used_configurations, epipolar_resolutions):
         INPUTS: used_configurations[epipolar_resolutions[0]][INPUTS],
         ADVANCED: used_configurations[epipolar_resolutions[0]][ADVANCED],
         OUTPUT: used_configurations[epipolar_resolutions[0]][OUTPUT],
+        ORCHESTRATOR: used_configurations[epipolar_resolutions[0]][
+            ORCHESTRATOR
+        ],
     }
 
     merged_conf[APPLICATIONS] = {}

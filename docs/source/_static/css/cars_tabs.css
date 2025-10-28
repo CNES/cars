@@ -51,6 +51,10 @@
   display: block;
 }
 
+.cars-buttons-spacer {
+    flex-grow: 1; /* pousse les boutons à la fin de la colonne */
+}
+
 .cars-tab-content pre.highlight {
   margin: 0;
   padding: 1em;
