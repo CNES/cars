@@ -23,10 +23,10 @@ inputs:
         loader: pivot_classif
         path: left_classif.tif
         filling:
-          fill_with_geoid: 1
-          interpolate_from_borders: 2
-          fill_with_endogenous_dem: 3
-          fill_with_exogenous_dem: 4
+          fill_with_geoid: null
+          interpolate_from_borders: null
+          fill_with_endogenous_dem: null
+          fill_with_exogenous_dem: null
     right:
       image:
         loader: pivot_image
@@ -49,10 +49,10 @@ inputs:
         loader: pivot_classif
         path: right_classif.tif
         filling:
-          fill_with_geoid: 1
-          interpolate_from_borders: 2
-          fill_with_endogenous_dem: 3
-          fill_with_exogenous_dem: 4
+          fill_with_geoid: null
+          interpolate_from_borders: null
+          fill_with_endogenous_dem: null
+          fill_with_exogenous_dem: null
   pairing:
   - - left
     - right
@@ -117,6 +117,19 @@ output:
   epsg: 
   resolution: 0.5
   save_by_pair: true
+orchestrator:
+  mode: multiprocessing
+  nb_workers: 5
+  max_ram_per_worker: 2000
+  mp_mode: forkserver
+  task_timeout: 600
+  max_tasks_per_worker: 10
+  dump_to_disk: true
+  per_job_timeout: 600
+  factorize_tasks: true
+  profiling:
+     mode: cars_profiling
+     loop_testing: false
 applications:
   '1':
     grid_generation:
