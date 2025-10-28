@@ -178,13 +178,13 @@ def test_output_minimal():
 @pytest.mark.parametrize(
     "case",
     [
-        {"classification": True, "expected": {1: "b0", 2: "b1", 3: "b2"}},
+        {"classification": True, "expected": {1: 1, 2: 3, 3: 2}},
         {"classification": False, "expected": False},
-        {"classification": [3, 2, 1], "expected": {3: "3", 2: "2", 1: "1"}},
+        {"classification": [3, 2, 1], "expected": {3: 3, 2: 2, 1: 1}},
         {"classification": [52, 3, 1], "expected": "invalid"},
         {
-            "classification": {"1": "b0", "52": "b1", "7": "b2"},
-            "expected": {"1": "b0", "52": "b1", "7": "b2"},
+            "classification": {"1": 1, "52": 2, "7": 3},
+            "expected": {"1": 1, "52": 2, "7": 3},
         },
     ],
 )
