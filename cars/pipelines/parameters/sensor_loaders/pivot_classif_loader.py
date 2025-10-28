@@ -22,7 +22,9 @@
 this module contains the PivotImageSensorLoader class.
 """
 
-from json_checker import Checker, Or
+import logging
+
+from json_checker import Checker
 
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
@@ -33,7 +35,7 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
 )
 
 
-@SensorLoader.register("pivot_classif")
+@SensorLoader.register("pivot_classification")
 class PivotClassifSensorLoader(SensorLoaderTemplate):
     """
     Pivot image sensor loader : used by CARS to read inputs
@@ -54,66 +56,69 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
             "fill_with_endogenous_dem": None,
             "fill_with_exogenous_dem": None,
         }
+        available_filling_methods = list(default_filling.keys())
         overloaded_conf = conf.copy()
-        # Make relative paths absolutes
-        for band in overloaded_conf["bands"]:
-            overloaded_conf["bands"][band]["path"] = (
-                make_relative_path_absolute(
-                    overloaded_conf["bands"][band]["path"], self.config_dir
-                )
-            )
-        # Check consistency between files
-        b0_path = overloaded_conf["bands"]["b0"]["path"]
-        b0_size = inputs.rasterio_get_size(b0_path)
-        b0_transform = inputs.rasterio_get_transform(b0_path)
-        for band in overloaded_conf["bands"]:
-            band_path = overloaded_conf["bands"][band]["path"]
-            band_id = overloaded_conf["bands"][band]["band"]
-            nb_bands = inputs.rasterio_get_nb_bands(band_path)
-            if band_id >= nb_bands:
-                raise RuntimeError(
-                    "Band id {} is not valid for sensor which "
-                    "has only {} bands".format(band_id, nb_bands)
-                )
-            if band_path != b0_path:
-                band_size = inputs.rasterio_get_size(band_path)
-                band_transform = inputs.rasterio_get_transform(band_path)
-                if b0_size != band_size:
-                    raise RuntimeError(
-                        "The files {} and {} do not have the same size"
-                        "but are in the same image".format(b0_path, band_path)
-                    )
-                if b0_transform != band_transform:
-                    raise RuntimeError(
-                        "The files {} and {} do not have the same size"
-                        "but are in the same image".format(
-                            b0_transform,
-                            band_transform,
-                        )
-                    )
-        overloaded_conf[sens_cst.MAIN_FILE] = overloaded_conf["bands"]["b0"][
-            "path"
-        ]
+        # Make relative path absolute
+        overloaded_conf["path"] = make_relative_path_absolute(
+            overloaded_conf["path"], self.config_dir
+        )
+        overloaded_conf[sens_cst.INPUT_VALUES] = conf.get(
+            sens_cst.INPUT_VALUES, []
+        )
         overloaded_conf[sens_cst.INPUT_FILLING] = conf.get(
             sens_cst.INPUT_FILLING, default_filling
         )
-        overloaded_conf["texture_bands"] = conf.get("texture_bands", None)
-        if overloaded_conf["texture_bands"] is not None:
-            for texture_band in overloaded_conf["texture_bands"]:
-                if texture_band not in overloaded_conf["bands"]:
-                    raise RuntimeError(
-                        "Texture band {} not found in bands {} "
-                        "of sensor image".format(
-                            texture_band, overloaded_conf["bands"]
-                        )
+        # Check filling is defined on existing values
+        for filling_method in overloaded_conf[sens_cst.INPUT_FILLING]:
+            if filling_method not in available_filling_methods:
+                raise ValueError(
+                    "Filling method {} does not exists".format(filling_method)
+                )
+            if isinstance(
+                overloaded_conf[sens_cst.INPUT_FILLING][filling_method], int
+            ):
+                # Convert int to list
+                overloaded_conf[sens_cst.INPUT_FILLING][filling_method] = [
+                    overloaded_conf[sens_cst.INPUT_FILLING][filling_method]
+                ]
+            filling_values = overloaded_conf[sens_cst.INPUT_FILLING][
+                filling_method
+            ]
+            if filling_values is not None and not set(filling_values) <= set(
+                overloaded_conf[sens_cst.INPUT_VALUES]
+            ):
+                logging.warning(
+                    "One of the values {} on which filling {} must be applied "
+                    "does not exist on classification {}".format(
+                        filling_values,
+                        filling_method,
+                        overloaded_conf["path"],
                     )
+                )
+        # Check dtype and number of bands
+        classif_file = overloaded_conf["path"]
+        classif_dtype = inputs.rasterio_get_dtype(classif_file)
+        if classif_dtype != "uint8":
+            raise TypeError(
+                "Classification file {} has type {} which is not supported "
+                "for classification : type must be uint8".format(
+                    classif_file, classif_dtype
+                )
+            )
+        classif_nb_bands = inputs.rasterio_get_nb_bands(classif_file)
+        if classif_nb_bands != 1:
+            raise TypeError(
+                "Classification file {} has {} bands but only mono-band "
+                "classification is allowed".format(
+                    classif_file, classif_nb_bands
+                )
+            )
 
         sensor_schema = {
             sens_cst.INPUT_LOADER: str,
-            sens_cst.MAIN_FILE: str,
-            "bands": dict,
+            sens_cst.INPUT_PATH: str,
+            sens_cst.INPUT_VALUES: list,
             sens_cst.INPUT_FILLING: dict,
-            "texture_bands": Or(None, [str]),
         }
 
         # Check conf

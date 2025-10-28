@@ -818,22 +818,24 @@ class UnitPipeline(PipelineTemplate):
             bands_right = list(
                 inputs_conf["sensors"][key2]["image"]["bands"].keys()
             )
-            bands_classif_left = None
-            bands_classif_right = None
+            values_classif_left = None
+            values_classif_right = None
             if (
                 "classification" in inputs_conf["sensors"][key1]
                 and inputs_conf["sensors"][key1]["classification"] is not None
             ):
-                bands_classif_left = inputs_conf["sensors"][key1][
+                values_classif_left = inputs_conf["sensors"][key1][
                     "classification"
-                ]["bands"].keys()
+                ]["values"]
+                values_classif_left = list(map(str, values_classif_left))
             if (
                 "classification" in inputs_conf["sensors"][key2]
                 and inputs_conf["sensors"][key2]["classification"] is not None
             ):
-                bands_classif_right = inputs_conf["sensors"][key2][
+                values_classif_right = inputs_conf["sensors"][key2][
                     "classification"
-                ]["bands"].keys()
+                ]["values"]
+                values_classif_right = list(map(str, values_classif_right))
             self.dense_matching_app.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
@@ -841,8 +843,8 @@ class UnitPipeline(PipelineTemplate):
                     nodata_right,
                     bands_left,
                     bands_right,
-                    bands_classif_left,
-                    bands_classif_right,
+                    values_classif_left,
+                    values_classif_right,
                 )
             )
 
@@ -851,8 +853,8 @@ class UnitPipeline(PipelineTemplate):
         # with a small step
         # For the higher ones, a step at 30 should be better
         first_image_path = next(iter(inputs_conf["sensors"].values()))["image"][
-            "main_file"
-        ]
+            "bands"
+        ]["b0"]["path"]
         first_image_size = rasterio_get_size(first_image_path)
         size_low_res_img_row = first_image_size[0] // epipolar_resolution
         size_low_res_img_col = first_image_size[1] // epipolar_resolution
@@ -2455,11 +2457,11 @@ class UnitPipeline(PipelineTemplate):
                     )
 
                     inter_poly, _ = projection.ground_intersection_envelopes(
-                        sensor_image_left[sens_cst.INPUT_IMG][
-                            sens_cst.MAIN_FILE
+                        sensor_image_left[sens_cst.INPUT_IMG]["bands"]["b0"][
+                            "path"
                         ],
-                        sensor_image_right[sens_cst.INPUT_IMG][
-                            sens_cst.MAIN_FILE
+                        sensor_image_right[sens_cst.INPUT_IMG]["bands"]["b0"][
+                            "path"
                         ],
                         sensor_image_left[sens_cst.INPUT_GEO_MODEL],
                         sensor_image_right[sens_cst.INPUT_GEO_MODEL],

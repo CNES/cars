@@ -212,7 +212,7 @@ def fill_from_one_sensor(  # pylint: disable=too-many-positional-arguments  # no
     """
 
     # Check if the sensor has color or classification
-    reference_sensor_image = sensor["image"]["main_file"]
+    reference_sensor_image = sensor["image"]["bands"]["b0"]["path"]
 
     output_not_interpolated_mask = np.ones(len(altitudes), dtype=bool)
     all_values = np.zeros((number_of_color_bands, len(altitudes)))
@@ -316,7 +316,9 @@ def fill_from_one_sensor(  # pylint: disable=too-many-positional-arguments  # no
         if all(
             band_name in sensor["image"]["bands"] for band_name in texture_bands
         ):
-            with rio.open(sensor["image"]["main_file"]) as sensor_color_image:
+            with rio.open(
+                sensor["image"]["bands"]["b0"]["path"]
+            ) as sensor_color_image:
                 first_row = np.floor(
                     max(
                         np.min(ind_rows_sensor) - texture_interpolator_margin, 0
@@ -411,10 +413,10 @@ def fill_from_one_sensor(  # pylint: disable=too-many-positional-arguments  # no
 
     if filled_classif is not None and sensor.get("classification"):
         if number_of_classification_bands == len(
-            sensor["classification"]["bands"]
+            sensor["classification"]["values"]
         ):
             with rio.open(
-                sensor["classification"]["main_file"]
+                sensor["classification"]["path"]
             ) as sensor_classif_image:
 
                 first_row = np.floor(
@@ -450,25 +452,20 @@ def fill_from_one_sensor(  # pylint: disable=too-many-positional-arguments  # no
                 np.arange(first_col, last_col),
             )
 
-            for output_band, band_name in enumerate(
-                sensor["classification"]["bands"]
+            classif_data = rio.open(sensor["classification"]["path"]).read(
+                1, window=rio_window
+            )
+
+            for output_band, value in enumerate(
+                sensor["classification"]["values"]
             ):
-                # rio band convention
-                sensor_file = rio.open(
-                    sensor["classification"]["bands"][band_name]["path"]
-                )
-                input_band = sensor["classification"]["bands"][band_name][
-                    "band"
-                ]
-                sensor_data = sensor_file.read(
-                    input_band + 1, window=rio_window
-                )
+                binary_band_data = classif_data == value
 
                 filled_classif[output_band, :] = np.logical_or(
                     filled_classif[output_band, :],
                     interpolate.interpn(
                         sensor_points,
-                        sensor_data,
+                        binary_band_data,
                         (ind_rows_sensor, ind_cols_sensor),
                         bounds_error=False,
                         method=classif_interpolator,

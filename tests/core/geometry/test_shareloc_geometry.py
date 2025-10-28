@@ -110,12 +110,12 @@ def test_get_roi():
     Test direct localization with RPC
     """
     sensor1_path = absolute_data_path("input/phr_ventoux/left_image.tif")
-    sensor1 = {"main_file": sensor1_path}
+    sensor1 = {"bands": {"b0": {"path": sensor1_path}}}
     geomodel1_path = absolute_data_path("input/phr_ventoux/left_image.geom")
     geomodel1 = {"path": geomodel1_path, "model_type": RPC_TYPE}
 
     sensor2_path = absolute_data_path("input/phr_ventoux/right_image.tif")
-    sensor2 = {"main_file": sensor2_path}
+    sensor2 = {"bands": {"b0": {"path": sensor2_path}}}
     geomodel2_path = absolute_data_path("input/phr_ventoux/right_image.geom")
     geomodel2 = {"path": geomodel2_path, "model_type": RPC_TYPE}
 
@@ -164,12 +164,12 @@ def test_exception_roi_outside_dtm():
     """
 
     sensor1_path = absolute_data_path("input/phr_ventoux/left_image.tif")
-    sensor1 = {"main_file": sensor1_path}
+    sensor1 = {"bands": {"b0": {"path": sensor1_path}}}
     geomodel1_path = absolute_data_path("input/phr_ventoux/left_image.geom")
     geomodel1 = {"path": geomodel1_path, "model_type": RPC_TYPE}
 
     sensor2_path = absolute_data_path("input/phr_ventoux/right_image.tif")
-    sensor2 = {"main_file": sensor2_path}
+    sensor2 = {"bands": {"b0": {"path": sensor2_path}}}
     geomodel2_path = absolute_data_path("input/phr_ventoux/right_image.geom")
     geomodel2 = {"path": geomodel2_path, "model_type": RPC_TYPE}
 

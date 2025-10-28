@@ -122,7 +122,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_IMG
         ] = image_as_pivot_format
-        image_path = image_as_pivot_format[sens_cst.MAIN_FILE]
+        image_path = image_as_pivot_format["bands"]["b0"]["path"]
 
         geomodel = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             "geomodel",
@@ -144,11 +144,13 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         )
         if classif is not None:
             if isinstance(classif, str):
-                loader_name = "basic_classif"
+                loader_name = "basic_classification"
             elif isinstance(classif, dict):
-                loader_name = classif.get("loader", "basic_classif")
+                loader_name = classif.get("loader", "basic_classification")
             else:
-                raise TypeError(f"Classif {classif} is not of type str or dict")
+                raise TypeError(
+                    f"Classification {classif} is not of type str or dict"
+                )
             classif_loader = SensorLoader(loader_name, classif, config_dir)
             classif_as_pivot_format = (
                 classif_loader.get_pivot_format()  # pylint: disable=E1101
@@ -178,10 +180,9 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             sensor_image[sens_cst.INPUT_MSK],
             sensor_image[sens_cst.INPUT_CLASSIFICATION],
         )
-        # check band nbits of msk and classification
+        # check band nbits of msk
         check_nbits(
             sensor_image[sens_cst.INPUT_MSK],
-            sensor_image[sens_cst.INPUT_CLASSIFICATION],
         )
 
     # Validate pairs
@@ -223,10 +224,16 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             "relative path are not transformed to absolute paths"
         )
 
-    # check datat type of pairs images
+    # Check consistency of pairs images
     for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
         compare_image_type(
             overloaded_conf[sens_cst.SENSORS], sens_cst.INPUT_IMG, key1, key2
+        )
+        compare_classification_values(
+            overloaded_conf[sens_cst.SENSORS],
+            sens_cst.INPUT_CLASSIFICATION,
+            key1,
+            key2,
         )
 
     return overloaded_conf
@@ -248,7 +255,7 @@ def get_sensor_resolution(
     :return: average resolution in meters/pixel along x and y
     :rtype: float
     """
-    width, height = inputs.rasterio_get_size(sensor_path[sens_cst.MAIN_FILE])
+    width, height = inputs.rasterio_get_size(sensor_path["bands"]["b0"]["path"])
 
     upper_left = (0.5, 0.5)
     upper_right = (width - 0.5, 0.5)
@@ -256,19 +263,19 @@ def get_sensor_resolution(
 
     # get geodetic coordinates
     lat_ul, lon_ul, _ = geom_plugin.direct_loc(
-        sensor_path[sens_cst.MAIN_FILE],
+        sensor_path["bands"]["b0"]["path"],
         geomodel,
         np.array([upper_left[0]]),
         np.array([upper_left[1]]),
     )
     lat_ur, lon_ur, _ = geom_plugin.direct_loc(
-        sensor_path[sens_cst.MAIN_FILE],
+        sensor_path["bands"]["b0"]["path"],
         geomodel,
         np.array([upper_right[0]]),
         np.array([upper_right[1]]),
     )
     lat_bl, lon_bl, _ = geom_plugin.direct_loc(
-        sensor_path[sens_cst.MAIN_FILE],
+        sensor_path["bands"]["b0"]["path"],
         geomodel,
         np.array([bottom_left[0]]),
         np.array([bottom_left[1]]),
@@ -460,25 +467,15 @@ def modify_to_absolute_path(config_dir, overloaded_conf):
             sens_cst.INPUT_GEO_MODEL,
         ]:
             if isinstance(sensor_image[tag], dict):
-                sensor_image[tag]["path"] = make_relative_path_absolute(
-                    sensor_image[tag]["path"], config_dir
+                sensor_image[tag][sens_cst.INPUT_PATH] = (
+                    make_relative_path_absolute(
+                        sensor_image[tag][sens_cst.INPUT_PATH], config_dir
+                    )
                 )
             elif sensor_image[tag] is not None:
                 sensor_image[tag] = make_relative_path_absolute(
                     sensor_image[tag], config_dir
                 )
-        for tag in [
-            sens_cst.INPUT_IMG,
-            sens_cst.INPUT_CLASSIFICATION,
-        ]:
-            if sensor_image[tag] is not None:
-                for band in sensor_image[tag]["bands"]:
-                    sensor_image[tag]["bands"][band]["path"] = (
-                        make_relative_path_absolute(
-                            sensor_image[tag]["bands"][band]["path"],
-                            config_dir,
-                        )
-                    )
 
     if overloaded_conf[sens_cst.ROI] is not None:
         if isinstance(overloaded_conf[sens_cst.ROI], str):
@@ -603,9 +600,9 @@ def check_input_size(image, mask, classif):
     :param classif: classif path
     :type classif: str
     """
-    image = image[sens_cst.MAIN_FILE]
+    image = image["bands"]["b0"]["path"]
     if classif is not None:
-        classif = classif[sens_cst.MAIN_FILE]
+        classif = classif[sens_cst.INPUT_PATH]
 
     if mask is not None:
         if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(mask):
@@ -622,7 +619,7 @@ def check_input_size(image, mask, classif):
             )
 
 
-def check_nbits(mask, classif):
+def check_nbits(mask):
     """
     Check the bits number of the mask, classif
     mask and classification are limited to 1 bits per band
@@ -632,9 +629,6 @@ def check_nbits(mask, classif):
     :param classif: classif path
     :type classif: str
     """
-    if classif is not None:
-        classif = classif[sens_cst.MAIN_FILE]
-
     if mask is not None:
         nbits = inputs.rasterio_get_nbits(mask)
         if not check_all_nbits_equal_one(nbits):
@@ -643,35 +637,25 @@ def check_nbits(mask, classif):
                 + "Only the mask with nbits=1 is supported! "
             )
 
-    if classif is not None:
-        nbits = inputs.rasterio_get_nbits(classif)
-        if not check_all_nbits_equal_one(nbits):
-            raise RuntimeError(
-                "The classification {} have {} nbits per band. ".format(
-                    classif, nbits
-                )
-                + "Only the classification with nbits=1 is supported! "
-            )
 
-
-def compare_image_type(imgs, image_type, key1, key2):
+def compare_image_type(sensors, sensor_type, key1, key2):
     """
     Compare the data type between a pair of images
 
-    :param imgs: list of image paths
-    :type imgs: str
+    :param sensors: list of  sensor paths
+    :type sensors: str
+    :param sensor_type: type of cardataset image (IMG, MASK, CLASSIF...)
+    :type sensor_type: int
     :param key1: key of the images pair
     :type key1: str
-    :param image_type: type of cardataset image (IMG, MASK, CLASSIF...)
-    :type image_type: int
-    :param key1: other key of the images pair
-    :type key1: str
+    :param key2: other key of the images pair
+    :type key2: str
     """
     dtype1 = inputs.rasterio_get_image_type(
-        imgs[key1][image_type][sens_cst.MAIN_FILE]
+        sensors[key1][sensor_type]["bands"]["b0"]["path"]
     )
     dtype2 = inputs.rasterio_get_image_type(
-        imgs[key2][image_type][sens_cst.MAIN_FILE]
+        sensors[key2][sensor_type]["bands"]["b0"]["path"]
     )
     if dtype1 != dtype2:
         raise RuntimeError(
@@ -679,6 +663,69 @@ def compare_image_type(imgs, image_type, key1, key2):
             + "\nSensor[{}]: {}".format(key1, dtype1)
             + "; Sensor[{}]: {}".format(key2, dtype2)
         )
+
+
+def compare_classification_values(sensors, sensor_type, key1, key2):
+    """
+    Compare the classification values between a pair of images
+
+    :param imgs: list of image paths
+    :type imgs: str
+    :param classif_type: type of cardataset image (IMG, MASK, CLASSIF...)
+    :type classif_type: int
+    :param key1: key of the images pair
+    :type key1: str
+    :param key2: other key of the images pair
+    :type key2: str
+    """
+    classif1 = sensors[key1][sensor_type]
+    classif2 = sensors[key2][sensor_type]
+    if classif1 is not None and classif2 is not None:
+        values1 = classif1[sens_cst.INPUT_VALUES]
+        values2 = classif2[sens_cst.INPUT_VALUES]
+        all_values = list(set(values1) | set(values2))
+        classif1[sens_cst.INPUT_VALUES] = all_values
+        classif2[sens_cst.INPUT_VALUES] = all_values
+        filling1 = sensors[key1][sensor_type][sens_cst.INPUT_FILLING]
+        filling2 = sensors[key2][sensor_type][sens_cst.INPUT_FILLING]
+        if filling1 != filling2:
+            raise ValueError(
+                "Filling rules of {} are not the same as filling "
+                "rules of {} but they belong to the same pair".format(
+                    classif1[sens_cst.INPUT_PATH],
+                    classif2[sens_cst.INPUT_PATH],
+                )
+            )
+        filling = filling1
+        for filling_method in filling:
+            filling_values = filling[filling_method]
+            if filling_values is not None and not all(
+                isinstance(val, int) for val in filling_values
+            ):
+                raise TypeError(
+                    "Not all values defined for "
+                    "filling {} are int : {}".format(
+                        filling_method,
+                        filling_values,
+                    )
+                )
+            if filling_values is not None and not set(filling_values) <= set(
+                all_values
+            ):
+                logging.warning(
+                    "One of the values {} on which filling {} must be applied "
+                    "does not exist on classifications {} and {}".format(
+                        filling_values,
+                        filling_method,
+                        classif1[sens_cst.INPUT_PATH],
+                        classif2[sens_cst.INPUT_PATH],
+                    )
+                )
+                logging.warning(
+                    "Filling {} is deactivated".format(filling_method)
+                )
+                filling1[filling_method] = None
+                filling2[filling_method] = None
 
 
 def check_all_nbits_equal_one(nbits):

@@ -373,7 +373,7 @@ def test_end2end_dsm_fusion():
         with check:
             assert inputs.get_descriptions_bands(
                 os.path.join(out_dir, "dsm", "classification.tif")
-            ) == ("b0", "b1", "b2")
+            ) == ("1", "2", "3", "4", "5")
         with check:
             assert inputs.get_descriptions_bands(
                 os.path.join(out_dir, "dsm", "contributing_pair.tif")
@@ -3142,7 +3142,7 @@ def test_end2end_ventoux_with_classif():
                             },
                             "geometric_prior": {
                                 "source": "classif",
-                                "classes": ["b0"],
+                                "classes": ["3"],
                             },
                         },
                         "disparity": {
@@ -4477,7 +4477,7 @@ def test_end2end_paca_with_mask():
         input_fill_geoid = copy.deepcopy(input_config_dense_dsm)
         classif_dict = {
             "filling": {
-                "fill_with_geoid": "b0",
+                "fill_with_geoid": 8,
                 "interpolate_from_borders": None,
                 "fill_with_endogenous_dem": None,
                 "fill_with_exogenous_dem": None,
@@ -4561,7 +4561,7 @@ def test_end2end_paca_with_mask():
         classif_dict = {
             "filling": {
                 "fill_with_geoid": None,
-                "interpolate_from_borders": "b0",
+                "interpolate_from_borders": 8,
                 "fill_with_endogenous_dem": None,
                 "fill_with_exogenous_dem": None,
             }
@@ -4631,7 +4631,7 @@ def test_end2end_disparity_filling_with_zeros():
                 "dense_match_filling": {
                     "method": "zero_padding",
                     "save_intermediate_data": True,
-                    "classification": ["b0"],
+                    "classification": ["1"],
                 },
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",

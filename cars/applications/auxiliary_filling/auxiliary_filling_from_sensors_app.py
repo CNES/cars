@@ -519,18 +519,19 @@ def filling_from_sensor_wrapper(
                 )
         else:
             profile = dsm_profile
-            number_of_classification_bands = inputs.rasterio_get_nb_bands(
-                sensor_inputs[list(sensor_inputs.keys())[0]].get(
-                    "classification", None
-                )
+            classif_sample = sensor_inputs[list(sensor_inputs.keys())[0]].get(
+                "classification", None
             )
+            if classif_sample is None:
+                raise RuntimeError(
+                    "No classification file found for auxiliary filling"
+                )
+            number_of_classification_bands = len(classif_sample["values"])
             classification_values = np.full(
                 (number_of_classification_bands, *target_mask.shape), np.nan
             )
             classification_band_names = inputs.get_descriptions_bands(
-                sensor_inputs[list(sensor_inputs.keys())[0]].get(
-                    "classification", None
-                )
+                classif_sample
             )
             # update profile
             profile.update(count=number_of_classification_bands)

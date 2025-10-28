@@ -376,7 +376,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             )
         else:
             im_type = inputs.rasterio_get_image_type(
-                sensor_image_left[sens_cst.INPUT_IMG]["main_file"]
+                sensor_image_left[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
             )
 
         # update attributes
@@ -474,11 +474,11 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # retrieve data
         epipolar_size_x = grid_left["epipolar_size_x"]
         epipolar_size_y = grid_left["epipolar_size_y"]
-        left_images = resampling_wrappers.get_paths_and_bands(
+        left_images = resampling_wrappers.get_paths_and_bands_from_image(
             sensor_image_left[sens_cst.INPUT_IMG],
             required_bands["left"],
         )
-        right_images = resampling_wrappers.get_paths_and_bands(
+        right_images = resampling_wrappers.get_paths_and_bands_from_image(
             sensor_image_right[sens_cst.INPUT_IMG],
             required_bands["right"],
         )
@@ -496,15 +496,19 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             sens_cst.INPUT_CLASSIFICATION, None
         )
         if left_classifs is not None:
-            left_classifs = resampling_wrappers.get_paths_and_bands(
-                left_classifs
+            left_classifs = (
+                resampling_wrappers.get_path_and_values_from_classif(
+                    left_classifs
+                )
             )
         right_classifs = sensor_image_right.get(
             sens_cst.INPUT_CLASSIFICATION, None
         )
         if right_classifs is not None:
-            right_classifs = resampling_wrappers.get_paths_and_bands(
-                right_classifs
+            right_classifs = (
+                resampling_wrappers.get_path_and_values_from_classif(
+                    right_classifs
+                )
             )
 
         # Set Epipolar roi

@@ -194,7 +194,7 @@ class LineOfSightIntersection(
 
         # Propagate color type in output file
         color_type = inputs.rasterio_get_image_type(
-            sensor_image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE]
+            sensor_image_left[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
         )
 
         if output_dir is None:

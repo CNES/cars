@@ -182,13 +182,15 @@ class DirectLocalization(
             safe_makedirs(pair_folder)
 
         # Get profile
-        with rio.open(sensor_left[sens_cst.INPUT_IMG]["main_file"]) as src_left:
+        with rio.open(
+            sensor_left[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
+        ) as src_left:
             width_left = src_left.width
             height_left = src_left.height
             transform_left = src_left.transform
 
         with rio.open(
-            sensor_right[sens_cst.INPUT_IMG]["main_file"]
+            sensor_right[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
         ) as src_right:
             width_right = src_right.width
             height_right = src_right.height

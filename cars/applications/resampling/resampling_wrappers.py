@@ -39,7 +39,7 @@ from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
 @cars_profile(name="Get paths and bands", interval=0.5)
-def get_paths_and_bands(sensor_image, required_bands=None):
+def get_paths_and_bands_from_image(sensor_image, required_bands=None):
     """
     Reformat file paths and bands required from each file to ease reading
 
@@ -63,6 +63,17 @@ def get_paths_and_bands(sensor_image, required_bands=None):
     return paths
 
 
+def get_path_and_values_from_classif(sensor_classif):
+    """
+    Reformat file paths and bands required from each file to ease reading
+
+    :param sensor_classif: input configuration of a classif
+    :type sensor_image: dict
+    """
+    paths = {sensor_classif["path"]: {"values": sensor_classif["values"]}}
+    return paths
+
+
 def get_sensors_bounds(sensor_image_left, sensor_image_right):
     """
     Get bounds of sensor images
@@ -79,14 +90,14 @@ def get_sensors_bounds(sensor_image_left, sensor_image_right):
 
     left_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_left[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE],
+            sensor_image_left[sens_cst.INPUT_IMG]["bands"]["b0"]["path"],
             apply_resolution_sign=True,
         )
     )
 
     right_sensor_bounds = list(
         inputs.rasterio_get_bounds(
-            sensor_image_right[sens_cst.INPUT_IMG][sens_cst.MAIN_FILE],
+            sensor_image_right[sens_cst.INPUT_IMG]["bands"]["b0"]["path"],
             apply_resolution_sign=True,
         )
     )

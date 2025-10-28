@@ -19,16 +19,18 @@
 # limitations under the License.
 #
 """
-This module contains the BasicImageSensorLoader class.
+This module contains the ClassifSensorLoader class.
 """
 
-from json_checker import Checker, Or
+import logging
+
+from json_checker import Checker
 
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
-from cars.pipelines.parameters.sensor_loaders.pivot_image_loader import (
-    PivotImageSensorLoader,
+from cars.pipelines.parameters.sensor_loaders.pivot_classif_loader import (
+    PivotClassifSensorLoader,
 )
 from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
@@ -36,10 +38,10 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
 )
 
 
-@SensorLoader.register("basic_image")
-class BasicImageSensorLoader(SensorLoaderTemplate):
+@SensorLoader.register("slurp_classification")
+class SlurpClassifSensorLoader(SensorLoaderTemplate):
     """
-    Default sensor loader for image (used when no sensor loader is specified)
+    Default sensor loader (used when no sensor loader is specified)
     """
 
     def check_conf(self, conf):
@@ -51,31 +53,32 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         :return: overloaded configuration
         :rtype: dict
         """
-        if isinstance(conf, str):
-            overloaded_conf = {}
-            image_path = make_relative_path_absolute(conf, self.config_dir)
-            overloaded_conf[sens_cst.INPUT_PATH] = image_path
-            overloaded_conf[sens_cst.INPUT_LOADER] = "basic_image"
-            overloaded_conf[sens_cst.INPUT_NODATA] = 0
-        elif isinstance(conf, dict):
+        slurp_filling = {
+            "fill_with_geoid": 8,
+            "interpolate_from_borders": 9,
+            "fill_with_endogenous_dem": 10,
+            "fill_with_exogenous_dem": 6,
+        }
+        if isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
                 conf[sens_cst.INPUT_PATH], self.config_dir
             )
             overloaded_conf[sens_cst.INPUT_PATH] = image_path
-            overloaded_conf[sens_cst.INPUT_LOADER] = conf.get(
-                sens_cst.INPUT_LOADER, "basic_image"
-            )
-            overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
-                sens_cst.INPUT_NODATA, 0
-            )
+            if sens_cst.INPUT_FILLING in conf:
+                logging.warning(
+                    "A filling dictionary has been defined but "
+                    "the slurp_classification loader is selected : filling "
+                    "values will be overriden according to SLURP conventions"
+                )
+            overloaded_conf[sens_cst.INPUT_FILLING] = slurp_filling
         else:
             raise TypeError(f"Input {conf} is not a string ot dict")
 
         sensor_schema = {
             sens_cst.INPUT_LOADER: str,
             sens_cst.INPUT_PATH: str,
-            sens_cst.INPUT_NODATA: Or(None, int),
+            sens_cst.INPUT_FILLING: dict,
         }
 
         # Check conf
@@ -89,19 +92,16 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            "loader": "pivot_image",
+            sens_cst.INPUT_LOADER: "basic_classification",
+            sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
+            sens_cst.INPUT_FILLING: self.used_config[sens_cst.INPUT_FILLING],
         }
-        pivot_config["bands"] = {}
-        for band_id in range(
-            inputs.rasterio_get_nb_bands(self.used_config[sens_cst.INPUT_PATH])
-        ):
-            band_name = "b" + str(band_id)
-            pivot_config["bands"][band_name] = {
-                sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
-                "band": band_id,
-            }
-        pivot_config["texture_bands"] = None
-        pivot_sensor_loader = PivotImageSensorLoader(
+        pivot_config["values"] = inputs.rasterio_get_classif_values(
+            self.used_config[sens_cst.INPUT_PATH]
+        )
+        # Remove value 0 because it corresponds to unclassified
+        pivot_config["values"].remove(0)
+        pivot_sensor_loader = PivotClassifSensorLoader(
             pivot_config, self.config_dir
         )
         self.pivot_format = pivot_sensor_loader.get_pivot_format()

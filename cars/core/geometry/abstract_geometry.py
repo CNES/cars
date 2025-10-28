@@ -201,25 +201,25 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
             # Footprint of left image with altitude z_min
             coords_list.extend(
                 self.image_envelope(
-                    image1["main_file"], geomodel1, elevation=z_min
+                    image1["bands"]["b0"]["path"], geomodel1, elevation=z_min
                 )
             )
             # Footprint of left image with altitude z_max
             coords_list.extend(
                 self.image_envelope(
-                    image1["main_file"], geomodel1, elevation=z_max
+                    image1["bands"]["b0"]["path"], geomodel1, elevation=z_max
                 )
             )
             # Footprint of right image with altitude z_min
             coords_list.extend(
                 self.image_envelope(
-                    image2["main_file"], geomodel2, elevation=z_min
+                    image2["bands"]["b0"]["path"], geomodel2, elevation=z_min
                 )
             )
             # Footprint of right image with altitude z_max
             coords_list.extend(
                 self.image_envelope(
-                    image2["main_file"], geomodel2, elevation=z_max
+                    image2["bands"]["b0"]["path"], geomodel2, elevation=z_max
                 )
             )
         lon_list, lat_list = list(zip(*coords_list))  # noqa: B905

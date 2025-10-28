@@ -669,8 +669,9 @@ def generate_filling_applications(inputs_conf):
                 ].items():
                     # Add new value to filling bands
                     if classif_values is not None:
-                        if isinstance(classif_values, str):
+                        if isinstance(classif_values, int):
                             classif_values = [classif_values]
+                        classif_values = list(map(str, classif_values))
                         filling_bands[filling_name] = list(
                             OrderedDict.fromkeys(
                                 filling_bands[filling_name] + classif_values

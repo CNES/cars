@@ -68,7 +68,7 @@ def get_ground_truth(  # pylint: disable=too-many-positional-arguments
     :type reverse: bool
     """
 
-    sensor_data_im = sensor[sens_cst.INPUT_IMG]["main_file"]
+    sensor_data_im = sensor[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
     geomodel = sensor[sens_cst.INPUT_GEO_MODEL]
 
     rows = np.arange(window[0], window[1])

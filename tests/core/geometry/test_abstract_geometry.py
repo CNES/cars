@@ -380,7 +380,13 @@ def test_epipolar_position_from_grid():
 
     sensor_left = {
         "image": {
-            "main_file": absolute_data_path("input/phr_ventoux/left_image.tif"),
+            "bands": {
+                "b0": {
+                    "path": absolute_data_path(
+                        "input/phr_ventoux/left_image.tif"
+                    )
+                }
+            }
         },
         "geomodel": {
             "path": absolute_data_path("input/phr_ventoux/left_image.geom"),
@@ -390,9 +396,13 @@ def test_epipolar_position_from_grid():
 
     sensor_right = {
         "image": {
-            "main_file": absolute_data_path(
-                "input/phr_ventoux/right_image.tif"
-            ),
+            "bands": {
+                "b0": {
+                    "path": absolute_data_path(
+                        "input/phr_ventoux/right_image.tif"
+                    )
+                }
+            }
         },
         "geomodel": {
             "path": absolute_data_path("input/phr_ventoux/right_image.geom"),

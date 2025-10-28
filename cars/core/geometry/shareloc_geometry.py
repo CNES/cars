@@ -190,7 +190,7 @@ class SharelocGeometry(AbstractGeometry):
         coords_list = []
         for image1, geomodel1, _, geomodel2 in pairs_for_roi:
             # Footprint of rectification grid (with margins)
-            image1 = SharelocGeometry.load_image(image1["main_file"])
+            image1 = SharelocGeometry.load_image(image1["bands"]["b0"]["path"])
             geomodel1 = self.load_geom_model(geomodel1)
             geomodel2 = self.load_geom_model(geomodel2)
 

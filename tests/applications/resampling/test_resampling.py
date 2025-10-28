@@ -424,14 +424,11 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
                 data["sensor_image_left"] = {
                     "image": {
                         "loader": "pivot_image",
-                        "main_file": data["sensor_image_left"]["image"][
-                            "main_file"
-                        ],
                         "bands": {
                             "b0": {
                                 "path": data["sensor_image_left"]["image"][
-                                    "main_file"
-                                ],
+                                    "bands"
+                                ]["b0"]["path"],
                                 "band": 0,
                             }
                         },
@@ -449,14 +446,11 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
                 data["sensor_image_right"] = {
                     "image": {
                         "loader": "pivot_image",
-                        "main_file": data["sensor_image_right"]["image"][
-                            "main_file"
-                        ],
                         "bands": {
                             "b0": {
                                 "path": data["sensor_image_right"]["image"][
-                                    "main_file"
-                                ],
+                                    "bands"
+                                ]["b0"]["path"],
                                 "band": 0,
                             }
                         },
@@ -525,12 +519,12 @@ def test_resampling_low_res():  # pylint: disable=redefined-outer-name):
                 )
 
                 with rasterio.open(
-                    data["sensor_image_left"]["image"]["main_file"]
+                    data["sensor_image_left"]["image"]["bands"]["b0"]["path"]
                 ) as src:
                     data1 = src.read(1)
 
                 with rasterio.open(
-                    data["sensor_image_right"]["image"]["main_file"]
+                    data["sensor_image_right"]["image"]["bands"]["b0"]["path"]
                 ) as src:
                     data2 = src.read(1)
 

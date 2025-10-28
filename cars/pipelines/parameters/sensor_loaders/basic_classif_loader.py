@@ -36,7 +36,7 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
 )
 
 
-@SensorLoader.register("basic_classif")
+@SensorLoader.register("basic_classification")
 class BasicClassifSensorLoader(SensorLoaderTemplate):
     """
     Default sensor loader (used when no sensor loader is specified)
@@ -60,17 +60,17 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
         if isinstance(conf, str):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
-            overloaded_conf["path"] = image_path
-            overloaded_conf[sens_cst.INPUT_LOADER] = "basic_classif"
+            overloaded_conf[sens_cst.INPUT_PATH] = image_path
+            overloaded_conf[sens_cst.INPUT_LOADER] = "basic_classification"
             overloaded_conf[sens_cst.INPUT_FILLING] = default_filling
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
-                conf["path"], self.config_dir
+                conf[sens_cst.INPUT_PATH], self.config_dir
             )
-            overloaded_conf["path"] = image_path
+            overloaded_conf[sens_cst.INPUT_PATH] = image_path
             overloaded_conf[sens_cst.INPUT_LOADER] = conf.get(
-                sens_cst.INPUT_LOADER, "basic"
+                sens_cst.INPUT_LOADER, "basic_classification"
             )
             overloaded_conf[sens_cst.INPUT_FILLING] = conf.get(
                 sens_cst.INPUT_FILLING, default_filling
@@ -80,7 +80,7 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
 
         sensor_schema = {
             sens_cst.INPUT_LOADER: str,
-            "path": str,
+            sens_cst.INPUT_PATH: str,
             sens_cst.INPUT_FILLING: dict,
         }
 
@@ -95,20 +95,15 @@ class BasicClassifSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {
-            sens_cst.INPUT_LOADER: "pivot_classif",
-            sens_cst.MAIN_FILE: self.used_config["path"],
+            sens_cst.INPUT_LOADER: "pivot_classification",
+            sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
             sens_cst.INPUT_FILLING: self.used_config[sens_cst.INPUT_FILLING],
         }
-        pivot_config["bands"] = {}
-        for band_id in range(
-            inputs.rasterio_get_nb_bands(self.used_config["path"])
-        ):
-            band_name = "b" + str(band_id)
-            pivot_config["bands"][band_name] = {
-                "path": self.used_config["path"],
-                "band": band_id,
-            }
-        pivot_config["texture_bands"] = None
+        pivot_config["values"] = inputs.rasterio_get_classif_values(
+            self.used_config[sens_cst.INPUT_PATH]
+        )
+        # Remove value 0 because it corresponds to unclassified data
+        pivot_config["values"].remove(0)
         pivot_sensor_loader = PivotClassifSensorLoader(
             pivot_config, self.config_dir
         )

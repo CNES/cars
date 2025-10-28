@@ -1,0 +1,5 @@
+---
+classification:
+  path: classif.tif
+  loader: slurp_classification
+

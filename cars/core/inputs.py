@@ -170,6 +170,30 @@ def rasterio_get_nb_bands(raster_file: str) -> int:
         return descriptor.count
 
 
+def rasterio_get_classif_values(raster_file: str) -> int:
+    """
+    Get the number of bands in an image file
+
+    :param raster_file: Image file
+    :return: The number of bands
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        max_value = int(descriptor.stats()[0].max)
+        if max_value <= 10:
+            logging.info("Max value of classif is {}")
+            values = list(range(max_value + 1))
+            logging.info("Classes are {}".format(values))
+            return values
+        logging.warning(
+            "Input classif has classes over 10"
+            "Classification file will be read to determine exact values"
+        )
+        array = descriptor.read()
+        values = list(map(int, np.unique(array)))
+        logging.info("Classes are {}".format(values))
+        return values
+
+
 def rasterio_get_tags(raster_file: str) -> dict:
     """
     Get the tags in an image file
@@ -538,7 +562,7 @@ def get_descriptions_bands(sensor) -> Dict:
         with rio.open(sensor, "r") as descriptor:
             return descriptor.descriptions
     elif isinstance(sensor, dict):
-        if "bands" in sensor:
-            return list(sensor["bands"].keys())
+        if "values" in sensor:
+            return list(map(str, sensor["values"]))
         raise RuntimeError("Sensor {} cannot be read".format(sensor))
     raise TypeError("Sensor {} is not str or dict".format(sensor))
