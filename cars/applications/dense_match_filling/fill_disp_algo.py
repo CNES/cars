@@ -35,7 +35,6 @@ import xarray as xr
 from cars.applications.dense_match_filling import (
     fill_disp_wrappers as fill_wrap,
 )
-from cars.conf import mask_cst
 
 # Cars import
 from cars.core import constants as cst
@@ -82,6 +81,7 @@ def fill_disp_using_zero_padding(
     :param fill_valid_pixels: option to fill valid pixels
     :type fill_valid_pixels: bool
     """
+
     # get index of the application class config
     # according the coords classif band
     if cst.BAND_CLASSIF in disp_map.coords or "nodata" in classif_tag:
@@ -97,11 +97,8 @@ def fill_disp_using_zero_padding(
             )
             stack_index = np.logical_or(stack_index, nodata_mask)
 
-        # Exclude pixels outside of epipolar footprint
-        mask = (
-            disp_map[cst.EPI_MSK].values
-            != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
-        )
+        # Exclude pixels invalid in epipolar mask
+        mask = disp_map[cst.EPI_MSK].values == 0
 
         if not fill_valid_pixels:
             # Exclude valid pixels

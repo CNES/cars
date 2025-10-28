@@ -302,8 +302,19 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
 
     left = ds1.im.loc[used_band].values
     right = ds2.im.loc[used_band].values
+    # Generate validity masks
     left_mask = ds1.msk.loc[used_band].values == 0
     right_mask = ds2.msk.loc[used_band].values == 0
+
+    # Update validity masks: all classes in classification should be 0
+    if "classification" in ds1:
+        left_mask = np.logical_and(
+            left_mask, ~np.any(ds1["classification"].values > 0, axis=0)
+        )
+    if "classification" in ds2:
+        right_mask = np.logical_and(
+            right_mask, ~np.any(ds2["classification"].values > 0, axis=0)
+        )
 
     matches = compute_matches(
         left,

@@ -246,6 +246,18 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
     left_dataset["disparity"] = left_disparity
     right_dataset["disparity"] = right_disparity
 
+    # Update invalidity masks: all classes in classification should be 0
+    if "classification" in left_dataset:
+        left_dataset[cst.EPI_MSK] = np.logical_or(
+            left_dataset[cst.EPI_MSK],
+            np.any(left_dataset["classification"].values != 0, axis=0),
+        )
+    if "classification" in right_dataset:
+        right_dataset[cst.EPI_MSK] = np.logical_or(
+            right_dataset[cst.EPI_MSK],
+            np.any(right_dataset["classification"].values != 0, axis=0),
+        )
+
     if used_band is not None:
         # Remove band_im dimension from mask
         left_msk = left_dataset[cst.EPI_MSK]
