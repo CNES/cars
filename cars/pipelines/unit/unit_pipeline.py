@@ -2587,20 +2587,18 @@ class UnitPipeline(PipelineTemplate):
                 return False
 
             classif_multi_bands = src.read()
-            bands_names = src.descriptions
-            band_dict = {name: i for i, name in enumerate(bands_names)}
             classif_mono_band = np.zeros(classif_multi_bands.shape[1:3])
             profile = src.profile
 
             for key, value in aux_classif.items():
-                if isinstance(value, str):
-                    num_band = band_dict[value]
+                if isinstance(value, int):
+                    num_band = value - 1
                     mask_1 = classif_mono_band == 0
                     mask_2 = classif_multi_bands[num_band, :, :] == 1
                     classif_mono_band[mask_1 & mask_2] = key
                 elif isinstance(value, list):
                     for elem in value:
-                        num_band = band_dict[elem]
+                        num_band = elem - 1
                         mask_1 = classif_mono_band == 0
                         mask_2 = classif_multi_bands[num_band, :, :] == 1
                         classif_mono_band[mask_1 & mask_2] = key

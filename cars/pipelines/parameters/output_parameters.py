@@ -275,7 +275,7 @@ def check_classification_parameter(inputs, overloaded_conf):
             classif = inputs[sens_cst.SENSORS][first_key][
                 sens_cst.INPUT_CLASSIFICATION
             ]
-            bands_classif = sorted(set(classif["bands"].keys()))
+            bands_classif = classif["values"]
 
             if isinstance(classification_formatting, list):
                 overloaded_conf[output_constants.AUXILIARY][
@@ -300,7 +300,10 @@ def check_classification_parameter(inputs, overloaded_conf):
                 ] = {val + 1: name for val, name in enumerate(bands_classif)}
             elif isinstance(classification_formatting, dict):
                 for _, value in classification_formatting.items():
-                    if value not in bands_classif:
+                    if isinstance(value, int):
+                        value = [value]
+
+                    if any(elem not in bands_classif for elem in value):
                         raise RuntimeError(
                             f"The band {value} is "
                             f"not an existing band of "
