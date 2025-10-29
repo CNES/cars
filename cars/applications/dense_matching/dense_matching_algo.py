@@ -157,6 +157,7 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
     classification_fusion_margin=-1,
     texture_bands=None,
     filter_incomplete_disparity_range=True,
+    classif_bands_to_mask=None,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will compute disparity.
@@ -183,6 +184,8 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
     :type margins_to_keep: int
     :param classification_fusion_margin: the margin to add for the fusion
     :type classification_fusion_margin: int
+    :param classif_bands_to_mask: bands from classif to mask
+    :type classif_bands_to_mask: list of str / int
 
 
     :return: Disparity dataset
@@ -248,14 +251,34 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
 
     # Update invalidity masks: all classes in classification should be 0
     if "classification" in left_dataset:
+        if classif_bands_to_mask is not None:
+            classif_values = (
+                left_dataset["classification"].loc[classif_bands_to_mask].values
+            )
+        else:
+            classif_values = (
+                left_dataset["classification"].loc[classif_bands_to_mask].values
+            )
         left_dataset[cst.EPI_MSK] = np.logical_or(
             left_dataset[cst.EPI_MSK],
-            np.any(left_dataset["classification"].values != 0, axis=0),
+            np.any(classif_values != 0, axis=0),
         )
     if "classification" in right_dataset:
+        if classif_bands_to_mask is not None:
+            classif_values = (
+                right_dataset["classification"]
+                .loc[classif_bands_to_mask]
+                .values
+            )
+        else:
+            classif_values = (
+                right_dataset["classification"]
+                .loc[classif_bands_to_mask]
+                .values
+            )
         right_dataset[cst.EPI_MSK] = np.logical_or(
             right_dataset[cst.EPI_MSK],
-            np.any(right_dataset["classification"].values != 0, axis=0),
+            np.any(classif_values != 0, axis=0),
         )
 
     if used_band is not None:

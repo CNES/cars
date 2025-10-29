@@ -268,6 +268,7 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
     backmatching=True,
     disp_lower_bound=None,
     disp_upper_bound=None,
+    classif_bands_to_mask=None,
 ):
     """
     Compute sift matches between two datasets
@@ -292,6 +293,8 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
     :type window_size: int
     :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
+    :param classif_bands_to_mask: bands from classif to mask
+    :type classif_bands_to_mask: list of str / int
 
     :return: matches
     :rtype: numpy buffer of shape (nb_matches,4)
@@ -306,14 +309,31 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
     left_mask = ds1.msk.loc[used_band].values == 0
     right_mask = ds2.msk.loc[used_band].values == 0
 
-    # Update validity masks: all classes in classification should be 0
+    # Update validity masks: all classes (used in filling) in
+    # classification should be 0
     if "classification" in ds1:
+        if classif_bands_to_mask is not None:
+            classif_values = (
+                ds1["classification"].loc[classif_bands_to_mask].values
+            )
+        else:
+            classif_values = (
+                ds1["classification"].loc[classif_bands_to_mask].values
+            )
         left_mask = np.logical_and(
-            left_mask, ~np.any(ds1["classification"].values > 0, axis=0)
+            left_mask, ~np.any(classif_values > 0, axis=0)
         )
     if "classification" in ds2:
+        if classif_bands_to_mask is not None:
+            classif_values = (
+                ds2["classification"].loc[classif_bands_to_mask].values
+            )
+        else:
+            classif_values = (
+                ds1["classification"].loc[classif_bands_to_mask].values
+            )
         right_mask = np.logical_and(
-            right_mask, ~np.any(ds2["classification"].values > 0, axis=0)
+            right_mask, ~np.any(classif_values > 0, axis=0)
         )
 
     matches = compute_matches(
