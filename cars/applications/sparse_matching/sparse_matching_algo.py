@@ -35,6 +35,7 @@ from vlsift.sift.sift import sift
 from cars.applications.sparse_matching.sparse_matching_wrappers import (
     euclidean_matrix_distance,
 )
+from cars.core import constants as cst
 
 
 def compute_matches(  # pylint: disable=too-many-positional-arguments
@@ -311,29 +312,40 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
 
     # Update validity masks: all classes (used in filling) in
     # classification should be 0
-    if "classification" in ds1:
+    if cst.EPI_CLASSIFICATION in ds1:
         if classif_bands_to_mask is not None:
             classif_values = (
-                ds1["classification"].loc[classif_bands_to_mask].values
+                ds1[cst.EPI_CLASSIFICATION]
+                .sel(band_classif=classif_bands_to_mask)
+                .values
             )
         else:
-            classif_values = (
-                ds1["classification"].loc[classif_bands_to_mask].values
-            )
+            classif_values = ds1[cst.EPI_CLASSIFICATION].values
         left_mask = np.logical_and(
-            left_mask, ~np.any(classif_values > 0, axis=0)
+            left_mask,
+            np.repeat(
+                ~np.any(classif_values > 0, axis=0),
+                ds1.sizes["band_im"],
+                axis=0,
+            ),
         )
-    if "classification" in ds2:
+
+    if cst.EPI_CLASSIFICATION in ds2:
         if classif_bands_to_mask is not None:
             classif_values = (
-                ds2["classification"].loc[classif_bands_to_mask].values
+                ds2[cst.EPI_CLASSIFICATION]
+                .sel(band_classif=classif_bands_to_mask)
+                .values
             )
         else:
-            classif_values = (
-                ds1["classification"].loc[classif_bands_to_mask].values
-            )
+            classif_values = ds1[cst.EPI_CLASSIFICATION].values
         right_mask = np.logical_and(
-            right_mask, ~np.any(classif_values > 0, axis=0)
+            right_mask,
+            np.repeat(
+                ~np.any(classif_values > 0, axis=0),
+                ds2.sizes["band_im"],
+                axis=0,
+            ),
         )
 
     matches = compute_matches(

@@ -250,35 +250,39 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
     right_dataset["disparity"] = right_disparity
 
     # Update invalidity masks: all classes in classification should be 0
-    if "classification" in left_dataset:
+    if cst.EPI_CLASSIFICATION in left_dataset:
         if classif_bands_to_mask is not None:
             classif_values = (
-                left_dataset["classification"].loc[classif_bands_to_mask].values
+                left_dataset[cst.EPI_CLASSIFICATION]
+                .sel(band_classif=classif_bands_to_mask)
+                .values
             )
         else:
-            classif_values = (
-                left_dataset["classification"].loc[classif_bands_to_mask].values
-            )
+            classif_values = left_dataset[cst.EPI_CLASSIFICATION].values
         left_dataset[cst.EPI_MSK] = np.logical_or(
             left_dataset[cst.EPI_MSK],
-            np.any(classif_values != 0, axis=0),
+            np.repeat(
+                np.any(classif_values != 0, axis=0),
+                left_dataset.sizes["band_im"],
+                axis=0,
+            ),
         )
-    if "classification" in right_dataset:
+    if cst.EPI_CLASSIFICATION in right_dataset:
         if classif_bands_to_mask is not None:
             classif_values = (
-                right_dataset["classification"]
-                .loc[classif_bands_to_mask]
+                right_dataset[cst.EPI_CLASSIFICATION]
+                .sel(band_classif=classif_bands_to_mask)
                 .values
             )
         else:
-            classif_values = (
-                right_dataset["classification"]
-                .loc[classif_bands_to_mask]
-                .values
-            )
+            classif_values = right_dataset[cst.EPI_CLASSIFICATION].values
         right_dataset[cst.EPI_MSK] = np.logical_or(
             right_dataset[cst.EPI_MSK],
-            np.any(classif_values != 0, axis=0),
+            np.repeat(
+                np.any(classif_values != 0, axis=0),
+                right_dataset.sizes["band_im"],
+                axis=0,
+            ),
         )
 
     if used_band is not None:

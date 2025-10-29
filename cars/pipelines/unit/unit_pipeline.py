@@ -778,7 +778,9 @@ class UnitPipeline(PipelineTemplate):
                                 classif_values = [classif_values]
                             filling_classif_values += classif_values
 
-        return list(OrderedDict.fromkeys(filling_classif_values))
+        simplified_list = list(OrderedDict.fromkeys(filling_classif_values))
+        res_as_string_list = [str(value) for value in simplified_list]
+        return res_as_string_list
 
     def check_applications_with_inputs(  # noqa: C901 : too complex
         self, inputs_conf, application_conf, epipolar_resolution
