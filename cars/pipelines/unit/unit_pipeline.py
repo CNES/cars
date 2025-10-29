@@ -2564,21 +2564,108 @@ class UnitPipeline(PipelineTemplate):
         )
         self.cars_orchestrator.breakpoint()
 
-        if classif_file_name is not None:
+        if (
+            classif_file_name is not None
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                out_cst.AUX_CLASSIFICATION
+            ]
+        ):
             self.merge_classif_bands(
                 classif_file_name,
                 self.used_conf[OUTPUT][out_cst.AUXILIARY][
                     out_cst.AUX_CLASSIFICATION
                 ],
+                dsm_file_name,
+            )
+        if (
+            filling_file_name is not None
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]
+        ):
+            self.merge_filling_bands(
+                filling_file_name,
+                self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING],
+                dsm_file_name,
             )
 
         return self.quit_on_app("auxiliary_filling")
 
+    @cars_profile(name="merge filling bands", interval=0.5)
+    def merge_filling_bands(self, filling_path, aux_filling, dsm_file):
+        """
+        Merge filling bands to get mono band in output
+        """
+
+        with rasterio.open(dsm_file) as in_dsm:
+            dsm_msk = in_dsm.read_masks(1)
+
+        with rasterio.open(filling_path) as src:
+            nb_bands = src.count
+
+            if nb_bands == 1:
+                return False
+
+            filling_multi_bands = src.read()
+            filling_mono_bands = np.zeros(filling_multi_bands.shape[1:3])
+            descriptions = src.descriptions
+            dict_temp = {name: i for i, name in enumerate(descriptions)}
+            profile = src.profile
+            filling_mask = src.read_masks(1)
+            filling_mono_bands[filling_mask == 0] = 0
+
+            filling_bands_list = {
+                "fill_with_geoid": ["zeros_padding", "filling_exogenous"],
+                "interpolate_from_borders": [
+                    "zeros_padding",
+                    "bulldozer",
+                    "border_interpolation",
+                ],
+                "fill_with_endogenous_dem": [
+                    "zeros_padding",
+                    "filling_exogenous",
+                    "bulldozer",
+                ],
+                "fill_with_exogenous_dem": ["zeros_padding", "bulldozer"],
+            }
+
+            # To get the right footprint
+            filling_mono_bands = np.logical_or(dsm_msk, filling_mask).astype(
+                np.uint8
+            )
+
+            for key, value in aux_filling.items():
+                if isinstance(value, str):
+                    value = [value]
+
+                if isinstance(value, list):
+                    for elem in value:
+                        filling_method = filling_bands_list[elem]
+                        mask = np.all(
+                            [
+                                filling_multi_bands[
+                                    dict_temp[filling_method[index]], :, :
+                                ]
+                                == 1
+                                for index in range(len(filling_method))
+                            ],
+                            axis=0,
+                        )
+
+                        filling_mono_bands[mask] = key
+
+            profile.update(count=1, dtype=filling_mono_bands.dtype)
+            with rasterio.open(filling_path, "w", **profile) as src:
+                src.write(filling_mono_bands, 1)
+
+            return True
+
     @cars_profile(name="merge classif bands", interval=0.5)
-    def merge_classif_bands(self, classif_path, aux_classif):
+    def merge_classif_bands(self, classif_path, aux_classif, dsm_file):
         """
         Merge classif bands to get mono band in output
         """
+
+        with rasterio.open(dsm_file) as in_dsm:
+            dsm_msk = in_dsm.read_masks(1)
 
         with rasterio.open(classif_path) as src:
             nb_bands = src.count
@@ -2589,6 +2676,13 @@ class UnitPipeline(PipelineTemplate):
             classif_multi_bands = src.read()
             classif_mono_band = np.zeros(classif_multi_bands.shape[1:3])
             profile = src.profile
+            classif_mask = src.read_masks(1)
+            classif_mono_band[classif_mask == 0] = 0
+
+            # To get the right footprint
+            classif_mono_band = np.logical_or(dsm_msk, classif_mask).astype(
+                np.uint8
+            )
 
             for key, value in aux_classif.items():
                 if isinstance(value, int):

@@ -194,7 +194,7 @@ def check_output_parameters(  # noqa: C901 : too complex
         output_constants.AUX_CLASSIFICATION: Or(bool, dict, list),
         output_constants.AUX_PERFORMANCE_MAP: Or(bool, list),
         output_constants.AUX_CONTRIBUTING_PAIR: bool,
-        output_constants.AUX_FILLING: bool,
+        output_constants.AUX_FILLING: Or(bool, dict),
         output_constants.AUX_AMBIGUITY: bool,
         output_constants.AUX_DEM_MIN: bool,
         output_constants.AUX_DEM_MAX: bool,
@@ -210,6 +210,9 @@ def check_output_parameters(  # noqa: C901 : too complex
     # Check and overload performance_map parameter
     check_performance_classes(overloaded_conf)
 
+    # Check and overload filling parameter
+    check_filling_parameter(overloaded_conf)
+
     checker_auxiliary = Checker(auxiliary_schema)
     checker_auxiliary.validate(overloaded_conf[output_constants.AUXILIARY])
 
@@ -224,6 +227,37 @@ def check_output_parameters(  # noqa: C901 : too complex
                 )
 
     return overloaded_conf, overloaded_scaling_coeff
+
+
+def check_filling_parameter(overloaded_conf):
+    """
+    Check and overload filling parameter
+    """
+
+    filling_param = overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_FILLING
+    ]
+
+    valid_names = [
+        "fill_with_geoid",
+        "interpolate_from_borders",
+        "fill_with_endogenous_dem",
+        "fill_with_exogenous_dem",
+    ]
+
+    if isinstance(filling_param, dict):
+        for _, value in filling_param.items():
+            if isinstance(value, str):
+                value = [value]
+            print(value)
+            if any(elem not in valid_names for elem in value):
+                raise RuntimeError(
+                    "Those filling methods are not available in CARS"
+                )
+    elif filling_param is True:
+        overloaded_conf[output_constants.AUXILIARY][
+            output_constants.AUX_FILLING
+        ] = {i + 1: name for i, name in enumerate(valid_names)}
 
 
 def check_texture_bands(inputs, overloaded_conf):
