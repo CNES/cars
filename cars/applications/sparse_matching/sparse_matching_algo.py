@@ -312,28 +312,28 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
 
     # Update validity masks: all classes (used in filling) in
     # classification should be 0
-    if cst.EPI_CLASSIFICATION in ds1:
-        if classif_bands_to_mask is not None:
-            classif_values = (
-                ds1[cst.EPI_CLASSIFICATION]
-                .sel(band_classif=classif_bands_to_mask)
-                .values
-            )
-        else:
-            classif_values = ds1[cst.EPI_CLASSIFICATION].values
+    if cst.EPI_CLASSIFICATION in ds1 and classif_bands_to_mask not in (
+        None,
+        [],
+    ):
+        classif_values = (
+            ds1[cst.EPI_CLASSIFICATION]
+            .sel(band_classif=classif_bands_to_mask)
+            .values
+        )
         left_mask = np.logical_and(
             left_mask, ~np.any(classif_values > 0, axis=0)
         )
 
-    if cst.EPI_CLASSIFICATION in ds2:
-        if classif_bands_to_mask is not None:
-            classif_values = (
-                ds2[cst.EPI_CLASSIFICATION]
-                .sel(band_classif=classif_bands_to_mask)
-                .values
-            )
-        else:
-            classif_values = ds1[cst.EPI_CLASSIFICATION].values
+    if cst.EPI_CLASSIFICATION in ds2 and classif_bands_to_mask not in (
+        None,
+        [],
+    ):
+        classif_values = (
+            ds2[cst.EPI_CLASSIFICATION]
+            .sel(band_classif=classif_bands_to_mask)
+            .values
+        )
         right_mask = np.logical_and(
             right_mask, ~np.any(classif_values > 0, axis=0)
         )

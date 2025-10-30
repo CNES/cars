@@ -762,7 +762,7 @@ class UnitPipeline(PipelineTemplate):
 
         if SENSORS not in inputs or inputs[SENSORS] is None:
             logging.info("No sensors in inputs configuration")
-            return []
+            return None
 
         for _sensor_key, sensor_conf in inputs[SENSORS].items():
             if sens_cst.INPUT_CLASSIFICATION in sensor_conf:

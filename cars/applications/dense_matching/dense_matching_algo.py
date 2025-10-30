@@ -250,15 +250,15 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
     right_dataset["disparity"] = right_disparity
 
     # Update invalidity masks: all classes in classification should be 0
-    if cst.EPI_CLASSIFICATION in left_dataset:
-        if classif_bands_to_mask is not None:
-            classif_values = (
-                left_dataset[cst.EPI_CLASSIFICATION]
-                .sel(band_classif=classif_bands_to_mask)
-                .values
-            )
-        else:
-            classif_values = left_dataset[cst.EPI_CLASSIFICATION].values
+    if (
+        cst.EPI_CLASSIFICATION in left_dataset
+        and classif_bands_to_mask not in (None, [])
+    ):
+        classif_values = (
+            left_dataset[cst.EPI_CLASSIFICATION]
+            .sel(band_classif=classif_bands_to_mask)
+            .values
+        )
         left_dataset[cst.EPI_MSK] = np.logical_or(
             left_dataset[cst.EPI_MSK],
             np.repeat(
@@ -267,15 +267,15 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
                 axis=0,
             ),
         )
-    if cst.EPI_CLASSIFICATION in right_dataset:
-        if classif_bands_to_mask is not None:
-            classif_values = (
-                right_dataset[cst.EPI_CLASSIFICATION]
-                .sel(band_classif=classif_bands_to_mask)
-                .values
-            )
-        else:
-            classif_values = right_dataset[cst.EPI_CLASSIFICATION].values
+    if (
+        cst.EPI_CLASSIFICATION in right_dataset
+        and classif_bands_to_mask not in (None, [])
+    ):
+        classif_values = (
+            right_dataset[cst.EPI_CLASSIFICATION]
+            .sel(band_classif=classif_bands_to_mask)
+            .values
+        )
         right_dataset[cst.EPI_MSK] = np.logical_or(
             right_dataset[cst.EPI_MSK],
             np.repeat(
