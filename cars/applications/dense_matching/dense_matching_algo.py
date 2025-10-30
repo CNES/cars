@@ -262,7 +262,7 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
         left_dataset[cst.EPI_MSK] = np.logical_or(
             left_dataset[cst.EPI_MSK],
             np.repeat(
-                np.any(classif_values != 0, axis=0),
+                np.any(classif_values != 0, axis=0)[np.newaxis, ...],
                 left_dataset.sizes["band_im"],
                 axis=0,
             ),
@@ -279,7 +279,7 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
         right_dataset[cst.EPI_MSK] = np.logical_or(
             right_dataset[cst.EPI_MSK],
             np.repeat(
-                np.any(classif_values != 0, axis=0),
+                np.any(classif_values != 0, axis=0)[np.newaxis, ...],
                 right_dataset.sizes["band_im"],
                 axis=0,
             ),

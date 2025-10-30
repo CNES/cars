@@ -322,12 +322,7 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
         else:
             classif_values = ds1[cst.EPI_CLASSIFICATION].values
         left_mask = np.logical_and(
-            left_mask,
-            np.repeat(
-                ~np.any(classif_values > 0, axis=0),
-                ds1.sizes["band_im"],
-                axis=0,
-            ),
+            left_mask, ~np.any(classif_values > 0, axis=0)
         )
 
     if cst.EPI_CLASSIFICATION in ds2:
@@ -340,12 +335,7 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
         else:
             classif_values = ds1[cst.EPI_CLASSIFICATION].values
         right_mask = np.logical_and(
-            right_mask,
-            np.repeat(
-                ~np.any(classif_values > 0, axis=0),
-                ds2.sizes["band_im"],
-                axis=0,
-            ),
+            right_mask, ~np.any(classif_values > 0, axis=0)
         )
 
     matches = compute_matches(
