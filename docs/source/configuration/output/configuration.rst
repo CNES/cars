@@ -112,7 +112,6 @@ Output configuration
 
 
            For the classification parameter:
-           
             you can configure the output. For example, by configuring `{17: [1, 2], 3:3, 15:4}`:
 
             - The classification represented by the pixel value 1 and 2 in the input file will be represented by the value 17 in the output file.
