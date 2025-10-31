@@ -2646,18 +2646,29 @@ class UnitPipeline(PipelineTemplate):
                                 method in descriptions
                                 for method in filling_method
                             ):
-                                mask = np.all(
-                                    [
-                                        filling_multi_bands[
-                                            dict_temp[filling_method[index]],
-                                            :,
-                                            :,
-                                        ]
-                                        == 1
-                                        for index in range(len(filling_method))
-                                    ],
+                                indices_true = [
+                                    dict_temp[m] for m in filling_method
+                                ]
+
+                                mask_true = np.all(
+                                    filling_multi_bands[indices_true, :, :]
+                                    == 1,
                                     axis=0,
                                 )
+
+                                indices_false = [
+                                    i
+                                    for i in range(filling_multi_bands.shape[0])
+                                    if i not in indices_true
+                                ]
+
+                                mask_false = np.all(
+                                    filling_multi_bands[indices_false, :, :]
+                                    == 0,
+                                    axis=0,
+                                )
+
+                                mask = mask_true & mask_false
 
                                 filling_mono_bands[mask] = key
                             else:
