@@ -71,6 +71,7 @@ from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.advanced_parameters_constants import (
     USE_ENDOGENOUS_DEM,
 )
+from cars.pipelines.parameters.output_constants import AUXILIARY
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
@@ -177,7 +178,7 @@ class UnitPipeline(PipelineTemplate):
         (
             output,
             self.scaling_coeff,
-        ) = self.check_output(conf[OUTPUT], self.scaling_coeff)
+        ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff)
 
         self.used_conf[OUTPUT] = output
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
@@ -414,7 +415,7 @@ class UnitPipeline(PipelineTemplate):
             os.path.join(self.out_dir, "refined_conf.yaml"),
         )
 
-    def check_output(self, conf, scaling_coeff):
+    def check_output(self, inputs, conf, scaling_coeff):
         """
         Check the output given
 
@@ -425,7 +426,9 @@ class UnitPipeline(PipelineTemplate):
         :return: overloader output
         :rtype: dict
         """
-        return output_parameters.check_output_parameters(conf, scaling_coeff)
+        return output_parameters.check_output_parameters(
+            inputs, conf, scaling_coeff
+        )
 
     def check_applications(  # noqa: C901 : too complex
         self,
@@ -562,11 +565,12 @@ class UnitPipeline(PipelineTemplate):
             used_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
             # Matching
-            generate_performance_map = (
-                self.used_conf[OUTPUT]
-                .get(out_cst.AUXILIARY, {})
-                .get(out_cst.AUX_PERFORMANCE_MAP, False)
+            generate_performance_map = bool(
+                self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_PERFORMANCE_MAP
+                ]
             )
+
             generate_ambiguity = (
                 self.used_conf[OUTPUT]
                 .get(out_cst.AUXILIARY, {})
@@ -1885,13 +1889,11 @@ class UnitPipeline(PipelineTemplate):
                     self.save_output_depth_map or self.save_output_point_cloud
                 ),
                 save_output_color=bool(depth_map_dir)
-                and self.auxiliary[out_cst.AUX_TEXTURE],
+                and self.auxiliary[out_cst.AUX_IMAGE],
                 save_output_classification=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_CLASSIFICATION],
                 save_output_filling=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_FILLING],
-                save_output_mask=bool(depth_map_dir)
-                and self.auxiliary[out_cst.AUX_MASK],
                 save_output_performance_map=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_PERFORMANCE_MAP],
                 save_output_ambiguity=bool(depth_map_dir)
@@ -1984,10 +1986,10 @@ class UnitPipeline(PipelineTemplate):
             os.path.join(
                 self.out_dir,
                 out_cst.DSM_DIRECTORY,
-                "texture.tif",
+                "image.tif",
             )
             if self.save_output_dsm
-            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_TEXTURE]
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_IMAGE]
             else None
         )
 
@@ -2034,17 +2036,6 @@ class UnitPipeline(PipelineTemplate):
                 "classification_for_filling.tif",
             )
 
-        mask_file_name = (
-            os.path.join(
-                self.out_dir,
-                out_cst.DSM_DIRECTORY,
-                "mask.tif",
-            )
-            if self.save_output_dsm
-            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_MASK]
-            else None
-        )
-
         contributing_pair_file_name = (
             os.path.join(
                 self.out_dir,
@@ -2082,13 +2073,12 @@ class UnitPipeline(PipelineTemplate):
             classif_file_name=classif_file_name,
             performance_map_file_name=performance_map_file_name,
             ambiguity_file_name=ambiguity_file_name,
-            mask_file_name=mask_file_name,
             contributing_pair_file_name=contributing_pair_file_name,
             filling_file_name=filling_file_name,
             color_dtype=self.color_type,
             dump_dir=self.rasterization_dump_dir,
-            performance_map_classes=self.used_conf[ADVANCED][
-                adv_cst.PERFORMANCE_MAP_CLASSES
+            performance_map_classes=self.used_conf[OUTPUT][AUXILIARY][
+                out_cst.AUX_PERFORMANCE_MAP
             ],
             phasing=self.phasing,
         )
@@ -2274,22 +2264,10 @@ class UnitPipeline(PipelineTemplate):
                 os.path.join(
                     self.out_dir,
                     out_cst.DSM_DIRECTORY,
-                    "texture.tif",
+                    "image.tif",
                 )
                 if "texture" in dict_path
-                or self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_TEXTURE
-                ]
-                else None
-            )
-
-            mask_file_name = (
-                os.path.join(
-                    self.out_dir,
-                    out_cst.DSM_DIRECTORY,
-                    "mask.tif",
-                )
-                if "mask" in dict_path
+                or self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_IMAGE]
                 else None
             )
 
@@ -2366,7 +2344,6 @@ class UnitPipeline(PipelineTemplate):
                 filling_file_name,
                 performance_map_file_name,
                 ambiguity_file_name,
-                mask_file_name,
                 contributing_all_pair_file_name,
             )
 
@@ -2377,12 +2354,10 @@ class UnitPipeline(PipelineTemplate):
                 os.path.join(
                     self.out_dir,
                     out_cst.DSM_DIRECTORY,
-                    "texture.tif",
+                    "image.tif",
                 )
                 if self.save_output_dsm
-                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_TEXTURE
-                ]
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_IMAGE]
                 else None
             )
 
@@ -2604,7 +2579,9 @@ class UnitPipeline(PipelineTemplate):
             self.log_dir = os.path.join(self.out_dir, "logs")
 
         self.first_res_out_dir = first_res_out_dir
-        self.texture_bands = self.used_conf[ADVANCED][adv_cst.TEXTURE_BANDS]
+        self.texture_bands = self.used_conf[OUTPUT][AUXILIARY][
+            out_cst.AUX_IMAGE
+        ]
 
         self.auxiliary = self.used_conf[OUTPUT][out_cst.AUXILIARY]
 

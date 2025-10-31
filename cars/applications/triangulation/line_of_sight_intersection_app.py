@@ -50,7 +50,6 @@ from cars.applications.triangulation import (
 from cars.applications.triangulation.abstract_triangulation_app import (
     Triangulation,
 )
-from cars.conf import mask_cst
 from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
 from cars.core.utils import safe_makedirs
@@ -143,7 +142,6 @@ class LineOfSightIntersection(
         save_output_coordinates=True,
         save_output_color=True,
         save_output_classification=False,
-        save_output_mask=False,
         save_output_filling=False,
         save_output_performance_map=False,
         save_output_ambiguity=False,
@@ -179,8 +177,6 @@ class LineOfSightIntersection(
         :param save_output_classification: Save classification depth map in
                 output_dir
         :type save_output_classification: bool
-        :param save_output_mask: Save mask depth map in output_dir
-        :type save_output_mask: bool
         :param save_output_filling: Save filling depth map in output_dir
         :type save_output_filling: bool
         :param save_output_performance_map: Save performance map in output_dir
@@ -231,23 +227,11 @@ class LineOfSightIntersection(
         if save_output_color or dump_dir:
             color_output_dir = output_dir if save_output_color else dump_dir
             self.orchestrator.add_to_save_lists(
-                os.path.join(color_output_dir, "texture.tif"),
+                os.path.join(color_output_dir, "image.tif"),
                 cst.EPI_TEXTURE,
                 epipolar_point_cloud,
                 cars_ds_name="depth_map_color",
                 dtype=color_type,
-            )
-
-        if save_output_mask or dump_dir:
-            mask_output_dir = output_dir if save_output_mask else dump_dir
-            self.orchestrator.add_to_save_lists(
-                os.path.join(mask_output_dir, "mask.tif"),
-                cst.EPI_MSK,
-                epipolar_point_cloud,
-                cars_ds_name="depth_map_msk",
-                nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
-                optional_data=True,
-                dtype=np.uint8,
             )
 
         if save_output_performance_map or dump_dir:
@@ -361,7 +345,6 @@ class LineOfSightIntersection(
         save_output_coordinates=True,
         save_output_color=True,
         save_output_classification=False,
-        save_output_mask=False,
         save_output_filling=False,
         save_output_performance_map=False,
         save_output_ambiguity=False,
@@ -378,8 +361,6 @@ class LineOfSightIntersection(
         :param save_output_classification: Save classification depth map in
                 output_dir
         :type save_output_classification: bool
-        :param save_output_mask: Save mask depth map in output_dir
-        :type save_output_mask: bool
         :param save_output_filling: Save filling depth map in output_dir
         :type save_output_filling: bool
         :param save_output_performance_map: Save performance map in output_dir
@@ -400,11 +381,8 @@ class LineOfSightIntersection(
 
         if save_output_color:
             index[cst.INDEX_DEPTH_MAP_COLOR] = os.path.join(
-                pair_key, "texture.tif"
+                pair_key, "image.tif"
             )
-
-        if save_output_mask:
-            index[cst.INDEX_DEPTH_MAP_MASK] = os.path.join(pair_key, "mask.tif")
 
         if save_output_performance_map:
             index[cst.INDEX_DEPTH_MAP_PERFORMANCE_MAP] = os.path.join(
@@ -491,7 +469,6 @@ class LineOfSightIntersection(
         save_output_coordinates=False,
         save_output_color=False,
         save_output_classification=False,
-        save_output_mask=False,
         save_output_filling=False,
         save_output_performance_map=False,
         save_output_ambiguity=False,
@@ -574,8 +551,6 @@ class LineOfSightIntersection(
         :param save_output_classification: Save classification depth map in
                 depth_map_dir
         :type save_output_classification: bool
-        :param save_output_mask: Save mask depth map in depth_map_dir
-        :type save_output_mask: bool
         :param save_output_filling: Save filling depth map in depth_map_dir
         :type save_output_filling: bool
         :param save_output_performance_map: Save performance map in
@@ -782,7 +757,6 @@ class LineOfSightIntersection(
                 save_output_coordinates,
                 save_output_color,
                 save_output_classification,
-                save_output_mask,
                 save_output_filling,
                 save_output_performance_map,
                 save_output_ambiguity,
@@ -791,7 +765,6 @@ class LineOfSightIntersection(
                 save_output_coordinates,
                 save_output_color,
                 save_output_classification,
-                save_output_mask,
                 save_output_filling,
                 save_output_performance_map,
                 save_output_ambiguity,

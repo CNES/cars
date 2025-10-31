@@ -1107,7 +1107,7 @@ class CensusMccnnSgm(
                 )
 
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_texture.tif"),
+                    os.path.join(pair_folder, "epi_disp_image.tif"),
                     cst.EPI_TEXTURE,
                     epipolar_disparity_map,
                     cars_ds_name="epi_disp_color",

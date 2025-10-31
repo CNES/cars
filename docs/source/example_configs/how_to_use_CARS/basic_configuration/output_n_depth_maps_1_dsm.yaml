@@ -5,7 +5,7 @@ input:
       x: path_to_x.tif
       y: path_to_y.tif
       z: path_to_z.tif
-      texture: path_to_texture.tif
+      texture: path_to_image.tif
       mask: path_to_mask.tif
       classification: path_to_classification.tif
       filling: path_to_filling.tif

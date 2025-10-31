@@ -118,7 +118,6 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         save_output_coordinates=False,
         save_output_color=False,
         save_output_classification=False,
-        save_output_mask=False,
         save_output_filling=False,
         save_output_performance_map=False,
     ):
@@ -206,8 +205,6 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :param save_output_classification: Save classification depth map in
                 depth_map_dir
         :type save_output_classification: bool
-        :param save_output_mask: Save mask depth map in depth_map_dir
-        :type save_output_mask: bool
         :param save_output_filling: Save filling depth map in depth_map_dir
         :type save_output_filling: bool
         :param save_output_performance_map: Save performance map in

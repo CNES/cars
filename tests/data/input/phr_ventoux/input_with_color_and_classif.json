@@ -25,8 +25,7 @@
                             "path": "color_image.tif",
                             "band": 3
                         }
-                    },
-                    "texture_bands": ["b1", "b2", "b3", "b4"]
+                    }
                 },
                 "geomodel": {
                     "path": "left_image.geom"

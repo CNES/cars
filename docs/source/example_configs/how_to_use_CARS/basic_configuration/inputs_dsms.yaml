@@ -4,7 +4,7 @@ input:
     my_name_for_this_dsm:
       dsm: path_to_dsm.tif
       classification: path_to_classif.tif
-      texture: path_to_texture.tif
+      texture: path_to_image.tif
       performance_map: path_to_performance_map.tif
       filling: path_to_filling.tif
       mask: path_to_mask.tif

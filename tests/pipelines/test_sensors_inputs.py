@@ -423,7 +423,6 @@ def test_input_pivot_image_loader():
                         "b2": {"path": "color_image.tif", "band": 1},
                         "b3": {"path": "color_image.tif", "band": 2},
                     },
-                    "texture_bands": ["b1", "b2", "b3"],
                 },
                 "geomodel": {"path": "left_image.geom"},
                 "mask": None,

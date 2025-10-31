@@ -120,11 +120,10 @@ def test_end2end_dsm_fusion():
         resolution = 0.5
         input_dense_dsm_lr["output"]["resolution"] = resolution
         input_dense_dsm_lr["output"]["auxiliary"] = {
-            "mask": True,
             "performance_map": True,
             "weights": True,
             "filling": True,
-            "texture": True,
+            "image": ["b1", "b2", "b3", "b4"],
             "contributing_pair": True,
             "classification": True,
         }
@@ -149,7 +148,7 @@ def test_end2end_dsm_fusion():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "color_end2end_ventoux_lr.tif"
@@ -206,7 +205,7 @@ def test_end2end_dsm_fusion():
             "weights": absolute_data_path(
                 "ref_output/weights_end2end_ventoux_lr.tif"
             ),
-            "texture": absolute_data_path(
+            "image": absolute_data_path(
                 "ref_output/color_end2end_ventoux_lr.tif"
             ),
             "classification": absolute_data_path(
@@ -239,11 +238,10 @@ def test_end2end_dsm_fusion():
         input_dsm_config["output"] = {}
         input_dsm_config["output"]["directory"] = directory
         input_dsm_config["output"]["auxiliary"] = {
-            "mask": True,
             "performance_map": True,
             "weights": True,
             "filling": True,
-            "texture": True,
+            "image": ["b1", "b2", "b3", "b4"],
             "contributing_pair": True,
             "classification": True,
         }
@@ -270,7 +268,7 @@ def test_end2end_dsm_fusion():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "color_end2end_ventoux_fusion.tif"
@@ -326,7 +324,7 @@ def test_end2end_dsm_fusion():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_fusion.tif")
             ),
@@ -368,7 +366,7 @@ def test_end2end_dsm_fusion():
 
         with check:
             assert inputs.get_descriptions_bands(
-                os.path.join(out_dir, "dsm", "texture.tif")
+                os.path.join(out_dir, "dsm", "image.tif")
             ) == (None, None, None, None)
         with check:
             assert inputs.get_descriptions_bands(
@@ -454,9 +452,7 @@ def test_end2end_color_after_dsm_reentrance():
         "weights": absolute_data_path(
             "ref_output/weights_end2end_ventoux_lr.tif"
         ),
-        "texture": absolute_data_path(
-            "ref_output/color_end2end_ventoux_lr.tif"
-        ),
+        "image": absolute_data_path("ref_output/color_end2end_ventoux_lr.tif"),
     }
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_dsm_config = {
@@ -509,7 +505,7 @@ def test_end2end_color_after_dsm_reentrance():
         dsm_merging_pipeline.run()
 
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -519,7 +515,7 @@ def test_end2end_color_after_dsm_reentrance():
         )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "colorisation_end2end_gizeh_reentrance.tif"
@@ -594,7 +590,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         resolution = 0.5
         input_dense_dsm["output"]["resolution"] = resolution
         input_dense_dsm["output"]["auxiliary"] = {
-            "mask": True,
             "performance_map": True,
         }
 
@@ -623,20 +618,11 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
                     "color_end2end_gizeh_crop_no_merging.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "mask_end2end_gizeh_crop_no_merging.tif",
                 )
             ),
         )
@@ -720,7 +706,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             rtol=1e-2,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
@@ -728,16 +714,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             ),
             rtol=0.002,  # TODO: analyse
             atol=2,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
-                )
-            ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
         )
         assert_same_images(
             os.path.join(
@@ -1346,7 +1322,7 @@ def test_end2end_ventoux_unique():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "color_end2end_ventoux.tif"
@@ -1386,15 +1362,13 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        with check:
-            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test that we have the same results without setting the texture
     input_json = absolute_data_path(
@@ -1554,15 +1528,13 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        with check:
-            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test we have the same results with multiprocessing
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -1666,14 +1638,12 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
             rtol=0.005,
         )
-        with check:
-            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -1760,7 +1730,7 @@ def test_end2end_ventoux_unique_epsg_4326():
             ),
         )
         copy2(
-            os.path.join(out_dir_dsm, "dsm", "texture.tif"),
+            os.path.join(out_dir_dsm, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -1792,7 +1762,7 @@ def test_end2end_ventoux_unique_epsg_4326():
             rtol=1e-4,
         )
         assert_same_images(
-            os.path.join(out_dir_dsm, "dsm", "texture.tif"),
+            os.path.join(out_dir_dsm, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_4326.tif")
             ),
@@ -2124,7 +2094,7 @@ def test_end2end_use_epipolar_a_priori():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -2150,7 +2120,7 @@ def test_end2end_use_epipolar_a_priori():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_no_srtm.tif"
@@ -2174,8 +2144,6 @@ def test_end2end_use_epipolar_a_priori():
             atol=1.0e-7,
             rtol=1.0e-7,
         )
-        with check:
-            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -2331,10 +2299,9 @@ def test_end2end_ventoux_full_output_no_elevation():
             "directory": out_dir,
             "product_level": ["depth_map", "point_cloud", "dsm"],
             "auxiliary": {
-                "texture": True,
+                "image": True,
                 "weights": True,
                 "filling": True,
-                "mask": True,
                 "classification": True,
                 "contributing_pair": True,
             },
@@ -2366,7 +2333,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -2393,15 +2360,6 @@ def test_end2end_ventoux_full_output_no_elevation():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "mask_end2end_ventoux_no_elevation.tif",
-                )
-            ),
-        )
-        copy2(
             os.path.join(out_dir, "dsm", "filling.tif"),
             absolute_data_path(
                 os.path.join(
@@ -2420,7 +2378,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             ),
         )
         copy2(
-            os.path.join(out_dir, "depth_map", "left_right", "texture.tif"),
+            os.path.join(out_dir, "depth_map", "left_right", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -2445,15 +2403,6 @@ def test_end2end_ventoux_full_output_no_elevation():
                 os.path.join(
                     intermediate_output_dir,
                     "epi_pc_filling_end2end_ventoux_no_elevation.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "depth_map", "left_right", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "epi_pc_mask_end2end_ventoux_no_elevation.tif",
                 )
             ),
         )
@@ -2497,7 +2446,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_no_elevation.tif"
@@ -2511,16 +2460,6 @@ def test_end2end_ventoux_full_output_no_elevation():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "weights_end2end_ventoux_no_elevation.tif"
-                )
-            ),
-            rtol=0.0002,
-            atol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "mask_end2end_ventoux_no_elevation.tif"
                 )
             ),
             rtol=0.0002,
@@ -2596,17 +2535,6 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "epi_pc_mask_end2end_ventoux_no_elevation.tif",
-                )
-            ),
-            rtol=0.0002,
-            atol=1.0e-6,
-        )
-        assert_same_images(
             os.path.join(depth_map_dir, "filling.tif"),
             absolute_data_path(
                 os.path.join(
@@ -2618,7 +2546,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "texture.tif"),
+            os.path.join(depth_map_dir, "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -2677,8 +2605,8 @@ def test_end2end_ventoux_full_output_no_elevation():
                         "x": "left_right/X.tif",
                         "y": "left_right/Y.tif",
                         "z": "left_right/Z.tif",
-                        "texture": "left_right/texture.tif",
-                        "mask": "left_right/mask.tif",
+                        "image": "left_right/image.tif",
+                        "mask": None,
                         "classification": "left_right/classification.tif",
                         "performance_map": None,
                         "filling": "left_right/filling.tif",
@@ -2691,8 +2619,8 @@ def test_end2end_ventoux_full_output_no_elevation():
             with check:
                 assert dsm_index == {
                     "dsm": "dsm.tif",
-                    "texture": "texture.tif",
-                    "mask": "mask.tif",
+                    "image": "image.tif",
+                    "mask": None,
                     "weights": "weights.tif",
                     "classification": "classification.tif",
                     "performance_map": None,
@@ -2854,7 +2782,11 @@ def test_end2end_ventoux_with_color():
 
         # update pipeline
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
-        input_config_dense_dsm["output"]["auxiliary"] = {"ambiguity": True}
+        input_config_dense_dsm["output"]["auxiliary"] = {
+            "ambiguity": True,
+            "image": ["b1", "b2", "b3", "b4"],
+            "performance_map": False,
+        }
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
 
@@ -2975,7 +2907,7 @@ def test_end2end_ventoux_with_color():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -2985,7 +2917,7 @@ def test_end2end_ventoux_with_color():
         )
         copy2(
             os.path.join(
-                out_dir, "dump_dir", "rasterization", "performance_map.tif"
+                out_dir, "dump_dir", "rasterization", "performance_map_raw.tif"
             ),
             absolute_data_path(
                 os.path.join(
@@ -3030,7 +2962,7 @@ def test_end2end_ventoux_with_color():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_with_color.tif"
@@ -3041,7 +2973,7 @@ def test_end2end_ventoux_with_color():
         )
         assert_same_images(
             os.path.join(
-                out_dir, "dump_dir", "rasterization", "performance_map.tif"
+                out_dir, "dump_dir", "rasterization", "performance_map_raw.tif"
             ),
             absolute_data_path(
                 os.path.join(
@@ -3385,6 +3317,9 @@ def test_compute_dsm_with_roi_ventoux():
         input_config_dense_dsm["output"]["resolution"] = resolution
         input_config_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
 
+        input_config_dense_dsm["output"]["auxiliary"] = {
+            "image": ["b1", "b2", "b3", "b4"]
+        }
         # Update roi
         roi_geo_json = {
             "type": "FeatureCollection",
@@ -3428,7 +3363,7 @@ def test_compute_dsm_with_roi_ventoux():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -3448,7 +3383,7 @@ def test_compute_dsm_with_roi_ventoux():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_with_roi.tif"
@@ -3457,8 +3392,6 @@ def test_compute_dsm_with_roi_ventoux():
             rtol=0.0002,
             atol=1.0e-6,
         )
-        with check:
-            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
         # check final bounding box
         # create reference
@@ -3580,7 +3513,7 @@ def test_compute_dsm_with_snap_to_img1():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -3600,7 +3533,7 @@ def test_compute_dsm_with_snap_to_img1():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3610,8 +3543,6 @@ def test_compute_dsm_with_snap_to_img1():
             rtol=0.0002,
             atol=1.0e-6,
         )
-        with check:
-            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -3772,7 +3703,7 @@ def test_end2end_quality_stats():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -3861,7 +3792,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_quality_stats.tif"
@@ -3914,8 +3845,6 @@ def test_end2end_quality_stats():
             atol=0.0001,
             rtol=1e-6,
         )
-        with check:
-            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -4032,7 +3961,7 @@ def test_end2end_ventoux_egm96_geoid():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "color_end2end_ventoux_egm96.tif"
@@ -4049,15 +3978,13 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-    with check:
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test that we have the same results without setting the texture1
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -4142,15 +4069,13 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        with check:
-            assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test with custom geoid
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -4266,7 +4191,7 @@ def test_end2end_ventoux_egm96_geoid():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -4286,7 +4211,7 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -4374,7 +4299,6 @@ def test_end2end_paca_with_mask():
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
         input_config_dense_dsm["output"]["auxiliary"] = {
-            "mask": True,
             "classification": True,
         }
         resolution = 0.5
@@ -4401,7 +4325,7 @@ def test_end2end_paca_with_mask():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -4415,14 +4339,6 @@ def test_end2end_paca_with_mask():
                 os.path.join(
                     intermediate_output_dir,
                     "classification_end2end_paca_aux_filling.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir, "mask_end2end_paca_bulldozer.tif"
                 )
             ),
         )
@@ -4448,7 +4364,7 @@ def test_end2end_paca_with_mask():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_paca_aux_filling.tif"
@@ -4456,14 +4372,6 @@ def test_end2end_paca_with_mask():
             ),
             rtol=0.01,
             atol=1,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "mask_end2end_paca_bulldozer.tif")
-            ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
         )
 
         # clean out dir for second run
@@ -4504,20 +4412,11 @@ def test_end2end_paca_with_mask():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
                     "color_end2end_paca_matches_filling.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "mask_end2end_paca_matches_filling.tif",
                 )
             ),
         )
@@ -4533,7 +4432,7 @@ def test_end2end_paca_with_mask():
             atol=2.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_paca_matches_filling.tif"
@@ -4541,16 +4440,6 @@ def test_end2end_paca_with_mask():
             ),
             rtol=0.0002,
             atol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "mask_end2end_paca_matches_filling.tif"
-                )
-            ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
         )
 
         # clean out dir for second run
@@ -4655,7 +4544,6 @@ def test_end2end_disparity_filling_with_zeros():
         # Save mask and filling
         input_config_dense_dsm["output"]["auxiliary"] = {
             "filling": True,
-            "mask": True,
         }
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
@@ -4676,20 +4564,11 @@ def test_end2end_disparity_filling_with_zeros():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
                     "color_end2end_gizeh_fill_with_zero.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "mask_end2end_gizeh_fill_with_zero.tif",
                 )
             ),
         )
@@ -4714,7 +4593,7 @@ def test_end2end_disparity_filling_with_zeros():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "texture.tif"),
+            os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_gizeh_fill_with_zero.tif"
@@ -4722,16 +4601,6 @@ def test_end2end_disparity_filling_with_zeros():
             ),
             rtol=0.0002,
             atol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "mask_end2end_gizeh_fill_with_zero.tif"
-                )
-            ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "filling.tif"),

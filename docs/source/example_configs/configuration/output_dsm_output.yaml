@@ -1,6 +1,6 @@
 ---
 dsm: dsm.tif
-texture: texture.tif
+texture: image.tif
 mask: mask.tif
 classification: classification.tif
 performance_map: performance_map.tif

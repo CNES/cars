@@ -5,7 +5,7 @@ input:
       x: path_to_x.tif
       y: path_to_y.tif
       z: path_to_z.tif
-      texture: path_to_texture.tif
+      texture: path_to_image.tif
       z_inf: path_to_z_inf.tif
       z_sup: path_to_z_sup.tif
       mask: path_to_mask.tif
