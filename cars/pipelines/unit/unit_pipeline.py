@@ -24,6 +24,7 @@
 # introduced in issue#895
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=too-many-nested-blocks
+# pylint: disable=C0302
 """
 CARS default pipeline class file
 """
