@@ -86,7 +86,7 @@ class Orchestrator:
         out_dir=None,
         log_dir=None,
         launch_worker=True,
-        out_json_path=None,
+        out_yaml_path=None,
     ):
         """
         Init function of Orchestrator.
@@ -186,10 +186,10 @@ class Orchestrator:
         self.cars_ds_names_info = []
 
         # outjson
-        self.out_json_path = out_json_path
-        if self.out_json_path is None:
-            os.path.join(self.out_dir, "metadata.json")
-        self.out_json = {}
+        self.out_yaml_path = out_yaml_path
+        if self.out_yaml_path is None:
+            os.path.join(self.out_dir, "metadata.yaml")
+        self.out_yaml = {}
 
         # product index file
         self.product_index = {}
@@ -299,18 +299,16 @@ class Orchestrator:
             cars_ds, self.get_saving_infos([cars_ds])[0][CARS_DATASET_KEY]
         )
 
-    def save_out_json(self):
+    def save_out_yaml(self):
         """
-        Check out_json and save it to file
+        Check out_file and save it to file
         """
 
         # TODO check schema ?
 
         # dump file
-        if self.out_json_path is not None:
-            cars_dataset.save_dict(
-                self.out_json, self.out_json_path, safe_save=True
-            )
+        if self.out_yaml_path is not None:
+            cars_dataset.save_dict(self.out_yaml, self.out_yaml_path)
 
     def save_index(self):
         """
@@ -322,13 +320,12 @@ class Orchestrator:
             safe_makedirs(index_directory)
             cars_dataset.save_dict(
                 index,
-                os.path.join(index_directory, "index.json"),
-                safe_save=True,
+                os.path.join(index_directory, "index.yaml"),
             )
 
     def update_out_info(self, new_dict):
         """
-        Update self.out_json with new dict
+        Update self.out_file with new dict
 
         :param new_dict: dict to merge
         :type new_dict: dict
@@ -337,7 +334,7 @@ class Orchestrator:
         # TODO merge with safe creation of new keys of application
         # when 2 same applications are used
 
-        merge_dicts(self.out_json, new_dict)
+        merge_dicts(self.out_yaml, new_dict)
 
     def update_index(self, new_dict):
         """
@@ -419,7 +416,7 @@ class Orchestrator:
 
         # save json
         if self.launch_worker:
-            self.save_out_json()
+            self.save_out_yaml()
             self.save_index()
 
             # run compute and save files

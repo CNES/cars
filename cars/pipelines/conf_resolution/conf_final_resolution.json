@@ -1,9 +1,0 @@
-{
-    "applications" : {
-        "dense_matching": {
-            "confidence_filtering": {
-                "activated": false
-            }
-        }
-    }
-}

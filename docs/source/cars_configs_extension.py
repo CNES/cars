@@ -146,18 +146,31 @@ class IncludeCarsConfigDirective(SphinxDirective):
     """
 
     required_arguments = 1
+    option_spec = {
+        "json": directives.unchanged,
+    }
 
     def run(self):
         base = self.arguments[0]
+        json_option = True
+        if "json" in self.options:
+            val = str(self.options["json"]).strip().lower()
+            if val == "false":
+                json_option = False
 
         yaml_code = self._read_file(base + ".yaml", "yaml")
-        json_code = self._read_file(base + ".json", "json")
+
+        json_code = ""
+        json_button = ""
+        if json_option:
+            json_code = self._read_file(base + ".json", "json")
+            json_button = '<button class="cars-tab-btn" onclick="carsSwitchTab(this, \'json\')">JSON</button>'
 
         html_content = f"""
             <div class="cars-tabs">
             <div class="cars-tabs-buttons">
                 <button class="cars-tab-btn active" onclick="carsSwitchTab(this, 'yaml')">YAML</button>
-                <button class="cars-tab-btn" onclick="carsSwitchTab(this, 'json')">JSON</button>
+                {json_button}
                 <button class="cars-tab-btn cars-copy-btn" onclick="carsCopyCode(this)">Copy</button>
             </div>
 
@@ -165,9 +178,13 @@ class IncludeCarsConfigDirective(SphinxDirective):
                 <pre class="highlight">{yaml_code}</pre>
             </div>
 
-            <div class="cars-tab-content json">
-                <pre class="highlight">{json_code}</pre>
-            </div>
+            {(
+                f'''
+                <div class="cars-tab-content json">
+                    <pre class="highlight">{json_code}</pre>
+                </div>
+                ''' if json_option else ''
+            )}
             </div>
         """
 

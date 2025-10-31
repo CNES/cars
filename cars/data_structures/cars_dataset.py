@@ -26,7 +26,6 @@ cars_dataset module:
 
 
 import copy
-import json
 import logging
 import math
 
@@ -41,6 +40,7 @@ import pandas
 import pyproj
 import rasterio as rio
 import xarray as xr
+import yaml
 from rasterio.profiles import DefaultGTiffProfile
 from rasterio.windows import Window
 
@@ -56,13 +56,13 @@ CARS_DS_TYPE_POINTS = "points"
 CARS_DS_TYPE_DICT = "dict"
 
 # cars_dataset names
-TILES_INFO_FILE = "tiles_info.json"
+TILES_INFO_FILE = "tiles_info.yaml"
 OVERLAP_FILE = "overlaps.npy"
 GRID_FILE = "grid.npy"
 PROFILE_FILE = "profile.json"
 
 # single tile names
-ATTRIBUTE_FILE = "attributes.json"
+ATTRIBUTE_FILE = "attributes.yaml"
 DATASET_FILE = "dataset"
 DATAFRAME_FILE = "dataframe.csv"
 CARSDICT_FILE = "cars_dict"
@@ -1017,8 +1017,8 @@ def save_dataframe(
     Save dataframe (csv, laz, attr file)
     """
     # Save attributes
-    attributes_file_name = file_name + "_attrs.json"
-    save_dict(dataframe.attrs, attributes_file_name, safe_save=True)
+    attributes_file_name = file_name + "_attrs.yaml"
+    save_dict(dataframe.attrs, attributes_file_name)
 
     # Save point cloud to laz format
 
@@ -1375,7 +1375,7 @@ def rio_profile_to_dict_profile(in_profile: Dict) -> Dict:
     return profile
 
 
-def save_dict(dictionary, file_path: str, safe_save=False):
+def save_dict(dictionary, file_path: str):
     """
     Save dict to json file
 
@@ -1383,35 +1383,33 @@ def save_dict(dictionary, file_path: str, safe_save=False):
     :type dictionary: Dict
     :param file_path: file path to use
     :type file_path: str
-    :param safe_save: if True, be robust to types
-    :type safe_save: bool
-
     """
 
-    class CustomEncoder(json.JSONEncoder):
-        """
-        Custom json encoder
+    dictionary_yaml = make_yaml_safe(dictionary)
 
-        """
+    with open(file_path, "w", encoding="utf8") as fstream:
+        yaml.safe_dump(
+            dictionary_yaml,
+            fstream,
+            allow_unicode=True,
+            sort_keys=False,
+        )
 
-        def default(self, o):
-            """
-            Converter
-            """
-            if isinstance(o, np.integer):
-                return int(o)
-            if isinstance(o, np.floating):
-                return float(o)
-            if isinstance(o, np.ndarray):
-                return o.tolist()
-            return json.JSONEncoder.default(self, o)
 
-    if safe_save:
-        with open(file_path, "w", encoding="utf8") as fstream:
-            json.dump(dictionary, fstream, indent=2, cls=CustomEncoder)
-    else:
-        with open(file_path, "w", encoding="utf8") as fstream:
-            json.dump(dictionary, fstream, indent=2)
+def make_yaml_safe(obj):  # pylint: disable=too-many-return-statements
+    """
+    Converter
+    """
+    if isinstance(obj, dict):
+        return {make_yaml_safe(k): make_yaml_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [make_yaml_safe(v) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(make_yaml_safe(v) for v in obj)
+    if isinstance(obj, (np.generic, np.number)):
+        return obj.item()
+
+    return obj
 
 
 def load_dict(file_path: str) -> Dict:
@@ -1424,7 +1422,7 @@ def load_dict(file_path: str) -> Dict:
     """
 
     with open(file_path, "r", encoding="utf8") as fstream:
-        dictionary = json.load(fstream)
+        dictionary = yaml.safe_load(fstream)
 
     return dictionary
 
