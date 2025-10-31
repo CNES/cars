@@ -29,7 +29,6 @@ TODO: Refactor in several files and remove too-many-lines
 from __future__ import absolute_import
 
 import copy
-import json
 import math
 import os
 import shutil
@@ -39,6 +38,7 @@ import tempfile
 import pyproj
 import pytest
 import rasterio
+import yaml
 from pytest_check import check
 from shapely.ops import transform
 
@@ -882,22 +882,22 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "metadata.json")
+        out_yaml = os.path.join(out_dir, "metadata.yaml")
         with check:
-            assert os.path.isfile(out_json)
+            assert os.path.isfile(out_yaml)
 
-        with open(out_json, "r", encoding="utf-8") as json_file:
-            out_json = json.load(json_file)
+        with open(out_yaml, "r", encoding="utf-8") as yaml_file:
+            out_yaml = yaml.safe_load(yaml_file)
             with check:
                 assert (
-                    out_json["applications"]["grid_generation"]["left_right"][
+                    out_yaml["applications"]["grid_generation"]["left_right"][
                         "epipolar_size_x"
                     ]
                     == 612
                 )
             with check:
                 assert (
-                    out_json["applications"]["grid_generation"]["left_right"][
+                    out_yaml["applications"]["grid_generation"]["left_right"][
                         "epipolar_size_y"
                     ]
                     == 612
@@ -905,7 +905,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             with check:
                 assert (
                     -85
-                    < out_json["applications"]["disparity_range_computation"][
+                    < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["minimum_disparity"]
                     < -75
@@ -913,14 +913,14 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             with check:
                 assert (
                     45
-                    < out_json["applications"]["disparity_range_computation"][
+                    < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["maximum_disparity"]
                     < 55
                 )
 
-        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
-        refined_conf_path = os.path.join(out_dir, "refined_conf.json")
+        used_conf_path = os.path.join(out_dir, "current_res_used_conf.yaml")
+        refined_conf_path = os.path.join(out_dir, "refined_conf.yaml")
 
         # check used_conf file exists
         with check:
@@ -1057,22 +1057,22 @@ def test_end2end_ventoux_unique():
 
         out_dir = os.path.join(input_config_sparse_dsm["output"]["directory"])
         # Check preproc properties
-        out_json = os.path.join(out_dir, "metadata.json")
+        out_yaml = os.path.join(out_dir, "metadata.yaml")
         with check:
-            assert os.path.isfile(out_json)
+            assert os.path.isfile(out_yaml)
 
-        with open(out_json, "r", encoding="utf-8") as json_file:
-            out_json = json.load(json_file)
+        with open(out_yaml, "r", encoding="utf-8") as yaml_file:
+            out_yaml = yaml.safe_load(yaml_file)
             with check:
                 assert (
-                    out_json["applications"]["grid_generation"]["left_right"][
+                    out_yaml["applications"]["grid_generation"]["left_right"][
                         "epipolar_size_x"
                     ]
                     == 612
                 )
             with check:
                 assert (
-                    out_json["applications"]["grid_generation"]["left_right"][
+                    out_yaml["applications"]["grid_generation"]["left_right"][
                         "epipolar_size_y"
                     ]
                     == 612
@@ -1080,7 +1080,7 @@ def test_end2end_ventoux_unique():
             with check:
                 assert (
                     -85
-                    < out_json["applications"]["disparity_range_computation"][
+                    < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["minimum_disparity"]
                     < -75
@@ -1088,7 +1088,7 @@ def test_end2end_ventoux_unique():
             with check:
                 assert (
                     45
-                    < out_json["applications"]["disparity_range_computation"][
+                    < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["maximum_disparity"]
                     < 55
@@ -1171,14 +1171,14 @@ def test_end2end_ventoux_unique():
             }
         }
 
-        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
+        used_conf_path = os.path.join(out_dir, "current_res_used_conf.yaml")
 
         # check used_conf file exists
         with check:
             assert os.path.isfile(used_conf_path)
 
-        with open(used_conf_path, "r", encoding="utf-8") as json_file:
-            used_conf = json.load(json_file)
+        with open(used_conf_path, "r", encoding="utf-8") as yaml_file:
+            used_conf = yaml.safe_load(yaml_file)
             # check used_conf inputs conf exists
             with check:
                 assert "inputs" in used_conf
@@ -1309,14 +1309,14 @@ def test_end2end_ventoux_unique():
 
         out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check used_conf for dense dsm
-        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
+        used_conf_path = os.path.join(out_dir, "current_res_used_conf.yaml")
 
         # check used_conf file exists
         with check:
             assert os.path.isfile(used_conf_path)
 
-        with open(used_conf_path, "r", encoding="utf-8") as json_file:
-            used_conf = json.load(json_file)
+        with open(used_conf_path, "r", encoding="utf-8") as yaml_file:
+            used_conf = yaml.safe_load(yaml_file)
             # check used_conf inputs conf exists
             with check:
                 assert "inputs" in used_conf
@@ -1895,22 +1895,22 @@ def test_end2end_use_epipolar_a_priori():
         out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "metadata.json")
+        out_yaml = os.path.join(out_dir, "metadata.yaml")
         with check:
-            assert os.path.isfile(out_json)
+            assert os.path.isfile(out_yaml)
 
-        with open(out_json, "r", encoding="utf-8") as json_file:
-            out_json = json.load(json_file)
+        with open(out_yaml, "r", encoding="utf-8") as yaml_file:
+            out_yaml = yaml.safe_load(yaml_file)
             with check:
                 assert (
-                    out_json["applications"]["grid_generation"]["left_right"][
+                    out_yaml["applications"]["grid_generation"]["left_right"][
                         "epipolar_size_x"
                     ]
                     == 612
                 )
             with check:
                 assert (
-                    out_json["applications"]["grid_generation"]["left_right"][
+                    out_yaml["applications"]["grid_generation"]["left_right"][
                         "epipolar_size_y"
                     ]
                     == 612
@@ -1918,7 +1918,7 @@ def test_end2end_use_epipolar_a_priori():
             with check:
                 assert (
                     -65
-                    < out_json["applications"]["disparity_range_computation"][
+                    < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["minimum_disparity"]
                     < -45
@@ -1926,7 +1926,7 @@ def test_end2end_use_epipolar_a_priori():
             with check:
                 assert (
                     30
-                    < out_json["applications"]["disparity_range_computation"][
+                    < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["maximum_disparity"]
                     < 40
@@ -2007,14 +2007,14 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
 
-        refined_conf_path = os.path.join(out_dir, "refined_conf.json")
+        refined_conf_path = os.path.join(out_dir, "refined_conf.yaml")
 
         # check refined_config_dense_dsm_json file exists
         with check:
             assert os.path.isfile(refined_conf_path)
 
-        with open(refined_conf_path, "r", encoding="utf-8") as json_file:
-            refined_conf = json.load(json_file)
+        with open(refined_conf_path, "r", encoding="utf-8") as yaml_file:
+            refined_conf = yaml.safe_load(yaml_file)
             # check refined_conf inputs conf exists
             with check:
                 assert "inputs" in refined_conf
@@ -2086,14 +2086,14 @@ def test_end2end_use_epipolar_a_priori():
         out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Check used_conf for dense_dsm
-        used_conf_path = os.path.join(out_dir, "current_res_used_conf.json")
+        used_conf_path = os.path.join(out_dir, "current_res_used_conf.yaml")
 
         # check used_conf file exists
         with check:
             assert os.path.isfile(used_conf_path)
 
-        with open(used_conf_path, "r", encoding="utf-8") as json_file:
-            used_conf = json.load(json_file)
+        with open(used_conf_path, "r", encoding="utf-8") as yaml_file:
+            used_conf = yaml.safe_load(yaml_file)
             # check used_conf inputs conf exists
             with check:
                 assert "inputs" in used_conf
@@ -2242,12 +2242,12 @@ def test_prepare_ventoux_bias():
         out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "metadata.json")
+        out_yaml = os.path.join(out_dir, "metadata.yaml")
         with check:
-            assert os.path.isfile(out_json)
+            assert os.path.isfile(out_yaml)
 
-        with open(out_json, "r", encoding="utf-8") as out_json_file:
-            out_data = json.load(out_json_file)
+        with open(out_yaml, "r", encoding="utf-8") as out_yaml_file:
+            out_data = yaml.safe_load(out_yaml_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
             with check:
                 assert out_grid["epipolar_size_x"] == 612
@@ -2656,10 +2656,10 @@ def test_end2end_ventoux_full_output_no_elevation():
             )
 
         # Assertions on index files
-        depth_map_index_path = os.path.join(out_dir, "depth_map", "index.json")
-        dsm_index_path = os.path.join(out_dir, "dsm", "index.json")
+        depth_map_index_path = os.path.join(out_dir, "depth_map", "index.yaml")
+        dsm_index_path = os.path.join(out_dir, "dsm", "index.yaml")
         point_cloud_index_path = os.path.join(
-            out_dir, "point_cloud", "index.json"
+            out_dir, "point_cloud", "index.yaml"
         )
 
         with check:
@@ -2669,8 +2669,8 @@ def test_end2end_ventoux_full_output_no_elevation():
         with check:
             assert os.path.isfile(point_cloud_index_path)
 
-        with open(depth_map_index_path, "r", encoding="utf-8") as json_file:
-            depth_map_index = json.load(json_file)
+        with open(depth_map_index_path, "r", encoding="utf-8") as yaml_file:
+            depth_map_index = yaml.safe_load(yaml_file)
             with check:
                 assert depth_map_index == {
                     "left_right": {
@@ -2686,8 +2686,8 @@ def test_end2end_ventoux_full_output_no_elevation():
                     }
                 }
 
-        with open(dsm_index_path, "r", encoding="utf-8") as json_file:
-            dsm_index = json.load(json_file)
+        with open(dsm_index_path, "r", encoding="utf-8") as yaml_file:
+            dsm_index = yaml.safe_load(yaml_file)
             with check:
                 assert dsm_index == {
                     "dsm": "dsm.tif",
@@ -2700,8 +2700,8 @@ def test_end2end_ventoux_full_output_no_elevation():
                     "filling": "filling.tif",
                 }
 
-        with open(point_cloud_index_path, "r", encoding="utf-8") as json_file:
-            point_cloud_index = json.load(json_file)
+        with open(point_cloud_index_path, "r", encoding="utf-8") as yaml_file:
+            point_cloud_index = yaml.safe_load(yaml_file)
             with check:
                 assert point_cloud_index == {
                     "left_right": {
@@ -2780,12 +2780,12 @@ def test_end2end_ventoux_with_color():
         out_dir = os.path.join(input_config_sparse_res["output"]["directory"])
 
         # Check metadata.json properties
-        out_json = os.path.join(out_dir, "metadata.json")
+        out_yaml = os.path.join(out_dir, "metadata.yaml")
         with check:
-            assert os.path.isfile(out_json)
+            assert os.path.isfile(out_yaml)
 
-        with open(out_json, "r", encoding="utf-8") as out_json_file:
-            out_data = json.load(out_json_file)
+        with open(out_yaml, "r", encoding="utf-8") as out_yaml_file:
+            out_data = yaml.safe_load(out_yaml_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
             with check:
                 assert out_grid["epipolar_size_x"] == 612
@@ -3192,9 +3192,9 @@ def test_end2end_ventoux_with_classif():
         pc1 = "0_0"
 
         # Check metadata.json properties
-        out_json = os.path.join(out_dir, "metadata.json")
+        out_yaml = os.path.join(out_dir, "metadata.yaml")
         with check:
-            assert os.path.isfile(out_json)
+            assert os.path.isfile(out_yaml)
 
         with check:
             assert (
@@ -3704,12 +3704,12 @@ def test_end2end_quality_stats():
 
         out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
-        out_json = os.path.join(out_dir, "metadata.json")
+        out_yaml = os.path.join(out_dir, "metadata.yaml")
         with check:
-            assert os.path.isfile(out_json)
+            assert os.path.isfile(out_yaml)
 
-        with open(out_json, "r", encoding="utf-8") as out_json_file:
-            out_data = json.load(out_json_file)
+        with open(out_yaml, "r", encoding="utf-8") as out_yaml_file:
+            out_data = yaml.safe_load(out_yaml_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
             with check:
                 assert out_grid["epipolar_size_x"] == 612
@@ -3996,12 +3996,12 @@ def test_end2end_ventoux_egm96_geoid():
 
         out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
-        out_json = os.path.join(out_dir, "metadata.json")
+        out_yaml = os.path.join(out_dir, "metadata.yaml")
         with check:
-            assert os.path.isfile(out_json)
+            assert os.path.isfile(out_yaml)
 
-        with open(out_json, "r", encoding="utf-8") as out_json_file:
-            out_data = json.load(out_json_file)
+        with open(out_yaml, "r", encoding="utf-8") as out_yaml_file:
+            out_data = yaml.safe_load(out_yaml_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
             with check:
                 assert out_grid["epipolar_size_x"] == 612
@@ -4229,12 +4229,12 @@ def test_end2end_ventoux_egm96_geoid():
 
         out_dir = os.path.join(input_config_dense_dsm["output"]["directory"])
         # Check metadata.json properties
-        out_json = os.path.join(out_dir, "metadata.json")
+        out_yaml = os.path.join(out_dir, "metadata.yaml")
         with check:
-            assert os.path.isfile(out_json)
+            assert os.path.isfile(out_yaml)
 
-        with open(out_json, "r", encoding="utf-8") as out_json_file:
-            out_data = json.load(out_json_file)
+        with open(out_yaml, "r", encoding="utf-8") as out_yaml_file:
+            out_data = yaml.safe_load(out_yaml_file)
             out_grid = out_data["applications"]["grid_generation"]["left_right"]
             with check:
                 assert out_grid["epipolar_size_x"] == 612

@@ -31,12 +31,13 @@ CARS default pipeline class file
 from __future__ import print_function
 
 import copy
-import json
 import logging
 import os
 import shutil
 from collections import OrderedDict
 from datetime import datetime
+
+import yaml
 
 # CARS imports
 from cars.core import cars_logging
@@ -72,19 +73,19 @@ PIPELINE_CONFS = {
         package_path,
         "..",
         "conf_resolution",
-        "conf_first_resolution.json",
+        "conf_first_resolution.yaml",
     ),
     INTERMEDIATE_RES: os.path.join(
         package_path,
         "..",
         "conf_resolution",
-        "conf_intermediate_resolution.json",
+        "conf_intermediate_resolution.yaml",
     ),
     FINAL_RES: os.path.join(
         package_path,
         "..",
         "conf_resolution",
-        "conf_final_resolution.json",
+        "conf_final_resolution.yaml",
     ),
 }
 
@@ -216,8 +217,7 @@ class DefaultPipeline(PipelineTemplate):
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,
-            os.path.join(self.out_dir, "global_used_conf.json"),
-            safe_save=True,
+            os.path.join(self.out_dir, "global_used_conf.yaml"),
         )
 
     def check_inputs(self, conf, config_json_dir=None):
@@ -468,8 +468,7 @@ class DefaultPipeline(PipelineTemplate):
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,
-            os.path.join(self.out_dir, "global_used_conf.json"),
-            safe_save=True,
+            os.path.join(self.out_dir, "global_used_conf.yaml"),
         )
 
         # Merge profiling in pdf
@@ -575,15 +574,15 @@ def extract_conf_with_resolution(
     if first_res:
         # read the first resolution conf with json package
         with open(PIPELINE_CONFS[FIRST_RES], "r", encoding="utf-8") as file:
-            overiding_conf = json.load(file)
+            overiding_conf = yaml.safe_load(file)
     elif intermediate_res:
         with open(
             PIPELINE_CONFS[INTERMEDIATE_RES], "r", encoding="utf-8"
         ) as file:
-            overiding_conf = json.load(file)
+            overiding_conf = yaml.safe_load(file)
     else:
         with open(PIPELINE_CONFS[FINAL_RES], "r", encoding="utf-8") as file:
-            overiding_conf = json.load(file)
+            overiding_conf = yaml.safe_load(file)
 
     if last_res and dsm_cst.DSMS not in current_conf[INPUTS]:
         # Use filling applications only for last resolution

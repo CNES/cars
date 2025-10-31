@@ -407,13 +407,11 @@ class UnitPipeline(PipelineTemplate):
 
         cars_dataset.save_dict(
             self.used_conf,
-            os.path.join(self.out_dir, "current_res_used_conf.json"),
-            safe_save=True,
+            os.path.join(self.out_dir, "current_res_used_conf.yaml"),
         )
         cars_dataset.save_dict(
             self.refined_conf,
-            os.path.join(self.out_dir, "refined_conf.json"),
-            safe_save=True,
+            os.path.join(self.out_dir, "refined_conf.yaml"),
         )
 
     def check_output(self, conf, scaling_coeff):
@@ -2623,7 +2621,7 @@ class UnitPipeline(PipelineTemplate):
             orchestrator_conf=self.used_conf[ORCHESTRATOR],
             out_dir=self.out_dir,
             log_dir=self.log_dir,
-            out_json_path=os.path.join(
+            out_yaml_path=os.path.join(
                 self.out_dir,
                 out_cst.INFO_FILENAME,
             ),

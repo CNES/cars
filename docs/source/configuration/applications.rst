@@ -67,17 +67,17 @@ The section below includes the files directly.
 
         This is empty for now.
         
-        .. include:: ../../../cars/pipelines/conf_resolution/conf_first_resolution.json
-            :literal:
+        .. include-cars-config:: ../../../cars/pipelines/conf_resolution/conf_first_resolution
+            :json: false
 
     .. tab:: Overriding configuration : all intermediate resolutions
         
         This is empty for now.
 
-        .. include:: ../../../cars/pipelines/conf_resolution/conf_intermediate_resolution.json
-            :literal:
+        .. include-cars-config:: ../../../cars/pipelines/conf_resolution/conf_intermediate_resolution
+            :json: false
 
     .. tab:: Overriding configuration : final resolution
         
-        .. include:: ../../../cars/pipelines/conf_resolution/conf_final_resolution.json
-            :literal:
+        .. include-cars-config:: ../../../cars/pipelines/conf_resolution/conf_final_resolution
+            :json: false
