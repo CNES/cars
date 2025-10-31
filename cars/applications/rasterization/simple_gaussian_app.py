@@ -219,7 +219,6 @@ class SimpleGaussian(
         dsm_file_name=None,
         weights_file_name=None,
         color_file_name=None,
-        mask_file_name=None,
         classif_file_name=None,
         performance_map_file_name=None,
         ambiguity_file_name=None,
@@ -273,8 +272,6 @@ class SimpleGaussian(
         :type weights_file_name: str
         :param color_file_name: path of color
         :type color_file_name: str
-        :param mask_file_name: path of color
-        :type mask_file_name: str
         :param classif_file_name: path of classification
         :type classif_file_name: str
         :param performance_map_file_name: path of performance map file
@@ -307,7 +304,6 @@ class SimpleGaussian(
 
         :rtype : CarsDataset filled with xr.Dataset
         """
-
         # only the saved layers will be saved
         list_computed_layers = []
 
@@ -322,7 +318,7 @@ class SimpleGaussian(
         else:
             self.orchestrator = orchestrator
 
-        # Get if color, mask and stats are saved
+        # Get if color and stats are saved
         save_intermediate_data = self.used_config["save_intermediate_data"]
 
         keep_dir = (
@@ -333,7 +329,6 @@ class SimpleGaussian(
                         [
                             weights_file_name,
                             color_file_name,
-                            mask_file_name,
                             classif_file_name,
                             performance_map_file_name,
                             ambiguity_file_name,
@@ -499,7 +494,7 @@ class SimpleGaussian(
             )
         elif save_intermediate_data:
             # File is not part of the official product, write it in dump_dir
-            out_clr_file_name = os.path.join(out_dump_dir, "texture.tif")
+            out_clr_file_name = os.path.join(out_dump_dir, "image.tif")
         if out_clr_file_name is not None:
             list_computed_layers += ["texture"]
 
@@ -544,32 +539,6 @@ class SimpleGaussian(
             )
             paths_data[cst.RASTER_CLASSIF] = out_classif_file_name
 
-        out_msk_file_name = mask_file_name
-        if out_msk_file_name is not None:
-            # add contributing pair filename to index
-            self.orchestrator.update_index(
-                {
-                    "dsm": {
-                        cst.INDEX_DSM_MASK: os.path.basename(out_msk_file_name)
-                    }
-                }
-            )
-        elif save_intermediate_data:
-            # File is not part of the official product, write it in dump_dir
-            out_msk_file_name = os.path.join(out_dump_dir, "mask.tif")
-        if out_msk_file_name is not None:
-            list_computed_layers += ["mask"]
-            self.orchestrator.add_to_save_lists(
-                out_msk_file_name,
-                cst.RASTER_MSK,
-                terrain_raster,
-                dtype=np.uint8,
-                nodata=self.msk_no_data,
-                cars_ds_name="dsm_mask",
-                optional_data=True,
-            )
-            paths_data[cst.RASTER_MSK] = out_msk_file_name
-
         out_performance_map = performance_map_file_name
 
         # save raw as performance map if performance_map_classes is None
@@ -586,7 +555,7 @@ class SimpleGaussian(
                     }
                 }
             )
-            if performance_map_classes is None:
+            if performance_map_classes is False:
                 # No classes, we return raw data
                 out_performance_map_raw = out_performance_map
                 out_performance_map = None
@@ -611,10 +580,8 @@ class SimpleGaussian(
                 optional_data=True,
             )
             paths_data[cst.RASTER_PERFORMANCE_MAP_RAW] = out_performance_map_raw
-        if (
-            out_performance_map is not None
-            and performance_map_classes is not None
-        ):
+
+        if out_performance_map is not None:
             # classified performance map exists
             list_computed_layers += ["performance_map"]
             self.orchestrator.add_to_save_lists(

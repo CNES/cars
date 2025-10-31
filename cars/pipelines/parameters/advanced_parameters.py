@@ -110,28 +110,6 @@ def check_advanced_parameters(
         adv_cst.DSM_MERGING_TILE_SIZE, 4000
     )
 
-    # default classes, in meters:
-    default_performance_classes = [
-        0,
-        0.968,
-        1.13375,
-        1.295,
-        1.604,
-        2.423,
-        3.428,
-    ]
-    overloaded_conf[adv_cst.PERFORMANCE_MAP_CLASSES] = conf.get(
-        adv_cst.PERFORMANCE_MAP_CLASSES, default_performance_classes
-    )
-    if overloaded_conf[adv_cst.PERFORMANCE_MAP_CLASSES] is not None:
-        check_performance_classes(
-            overloaded_conf[adv_cst.PERFORMANCE_MAP_CLASSES]
-        )
-
-    (overloaded_conf[adv_cst.TEXTURE_BANDS]) = check_texture_bands(
-        inputs, conf.get(adv_cst.TEXTURE_BANDS, None)
-    )
-
     overloaded_conf[adv_cst.GROUND_TRUTH_DSM] = conf.get(
         adv_cst.GROUND_TRUTH_DSM, {}
     )
@@ -202,11 +180,9 @@ def check_advanced_parameters(
         adv_cst.KEEP_LOW_RES_DIR: bool,
         adv_cst.GROUND_TRUTH_DSM: Or(dict, str),
         adv_cst.PHASING: Or(dict, None),
-        adv_cst.PERFORMANCE_MAP_CLASSES: Or(None, list),
         adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
         adv_cst.PIPELINE: str,
         adv_cst.DSM_MERGING_TILE_SIZE: And(int, lambda x: x > 0),
-        adv_cst.TEXTURE_BANDS: list,
         adv_cst.EPIPOLAR_RESOLUTIONS: Or(int, list),
         adv_cst.LAND_COVER_MAP: str,
         adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: str,
@@ -265,82 +241,6 @@ def check_advanced_parameters(
         overloaded_conf[adv_cst.LAND_COVER_MAP],
         overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],
     )
-
-
-def check_performance_classes(performance_map_classes):
-    """
-    Check performance classes
-
-    :param performance_map_classes: list for step defining border of class
-    :type performance_map_classes: list or None
-    """
-    if len(performance_map_classes) < 2:
-        raise RuntimeError("Not enough step for performance_map_classes")
-    if performance_map_classes is not None:
-        previous_step = -1
-        for step in performance_map_classes:
-            if step < 0:
-                raise RuntimeError(
-                    "All step in performance_map_classes must be >=0"
-                )
-            if step <= previous_step:
-                raise RuntimeError(
-                    "performance_map_classes list must be ordered."
-                )
-            previous_step = step
-
-
-def check_texture_bands(inputs, texture_bands_in_advanced_cfg):
-    """
-    Define bands used for texture and put it on advanced and
-    inputs configuration
-    """
-    if inputs[sens_cst.SENSORS] is None:
-        # Parameter "texture_band" is used only when inputs are sensors
-        return []
-    texture_bands_dict = {}
-    bands_set = None
-    if texture_bands_in_advanced_cfg is not None:
-        texture_bands_dict[tuple(texture_bands_in_advanced_cfg)] = "advanced"
-    for [sensor_left, _] in inputs[sens_cst.PAIRING]:
-        image = inputs[sens_cst.SENSORS][sensor_left][sens_cst.INPUT_IMG]
-        bands = set(image["bands"].keys())
-        if bands_set is None:
-            bands_set = bands
-        else:
-            bands_set = bands_set & bands
-        texture_bands = image["texture_bands"]
-        if texture_bands is not None:
-            for texture_band in texture_bands:
-                if texture_band not in bands:
-                    raise RuntimeError(
-                        "Band {} not found in sensor {}".format(
-                            texture_band,
-                            sensor_left,
-                        )
-                    )
-            texture_bands_dict[tuple(texture_bands)] = "sensor " + sensor_left
-            if len(texture_bands_dict) == 2:
-                keys = list(texture_bands_dict.keys())
-                raise RuntimeError(
-                    "Texture bands defined in {} ({}) and {} ({}) "
-                    "are not the same".format(
-                        texture_bands_dict[keys[0]],
-                        keys[0],
-                        texture_bands_dict[keys[1]],
-                        keys[1],
-                    )
-                )
-    if len(texture_bands_dict) == 0:
-        if len(bands_set) == 0:
-            logging.warning("No common band found between sensors")
-            return []
-        logging.info(
-            "Texture bands are not defined, "
-            "taking all possible bands : {}".format(bands_set)
-        )
-        return sorted(bands_set)
-    return list(next(iter(texture_bands_dict)))
 
 
 def validate_epipolar_a_priori(

@@ -6,7 +6,7 @@ Auxiliary Filling
 **Description**
 
 Fill in the missing values of the texture and classification by using information from sensor inputs 
-This application replaces the existing `texture.tif` and `classification.tif`.
+This application replaces the existing `image.tif` and `classification.tif`.
 
 The application retrieves texture and classification information by performing inverse location on the input sensor images. It is therefore necessary to provide the `sensors` category in `inputs` configuration in order to use this application. The pairing information is also required: when searching for texture information, the application will always look in the first sensor of the pair and then in the second, if no information for the given pixel is found in the first sensor. The final filled value of the pixel is the average of the contribution of each pair. The classification information is a logical OR of all classifications.
 

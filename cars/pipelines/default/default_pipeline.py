@@ -249,7 +249,7 @@ class DefaultPipeline(PipelineTemplate):
         """
         conf_output, self.scaling_coeff = (
             output_parameters.check_output_parameters(
-                conf[OUTPUT], self.scaling_coeff
+                conf[INPUTS], conf[OUTPUT], self.scaling_coeff
             )
         )
         return conf_output
@@ -633,7 +633,7 @@ def extract_conf_with_resolution(
             # Save the less possible things
             aux_items = new_conf[OUTPUT][out_cst.AUXILIARY].items()
             for aux_key, _ in aux_items:
-                if aux_key not in ("dem_min", "dem_max", "dem_median"):
+                if aux_key not in ("dem_min", "dem_max", "dem_median", "image"):
                     new_conf[OUTPUT][out_cst.AUXILIARY][aux_key] = False
 
     return new_conf

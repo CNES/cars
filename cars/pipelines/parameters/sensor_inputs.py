@@ -657,6 +657,7 @@ def compare_image_type(sensors, sensor_type, key1, key2):
     dtype2 = inputs.rasterio_get_image_type(
         sensors[key2][sensor_type]["bands"]["b0"]["path"]
     )
+
     if dtype1 != dtype2:
         raise RuntimeError(
             "The pair images haven't the same data type."

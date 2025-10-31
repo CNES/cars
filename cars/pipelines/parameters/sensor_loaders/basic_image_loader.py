@@ -100,7 +100,6 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
                 sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
                 "band": band_id,
             }
-        pivot_config["texture_bands"] = None
         pivot_sensor_loader = PivotImageSensorLoader(
             pivot_config, self.config_dir
         )

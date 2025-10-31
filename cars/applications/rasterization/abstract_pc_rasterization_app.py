@@ -137,7 +137,6 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         dsm_file_name=None,
         weights_file_name=None,
         color_file_name=None,
-        mask_file_name=None,
         classif_file_name=None,
         performance_map_file_name=None,
         ambiguity_file_name=None,
@@ -164,8 +163,6 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         :type weights_file_name: str
         :param color_file_name: path of color
         :type color_file_name: str
-        :param mask_file_name: path of color
-        :type mask_file_name: str
         :param classif_file_name: path of color
         :type classif_file_name: str
         :param performance_map_file_name: path of confidence file

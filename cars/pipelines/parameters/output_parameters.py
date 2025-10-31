@@ -32,6 +32,7 @@ from pyproj import CRS
 import cars.core.constants as cst
 from cars.core.utils import safe_makedirs
 from cars.pipelines.parameters import output_constants
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
 def is_valid_epsg(epsg) -> bool:
@@ -49,7 +50,9 @@ def is_valid_epsg(epsg) -> bool:
         return False
 
 
-def check_output_parameters(conf, scaling_coeff):
+def check_output_parameters(  # noqa: C901 : too complex
+    inputs, conf, scaling_coeff
+):
     """
     Check the output json configuration and fill in default values
 
@@ -120,10 +123,10 @@ def check_output_parameters(conf, scaling_coeff):
     )
 
     # Load auxiliary and subfields
-    overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_TEXTURE
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_TEXTURE, True
+    overloaded_conf[output_constants.AUXILIARY][output_constants.AUX_IMAGE] = (
+        overloaded_conf[output_constants.AUXILIARY].get(
+            output_constants.AUX_IMAGE, True
+        )
     )
     overloaded_conf[output_constants.AUXILIARY][
         output_constants.AUX_DEM_MIN
@@ -144,11 +147,6 @@ def check_output_parameters(conf, scaling_coeff):
         output_constants.AUX_WEIGHTS
     ] = overloaded_conf[output_constants.AUXILIARY].get(
         output_constants.AUX_WEIGHTS, False
-    )
-    overloaded_conf[output_constants.AUXILIARY][output_constants.AUX_MASK] = (
-        overloaded_conf[output_constants.AUXILIARY].get(
-            output_constants.AUX_MASK, False
-        )
     )
     overloaded_conf[output_constants.AUXILIARY][
         output_constants.AUX_CLASSIFICATION
@@ -191,11 +189,10 @@ def check_output_parameters(conf, scaling_coeff):
 
     # check auxiliary keys
     auxiliary_schema = {
-        output_constants.AUX_TEXTURE: bool,
+        output_constants.AUX_IMAGE: Or(bool, str, list),
         output_constants.AUX_WEIGHTS: bool,
-        output_constants.AUX_MASK: bool,
         output_constants.AUX_CLASSIFICATION: bool,
-        output_constants.AUX_PERFORMANCE_MAP: bool,
+        output_constants.AUX_PERFORMANCE_MAP: Or(bool, list),
         output_constants.AUX_CONTRIBUTING_PAIR: bool,
         output_constants.AUX_FILLING: bool,
         output_constants.AUX_AMBIGUITY: bool,
@@ -203,6 +200,67 @@ def check_output_parameters(conf, scaling_coeff):
         output_constants.AUX_DEM_MAX: bool,
         output_constants.AUX_DEM_MEDIAN: bool,
     }
+
+    # Check and overload image parameter
+    texture_bands = overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_IMAGE
+    ]
+
+    if inputs[sens_cst.SENSORS] is not None:
+        if isinstance(texture_bands, list):
+            for elem in texture_bands:
+                if not isinstance(elem, str):
+                    raise RuntimeError(
+                        "The image parameter of auxiliary should "
+                        "be a boolean, a string or a list of string"
+                    )
+        elif isinstance(texture_bands, str):
+            overloaded_conf[output_constants.AUXILIARY][
+                output_constants.AUX_IMAGE
+            ] = [texture_bands]
+        elif texture_bands is True:
+            first_key = list(inputs[sens_cst.SENSORS].keys())[0]
+            image = inputs[sens_cst.SENSORS][first_key][sens_cst.INPUT_IMG]
+            bands = set(image["bands"].keys())
+
+            overloaded_conf[output_constants.AUXILIARY][
+                output_constants.AUX_IMAGE
+            ] = sorted(bands)
+
+    # Check and overload performance_map parameter
+    performance_map_classes = overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_PERFORMANCE_MAP
+    ]
+
+    if isinstance(performance_map_classes, list):
+        for elem in performance_map_classes:
+            if not isinstance(elem, (int, float)):
+                raise RuntimeError(
+                    "The performance_map parameter of auxiliary should"
+                    "be a boolean or a list of string"
+                )
+    elif performance_map_classes is True:
+        # default classes, in meters:
+        default_performance_classes = [
+            0,
+            0.968,
+            1.13375,
+            1.295,
+            1.604,
+            2.423,
+            3.428,
+        ]
+
+        overloaded_conf[output_constants.AUXILIARY][
+            output_constants.AUX_PERFORMANCE_MAP
+        ] = default_performance_classes
+
+    if performance_map_classes:
+        check_performance_classes(
+            overloaded_conf[output_constants.AUXILIARY][
+                output_constants.AUX_PERFORMANCE_MAP
+            ]
+        )
 
     checker_auxiliary = Checker(auxiliary_schema)
     checker_auxiliary.validate(overloaded_conf[output_constants.AUXILIARY])
@@ -218,6 +276,30 @@ def check_output_parameters(conf, scaling_coeff):
                 )
 
     return overloaded_conf, overloaded_scaling_coeff
+
+
+def check_performance_classes(performance_map_classes):
+    """
+    Check performance classes
+
+    :param performance_map_classes: list for step defining border of class
+    :type performance_map_classes: list or None
+    """
+    if not isinstance(performance_map_classes, bool):
+        if len(performance_map_classes) < 2:
+            raise RuntimeError("Not enough step for performance_map_classes")
+        if performance_map_classes:
+            previous_step = -1
+            for step in performance_map_classes:
+                if step < 0:
+                    raise RuntimeError(
+                        "All step in performance_map_classes must be >=0"
+                    )
+                if step <= previous_step:
+                    raise RuntimeError(
+                        "performance_map_classes list must be ordered."
+                    )
+                previous_step = step
 
 
 def intialize_product_index(orchestrator, product_levels, input_pairs):

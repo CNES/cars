@@ -34,7 +34,7 @@ SAVE_BY_PAIR = "save_by_pair"
 AUXILIARY = "auxiliary"
 
 # Auxiliary keys
-AUX_TEXTURE = "texture"
+AUX_IMAGE = "image"
 AUX_WEIGHTS = "weights"
 AUX_MASK = "mask"
 AUX_CLASSIFICATION = "classification"

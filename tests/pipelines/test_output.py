@@ -45,8 +45,7 @@ def test_output_full():
             "product_level": "dsm",
             "auxiliary": {
                 "performance_map": False,
-                "mask": False,
-                "texture": True,
+                "image": True,
                 "classification": False,
                 "contributing_pair": False,
             },
@@ -56,8 +55,27 @@ def test_output_full():
             "save_by_pair": False,
         }
 
+        inputs = {
+            "sensors": {
+                "one": {
+                    "image": {
+                        "loader": "pivot_image",
+                        "main_file": "img1_crop.tif",
+                        "bands": {
+                            "b0": {"path": "img1_crop.tif", "band": 0},
+                            "b1": {"path": "color1.tif", "band": 1},
+                            "b2": {"path": "color1.tif", "band": 2},
+                            "b3": {"path": "color1.tif", "band": 2},
+                        },
+                    },
+                    "geomodel": "img1_crop.geom",
+                },
+                "two": {"image": "img2_crop.tif", "geomodel": "img2_crop.geom"},
+            }
+        }
+
         print(f"config {config}")
-        output_parameters.check_output_parameters(config, 1)
+        output_parameters.check_output_parameters(inputs, config, 1)
 
 
 @pytest.mark.unit_tests
@@ -85,8 +103,7 @@ def test_output_epsg(case):
             "product_level": "dsm",
             "auxiliary": {
                 "performance_map": False,
-                "mask": False,
-                "texture": True,
+                "image": True,
                 "classification": False,
                 "contributing_pair": False,
             },
@@ -96,13 +113,32 @@ def test_output_epsg(case):
             "save_by_pair": False,
         }
 
+        inputs = {
+            "sensors": {
+                "one": {
+                    "image": {
+                        "loader": "pivot_image",
+                        "main_file": "img1_crop.tif",
+                        "bands": {
+                            "b0": {"path": "img1_crop.tif", "band": 0},
+                            "b1": {"path": "color1.tif", "band": 1},
+                            "b2": {"path": "color1.tif", "band": 2},
+                            "b3": {"path": "color1.tif", "band": 2},
+                        },
+                    },
+                    "geomodel": "img1_crop.geom",
+                },
+                "two": {"image": "img2_crop.tif", "geomodel": "img2_crop.geom"},
+            }
+        }
+
         if case["expected"] == "valid":
             # Should succeed without raising
-            output_parameters.check_output_parameters(config, 1)
+            output_parameters.check_output_parameters(inputs, config, 1)
         else:
             with pytest.raises(DictCheckerError):
                 # Expecting some sort of failure
-                output_parameters.check_output_parameters(config, 1)
+                output_parameters.check_output_parameters(inputs, config, 1)
 
 
 @pytest.mark.unit_tests
@@ -114,6 +150,25 @@ def test_output_minimal():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         config = {"directory": os.path.join(directory, "outdir")}
 
+        inputs = {
+            "sensors": {
+                "one": {
+                    "image": {
+                        "loader": "pivot_image",
+                        "main_file": "img1_crop.tif",
+                        "bands": {
+                            "b0": {"path": "img1_crop.tif", "band": 0},
+                            "b1": {"path": "color1.tif", "band": 1},
+                            "b2": {"path": "color1.tif", "band": 2},
+                            "b3": {"path": "color1.tif", "band": 2},
+                        },
+                    },
+                    "geomodel": "img1_crop.geom",
+                },
+                "two": {"image": "img2_crop.tif", "geomodel": "img2_crop.geom"},
+            }
+        }
+
         print(f"config {config}")
-        overload = output_parameters.check_output_parameters(config, 1)
+        overload = output_parameters.check_output_parameters(inputs, config, 1)
         print(overload)
