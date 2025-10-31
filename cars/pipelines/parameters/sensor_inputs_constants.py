@@ -30,15 +30,14 @@ PAIRING = "pairing"
 
 INITIAL_ELEVATION = "initial_elevation"
 
-CHECK_INPUTS = "check_inputs"
 ROI = "roi"
 GEOID = "geoid"
 DEM_PATH = "dem"
+LOADERS = "loaders"
+FILLING = "filling"
 
 INPUT_IMG = "image"
 INPUT_MSK = "mask"
-INPUT_FILLING = "filling"
-INPUT_LOADER = "loader"
 INPUT_CLASSIFICATION = "classification"
 INPUT_GEO_MODEL = "geomodel"
 INPUT_GEO_MODEL_TYPE = "geomodel_type"

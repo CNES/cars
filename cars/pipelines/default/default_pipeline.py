@@ -51,7 +51,6 @@ from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
-from cars.pipelines.parameters.sensor_inputs_constants import SENSORS
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
@@ -648,41 +647,13 @@ def generate_filling_applications(inputs_conf):
 
     filling_applications = {}
 
-    # Get filling bands
-    filling_bands = {
-        "fill_with_geoid": [],
-        "interpolate_from_borders": [],
-        "fill_with_endogenous_dem": [],
-        "fill_with_exogenous_dem": [],
-    }
-    if SENSORS not in inputs_conf or inputs_conf[SENSORS] is None:
-        raise RuntimeError("No sensors in inputs configuration")
-
-    for _sensor_key, sensor_conf in inputs_conf[SENSORS].items():
-        if sens_cst.INPUT_CLASSIFICATION in sensor_conf:
-            sens_classif = sensor_conf[sens_cst.INPUT_CLASSIFICATION]
-            if sens_classif is None:
-                continue
-            if sens_cst.INPUT_FILLING in sens_classif:
-                for filling_name, classif_values in sens_classif[
-                    sens_cst.INPUT_FILLING
-                ].items():
-                    # Add new value to filling bands
-                    if classif_values is not None:
-                        if isinstance(classif_values, int):
-                            classif_values = [classif_values]
-                        classif_values = list(map(str, classif_values))
-                        filling_bands[filling_name] = list(
-                            OrderedDict.fromkeys(
-                                filling_bands[filling_name] + classif_values
-                            )
-                        )
-
     # Generate applications configuration
-    for filling_name, classif_values in filling_bands.items():
+    for filling_name, classif_values in inputs_conf[sens_cst.FILLING].items():
         # No filling
-        if len(classif_values) == 0:
+        if classif_values is None:
             continue
+
+        classif_values = list(map(str, classif_values))
 
         # Update application configuration
         if filling_name == "fill_with_geoid":

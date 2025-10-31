@@ -55,7 +55,6 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
             overloaded_conf[sens_cst.INPUT_PATH] = image_path
-            overloaded_conf[sens_cst.INPUT_LOADER] = "basic_image"
             overloaded_conf[sens_cst.INPUT_NODATA] = 0
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
@@ -63,9 +62,6 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
                 conf[sens_cst.INPUT_PATH], self.config_dir
             )
             overloaded_conf[sens_cst.INPUT_PATH] = image_path
-            overloaded_conf[sens_cst.INPUT_LOADER] = conf.get(
-                sens_cst.INPUT_LOADER, "basic_image"
-            )
             overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
                 sens_cst.INPUT_NODATA, 0
             )
@@ -73,7 +69,6 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
             raise TypeError(f"Input {conf} is not a string ot dict")
 
         sensor_schema = {
-            sens_cst.INPUT_LOADER: str,
             sens_cst.INPUT_PATH: str,
             sens_cst.INPUT_NODATA: Or(None, int),
         }
@@ -88,10 +83,7 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         """
         Transform input configuration to pivot format and store it
         """
-        pivot_config = {
-            "loader": "pivot_image",
-        }
-        pivot_config["bands"] = {}
+        pivot_config = {"bands": {}}
         for band_id in range(
             inputs.rasterio_get_nb_bands(self.used_config[sens_cst.INPUT_PATH])
         ):

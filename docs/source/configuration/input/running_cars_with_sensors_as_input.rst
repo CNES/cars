@@ -14,6 +14,10 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 +----------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
 | *roi*                      | Region Of Interest: Vector file path or GeoJson dictionary          | string or dict              | None                 | No       |
 +----------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
+| *loaders*                  | Input format for image and classification                           | cf. Loaders tab             | None                 | No       |
++----------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
+| *filling*                  | Areas to fill in final result                                       | cf. Filling tab             | None                 | No       |
++----------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
 
 (*) `pairing` is required if there are more than two sensors (see pairing section below)
 
@@ -65,7 +69,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
                  - A multi-band image is passed as input and you want to control which band is used for correlation 
                  - A multi-band image is passed as input and you want to control which bands are used in the output orthorectified image.
-                 - You want to concatenate several bands of a single image that are on separate files (for example a panchromatic image file and a RGB image file).
+                 - You want to concatenate several bands of a single image which are on separate files (for example a panchromatic image file and a RGB image file).
 
                 At the moment only two sensor loaders are available in CARS : “basic” and “pivot”. To use them you juste have to pass a dictionary for the "image" parameter, with the key "loader".
 
@@ -76,8 +80,6 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +----------------+-----------------------+--------+---------------+------------------+----------+
                 | Name           | Description           | Type   | Default value | Available values | Required |
                 +================+=======================+========+===============+==================+==========+
-                | *loader*       | Name of sensor loader | str    | "basic_image" | "basic_image"    | No       |
-                +----------------+-----------------------+--------+---------------+------------------+----------+
                 | *path*         | File path             | str    |               |                  | Yes      |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
                 | *no_data*      | No data value of file | int    | 0             |                  | No       |
@@ -94,8 +96,6 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
                 | Name            | Description                                                                           | Type   | Default value     | Available values | Required |
                 +=================+=======================================================================================+========+===================+==================+==========+
-                | *loader*        | Name of sensor loader                                                                 | str    | "basic_image"     | "pivot_image"    | Yes      |
-                +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
                 | *bands*         | Dictionary listing for every band of the image, the corresponding file and band index | dict   |                   |                  | Yes      |
                 +-----------------+---------------------------------------------------------------------------------------+--------+-------------------+------------------+----------+
                 | *no_data*       | No data value of file                                                                 | int    | 0                 |                  | No       |

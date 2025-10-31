@@ -91,7 +91,6 @@ class PivotImageSensorLoader(SensorLoaderTemplate):
         )
 
         sensor_schema = {
-            sens_cst.INPUT_LOADER: str,
             "bands": dict,
             sens_cst.INPUT_NODATA: Or(None, int),
         }
