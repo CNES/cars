@@ -21,7 +21,7 @@
 This module is responsible for the dense matching algorithms:
 - thus it creates a disparity map from a pair of images
 """
-# pylint: disable=too-many-lines
+import copy
 
 # Standard imports
 import logging
@@ -45,6 +45,8 @@ from cars.applications.dense_matching import dense_matching_wrappers as dm_wrap
 # CARS imports
 from cars.core import constants as cst
 from cars.core import inputs
+
+# pylint: disable=too-many-lines
 
 
 def compute_disparity_grid(
@@ -191,6 +193,10 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
     :return: Disparity dataset
     """
 
+    # Save dataset
+    saved_left_dataset = copy.deepcopy(left_dataset)
+    saved_right_dataset = copy.deepcopy(right_dataset)
+
     # Check disp min and max bounds with respect to margin used for
     # rectification
 
@@ -286,16 +292,32 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
         )
 
     if used_band is not None:
-        # Remove band_im dimension from mask
-        left_msk = left_dataset[cst.EPI_MSK]
-        left_msk = left_msk.loc[used_band]
-        left_dataset = left_dataset.drop_vars([cst.EPI_MSK])
-        left_dataset[cst.EPI_MSK] = left_msk
 
-        right_msk = right_dataset[cst.EPI_MSK]
-        right_msk = right_msk.loc[used_band]
-        right_dataset = right_dataset.drop_vars([cst.EPI_MSK])
-        right_dataset[cst.EPI_MSK] = right_msk
+        def remove_band(current_dataset, used_band):
+            """
+            Remove band_im dimension from mask
+            """
+            current_mask = current_dataset[cst.EPI_MSK]
+            current_mask = current_mask.loc[used_band]
+            current_dataset = current_dataset.drop_vars([cst.EPI_MSK])
+            current_dataset[cst.EPI_MSK] = current_mask
+            return current_dataset
+
+        # remove band_im in masks
+        [
+            left_dataset,
+            saved_left_dataset,
+            right_dataset,
+            saved_right_dataset,
+        ] = [
+            remove_band(current_dataset, used_band)
+            for current_dataset in [
+                left_dataset,
+                saved_left_dataset,
+                right_dataset,
+                saved_right_dataset,
+            ]
+        ]
 
     # Check that the datasets are not full of nan (would crash later)
     if left_dataset["msk"].all() or right_dataset["msk"].all():
@@ -347,8 +369,8 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
 
     disp_dataset = dm_wrap.create_disp_dataset(
         ref,
-        left_dataset,
-        right_dataset,
+        saved_left_dataset,
+        saved_right_dataset,
         compute_disparity_masks=compute_disparity_masks,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
