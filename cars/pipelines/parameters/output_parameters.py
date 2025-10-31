@@ -243,13 +243,13 @@ def check_filling_parameter(overloaded_conf):
         "interpolate_from_borders",
         "fill_with_endogenous_dem",
         "fill_with_exogenous_dem",
+        "other",
     ]
 
     if isinstance(filling_param, dict):
         for _, value in filling_param.items():
             if isinstance(value, str):
                 value = [value]
-            print(value)
             if any(elem not in valid_names for elem in value):
                 raise RuntimeError(
                     "Those filling methods are not available in CARS"

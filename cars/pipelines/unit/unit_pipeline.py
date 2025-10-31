@@ -2632,25 +2632,46 @@ class UnitPipeline(PipelineTemplate):
                 np.uint8
             )
 
+            no_match = False
             for key, value in aux_filling.items():
                 if isinstance(value, str):
                     value = [value]
 
                 if isinstance(value, list):
                     for elem in value:
-                        filling_method = filling_bands_list[elem]
-                        mask = np.all(
-                            [
-                                filling_multi_bands[
-                                    dict_temp[filling_method[index]], :, :
-                                ]
-                                == 1
-                                for index in range(len(filling_method))
-                            ],
-                            axis=0,
-                        )
+                        if elem != "other":
+                            filling_method = filling_bands_list[elem]
 
-                        filling_mono_bands[mask] = key
+                            if all(
+                                method in descriptions
+                                for method in filling_method
+                            ):
+                                mask = np.all(
+                                    [
+                                        filling_multi_bands[
+                                            dict_temp[filling_method[index]],
+                                            :,
+                                            :,
+                                        ]
+                                        == 1
+                                        for index in range(len(filling_method))
+                                    ],
+                                    axis=0,
+                                )
+
+                                filling_mono_bands[mask] = key
+                            else:
+                                no_match = True
+
+            if no_match:
+                mask = np.all(
+                    filling_multi_bands[1:, :, :] == 1,
+                    axis=0,
+                )
+
+                filling_mono_bands[mask] = (
+                    aux_filling["other"] if "other" in aux_filling else 50
+                )
 
             profile.update(count=1, dtype=filling_mono_bands.dtype)
             with rasterio.open(filling_path, "w", **profile) as src:
@@ -2663,13 +2684,13 @@ class UnitPipeline(PipelineTemplate):
         """
         Merge classif bands to get mono band in output
         """
-
         with rasterio.open(dsm_file) as in_dsm:
             dsm_msk = in_dsm.read_masks(1)
 
         with rasterio.open(classif_path) as src:
             nb_bands = src.count
 
+            print(nb_bands)
             if nb_bands == 1:
                 return False
 
