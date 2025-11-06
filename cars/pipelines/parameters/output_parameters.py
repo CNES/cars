@@ -327,7 +327,7 @@ def check_classification_parameter(inputs, overloaded_conf):
             if isinstance(classification_formatting, list):
                 overloaded_conf[output_constants.AUXILIARY][
                     output_constants.AUX_CLASSIFICATION
-                ] = {val: str(val) for val in classification_formatting}
+                ] = {val: val for val in classification_formatting}
 
                 for elem in classification_formatting:
                     if not isinstance(elem, int):
