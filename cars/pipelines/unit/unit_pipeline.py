@@ -2632,6 +2632,10 @@ class UnitPipeline(PipelineTemplate):
                 np.uint8
             )
 
+            # to keep the previous classif convention
+            filling_mono_bands[filling_mono_bands == 0] = src.nodata
+            filling_mono_bands[filling_mono_bands == 1] = 0
+
             no_match = False
             for key, value in aux_filling.items():
                 if isinstance(value, str):

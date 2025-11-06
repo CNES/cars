@@ -120,14 +120,15 @@ Output configuration
            
             Here, if a pixel is classified by the values 1 and 3, the priority will go to the first value in the dictionary -> 17.
            
-            You can also use a list as [3, 2, 1, 4] and a dictionary will be formatted regarding those values: {3: 1, 2: 2, 1: 3, 4: 4}. By using a list, it will not be possible for you to use values that are not the classification input file as 17 in this example.
+            You can also use a list as [3, 2, 1, 4] and a dictionary will be formatted regarding those values: {3: 1, 2: 2, 1: 3, 4: 4}. By using a list, it will not be possible for you to use values that are not in the classification input file (as 17 in this example).
 
            It works the same for the filling parameter:
-            By configuring `{17: ["fill_with_geoid", "interpolate_from_borders", 2], 3: "fill_with_endogenous_dem", 15:"fill_with_exogenous_dem"}`:
+            By configuring `{17: ["fill_with_geoid", "interpolate_from_borders", 2], 3: "fill_with_endogenous_dem", 15: "fill_with_exogenous_dem", "32": "other"}`:
 
             - Pixels filled with the `fill_with_geoid` and `interpolate_from_borders` methods will be represented by the value 17 in the output file.
             - Pixels filled with the `fill_with_endogenous_dem` method will be represented by the value 3 in the output file.
             - Pixels filled with the `fill_with_exogenous_dem` method will be represented by the value 15 in the output file.
+            - Pixels filled with other methods will be represented by the value 32 in the output file. By default, the value is 50.
 
         .. include-cars-config:: ../../example_configs/configuration/output_auxiliary_advanced
 
