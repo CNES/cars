@@ -85,6 +85,9 @@ def test_end2end_dsm_fusion():
             },
         )
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "sparse_matching": {
@@ -99,6 +102,7 @@ def test_end2end_dsm_fusion():
                 "dense_matching": {
                     "method": "census_sgm_default",
                     "use_cross_validation": True,
+                    "filter_incomplete_disparity_range": False,
                 },
                 "point_cloud_rasterization": {
                     "method": "simple_gaussian",
@@ -109,7 +113,7 @@ def test_end2end_dsm_fusion():
                     "msk_no_data": 254,
                     "save_intermediate_data": True,
                 },
-            }
+            },
         }
 
         input_dense_dsm_lr["applications"] = dense_dsm_applications
@@ -553,6 +557,9 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
         # Fill color, and dsm with bulldozer
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "sparse_matching": {
@@ -579,7 +586,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "dsm_filling.2": {
                     "method": "bulldozer",
                 },
-            }
+            },
         }
 
         input_dense_dsm["applications"] = dense_dsm_applications
@@ -804,6 +811,9 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         )
 
         application_config = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "4": {
                 "sparse_matching": {
                     "method": "sift",
@@ -989,6 +999,9 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {
                     "method": "epipolar",
@@ -1269,6 +1282,9 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["applications"]["1"].update(
             dense_dsm_applications
         )
+        input_config_dense_dsm["applications"]["all"].update(
+            {"dense_matching": {"filter_incomplete_disparity_range": False}}
+        )
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
         # update output product
@@ -1387,6 +1403,9 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
@@ -1550,6 +1569,9 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False}
+            },
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
@@ -1693,6 +1715,7 @@ def test_end2end_ventoux_unique_epsg_4326():
                 "dense_matching": {
                     "method": "census_sgm_default",
                     "use_cross_validation": True,
+                    "filter_incomplete_disparity_range": False,
                 },
                 "point_cloud_rasterization": {
                     "method": "simple_gaussian",
@@ -1811,6 +1834,9 @@ def test_end2end_use_epipolar_a_priori():
         input_config_sparse_res["input"]["initial_elevation"] = None
 
         application_config = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "4": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
@@ -2035,6 +2061,7 @@ def test_end2end_use_epipolar_a_priori():
                 "method": "census_sgm_default",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
+                "filter_incomplete_disparity_range": False,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -2165,6 +2192,9 @@ def test_prepare_ventoux_bias():
             },
         )
         application_config = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "4": {
                 "sparse_matching": {
                     "method": "sift",
@@ -2662,6 +2692,9 @@ def test_end2end_ventoux_with_color():
             },
         )
         application_config = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {
@@ -3051,6 +3084,7 @@ def test_end2end_ventoux_with_classif():
             },
             "dense_matching": {
                 "method": "census_sgm_default",
+                "filter_incomplete_disparity_range": False,
                 "use_cross_validation": True,
                 "loader": "pandora",
                 "save_intermediate_data": True,
@@ -3106,6 +3140,9 @@ def test_end2end_ventoux_with_classif():
             },
         }
         input_config_dense_dsm["applications"] = {"1": dense_dsm_applications}
+        input_config_dense_dsm["applications"]["all"] = {
+            "dense_matching": {"filter_incomplete_disparity_range": False}
+        }
 
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
@@ -3280,6 +3317,9 @@ def test_compute_dsm_with_roi_ventoux():
             },
         )
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3443,6 +3483,9 @@ def test_compute_dsm_with_snap_to_img1():
             },
         )
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3568,6 +3611,9 @@ def test_end2end_quality_stats():
         # no srtm
         input_config_dense_dsm["input"]["initial_elevation"] = None
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "4": {
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
@@ -3867,6 +3913,9 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {
                     "method": "epipolar",
@@ -4002,6 +4051,9 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {
                     "method": "epipolar",
@@ -4094,6 +4146,9 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {
                     "method": "epipolar",
@@ -4244,6 +4299,9 @@ def test_end2end_paca_with_mask():
             },
         )
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
                 "resampling": {"method": "bicubic", "strip_height": 80},
@@ -4507,6 +4565,9 @@ def test_end2end_disparity_filling_with_zeros():
             "multiprocessing",
         )
         dense_dsm_applications = {
+            "all": {
+                "dense_matching": {"filter_incomplete_disparity_range": False},
+            },
             "1": {
                 "sparse_matching": {
                     "decimation_factor": 80,

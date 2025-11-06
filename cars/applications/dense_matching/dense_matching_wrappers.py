@@ -100,7 +100,9 @@ def get_margins(margin, disp_min, disp_max):
 
 
 def get_masks_from_pandora(
-    disp: xr.Dataset, compute_disparity_masks: bool
+    disp: xr.Dataset,
+    compute_disparity_masks: bool,
+    filter_incomplete_disparity_range: bool,
 ) -> Dict[str, np.ndarray]:
     """
     Get masks dictionary from the disparity map in output of pandora.
@@ -124,9 +126,15 @@ def get_masks_from_pandora(
     validity_mask_cropped = disp.validity_mask.values
     # Mask initialization to false (all is invalid)
     masks[cst_disp.VALID] = np.full(validity_mask_cropped.shape, False)
+    invalid_value = p_cst.PANDORA_MSK_PIXEL_INVALID
+    if filter_incomplete_disparity_range:
+        invalid_value |= (
+            p_cst.PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE
+        )
+
     # Identify valid points
     masks[cst_disp.VALID][
-        np.where((validity_mask_cropped & p_cst.PANDORA_MSK_PIXEL_INVALID) == 0)
+        np.where((validity_mask_cropped & invalid_value) == 0)
     ] = True
 
     # With compute_disparity_masks, produce one mask for each invalid flag in
@@ -294,6 +302,7 @@ def create_disp_dataset(  # noqa: C901
     margins_to_keep=0,
     classification_fusion_margin=-1,
     texture_bands=None,
+    filter_incomplete_disparity_range=True,
 ) -> xr.Dataset:
     """
     Create the disparity dataset.
@@ -379,7 +388,9 @@ def create_disp_dataset(  # noqa: C901
         epi_msk_right = secondary_dataset[cst.EPI_MSK].values
 
     # Retrieve masks from pandora
-    pandora_masks = get_masks_from_pandora(disp, compute_disparity_masks)
+    pandora_masks = get_masks_from_pandora(
+        disp, compute_disparity_masks, filter_incomplete_disparity_range
+    )
     pandora_masks[cst_disp.VALID][np.isnan(disp_map)] = 0
 
     # retrieve classif
