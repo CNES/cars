@@ -2701,7 +2701,6 @@ class UnitPipeline(PipelineTemplate):
         with rasterio.open(classif_path) as src:
             nb_bands = src.count
 
-            print(nb_bands)
             if nb_bands == 1:
                 return False
 
