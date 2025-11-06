@@ -35,6 +35,7 @@ from vlsift.sift.sift import sift
 from cars.applications.sparse_matching.sparse_matching_wrappers import (
     euclidean_matrix_distance,
 )
+from cars.core import constants as cst
 
 
 def compute_matches(  # pylint: disable=too-many-positional-arguments
@@ -268,6 +269,7 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
     backmatching=True,
     disp_lower_bound=None,
     disp_upper_bound=None,
+    classif_bands_to_mask=None,
 ):
     """
     Compute sift matches between two datasets
@@ -292,6 +294,8 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
     :type window_size: int
     :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
+    :param classif_bands_to_mask: bands from classif to mask
+    :type classif_bands_to_mask: list of str / int
 
     :return: matches
     :rtype: numpy buffer of shape (nb_matches,4)
@@ -302,8 +306,37 @@ def dataset_matching(  # pylint: disable=too-many-positional-arguments
 
     left = ds1.im.loc[used_band].values
     right = ds2.im.loc[used_band].values
+    # Generate validity masks
     left_mask = ds1.msk.loc[used_band].values == 0
     right_mask = ds2.msk.loc[used_band].values == 0
+
+    # Update validity masks: all classes (used in filling) in
+    # classification should be 0
+    if cst.EPI_CLASSIFICATION in ds1 and classif_bands_to_mask not in (
+        None,
+        [],
+    ):
+        classif_values = (
+            ds1[cst.EPI_CLASSIFICATION]
+            .sel(band_classif=classif_bands_to_mask)
+            .values
+        )
+        left_mask = np.logical_and(
+            left_mask, ~np.any(classif_values > 0, axis=0)
+        )
+
+    if cst.EPI_CLASSIFICATION in ds2 and classif_bands_to_mask not in (
+        None,
+        [],
+    ):
+        classif_values = (
+            ds2[cst.EPI_CLASSIFICATION]
+            .sel(band_classif=classif_bands_to_mask)
+            .values
+        )
+        right_mask = np.logical_and(
+            right_mask, ~np.any(classif_values > 0, axis=0)
+        )
 
     matches = compute_matches(
         left,

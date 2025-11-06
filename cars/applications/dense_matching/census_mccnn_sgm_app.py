@@ -1009,6 +1009,7 @@ class CensusMccnnSgm(
         compute_disparity_masks=False,
         margins_to_keep=0,
         texture_bands=None,
+        classif_bands_to_mask=None,
     ):
         """
         Run Matching application.
@@ -1056,6 +1057,8 @@ class CensusMccnnSgm(
         :param texture_bands: indices of bands from epipolar_images_left
             used for output texture
         :type texture_bands: list
+        :param classif_bands_to_mask: bands from classif to mask
+        :type classif_bands_to_mask: list of str / int
 
         :return: disparity map: \
             The CarsDataset contains:
@@ -1275,6 +1278,7 @@ class CensusMccnnSgm(
                             filter_incomplete_disparity_range=(
                                 self.filter_incomplete_disparity_range
                             ),
+                            classif_bands_to_mask=classif_bands_to_mask,
                         )
 
         else:
@@ -1301,6 +1305,7 @@ def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
     conf_filtering=None,
     threshold_disp_range_to_borders=False,
     filter_incomplete_disparity_range=True,
+    classif_bands_to_mask=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1346,6 +1351,8 @@ def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
     :type margins_to_keep: int
     :param classification_fusion_margin: the margin to add for the fusion
     :type classification_fusion_margin: int
+    :param classif_bands_to_mask: bands from classif to mask
+    :type classif_bands_to_mask: list of str / int
 
 
     :return: Left to right disparity dataset
@@ -1415,6 +1422,7 @@ def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
         classification_fusion_margin=classification_fusion_margin,
         texture_bands=texture_bands,
         filter_incomplete_disparity_range=filter_incomplete_disparity_range,
+        classif_bands_to_mask=classif_bands_to_mask,
     )
 
     mask = disp_dataset["disp_msk"].values

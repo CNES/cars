@@ -192,6 +192,10 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
                     The value 0 cannot be used as a value to fill because pixels labeled 0 in classification are considered as unclassified pixels.
 
+                .. note::
+
+                    The classes used for filling will be masked during sparse and dense matching.
+
                 For each filling method, if you fill the parameter with `none` or [], the corresponding method will not be used.
 
                 A full configuration example is given below : 

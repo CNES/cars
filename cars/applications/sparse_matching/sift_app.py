@@ -438,6 +438,7 @@ class Sift(SparseMatching, short_name=["sift"]):
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
+        classif_bands_to_mask=None,
     ):
         """
         Run Matching application.
@@ -477,6 +478,8 @@ class Sift(SparseMatching, short_name=["sift"]):
         :type pair_folder: str
         :param pair_key: pair key id
         :type pair_key: str
+        :param classif_bands_to_mask: bands from classif to mask
+        :type classif_bands_to_mask: list of str / int
 
         :return left matches, right matches. Each CarsDataset contains:
 
@@ -616,6 +619,7 @@ class Sift(SparseMatching, short_name=["sift"]):
                         disp_lower_bound=disp_lower_bound,
                         disp_upper_bound=disp_upper_bound,
                         saving_info_left=full_saving_info_left,
+                        classif_bands_to_mask=classif_bands_to_mask,
                     )
 
         else:
@@ -642,6 +646,7 @@ def compute_matches_wrapper(  # pylint: disable=too-many-positional-arguments
     disp_lower_bound=None,
     disp_upper_bound=None,
     saving_info_left=None,
+    classif_bands_to_mask=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute matches from image objects.
@@ -661,6 +666,8 @@ def compute_matches_wrapper(  # pylint: disable=too-many-positional-arguments
             - cst.EPI_TEXTURE (for left, if given)
     :param right_image_object: tiled Right image
     :type right_image_object: xr.Dataset
+    :param classif_bands_to_mask: bands from classif to mask
+    :type classif_bands_to_mask: list of str / int
 
 
     :return: Left matches object, Right matches object (if exists)
@@ -691,6 +698,7 @@ def compute_matches_wrapper(  # pylint: disable=too-many-positional-arguments
         backmatching=backmatching,
         disp_lower_bound=disp_lower_bound,
         disp_upper_bound=disp_upper_bound,
+        classif_bands_to_mask=classif_bands_to_mask,
     )
 
     # Filter matches outside disparity range

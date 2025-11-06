@@ -33,6 +33,7 @@ from __future__ import print_function
 import copy
 import logging
 import os
+from collections import OrderedDict
 
 import numpy as np
 from pyproj import CRS
@@ -72,6 +73,7 @@ from cars.pipelines.parameters.advanced_parameters_constants import (
     USE_ENDOGENOUS_DEM,
 )
 from cars.pipelines.parameters.output_constants import AUXILIARY
+from cars.pipelines.parameters.sensor_inputs_constants import SENSORS
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
@@ -199,6 +201,12 @@ class UnitPipeline(PipelineTemplate):
             or self.save_output_point_cloud
         )
         self.sensors_in_inputs = sens_cst.SENSORS in self.used_conf[INPUT]
+
+        # Used classification values, for filling -> will be masked
+        self.used_classif_values_for_filling = self.get_classif_values_filling(
+            self.used_conf[INPUT]
+        )
+
         self.dsms_in_inputs = dsm_cst.DSMS in self.used_conf[INPUT]
 
         self.phasing = self.used_conf[ADVANCED][adv_cst.PHASING]
@@ -739,6 +747,42 @@ class UnitPipeline(PipelineTemplate):
 
         return used_conf
 
+    def get_classif_values_filling(self, inputs):
+        """
+        Get values in classif, used for filling
+
+        :param inputs: inputs
+        :type inputs: dict
+
+        :return: list of values
+        :rtype: list
+        """
+
+        filling_classif_values = []
+
+        if SENSORS not in inputs or inputs[SENSORS] is None:
+            logging.info("No sensors in inputs configuration")
+            return None
+
+        for _sensor_key, sensor_conf in inputs[SENSORS].items():
+            if sens_cst.INPUT_CLASSIFICATION in sensor_conf:
+                sens_classif = sensor_conf[sens_cst.INPUT_CLASSIFICATION]
+                if sens_classif is None:
+                    continue
+                if sens_cst.INPUT_FILLING in sens_classif:
+                    for _, classif_values in sens_classif[
+                        sens_cst.INPUT_FILLING
+                    ].items():
+                        # Add new value to filling bands
+                        if classif_values is not None:
+                            if isinstance(classif_values, str):
+                                classif_values = [classif_values]
+                            filling_classif_values += classif_values
+
+        simplified_list = list(OrderedDict.fromkeys(filling_classif_values))
+        res_as_string_list = [str(value) for value in simplified_list]
+        return res_as_string_list
+
     def check_applications_with_inputs(  # noqa: C901 : too complex
         self, inputs_conf, application_conf, epipolar_resolution
     ):
@@ -1091,6 +1135,7 @@ class UnitPipeline(PipelineTemplate):
                         self.dump_dir, "sparse_matching", pair_key
                     ),
                     pair_key=pair_key,
+                    classif_bands_to_mask=self.used_classif_values_for_filling,
                 )
 
             # Run cluster breakpoint to compute sifts: force computation
@@ -1803,6 +1848,7 @@ class UnitPipeline(PipelineTemplate):
                     for _, app in self.pc_outlier_removal_apps.items()
                 ),
                 texture_bands=texture_bands_indices,
+                classif_bands_to_mask=self.used_classif_values_for_filling,
             )
 
             if self.quit_on_app("dense_matching"):

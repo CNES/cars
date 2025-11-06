@@ -130,19 +130,17 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def generate_disparity_grids(
         self,
-        sensor_image_right,
-        grid_right,
-        geometry_plugin_with_dem_min,
-        geometry_plugin_with_dem_max,
-        geom_plugin_with_dem_and_geoid,
-        dmin=None,
-        dmax=None,
-        altitude_delta_min=None,
-        altitude_delta_max=None,
-        dem_min=None,
-        dem_max=None,
+        epipolar_images_left,
+        epipolar_images_right,
+        local_tile_optimal_size_fun,
+        orchestrator=None,
         pair_folder=None,
-        loc_inverse_orchestrator=None,
+        pair_key="PAIR_0",
+        disp_range_grid=None,
+        compute_disparity_masks=False,
+        margins_to_keep=0,
+        texture_bands=None,
+        classif_bands_to_mask=None,
     ):
         """
         Generate disparity grids min and max, with given step
@@ -195,9 +193,9 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         pair_key="PAIR_0",
         disp_range_grid=None,
         compute_disparity_masks=False,
-        disp_to_alt_ratio=None,
         margins_to_keep=0,
         texture_bands=None,
+        classif_bands_to_mask=None,
     ):
         """
         Run Matching application.

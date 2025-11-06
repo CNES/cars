@@ -478,7 +478,16 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def run(self, epipolar_image_left, epipolar_image_right, **kwargs):
+    def run(  # pylint: disable=too-many-positional-arguments
+        self,
+        epipolar_image_left,
+        epipolar_image_right,
+        disp_to_alt_ratio,
+        orchestrator=None,
+        pair_folder=None,
+        pair_key="PAIR_0",
+        classif_bands_to_mask=None,
+    ):
         """
         Run Matching application.
 
@@ -486,24 +495,4 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         corresponding to epipolar 2D disparities, on the same geometry
         that epipolar_images_left and epipolar_images_right.
 
-        :param epipolar_image_left: tiled left epipolar
-        :type epipolar_image_left: CarsDataset
-        :param epipolar_image_right: tiled right epipolar
-        :type epipolar_image_right: CarsDataset
-        :param disp_to_alt_ratio: disp to alti ratio
-        :type disp_to_alt_ratio: float
-        :param orchestrator: orchestrator used
-        :param pair_folder: folder used for current pair
-        :type pair_folder: str
-        :param pair_key: pair key id
-        :type pair_key: str
-        :param mask1_ignored_by_sift: values used in left mask to ignore
-         in correlation
-        :type mask1_ignored_by_sift: list
-        :param mask2_ignored_by_sift: values used in right mask to ignore
-         in correlation
-        :type mask2_ignored_by_sift: list
-
-        :return left matches, right matches
-        :rtype: Tuple(CarsDataset, CarsDataset)
         """
