@@ -2706,6 +2706,7 @@ class UnitPipeline(PipelineTemplate):
 
             classif_multi_bands = src.read()
             classif_mono_band = np.zeros(classif_multi_bands.shape[1:3])
+            descriptions = src.descriptions
             profile = src.profile
             classif_mask = src.read_masks(1)
             classif_mono_band[classif_mask == 0] = 0
@@ -2715,15 +2716,19 @@ class UnitPipeline(PipelineTemplate):
                 np.uint8
             )
 
+            # to keep the previous classif convention
+            classif_mono_band[classif_mono_band == 0] = src.nodata
+            classif_mono_band[classif_mono_band == 1] = 0
+
             for key, value in aux_classif.items():
                 if isinstance(value, int):
-                    num_band = value - 1
+                    num_band = descriptions.index(str(value))
                     mask_1 = classif_mono_band == 0
                     mask_2 = classif_multi_bands[num_band, :, :] == 1
                     classif_mono_band[mask_1 & mask_2] = key
                 elif isinstance(value, list):
                     for elem in value:
-                        num_band = elem - 1
+                        num_band = descriptions.index(str(elem))
                         mask_1 = classif_mono_band == 0
                         mask_2 = classif_multi_bands[num_band, :, :] == 1
                         classif_mono_band[mask_1 & mask_2] = key
