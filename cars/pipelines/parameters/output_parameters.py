@@ -269,6 +269,10 @@ def check_texture_bands(inputs, overloaded_conf):
     ]
 
     if inputs[sens_cst.SENSORS] is not None:
+        first_key = list(inputs[sens_cst.SENSORS].keys())[0]
+        image = inputs[sens_cst.SENSORS][first_key][sens_cst.INPUT_IMG]
+        bands = set(image["bands"].keys())
+
         if isinstance(texture_bands, list):
             for elem in texture_bands:
                 if not isinstance(elem, str):
@@ -276,15 +280,24 @@ def check_texture_bands(inputs, overloaded_conf):
                         "The image parameter of auxiliary should "
                         "be a boolean, a string or a list of string"
                     )
+                if elem not in bands:
+                    raise RuntimeError(
+                        f"The band {elem} is "
+                        f"not an existing band of "
+                        f"the input image"
+                    )
         elif isinstance(texture_bands, str):
             overloaded_conf[output_constants.AUXILIARY][
                 output_constants.AUX_IMAGE
             ] = [texture_bands]
-        elif texture_bands is True:
-            first_key = list(inputs[sens_cst.SENSORS].keys())[0]
-            image = inputs[sens_cst.SENSORS][first_key][sens_cst.INPUT_IMG]
-            bands = set(image["bands"].keys())
 
+            if texture_bands not in bands:
+                raise RuntimeError(
+                    f"The band {texture_bands} is "
+                    f"not an existing band of "
+                    f"the input image"
+                )
+        elif texture_bands is True:
             overloaded_conf[output_constants.AUXILIARY][
                 output_constants.AUX_IMAGE
             ] = sorted(bands)
