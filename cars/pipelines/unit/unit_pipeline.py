@@ -2679,12 +2679,17 @@ class UnitPipeline(PipelineTemplate):
                                 no_match = True
 
             if no_match:
-                mask = np.all(
+                mask_1 = np.all(
                     filling_multi_bands[1:, :, :] == 1,
                     axis=0,
                 )
 
-                filling_mono_bands[mask] = (
+                mask_2 = np.all(
+                    filling_mono_bands == 0,
+                    axis=0,
+                )
+
+                filling_mono_bands[mask_1 & mask_2] = (
                     aux_filling["other"] if "other" in aux_filling else 50
                 )
 
