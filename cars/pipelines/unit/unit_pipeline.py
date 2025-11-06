@@ -76,7 +76,7 @@ from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
     APPLICATIONS,
-    INPUTS,
+    INPUT,
     ORCHESTRATOR,
     OUTPUT,
 )
@@ -133,9 +133,9 @@ class UnitPipeline(PipelineTemplate):
         )
 
         # Check conf inputs
-        inputs = self.check_inputs(conf[INPUTS], config_dir=config_dir)
-        self.used_conf[INPUTS] = inputs
-        self.refined_conf[INPUTS] = copy.deepcopy(inputs)
+        inputs = self.check_inputs(conf[INPUT], config_dir=config_dir)
+        self.used_conf[INPUT] = inputs
+        self.refined_conf[INPUT] = copy.deepcopy(inputs)
 
         # Check advanced parameters
         # TODO static method in the base class
@@ -169,7 +169,7 @@ class UnitPipeline(PipelineTemplate):
             self.input_roi_poly,
             self.input_roi_epsg,
         ) = roi_tools.generate_roi_poly_from_inputs(
-            self.used_conf[INPUTS][sens_cst.ROI]
+            self.used_conf[INPUT][sens_cst.ROI]
         )
 
         self.debug_with_roi = self.used_conf[ADVANCED][adv_cst.DEBUG_WITH_ROI]
@@ -198,8 +198,8 @@ class UnitPipeline(PipelineTemplate):
             or self.save_output_depth_map
             or self.save_output_point_cloud
         )
-        self.sensors_in_inputs = sens_cst.SENSORS in self.used_conf[INPUTS]
-        self.dsms_in_inputs = dsm_cst.DSMS in self.used_conf[INPUTS]
+        self.sensors_in_inputs = sens_cst.SENSORS in self.used_conf[INPUT]
+        self.dsms_in_inputs = dsm_cst.DSMS in self.used_conf[INPUT]
 
         self.phasing = self.used_conf[ADVANCED][adv_cst.PHASING]
 
@@ -244,7 +244,7 @@ class UnitPipeline(PipelineTemplate):
         if self.sensors_in_inputs and not self.dsms_in_inputs:
             # Check conf application vs inputs application
             application_conf = self.check_applications_with_inputs(
-                self.used_conf[INPUTS], application_conf, self.res_resamp
+                self.used_conf[INPUT], application_conf, self.res_resamp
             )
 
         self.used_conf[APPLICATIONS] = application_conf
@@ -937,7 +937,7 @@ class UnitPipeline(PipelineTemplate):
         by following the CARS pipeline's steps.
         """
         # pylint:disable=too-many-return-statements
-        inputs = self.used_conf[INPUTS]
+        inputs = self.used_conf[INPUT]
         output = self.used_conf[OUTPUT]
 
         # Initialize epsg for terrain tiles
@@ -1419,9 +1419,9 @@ class UnitPipeline(PipelineTemplate):
                     "grid_correction_coef"
                 ],
                 pair_key=pair_key,
-                reference_dem=self.used_conf[INPUTS][
-                    sens_cst.INITIAL_ELEVATION
-                ][sens_cst.DEM_PATH],
+                reference_dem=self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
+                    sens_cst.DEM_PATH
+                ],
             )
             # saved used configuration
             self.save_configurations()
@@ -2162,12 +2162,12 @@ class UnitPipeline(PipelineTemplate):
                 dem_min_file_name,
                 dem_max_file_name,
                 dem_median_file_name,
-                input_geoid=self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
+                input_geoid=self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
                     sens_cst.GEOID
                 ],
                 output_geoid=self.used_conf[OUTPUT][out_cst.OUT_GEOID],
                 initial_elevation=(
-                    self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
+                    self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
                         sens_cst.DEM_PATH
                     ]
                 ),
@@ -2195,7 +2195,7 @@ class UnitPipeline(PipelineTemplate):
                 new_geom_plugin = (
                     sensor_inputs.generate_geometry_plugin_with_dem(
                         self.geometry_plugin,
-                        self.used_conf[INPUTS],
+                        self.used_conf[INPUT],
                         dem=dem_median,
                         output_dem_dir=output_dem_dir,
                     )
@@ -2245,7 +2245,7 @@ class UnitPipeline(PipelineTemplate):
         if self.dsms_in_inputs:
             dsms_merging_dump_dir = os.path.join(self.dump_dir, "dsms_merging")
 
-            dsm_dict = self.used_conf[INPUTS][dsm_cst.DSMS]
+            dsm_dict = self.used_conf[INPUT][dsm_cst.DSMS]
             dict_path = {}
             for key in dsm_dict.keys():
                 for path_name in dsm_dict[key].keys():
@@ -2398,14 +2398,14 @@ class UnitPipeline(PipelineTemplate):
 
         if not hasattr(self, "list_intersection_poly"):
             if (
-                self.used_conf[INPUTS][sens_cst.INITIAL_ELEVATION][
+                self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
                     sens_cst.DEM_PATH
                 ]
                 is not None
                 and self.sensors_in_inputs
             ):
                 self.list_sensor_pairs = sensor_inputs.generate_inputs(
-                    self.used_conf[INPUTS],
+                    self.used_conf[INPUT],
                     self.geom_plugin_without_dem_and_geoid,
                 )
 
@@ -2508,8 +2508,8 @@ class UnitPipeline(PipelineTemplate):
             color_file=color_file_name,
             classif_file=classif_file_name,
             dump_dir=self.dump_dir,
-            sensor_inputs=self.used_conf[INPUTS].get("sensors"),
-            pairing=self.used_conf[INPUTS].get("pairing"),
+            sensor_inputs=self.used_conf[INPUT].get("sensors"),
+            pairing=self.used_conf[INPUT].get("pairing"),
             geom_plugin=self.geom_plugin_with_dem_and_geoid,
             texture_bands=self.texture_bands,
             output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],

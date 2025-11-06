@@ -1,5 +1,5 @@
 {
-  "inputs": {
+  "input": {
     "sensors": {
       "one": {
         "image": "img1_crop.tif",

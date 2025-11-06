@@ -24,7 +24,7 @@ this module contains the constants used for all pipelines
 
 # Sensor input
 
-INPUTS = "inputs"
+INPUT = "input"
 OUTPUT = "output"
 APPLICATIONS = "applications"
 ADVANCED = "advanced"

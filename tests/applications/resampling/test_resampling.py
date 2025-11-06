@@ -563,7 +563,7 @@ def test_check_tiles_in_sensor():
             },
         )
 
-        inputs = input_data["inputs"]
+        inputs = input_data["input"]
         list_sensor_pairs = sensor_inputs.generate_inputs(
             inputs, get_geometry_plugin()
         )

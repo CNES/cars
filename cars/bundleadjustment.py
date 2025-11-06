@@ -590,7 +590,7 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
     # create configuration file + launch cars sparse matching
     sparse_matching = os.path.join(out_dir, "sparse_matching")
     sparse_matching_config = copy.deepcopy(conf_as_dict)
-    sparse_matching_config["inputs"]["pairing"] = bundle_adjustment_config[
+    sparse_matching_config["input"]["pairing"] = bundle_adjustment_config[
         "pairing"
     ]
     sparse_matching_config["output"]["directory"] = sparse_matching
@@ -615,12 +615,12 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
         sparse_matching_pipeline.run()
 
     # create new refined rpcs
-    conf_as_dict["inputs"] = sensor_inputs.sensors_check_inputs(
-        conf_as_dict["inputs"], config_dir=conf_dirname
+    conf_as_dict["input"] = sensor_inputs.sensors_check_inputs(
+        conf_as_dict["input"], config_dir=conf_dirname
     )
     separate = bundle_adjustment_config.pop("separate")
     refined_rpcs = new_rpcs_from_matches(
-        conf_as_dict["inputs"]["sensors"],
+        conf_as_dict["input"]["sensors"],
         conf_dirname,
         sparse_matching,
         **bundle_adjustment_config,
@@ -629,7 +629,7 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
     if refined_rpcs is not None:
         write_rpcs_as_geom(refined_rpcs, out_dir)
 
-    pairing_list = conf_as_dict["inputs"]["pairing"]
+    pairing_list = conf_as_dict["input"]["pairing"]
     if separate is False:
         pairing_list = [pairing_list]
 
@@ -637,13 +637,13 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
         # create configuration file + launch cars dense matching
         raw = os.path.join(out_dir, "raw")
         raw_config = copy.deepcopy(conf_as_dict)
-        sensors_keys = conf_as_dict["inputs"]["sensors"].keys()
+        sensors_keys = conf_as_dict["input"]["sensors"].keys()
 
         if separate:
-            raw_config["inputs"]["pairing"] = [pairing]
+            raw_config["input"]["pairing"] = [pairing]
             raw_config["output"]["directory"] = "_".join([raw] + pairing)
         else:
-            raw_config["inputs"]["pairing"] = pairing
+            raw_config["input"]["pairing"] = pairing
             raw_config["output"]["directory"] = raw
 
         # output config file
@@ -660,18 +660,18 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
             # create configuration file + launch cars dense matching
             refined = os.path.join(out_dir, "refined")
             refined_config = copy.deepcopy(conf_as_dict)
-            sensors_keys = conf_as_dict["inputs"]["sensors"].keys()
+            sensors_keys = conf_as_dict["input"]["sensors"].keys()
             for key in sensors_keys:
-                refined_config["inputs"]["sensors"][key]["geomodel"] = (
+                refined_config["input"]["sensors"][key]["geomodel"] = (
                     os.path.join(out_dir, key + ".geom")
                 )
             if separate:
-                refined_config["inputs"]["pairing"] = [pairing]
+                refined_config["input"]["pairing"] = [pairing]
                 refined_config["output"]["directory"] = "_".join(
                     [refined] + pairing
                 )
             else:
-                refined_config["inputs"]["pairing"] = pairing
+                refined_config["input"]["pairing"] = pairing
                 refined_config["output"]["directory"] = refined
 
             refined_cfg_file = refined_config["output"]["directory"] + (

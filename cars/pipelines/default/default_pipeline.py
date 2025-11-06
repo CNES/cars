@@ -56,7 +56,7 @@ from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
     APPLICATIONS,
-    INPUTS,
+    INPUT,
     ORCHESTRATOR,
     OUTPUT,
 )
@@ -132,13 +132,13 @@ class DefaultPipeline(PipelineTemplate):
         # Check application
         self.check_applications(conf)
         # Check input
-        conf[INPUTS] = self.check_inputs(conf)
+        conf[INPUT] = self.check_inputs(conf)
         # check advanced
         conf[ADVANCED] = self.check_advanced(conf)
         # check output
         conf[OUTPUT] = self.check_output(conf)
 
-        if dsm_cst.DSMS in conf[INPUTS] and len(self.epipolar_resolutions) != 1:
+        if dsm_cst.DSMS in conf[INPUT] and len(self.epipolar_resolutions) != 1:
             logging.info(
                 "For the use of those pipelines, "
                 "you have to give only one resolution"
@@ -234,7 +234,7 @@ class DefaultPipeline(PipelineTemplate):
         :rtype: dict
         """
         return UnitPipeline.check_inputs(
-            conf[INPUTS], config_dir=self.config_dir
+            conf[INPUT], config_dir=self.config_dir
         )
 
     def check_output(self, conf):
@@ -249,7 +249,7 @@ class DefaultPipeline(PipelineTemplate):
         """
         conf_output, self.scaling_coeff = (
             output_parameters.check_output_parameters(
-                conf[INPUTS], conf[OUTPUT], self.scaling_coeff
+                conf[INPUT], conf[OUTPUT], self.scaling_coeff
             )
         )
         return conf_output
@@ -263,7 +263,7 @@ class DefaultPipeline(PipelineTemplate):
         """
         (_, advanced, _, _, _, self.scaling_coeff, _, _) = (
             advanced_parameters.check_advanced_parameters(
-                conf[INPUTS],
+                conf[INPUT],
                 conf.get(ADVANCED, {}),
                 check_epipolar_a_priori=True,
             )
@@ -353,14 +353,14 @@ class DefaultPipeline(PipelineTemplate):
                 "dem_median": dem_median,
             }
             # Use initial elevation or dem median according to use wish
-            if new_conf[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"] is None:
-                new_conf[INPUTS][sens_cst.INITIAL_ELEVATION] = dem_median
+            if new_conf[INPUT][sens_cst.INITIAL_ELEVATION]["dem"] is None:
+                new_conf[INPUT][sens_cst.INITIAL_ELEVATION] = dem_median
             else:
                 new_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_median"] = (
-                    new_conf[INPUTS][sens_cst.INITIAL_ELEVATION]["dem"]
+                    new_conf[INPUT][sens_cst.INITIAL_ELEVATION]["dem"]
                 )
             if new_conf[ADVANCED][adv_cst.USE_ENDOGENOUS_DEM] and not first_res:
-                new_conf[INPUTS][sens_cst.INITIAL_ELEVATION] = dem_median
+                new_conf[INPUT][sens_cst.INITIAL_ELEVATION] = dem_median
 
             new_conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = None
 
@@ -584,10 +584,10 @@ def extract_conf_with_resolution(
         with open(PIPELINE_CONFS[FINAL_RES], "r", encoding="utf-8") as file:
             overiding_conf = yaml.safe_load(file)
 
-    if last_res and dsm_cst.DSMS not in current_conf[INPUTS]:
+    if last_res and dsm_cst.DSMS not in current_conf[INPUT]:
         # Use filling applications only for last resolution
         filling_applications = generate_filling_applications(
-            current_conf[INPUTS]
+            current_conf[INPUT]
         )
     else:
         filling_applications = {}
@@ -798,7 +798,7 @@ def merge_used_conf(used_configurations, epipolar_resolutions):
     used_configurations = copy.deepcopy(used_configurations)
 
     merged_conf = {
-        INPUTS: used_configurations[epipolar_resolutions[0]][INPUTS],
+        INPUT: used_configurations[epipolar_resolutions[0]][INPUT],
         ADVANCED: used_configurations[epipolar_resolutions[0]][ADVANCED],
         OUTPUT: used_configurations[epipolar_resolutions[0]][OUTPUT],
         ORCHESTRATOR: used_configurations[epipolar_resolutions[0]][

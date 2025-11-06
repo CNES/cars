@@ -16,7 +16,7 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
    :class: input
 
    .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: inputs
+      :key: input
 
 .. raw:: html
 
