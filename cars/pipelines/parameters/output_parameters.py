@@ -336,7 +336,7 @@ def check_classification_parameter(inputs, overloaded_conf):
                             "be a boolean, a string or a list of int"
                         )
 
-                    if elem > len(bands_classif):
+                    if elem not in bands_classif:
                         raise RuntimeError(
                             f"If you want to use {elem} as a band num, "
                             f"you should use a dictionary, not a list"
@@ -344,7 +344,7 @@ def check_classification_parameter(inputs, overloaded_conf):
             elif classification_formatting is True:
                 overloaded_conf[output_constants.AUXILIARY][
                     output_constants.AUX_CLASSIFICATION
-                ] = {val + 1: name for val, name in enumerate(bands_classif)}
+                ] = {int(name): name for val, name in enumerate(bands_classif)}
             elif isinstance(classification_formatting, dict):
                 for _, value in classification_formatting.items():
                     if isinstance(value, int):
