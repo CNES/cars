@@ -223,7 +223,7 @@ def test_end2end_dsm_fusion():
         }
 
         input_dsm_config = {
-            "inputs": {
+            "input": {
                 "dsms": {
                     "one": in_dsm,
                     "two": in_dsm,
@@ -404,7 +404,7 @@ def test_end2end_dsm_fusion():
         }
 
         input_dsm_config_base = {
-            "inputs": {
+            "input": {
                 "dsms": {
                     "one": in_dsm_base,
                     "two": in_dsm_base,
@@ -456,7 +456,7 @@ def test_end2end_color_after_dsm_reentrance():
     }
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_dsm_config = {
-            "inputs": {
+            "input": {
                 "dsms": {"one": in_dsm, "two": in_dsm},
                 "sensors": {
                     "one": {
@@ -594,7 +594,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         }
 
         # Ground truth generation
-        dsm_gt = input_dense_dsm["inputs"]["initial_elevation"]["dem"]
+        dsm_gt = input_dense_dsm["input"]["initial_elevation"]["dem"]
 
         input_dense_dsm["advanced"]["ground_truth_dsm"] = {"dsm": dsm_gt}
         input_dense_dsm["advanced"]["epipolar_resolutions"] = [4, 1]
@@ -1157,9 +1157,9 @@ def test_end2end_ventoux_unique():
             used_conf = yaml.safe_load(yaml_file)
             # check used_conf inputs conf exists
             with check:
-                assert "inputs" in used_conf
+                assert "input" in used_conf
             with check:
-                assert "sensors" in used_conf["inputs"]
+                assert "sensors" in used_conf["input"]
             # check used_conf sparse_matching configuration
             with check:
                 assert (
@@ -1295,9 +1295,9 @@ def test_end2end_ventoux_unique():
             used_conf = yaml.safe_load(yaml_file)
             # check used_conf inputs conf exists
             with check:
-                assert "inputs" in used_conf
+                assert "input" in used_conf
             with check:
-                assert "sensors" in used_conf["inputs"]
+                assert "sensors" in used_conf["input"]
             # check used_conf sparse_matching configuration
             with check:
                 assert (
@@ -1664,7 +1664,7 @@ def test_end2end_ventoux_unique_epsg_4326():
                 "max_ram_per_worker": 1000,
             },
         )
-        input_config_dsm["inputs"]["roi"] = {
+        input_config_dsm["input"]["roi"] = {
             "type": "FeatureCollection",
             "features": [
                 {
@@ -1685,7 +1685,7 @@ def test_end2end_ventoux_unique_epsg_4326():
                 }
             ],
         }
-        input_config_dsm["inputs"]["initial_elevation"] = absolute_data_path(
+        input_config_dsm["input"]["initial_elevation"] = absolute_data_path(
             "input/phr_ventoux/srtm/N44E005.hgt"
         )
         input_config_dsm["applications"] = {
@@ -1808,7 +1808,7 @@ def test_end2end_use_epipolar_a_priori():
             },
         )
         # no srtm
-        input_config_sparse_res["inputs"]["initial_elevation"] = None
+        input_config_sparse_res["input"]["initial_elevation"] = None
 
         application_config = {
             "4": {
@@ -1987,9 +1987,9 @@ def test_end2end_use_epipolar_a_priori():
             refined_conf = yaml.safe_load(yaml_file)
             # check refined_conf inputs conf exists
             with check:
-                assert "inputs" in refined_conf
+                assert "input" in refined_conf
             with check:
-                assert "sensors" in refined_conf["inputs"]
+                assert "sensors" in refined_conf["input"]
             with check:
                 assert "advanced" in refined_conf
 
@@ -2066,9 +2066,9 @@ def test_end2end_use_epipolar_a_priori():
             used_conf = yaml.safe_load(yaml_file)
             # check used_conf inputs conf exists
             with check:
-                assert "inputs" in used_conf
+                assert "input" in used_conf
             with check:
-                assert "sensors" in used_conf["inputs"]
+                assert "sensors" in used_conf["input"]
             # check used_conf sparse_matching configuration
             with check:
                 assert (
@@ -3343,7 +3343,7 @@ def test_compute_dsm_with_roi_ventoux():
             ],
         }
 
-        input_config_dense_dsm["inputs"]["roi"] = roi_geo_json
+        input_config_dense_dsm["input"]["roi"] = roi_geo_json
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -3566,7 +3566,7 @@ def test_end2end_quality_stats():
         )
 
         # no srtm
-        input_config_dense_dsm["inputs"]["initial_elevation"] = None
+        input_config_dense_dsm["input"]["initial_elevation"] = None
         dense_dsm_applications = {
             "4": {
                 "point_cloud_outlier_removal.1": {
@@ -4391,10 +4391,10 @@ def test_end2end_paca_with_mask():
                 "fill_with_exogenous_dem": None,
             }
         }
-        input_fill_geoid["inputs"]["sensors"]["left"]["classification"].update(
+        input_fill_geoid["input"]["sensors"]["left"]["classification"].update(
             classif_dict
         )
-        input_fill_geoid["inputs"]["sensors"]["right"]["classification"].update(
+        input_fill_geoid["input"]["sensors"]["right"]["classification"].update(
             classif_dict
         )
 
@@ -4455,12 +4455,12 @@ def test_end2end_paca_with_mask():
                 "fill_with_exogenous_dem": None,
             }
         }
-        input_fill_border["inputs"]["sensors"]["left"]["classification"].update(
+        input_fill_border["input"]["sensors"]["left"]["classification"].update(
             classif_dict
         )
-        input_fill_border["inputs"]["sensors"]["right"][
-            "classification"
-        ].update(classif_dict)
+        input_fill_border["input"]["sensors"]["right"]["classification"].update(
+            classif_dict
+        )
 
         dense_dsm_pipeline_border_interpolation = default.DefaultPipeline(
             input_fill_border

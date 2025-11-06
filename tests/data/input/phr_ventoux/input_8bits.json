@@ -1,5 +1,5 @@
 {
-    "inputs": { 
+    "input": {
         "sensors" : {
             "left": {
                 "image": "left_image_8bits.tif",

@@ -92,7 +92,7 @@ def test_fill_dsm(method):
         shutil.copyfile(input_dsm_base, input_dsm_noroi)
         shutil.copyfile(input_dsm_base, input_dsm_roi)
 
-        inputs = input_data["inputs"]
+        inputs = input_data["input"]
 
         geometry_plugin = get_geometry_plugin(
             dem=inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]

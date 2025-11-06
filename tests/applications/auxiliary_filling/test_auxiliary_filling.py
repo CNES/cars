@@ -114,8 +114,8 @@ def test_auxiliary_filling_paca(
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         _, input_data = generate_input_json(input_json, directory, "sequential")
 
-        sensor_inputs = input_data["inputs"]["sensors"]
-        pairing = input_data["inputs"]["pairing"]
+        sensor_inputs = input_data["input"]["sensors"]
+        pairing = input_data["input"]["pairing"]
 
         local_image_color = os.path.join(directory, "color.tif")
         local_classification_input = os.path.join(

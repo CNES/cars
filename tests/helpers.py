@@ -204,8 +204,8 @@ def generate_input_json(
     # transform paths
     new_config = config.copy()
 
-    new_config["inputs"] = sensor_inputs.sensors_check_inputs(
-        new_config["inputs"], config_dir=json_dir_path
+    new_config["input"] = sensor_inputs.sensors_check_inputs(
+        new_config["input"], config_dir=json_dir_path
     )
 
     # dump json

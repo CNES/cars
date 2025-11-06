@@ -65,7 +65,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
 
         # Validate inputs
         global_schema = {
-            pipeline_constants.INPUTS: dict,
+            pipeline_constants.INPUT: dict,
             pipeline_constants.OUTPUT: dict,
             OptionalKey(pipeline_constants.APPLICATIONS): dict,
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
