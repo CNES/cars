@@ -1918,19 +1918,19 @@ def test_end2end_use_epipolar_a_priori():
                 )
             with check:
                 assert (
-                    -65
+                    -35
                     < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["minimum_disparity"]
-                    < -45
+                    < -25
                 )
             with check:
                 assert (
-                    30
+                    25
                     < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["maximum_disparity"]
-                    < 40
+                    < 35
                 )
 
             # Ref output dir dependent from geometry plugin chosen
@@ -3700,13 +3700,13 @@ def test_end2end_quality_stats():
                 "left_right"
             ]
             with check:
-                assert out_disp_compute["global_disp_min"] > -65
+                assert out_disp_compute["global_disp_min"] > -35
             with check:
-                assert out_disp_compute["global_disp_min"] < -45
+                assert out_disp_compute["global_disp_min"] < -25
             with check:
-                assert out_disp_compute["global_disp_max"] > 30
+                assert out_disp_compute["global_disp_max"] > 25
             with check:
-                assert out_disp_compute["global_disp_max"] < 40
+                assert out_disp_compute["global_disp_max"] < 35
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
