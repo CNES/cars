@@ -25,12 +25,14 @@ This module contains the exogenous dsm filling application class.
 import logging
 import os
 import shutil
+import warnings
 
 import numpy as np
 import rasterio as rio
 from json_checker import Checker, Or
 from pyproj import CRS
 from rasterio.enums import Resampling
+from rasterio.errors import NodataShadowWarning
 from rasterio.warp import reproject
 from shapely import Polygon
 
@@ -275,7 +277,9 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             elif label == "nodata":
                 if classif_file is not None:
                     with rio.open(classif_file) as in_classif:
-                        classif_msk = in_classif.read_masks(1)
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore", NodataShadowWarning)
+                            classif_msk = in_classif.read_masks(1)
                     classif = ~classif_msk
                 else:
                     with rio.open(dsm_file) as in_dsm:

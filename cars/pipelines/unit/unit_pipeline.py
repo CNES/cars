@@ -33,11 +33,13 @@ from __future__ import print_function
 import copy
 import logging
 import os
+import warnings
 from collections import OrderedDict
 
 import numpy as np
 import rasterio
 from pyproj import CRS
+from rasterio.errors import NodataShadowWarning
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars import __version__
@@ -2609,7 +2611,11 @@ class UnitPipeline(PipelineTemplate):
             descriptions = src.descriptions
             dict_temp = {name: i for i, name in enumerate(descriptions)}
             profile = src.profile
-            filling_mask = src.read_masks(1)
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", NodataShadowWarning)
+                filling_mask = src.read_masks(1)
+
             filling_mono_bands[filling_mask == 0] = 0
 
             filling_bands_list = {
@@ -2697,7 +2703,7 @@ class UnitPipeline(PipelineTemplate):
             with rasterio.open(filling_path, "w", **profile) as src:
                 src.write(filling_mono_bands, 1)
 
-            return True
+        return True
 
     @cars_profile(name="merge classif bands", interval=0.5)
     def merge_classif_bands(self, classif_path, aux_classif, dsm_file):
