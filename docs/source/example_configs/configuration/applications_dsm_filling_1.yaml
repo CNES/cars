@@ -3,17 +3,17 @@ applications:
   dsm_filling.1:
     method: exogenous_filling
     classification:
-    - sea
+    - "8"
     fill_with_geoid:
-    - sea
+    - "8"
     save_intermediate_data: true
   dsm_filling.2:
     method: bulldozer
     classification:
-    - cloud
+    - "6"
     save_intermediate_data: true
   dsm_filling.3:
     method: border_interpolation
     classification:
-    - lake
+    - "7"
     save_intermediate_data: true

@@ -3,6 +3,6 @@ applications:
   dense_match_filling:
     method: zero_padding
     classification:
-    - water
-    - snow
+    - "3"
+    - "5"
     save_intermediate_data: true
