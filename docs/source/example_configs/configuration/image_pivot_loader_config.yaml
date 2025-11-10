@@ -3,7 +3,6 @@ loaders:
   image: pivot
 sensors:
   image:
-    loader: pivot
     bands:
       b0:
         path: img1.tif
