@@ -27,4 +27,4 @@ from cars.applications.dem_generation.abstract_dem_generation_app import (
     DemGeneration,
 )
 
-from . import dichotomic_generation_app, rasterization_app
+from . import bulldozer_dem_app

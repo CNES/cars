@@ -35,6 +35,9 @@ from json_checker import Checker, Or
 from pyproj import CRS
 from shapely import Polygon
 
+from cars.applications.dem_generation.bulldozer_memory import (
+    can_allocate_shared_memory,
+)
 from cars.core import inputs, projection
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -68,6 +71,12 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         else:
             conf = {}
             overloaded_conf = {}
+
+        # Check if can use bulldozer
+        can_allocate_sm, log_message = can_allocate_shared_memory()
+        if not can_allocate_sm:
+            logging.error(log_message)
+            logging.error("DSM filling with bulldozer might crash")
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")

@@ -133,48 +133,6 @@ def add_margin(bbox, ratio=1):
     return new_bbox
 
 
-def generate_grid(  # pylint: disable=too-many-positional-arguments
-    pd_pc, resolution, xmin=None, xmax=None, ymin=None, ymax=None
-):
-    """
-    Generate regular grid
-
-    :param pd_pc: point cloud
-    :type pd_pc: Pandas Dataframe
-    :param resolution: resolution in meter
-    :type resolution: float
-    :param xmin: x min position in metric system
-    :type xmin: float
-    :param xmax: x max position in metric system
-    :type xmax: float
-    :param ymin: y min position in metric system
-    :type ymin: float
-    :param ymax: y max position in metric system
-    :type ymax: float
-
-    :return: regular grid
-    :rtype: numpy array
-
-    """
-
-    if None in (xmin, xmax, ymin, ymax):
-        mins = pd_pc.min(skipna=True)
-        maxs = pd_pc.max(skipna=True)
-        xmin = mins["x"]
-        ymin = mins["y"]
-        xmax = maxs["x"]
-        ymax = maxs["y"]
-
-    nb_x = int((xmax - xmin) / resolution)
-    x_range = np.linspace(xmin, xmax, nb_x)
-    nb_y = int((ymax - ymin) / resolution)
-
-    y_range = np.linspace(ymin, ymax, nb_y)
-    x_grid, y_grid = np.meshgrid(x_range, y_range)  # 2D grid for interpolation
-
-    return x_grid, y_grid
-
-
 def compute_stats(diff):
     """
     Compute and display statistics of difference between two DEM :
