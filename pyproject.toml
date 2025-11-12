@@ -59,7 +59,7 @@ dependencies = [
     "laspy[laszip]",
     "tbb==2020.3.254", # Intel optim for numba: KO for 2021 versions
     "numba",
-    "pandora[sgm]==1.7.1",
+    "pandora[sgm]==1.7.2",
     "cars-rasterize==0.2.*",
     "cars-resample==0.1.*",
     "cars-filter==0.2.*",
@@ -125,7 +125,7 @@ notebook = [
 
 # [pandora_mccnn] add heavy mccnn capability for dense matching pandora already install in main requires
 pandora_mccnn = [
-    "pandora_plugin_mccnn==1.3.4"
+    "pandora_plugin_mccnn==1.3.5"
 ]
 
 bundleadjustment = [
