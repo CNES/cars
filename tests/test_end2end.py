@@ -4449,12 +4449,7 @@ def test_end2end_paca_with_mask():
                 "fill_with_exogenous_dem": None,
             }
         }
-        input_fill_geoid["input"]["sensors"]["left"]["classification"].update(
-            classif_dict
-        )
-        input_fill_geoid["input"]["sensors"]["right"]["classification"].update(
-            classif_dict
-        )
+        input_fill_geoid["input"].update(classif_dict)
 
         dense_dsm_pipeline_matches = default.DefaultPipeline(input_fill_geoid)
 
@@ -4513,12 +4508,7 @@ def test_end2end_paca_with_mask():
                 "fill_with_exogenous_dem": None,
             }
         }
-        input_fill_border["input"]["sensors"]["left"]["classification"].update(
-            classif_dict
-        )
-        input_fill_border["input"]["sensors"]["right"]["classification"].update(
-            classif_dict
-        )
+        input_fill_border["input"].update(classif_dict)
 
         dense_dsm_pipeline_border_interpolation = default.DefaultPipeline(
             input_fill_border

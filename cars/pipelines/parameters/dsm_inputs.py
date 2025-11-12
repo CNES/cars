@@ -208,6 +208,18 @@ def check_dsm_inputs(conf, config_dir=None):
 
     check_phasing(conf[dsm_cst.DSMS])
 
+    overloaded_conf[sens_cst.LOADERS] = sens_inp.check_loaders(
+        conf.get(sens_cst.LOADERS, {})
+    )
+
+    classif_loader = overloaded_conf[sens_cst.LOADERS][
+        sens_cst.INPUT_CLASSIFICATION
+    ]
+
+    overloaded_conf[sens_cst.FILLING] = sens_inp.check_filling(
+        conf.get(sens_cst.FILLING, {}), classif_loader
+    )
+
     if sens_cst.SENSORS in conf and conf[sens_cst.SENSORS] is not None:
         sens_inp.check_sensors(conf, overloaded_conf, config_dir)
 

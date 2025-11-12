@@ -17,7 +17,7 @@ The zero_padding method fills the disparity with zeros where the selected classi
 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 | save_intermediate_data              | Save disparity map              | boolean   |                         | False              | No       |
 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
-| classification                      | Classification band name        | List[str] |                         | None               | No       |
+| classification                      | Values of classes to fill       | List[str] |                         | None               | No       |
 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 
 .. note::

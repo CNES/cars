@@ -1,9 +1,11 @@
 {
     "input": {
+        "loaders": {
+            "image": "pivot"
+        },
         "sensors" : {
             "left": {
                 "image": {
-                    "loader": "pivot_image",
                     "bands": {
                         "b0": {
                             "path": "left_image.tif",
@@ -33,7 +35,14 @@
                 "classification": "left_classif.tif"
             },
             "right": {
-                "image": "right_image.tif",
+                "image": {
+                    "bands": {
+                        "b0": {
+                            "path": "right_image.tif",
+                            "band": 0
+                        }
+                    }
+                },
                 "geomodel": {
                     "path": "right_image.geom"
                 },

@@ -25,7 +25,7 @@ Method "exogenous_filling" fills with altitude of exogenous data (DEM/geoid).
 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
 | Name                                | Description                                        | Type        | Available value         | Default value      | Required |
 +=====================================+====================================================+=============+=========================+====================+==========+
-| classification                      | Classification band name                           | List[str]   |                         | "nodata"           | No       |
+| classification                      | Values of classes to fill                          | List[str]   |                         | "nodata"           | No       |
 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
 | fill_with_geoid                     | Classes to fill with geoid                         | List[str]   |                         | None               | No       |
 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
@@ -40,7 +40,7 @@ Method "bulldozer" converts the DSM to a DTM and fills the pixels with the outpu
 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 | Name                                | Description                     | Type      | Available value         | Default value      | Required |
 +=====================================+=================================+===========+=========================+====================+==========+
-| classification                      | Classification band name        | List[str] |                         | "nodata"           | No       |
+| classification                      | Values of classes to fill       | List[str] |                         | "nodata"           | No       |
 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 
 **Method border_interpolation:**
@@ -50,7 +50,7 @@ Method "border_interpolation" use the border of every component to compute the a
 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
 | Name                                | Description                              | Type      | Available value         | Default value      | Required |
 +=====================================+==========================================+===========+=========================+====================+==========+
-| classification                      | Classification band name                 | List[str] |                         | "nodata"           | No       |
+| classification                      | Values of classes to fill                | List[str] |                         | "nodata"           | No       |
 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
 | component_min_size                  | Minimal size (pixels) of feature to fill | int       |                         | 5                  | No       |
 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
@@ -60,7 +60,7 @@ Method "border_interpolation" use the border of every component to compute the a
 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
 
 .. note::
-    - If the keyword "nodata" is added to the classification band name parameter, nodata pixels of the classification will be filled. If no classification is given, nodata pixels of DSM will be filled.
+    - If the keyword "nodata" is added to the classification parameter, nodata pixels of the classification will be filled. If no classification is given, nodata pixels of DSM will be filled.
 
 .. warning::
 

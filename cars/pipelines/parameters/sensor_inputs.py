@@ -17,7 +17,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# pylint: disable=C0302
 """
 CARS containing inputs checking for sensor input data
 Used for full_res and low_res pipelines
@@ -62,12 +62,26 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         conf.get(sens_cst.INITIAL_ELEVATION, None)
     )
 
+    overloaded_conf[sens_cst.LOADERS] = check_loaders(
+        conf.get(sens_cst.LOADERS, {})
+    )
+
+    classif_loader = overloaded_conf[sens_cst.LOADERS][
+        sens_cst.INPUT_CLASSIFICATION
+    ]
+
+    overloaded_conf[sens_cst.FILLING] = check_filling(
+        conf.get(sens_cst.FILLING, {}), classif_loader
+    )
+
     # Validate inputs
     inputs_schema = {
         sens_cst.SENSORS: dict,
         sens_cst.PAIRING: Or([[str]], None),
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
         sens_cst.ROI: Or(str, dict, None),
+        sens_cst.LOADERS: dict,
+        sens_cst.FILLING: dict,
     }
 
     checker_inputs = Checker(inputs_schema)
@@ -84,7 +98,6 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
 def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
     """
     Check sensors
-
     """
     # Validate each sensor image
     sensor_schema = {
@@ -109,12 +122,11 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         image = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_IMG, None
         )
-        if isinstance(image, str):
-            loader_name = "basic_image"
-        elif isinstance(image, dict):
-            loader_name = image.get("loader", "basic_image")
-        else:
-            raise TypeError(f"Image {image} is not of type str or dict")
+        loader_name = (
+            overloaded_conf[sens_cst.LOADERS][sens_cst.INPUT_IMG]
+            + "_"
+            + sens_cst.INPUT_IMG
+        )
         image_loader = SensorLoader(loader_name, image, config_dir)
         image_as_pivot_format = (
             image_loader.get_pivot_format()  # pylint: disable=E1101
@@ -143,14 +155,11 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             sens_cst.INPUT_CLASSIFICATION, None
         )
         if classif is not None:
-            if isinstance(classif, str):
-                loader_name = "basic_classification"
-            elif isinstance(classif, dict):
-                loader_name = classif.get("loader", "basic_classification")
-            else:
-                raise TypeError(
-                    f"Classification {classif} is not of type str or dict"
-                )
+            loader_name = (
+                overloaded_conf[sens_cst.LOADERS][sens_cst.INPUT_CLASSIFICATION]
+                + "_"
+                + sens_cst.INPUT_CLASSIFICATION
+            )
             classif_loader = SensorLoader(loader_name, classif, config_dir)
             classif_as_pivot_format = (
                 classif_loader.get_pivot_format()  # pylint: disable=E1101
@@ -167,6 +176,10 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         checker_sensor.validate(
             overloaded_conf[sens_cst.SENSORS][sensor_image_key]
         )
+
+    # Image are now in pivot format
+    overloaded_conf[sens_cst.LOADERS][sens_cst.INPUT_IMG] = "pivot"
+    overloaded_conf[sens_cst.LOADERS][sens_cst.INPUT_CLASSIFICATION] = "pivot"
 
     # Modify to absolute path
     if config_dir is not None:
@@ -234,7 +247,77 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             sens_cst.INPUT_CLASSIFICATION,
             key1,
             key2,
+            overloaded_conf[sens_cst.FILLING],
         )
+
+    return overloaded_conf
+
+
+def check_loaders(conf):
+    """
+    Check loaders section
+    :param conf: loaders section of input conf
+    :type conf: dict
+    """
+    overloaded_conf = conf.copy()
+    overloaded_conf[sens_cst.INPUT_IMG] = conf.get(sens_cst.INPUT_IMG, "basic")
+    overloaded_conf[sens_cst.INPUT_CLASSIFICATION] = conf.get(
+        sens_cst.INPUT_CLASSIFICATION, "basic"
+    )
+
+    # Validate loaders
+    loaders_schema = {
+        sens_cst.INPUT_IMG: str,
+        sens_cst.INPUT_CLASSIFICATION: str,
+    }
+
+    checker_loaders = Checker(loaders_schema)
+    checker_loaders.validate(overloaded_conf)
+
+    return overloaded_conf
+
+
+def check_filling(conf, classif_loader):
+    """
+    Check filling section
+    :param conf: filling section of input conf
+    :type conf: dict
+    """
+    basic_filling = {
+        "fill_with_geoid": None,
+        "interpolate_from_borders": None,
+        "fill_with_endogenous_dem": None,
+        "fill_with_exogenous_dem": None,
+    }
+    slurp_filling = {
+        "fill_with_geoid": [8],
+        "interpolate_from_borders": [9],
+        "fill_with_endogenous_dem": [10],
+        "fill_with_exogenous_dem": [6],
+    }
+    filling_from_loader = {}
+    filling_from_loader["basic"] = basic_filling
+    filling_from_loader["slurp"] = slurp_filling
+    filling_from_loader["pivot"] = basic_filling
+    default_filling = filling_from_loader[classif_loader]
+    overloaded_conf = conf.copy()
+    for filling_method in basic_filling:
+        overloaded_conf[filling_method] = conf.get(
+            filling_method, default_filling[filling_method]
+        )
+        if isinstance(overloaded_conf[filling_method], int):
+            overloaded_conf[filling_method] = [overloaded_conf[filling_method]]
+
+    # Validate loaders
+    loaders_schema = {
+        "fill_with_geoid": Or(None, [int]),
+        "interpolate_from_borders": Or(None, [int]),
+        "fill_with_endogenous_dem": Or(None, [int]),
+        "fill_with_exogenous_dem": Or(None, [int]),
+    }
+
+    checker_loaders = Checker(loaders_schema)
+    checker_loaders.validate(overloaded_conf)
 
     return overloaded_conf
 
@@ -666,7 +749,7 @@ def compare_image_type(sensors, sensor_type, key1, key2):
         )
 
 
-def compare_classification_values(sensors, sensor_type, key1, key2):
+def compare_classification_values(sensors, sensor_type, key1, key2, filling):
     """
     Compare the classification values between a pair of images
 
@@ -687,17 +770,6 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
         all_values = list(set(values1) | set(values2))
         classif1[sens_cst.INPUT_VALUES] = all_values
         classif2[sens_cst.INPUT_VALUES] = all_values
-        filling1 = sensors[key1][sensor_type][sens_cst.INPUT_FILLING]
-        filling2 = sensors[key2][sensor_type][sens_cst.INPUT_FILLING]
-        if filling1 != filling2:
-            raise ValueError(
-                "Filling rules of {} are not the same as filling "
-                "rules of {} but they belong to the same pair".format(
-                    classif1[sens_cst.INPUT_PATH],
-                    classif2[sens_cst.INPUT_PATH],
-                )
-            )
-        filling = filling1
         for filling_method in filling:
             filling_values = filling[filling_method]
             if filling_values is not None and not all(
@@ -722,11 +794,6 @@ def compare_classification_values(sensors, sensor_type, key1, key2):
                         classif2[sens_cst.INPUT_PATH],
                     )
                 )
-                logging.warning(
-                    "Filling {} is deactivated".format(filling_method)
-                )
-                filling1[filling_method] = None
-                filling2[filling_method] = None
 
 
 def check_all_nbits_equal_one(nbits):

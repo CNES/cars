@@ -1,11 +1,8 @@
 ---
-classification:
-  loader: pivot_classification
-  path: classif.tif
-  values: [3, 4, 6, 8, 9, 10]
-  filling:
-    fill_with_geoid: 8
-    interpolate_from_borders: 9
-    fill_with_endogenous_dem: [3, 4, 10]
-    fill_with_exogenous_dem: 6
+loaders:
+  image: pivot
+sensors:
+  classification:
+    path: classif.tif
+    values: [3, 4, 6, 8, 9, 10]
 

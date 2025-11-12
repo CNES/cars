@@ -7,7 +7,7 @@
           "path": "left_image.geom"
         },
         "mask": "left_mask.tif",
-        "classification": {"path": "left_classif.tif"}
+        "classification": "left_classif.tif"
       },
       "right": {
         "image": "right_image.tif",
@@ -15,7 +15,7 @@
           "path": "right_image.geom"
         },
         "mask": "right_mask.tif",
-        "classification":  {"path": "right_classif.tif"}
+        "classification": "right_classif.tif"
       }
     },
     "pairing": [

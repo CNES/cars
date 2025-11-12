@@ -1,17 +1,19 @@
 ---
-image:
-  loader: pivot
-  bands:
-    b0:
-      path: img1.tif
-      band: 0
-    b1:
-      path: color1.tif
-      band: 0
-    b2:
-      path: color1.tif
-      band: 1
-    b3:
-      path: color1.tif
-      band: 2
-  no_data: -9999
+loaders:
+  image: pivot
+sensors:
+  image:
+    bands:
+      b0:
+        path: img1.tif
+        band: 0
+      b1:
+        path: color1.tif
+        band: 0
+      b2:
+        path: color1.tif
+        band: 1
+      b3:
+        path: color1.tif
+        band: 2
+    no_data: -9999

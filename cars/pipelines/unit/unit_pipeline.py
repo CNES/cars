@@ -24,6 +24,7 @@
 # introduced in issue#895
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=too-many-nested-blocks
+# pylint: disable=C0302
 """
 CARS default pipeline class file
 """
@@ -76,7 +77,6 @@ from cars.pipelines.parameters.advanced_parameters_constants import (
     USE_ENDOGENOUS_DEM,
 )
 from cars.pipelines.parameters.output_constants import AUXILIARY
-from cars.pipelines.parameters.sensor_inputs_constants import SENSORS
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
@@ -763,24 +763,17 @@ class UnitPipeline(PipelineTemplate):
 
         filling_classif_values = []
 
-        if SENSORS not in inputs or inputs[SENSORS] is None:
-            logging.info("No sensors in inputs configuration")
+        if sens_cst.FILLING not in inputs or inputs[sens_cst.FILLING] is None:
+            logging.info("No filling in input configuration")
             return None
 
-        for _sensor_key, sensor_conf in inputs[SENSORS].items():
-            if sens_cst.INPUT_CLASSIFICATION in sensor_conf:
-                sens_classif = sensor_conf[sens_cst.INPUT_CLASSIFICATION]
-                if sens_classif is None:
-                    continue
-                if sens_cst.INPUT_FILLING in sens_classif:
-                    for _, classif_values in sens_classif[
-                        sens_cst.INPUT_FILLING
-                    ].items():
-                        # Add new value to filling bands
-                        if classif_values is not None:
-                            if isinstance(classif_values, str):
-                                classif_values = [classif_values]
-                            filling_classif_values += classif_values
+        filling_classif_values = []
+        for _, classif_values in inputs[sens_cst.FILLING].items():
+            # Add new value to filling bands
+            if classif_values is not None:
+                if isinstance(classif_values, str):
+                    classif_values = [classif_values]
+                filling_classif_values += classif_values
 
         simplified_list = list(OrderedDict.fromkeys(filling_classif_values))
         res_as_string_list = [str(value) for value in simplified_list]

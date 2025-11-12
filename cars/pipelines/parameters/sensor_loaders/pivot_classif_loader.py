@@ -22,8 +22,6 @@
 this module contains the PivotImageSensorLoader class.
 """
 
-import logging
-
 from json_checker import Checker
 
 from cars.core import inputs
@@ -50,13 +48,6 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
         :return: overloaded configuration
         :rtype: dict
         """
-        default_filling = {
-            "fill_with_geoid": None,
-            "interpolate_from_borders": None,
-            "fill_with_endogenous_dem": None,
-            "fill_with_exogenous_dem": None,
-        }
-        available_filling_methods = list(default_filling.keys())
         overloaded_conf = conf.copy()
         # Make relative path absolute
         overloaded_conf["path"] = make_relative_path_absolute(
@@ -65,36 +56,6 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
         overloaded_conf[sens_cst.INPUT_VALUES] = conf.get(
             sens_cst.INPUT_VALUES, []
         )
-        overloaded_conf[sens_cst.INPUT_FILLING] = conf.get(
-            sens_cst.INPUT_FILLING, default_filling
-        )
-        # Check filling is defined on existing values
-        for filling_method in overloaded_conf[sens_cst.INPUT_FILLING]:
-            if filling_method not in available_filling_methods:
-                raise ValueError(
-                    "Filling method {} does not exists".format(filling_method)
-                )
-            if isinstance(
-                overloaded_conf[sens_cst.INPUT_FILLING][filling_method], int
-            ):
-                # Convert int to list
-                overloaded_conf[sens_cst.INPUT_FILLING][filling_method] = [
-                    overloaded_conf[sens_cst.INPUT_FILLING][filling_method]
-                ]
-            filling_values = overloaded_conf[sens_cst.INPUT_FILLING][
-                filling_method
-            ]
-            if filling_values is not None and not set(filling_values) <= set(
-                overloaded_conf[sens_cst.INPUT_VALUES]
-            ):
-                logging.warning(
-                    "One of the values {} on which filling {} must be applied "
-                    "does not exist on classification {}".format(
-                        filling_values,
-                        filling_method,
-                        overloaded_conf["path"],
-                    )
-                )
         # Check dtype and number of bands
         classif_file = overloaded_conf["path"]
         classif_dtype = inputs.rasterio_get_dtype(classif_file)
@@ -115,10 +76,8 @@ class PivotClassifSensorLoader(SensorLoaderTemplate):
             )
 
         sensor_schema = {
-            sens_cst.INPUT_LOADER: str,
             sens_cst.INPUT_PATH: str,
             sens_cst.INPUT_VALUES: list,
-            sens_cst.INPUT_FILLING: dict,
         }
 
         # Check conf

@@ -3,6 +3,6 @@ applications:
   dsm_filling: # run single filling application
     method: exogenous_filling
     classification:
-    - sea
+    - "8"
     fill_with_geoid:
-    - sea
+    - "8"

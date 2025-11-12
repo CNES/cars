@@ -381,7 +381,6 @@ def test_input_basic_image_loader():
         "sensors": {
             "left": {
                 "image": {
-                    "loader": "basic_image",
                     "path": "left_image.tif",
                     "no_data": -9999,
                 },
@@ -391,7 +390,6 @@ def test_input_basic_image_loader():
             },
             "right": {
                 "image": {
-                    "loader": "basic_image",
                     "path": "right_image.tif",
                     "no_data": -9999,
                 },
@@ -413,10 +411,10 @@ def test_input_pivot_image_loader():
     input_json = absolute_data_path("input/phr_ventoux/input.json")
     json_dir_path = os.path.dirname(input_json)
     conf = {
+        "loaders": {"image": "pivot"},
         "sensors": {
             "left": {
                 "image": {
-                    "loader": "pivot_image",
                     "bands": {
                         "b0": {"path": "left_image.tif", "band": 0},
                         "b1": {"path": "color_image.tif", "band": 0},
@@ -430,7 +428,6 @@ def test_input_pivot_image_loader():
             },
             "right": {
                 "image": {
-                    "loader": "pivot_image",
                     "bands": {"b0": {"path": "right_image.tif", "band": 0}},
                 },
                 "geomodel": {"path": "right_image.geom"},
@@ -451,10 +448,10 @@ def test_input_pivot_loader_fail_band_not_found():
     input_json = absolute_data_path("input/phr_ventoux/input.json")
     json_dir_path = os.path.dirname(input_json)
     conf = {
+        "loaders": {"image": "pivot"},
         "sensors": {
             "left": {
                 "image": {
-                    "loader": "pivot_image",
                     "bands": {
                         "b0": {"path": "left_image.tif", "band": 1},
                         "b1": {"path": "color_image.tif", "band": 0},
@@ -469,7 +466,6 @@ def test_input_pivot_loader_fail_band_not_found():
             },
             "right": {
                 "image": {
-                    "loader": "pivot_image",
                     "bands": {"b0": {"path": "right_image.tif", "band": 0}},
                 },
                 "geomodel": {"path": "right_image.geom"},
@@ -491,10 +487,10 @@ def test_input_pivot_loader_fail_undefined_texture_band():
     input_json = absolute_data_path("input/phr_ventoux/input.json")
     json_dir_path = os.path.dirname(input_json)
     conf = {
+        "loaders": {"image": "pivot"},
         "sensors": {
             "left": {
                 "image": {
-                    "loader": "pivot_image",
                     "bands": {
                         "b0": {"path": "left_image.tif", "band": 1},
                         "b1": {"path": "color_image.tif", "band": 0},
@@ -509,7 +505,6 @@ def test_input_pivot_loader_fail_undefined_texture_band():
             },
             "right": {
                 "image": {
-                    "loader": "pivot_image",
                     "bands": {"b0": {"path": "right_image.tif", "band": 0}},
                 },
                 "geomodel": {"path": "right_image.geom"},
