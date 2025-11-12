@@ -73,7 +73,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             overloaded_conf = {}
 
         # Overload conf
-        overloaded_conf["method"] = conf.get("method", "bulldozer")
+        overloaded_conf["method"] = conf.get("method", "exogenous_filling")
         overloaded_conf["classification"] = conf.get("classification", "nodata")
         if isinstance(overloaded_conf["classification"], str):
             overloaded_conf["classification"] = [

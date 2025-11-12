@@ -40,6 +40,9 @@ from cars.applications import application_constants
 from cars.applications.dem_generation.abstract_dem_generation_app import (
     DemGeneration,
 )
+from cars.applications.dem_generation.bulldozer_memory import (
+    can_allocate_shared_memory,
+)
 from cars.applications.dem_generation.dem_generation_algo import (
     launch_bulldozer,
 )
@@ -57,7 +60,7 @@ from cars.core import inputs
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
-class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
+class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
     """
     Rasterization
     """
@@ -172,6 +175,14 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
         overloaded_conf["disable_bulldozer"] = conf.get(
             "disable_bulldozer", False
         )
+        if not overloaded_conf["disable_bulldozer"]:
+            can_allocate_sm, log_message = can_allocate_shared_memory()
+            if not can_allocate_sm:
+                logging.info(log_message)
+                logging.info(
+                    "Dem generation disable_bulldozer parameter is set to True"
+                )
+                overloaded_conf["disable_bulldozer"] = True
         overloaded_conf["compute_stats"] = conf.get("compute_stats", True)
         overloaded_conf["coregistration"] = conf.get("coregistration", True)
         overloaded_conf["coregistration_max_shift"] = conf.get(
@@ -499,6 +510,43 @@ class Rasterization(DemGeneration, short_name="bulldozer_on_raster"):
                 shutil.copy2(temp_output_path, dem_max_path)
             reverse_dem(dem_max_path)
             edit_transform(dem_max_path, transform=saved_transform)
+
+        else:
+            # Fill nodata
+            def fill_dem_nodata(data):
+                """
+                Fill nodata
+                """
+                # Apply max_iter times rasterio fill nodata
+                max_iter = 5
+                current_iter = 0
+                while current_iter < max_iter:
+                    data = rio.fill.fillnodata(
+                        data,
+                        mask=data != nodata,
+                        max_search_distance=max_search_distance,
+                    )
+                    current_iter += 1
+                    if np.sum(data == nodata) == 0:
+                        # no nodata left, exit loop
+                        continue
+                # fill the rest with median
+                median_value = np.nanmedian(data)
+                data[data == nodata] = median_value
+                return data
+
+            with rio.open(dem_min_path, "r+", **profile) as out_dem:
+                dem_min = out_dem.read()
+                dem_min = fill_dem_nodata(dem_min)
+                out_dem.write(dem_min)
+            with rio.open(dem_median_path_out, "r+", **profile) as out_dem:
+                dem_median = out_dem.read()
+                dem_median = fill_dem_nodata(dem_median)
+                out_dem.write(dem_median)
+            with rio.open(dem_max_path, "r+", **profile) as out_dem:
+                dem_max = out_dem.read()
+                dem_max = fill_dem_nodata(dem_max)
+                out_dem.write(dem_max)
 
         # Check DEM min and max
         with rio.open(dem_min_path, "r") as in_dem:

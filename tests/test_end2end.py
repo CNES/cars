@@ -825,6 +825,11 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                     "save_intermediate_data": False,
                     "decimation_factor": 100,
                 },
+                "dem_generation": {
+                    # save the dems in the global pipeline
+                    "disable_bulldozer": True,
+                    "save_intermediate_data": True,
+                },
             },
             "1": {
                 "grid_generation": {"method": "epipolar", "epi_step": 30},
@@ -846,7 +851,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 },
                 "dem_generation": {
                     # save the dems in the global pipeline
-                    "save_intermediate_data": True
+                    "save_intermediate_data": True,
                 },
             },
         }
@@ -2315,7 +2320,6 @@ def test_end2end_ventoux_full_output_no_elevation():
                     "save_intermediate_data": True,
                     "decimation_factor": 80,
                 },
-                "dem_generation": {"method": "dichotomic"},
                 "dense_matching": {
                     "method": "census_sgm_default",
                     "use_cross_validation": True,
