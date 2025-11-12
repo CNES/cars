@@ -63,23 +63,23 @@ Output configuration
 
         Additional auxiliary files can be produced by setting the `auxiliary` dictionary attribute.
 
-        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | Name                  | Description                                                 | Type   | Default value  | Required  |
-        +=======================+=============================================================+========+================+===========+
-        | *image*               | Save output orthorectified image                            | bool   | True           | No        |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *classification*      | Save output classification map                              | bool   | False          | No        |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *filling*             | Save output filling                                         | bool   | False          | No        |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *performance_map*     | Save output performance map                                 | bool   | False          | No        |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *weights*             | Save output dsm weights                                     | bool   | False          | No        |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *contributing_pair*   | Save output contributing pair                               | bool   | False          | No        |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *ambiguity*           | Save output ambiguity                                       | bool   | False          | No        |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
+        | Name                  | Description                                                 | Type             | Default value  | Required  |
+        +=======================+=============================================================+==================+================+===========+
+        | *image*               | Save output orthorectified image                            | bool, str, list  | True           | No        |
+        +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
+        | *classification*      | Save output classification map                              | bool, dict, list | False          | No        |
+        +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
+        | *filling*             | Save output filling                                         | bool, dict       | False          | No        |
+        +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
+        | *performance_map*     | Save output performance map                                 | bool, list       | False          | No        |
+        +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
+        | *weights*             | Save output dsm weights                                     | bool             | False          | No        |
+        +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
+        | *contributing_pair*   | Save output contributing pair                               | bool             | False          | No        |
+        +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
+        | *ambiguity*           | Save output ambiguity                                       | bool             | False          | No        |
+        +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
 
         .. include-cars-config:: ../../example_configs/configuration/output_auxiliary_basic
 
@@ -93,17 +93,42 @@ Output configuration
 
         In the table below, the default value corresponds to the value used if parameter is set to `True`.
 
-        +-----------------------+----------------------------------------------------------------------+--------+-------------------------------------------------+-----------+
-        | Name                  | Description                                                          | Type   | Default value                                   | Required  |
-        +=======================+======================================================================+========+=================================================+===========+
-        | *image*               | Define the order of the bands on the output image                    | list   | [b0, b1, b2, ...]                               | No        |
-        +-----------------------+----------------------------------------------------------------------+--------+-------------------------------------------------+-----------+
-        | *classification*      | Edit and/or merge the values of the classification map               | dict   | {1: 1, 2: 2, ...}                               | No        |
-        +-----------------------+----------------------------------------------------------------------+--------+-------------------------------------------------+-----------+
-        | *filling*             | Edit and/or merge the values of the filling map                      | dict   | {1: 1, 2: 2, ...}                               | No        |
-        +-----------------------+----------------------------------------------------------------------+--------+-------------------------------------------------+-----------+
-        | *performance_map*     | List defining intervals used in the performance map classification   | list   | [0, 0.968, 1.13375, 1.295, 1.604, 2.423, 3.428] | No        |
-        +-----------------------+----------------------------------------------------------------------+--------+-------------------------------------------------+-----------+
+        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
+        | Name                  | Description                                                          | Type   | Default value                                                                                                       | Required  |
+        +=======================+======================================================================+========+=====================================================================================================================+===========+
+        | *image*               | Define the order of the bands on the output image                    | list   | [b0, b1, b2, ...]                                                                                                   | No        |
+        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
+        | *classification*      | Edit and/or merge the values of the classification map               | dict   | {1: 1, 2: 2, ...}                                                                                                   | No        |
+        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
+        | *filling*             | Edit and/or merge the values of the filling map                      | dict   | {1: "fill_with_geoid", 2: "interpolate_from_borders", 3: "fill_with_endogenous_dem", 4: "fill_with_exogenous_dem"}  | No        |
+        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
+        | *performance_map*     | List defining intervals used in the performance map classification   | list   | [0, 0.968, 1.13375, 1.295, 1.604, 2.423, 3.428]                                                                     | No        |
+        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
+
+        .. note::
+
+           For the image parameter:
+            You can also put a string instead of a list or a boolean. Therefore, only one band will be used for the color.
+
+
+           For the classification parameter:
+            you can configure the output. For example, by configuring `{17: [1, 2], 3:3, 15:4}`:
+
+            - The classification represented by the pixel value 1 and 2 in the input file will be represented by the value 17 in the output file.
+            - The classification represented by the pixel value 3 in the input file will be represented by the value 3 in the output file.
+            - The classification represented by the pixel value 4 in the input file will be represented by the value 15 in the output file.
+           
+            Here, if a pixel is classified by the values 1 and 3, the priority will go to the first value in the dictionary -> 17.
+           
+            You can also use a list as [3, 2, 1, 4] and a dictionary will be formatted regarding those values: {3: 1, 2: 2, 1: 3, 4: 4}. By using a list, it will not be possible for you to use values that are not in the classification input file (as 17 in this example).
+
+           It works the same for the filling parameter:
+            By configuring `{17: ["fill_with_geoid", "interpolate_from_borders"], 3: "fill_with_endogenous_dem", 15: "fill_with_exogenous_dem", "32": "other"}`:
+
+            - Pixels filled with the `fill_with_geoid` and `interpolate_from_borders` methods will be represented by the value 17 in the output file.
+            - Pixels filled with the `fill_with_endogenous_dem` method will be represented by the value 3 in the output file.
+            - Pixels filled with the `fill_with_exogenous_dem` method will be represented by the value 15 in the output file.
+            - Pixels filled with other methods will be represented by the value 32 in the output file. By default, the value is 50.
 
         .. include-cars-config:: ../../example_configs/configuration/output_auxiliary_advanced
 

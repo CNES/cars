@@ -28,9 +28,9 @@ import tempfile
 import pytest
 from json_checker.core.exceptions import DictCheckerError
 
-from cars.pipelines.parameters import output_parameters
+from cars.pipelines.parameters import output_parameters, sensor_inputs
 
-from ..helpers import temporary_dir
+from ..helpers import absolute_data_path, temporary_dir
 
 
 @pytest.mark.unit_tests
@@ -172,3 +172,65 @@ def test_output_minimal():
         print(f"config {config}")
         overload = output_parameters.check_output_parameters(inputs, config, 1)
         print(overload)
+
+
+@pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "case",
+    [
+        {"classification": True, "expected": {1: 1, 2: 3, 3: 2}},
+        {"classification": False, "expected": False},
+        {"classification": [3, 2, 1], "expected": {3: 3, 2: 2, 1: 1}},
+        {"classification": [52, 3, 1], "expected": "invalid"},
+        {
+            "classification": {"1": 1, "52": 2, "7": 3},
+            "expected": {"1": 1, "52": 2, "7": 3},
+        },
+    ],
+)
+def test_classification_parameter(case):
+    """
+    Test output_parameters.check_output_parameters
+    with different classif auxiliary parameter
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        config = {
+            "directory": os.path.join(directory, "outdir"),
+            "product_level": "dsm",
+            "auxiliary": {
+                "performance_map": False,
+                "image": True,
+                "classification": case["classification"],
+                "contributing_pair": False,
+            },
+            "resolution": 0.5,
+            "geoid": "path/to/geoid",
+            "save_by_pair": False,
+        }
+
+        inputs = {
+            "sensors": {
+                "one": {
+                    "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                    "geomodel": absolute_data_path("input/phr_gizeh/img1.geom"),
+                    "classification": absolute_data_path(
+                        "input/phr_gizeh/classif1.tif"
+                    ),
+                },
+                "two": {
+                    "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                    "geomodel": absolute_data_path("input/phr_gizeh/img2.geom"),
+                },
+            }
+        }
+
+        inputs = sensor_inputs.sensors_check_inputs(inputs, directory)
+
+        if case["expected"] == "invalid":
+            with pytest.raises(RuntimeError):
+                # Expecting some sort of failure
+                output_parameters.check_output_parameters(inputs, config, 1)
+        else:
+            # Should succeed without raising
+            output_parameters.check_output_parameters(inputs, config, 1)

@@ -33,10 +33,13 @@ from __future__ import print_function
 import copy
 import logging
 import os
+import warnings
 from collections import OrderedDict
 
 import numpy as np
+import rasterio
 from pyproj import CRS
+from rasterio.errors import NodataShadowWarning
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars import __version__
@@ -2563,7 +2566,193 @@ class UnitPipeline(PipelineTemplate):
         )
         self.cars_orchestrator.breakpoint()
 
+        if (
+            classif_file_name is not None
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                out_cst.AUX_CLASSIFICATION
+            ]
+        ):
+            self.merge_classif_bands(
+                classif_file_name,
+                self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_CLASSIFICATION
+                ],
+                dsm_file_name,
+            )
+        if (
+            filling_file_name is not None
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]
+        ):
+            self.merge_filling_bands(
+                filling_file_name,
+                self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING],
+                dsm_file_name,
+            )
+
         return self.quit_on_app("auxiliary_filling")
+
+    @cars_profile(name="merge filling bands", interval=0.5)
+    def merge_filling_bands(self, filling_path, aux_filling, dsm_file):
+        """
+        Merge filling bands to get mono band in output
+        """
+
+        with rasterio.open(dsm_file) as in_dsm:
+            dsm_msk = in_dsm.read_masks(1)
+
+        with rasterio.open(filling_path) as src:
+            nb_bands = src.count
+
+            if nb_bands == 1:
+                return False
+
+            filling_multi_bands = src.read()
+            filling_mono_bands = np.zeros(filling_multi_bands.shape[1:3])
+            descriptions = src.descriptions
+            dict_temp = {name: i for i, name in enumerate(descriptions)}
+            profile = src.profile
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", NodataShadowWarning)
+                filling_mask = src.read_masks(1)
+
+            filling_mono_bands[filling_mask == 0] = 0
+
+            filling_bands_list = {
+                "fill_with_geoid": ["zeros_padding", "filling_exogenous"],
+                "interpolate_from_borders": [
+                    "zeros_padding",
+                    "bulldozer",
+                    "border_interpolation",
+                ],
+                "fill_with_endogenous_dem": [
+                    "zeros_padding",
+                    "filling_exogenous",
+                    "bulldozer",
+                ],
+                "fill_with_exogenous_dem": ["zeros_padding", "bulldozer"],
+            }
+
+            # To get the right footprint
+            filling_mono_bands = np.logical_or(dsm_msk, filling_mask).astype(
+                np.uint8
+            )
+
+            # to keep the previous classif convention
+            filling_mono_bands[filling_mono_bands == 0] = src.nodata
+            filling_mono_bands[filling_mono_bands == 1] = 0
+
+            no_match = False
+            for key, value in aux_filling.items():
+                if isinstance(value, str):
+                    value = [value]
+
+                if isinstance(value, list):
+                    for elem in value:
+                        if elem != "other":
+                            filling_method = filling_bands_list[elem]
+
+                            if all(
+                                method in descriptions
+                                for method in filling_method
+                            ):
+                                indices_true = [
+                                    dict_temp[m] for m in filling_method
+                                ]
+
+                                mask_true = np.all(
+                                    filling_multi_bands[indices_true, :, :]
+                                    == 1,
+                                    axis=0,
+                                )
+
+                                indices_false = [
+                                    i
+                                    for i in range(filling_multi_bands.shape[0])
+                                    if i not in indices_true
+                                ]
+
+                                mask_false = np.all(
+                                    filling_multi_bands[indices_false, :, :]
+                                    == 0,
+                                    axis=0,
+                                )
+
+                                mask = mask_true & mask_false
+
+                                filling_mono_bands[mask] = key
+                            else:
+                                no_match = True
+
+            if no_match:
+                mask_1 = np.all(
+                    filling_multi_bands[1:, :, :] == 1,
+                    axis=0,
+                )
+
+                mask_2 = np.all(
+                    filling_mono_bands == 0,
+                    axis=0,
+                )
+
+                filling_mono_bands[mask_1 & mask_2] = (
+                    aux_filling["other"] if "other" in aux_filling else 50
+                )
+
+            profile.update(count=1, dtype=filling_mono_bands.dtype)
+            with rasterio.open(filling_path, "w", **profile) as src:
+                src.write(filling_mono_bands, 1)
+
+        return True
+
+    @cars_profile(name="merge classif bands", interval=0.5)
+    def merge_classif_bands(self, classif_path, aux_classif, dsm_file):
+        """
+        Merge classif bands to get mono band in output
+        """
+        with rasterio.open(dsm_file) as in_dsm:
+            dsm_msk = in_dsm.read_masks(1)
+
+        with rasterio.open(classif_path) as src:
+            nb_bands = src.count
+
+            if nb_bands == 1:
+                return False
+
+            classif_multi_bands = src.read()
+            classif_mono_band = np.zeros(classif_multi_bands.shape[1:3])
+            descriptions = src.descriptions
+            profile = src.profile
+            classif_mask = src.read_masks(1)
+            classif_mono_band[classif_mask == 0] = 0
+
+            # To get the right footprint
+            classif_mono_band = np.logical_or(dsm_msk, classif_mask).astype(
+                np.uint8
+            )
+
+            # to keep the previous classif convention
+            classif_mono_band[classif_mono_band == 0] = src.nodata
+            classif_mono_band[classif_mono_band == 1] = 0
+
+            for key, value in aux_classif.items():
+                if isinstance(value, int):
+                    num_band = descriptions.index(str(value))
+                    mask_1 = classif_mono_band == 0
+                    mask_2 = classif_multi_bands[num_band, :, :] == 1
+                    classif_mono_band[mask_1 & mask_2] = key
+                elif isinstance(value, list):
+                    for elem in value:
+                        num_band = descriptions.index(str(elem))
+                        mask_1 = classif_mono_band == 0
+                        mask_2 = classif_multi_bands[num_band, :, :] == 1
+                        classif_mono_band[mask_1 & mask_2] = key
+
+        profile.update(count=1, dtype=classif_mono_band.dtype)
+        with rasterio.open(classif_path, "w", **profile) as src:
+            src.write(classif_mono_band, 1)
+
+        return True
 
     @cars_profile(name="Preprocess depth maps", interval=0.5)
     def preprocess_depth_maps(self):

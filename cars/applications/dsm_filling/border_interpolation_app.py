@@ -25,6 +25,7 @@ This module contains the border interpolation dsm filling application class.
 import logging
 import os
 import shutil
+import warnings
 
 import numpy as np
 import rasterio as rio
@@ -32,6 +33,7 @@ import scipy
 import skimage
 from json_checker import Checker, Or
 from pyproj import CRS
+from rasterio.errors import NodataShadowWarning
 from shapely import Polygon
 
 from cars.core import inputs, projection
@@ -197,7 +199,11 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
                 index_classif = classif_descriptions.index(label) + 1
                 with rio.open(classif_file) as in_classif:
                     classif = in_classif.read(index_classif)
-                    classif_msk = in_classif.read_masks(1)
+
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", NodataShadowWarning)
+                        classif_msk = in_classif.read_masks(1)
+
                 classif[classif_msk == 0] = 0
                 filling_mask = np.logical_and(classif, roi_raster > 0)
             else:

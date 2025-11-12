@@ -191,76 +191,27 @@ def check_output_parameters(  # noqa: C901 : too complex
     auxiliary_schema = {
         output_constants.AUX_IMAGE: Or(bool, str, list),
         output_constants.AUX_WEIGHTS: bool,
-        output_constants.AUX_CLASSIFICATION: bool,
+        output_constants.AUX_CLASSIFICATION: Or(bool, dict, list),
         output_constants.AUX_PERFORMANCE_MAP: Or(bool, list),
         output_constants.AUX_CONTRIBUTING_PAIR: bool,
-        output_constants.AUX_FILLING: bool,
+        output_constants.AUX_FILLING: Or(bool, dict),
         output_constants.AUX_AMBIGUITY: bool,
         output_constants.AUX_DEM_MIN: bool,
         output_constants.AUX_DEM_MAX: bool,
         output_constants.AUX_DEM_MEDIAN: bool,
     }
 
+    # Check and overload classification parameter
+    check_classification_parameter(inputs, overloaded_conf)
+
     # Check and overload image parameter
-    texture_bands = overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_IMAGE
-    ]
-
-    if inputs[sens_cst.SENSORS] is not None:
-        if isinstance(texture_bands, list):
-            for elem in texture_bands:
-                if not isinstance(elem, str):
-                    raise RuntimeError(
-                        "The image parameter of auxiliary should "
-                        "be a boolean, a string or a list of string"
-                    )
-        elif isinstance(texture_bands, str):
-            overloaded_conf[output_constants.AUXILIARY][
-                output_constants.AUX_IMAGE
-            ] = [texture_bands]
-        elif texture_bands is True:
-            first_key = list(inputs[sens_cst.SENSORS].keys())[0]
-            image = inputs[sens_cst.SENSORS][first_key][sens_cst.INPUT_IMG]
-            bands = set(image["bands"].keys())
-
-            overloaded_conf[output_constants.AUXILIARY][
-                output_constants.AUX_IMAGE
-            ] = sorted(bands)
+    check_texture_bands(inputs, overloaded_conf)
 
     # Check and overload performance_map parameter
-    performance_map_classes = overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_PERFORMANCE_MAP
-    ]
+    check_performance_classes(overloaded_conf)
 
-    if isinstance(performance_map_classes, list):
-        for elem in performance_map_classes:
-            if not isinstance(elem, (int, float)):
-                raise RuntimeError(
-                    "The performance_map parameter of auxiliary should"
-                    "be a boolean or a list of string"
-                )
-    elif performance_map_classes is True:
-        # default classes, in meters:
-        default_performance_classes = [
-            0,
-            0.968,
-            1.13375,
-            1.295,
-            1.604,
-            2.423,
-            3.428,
-        ]
-
-        overloaded_conf[output_constants.AUXILIARY][
-            output_constants.AUX_PERFORMANCE_MAP
-        ] = default_performance_classes
-
-    if performance_map_classes:
-        check_performance_classes(
-            overloaded_conf[output_constants.AUXILIARY][
-                output_constants.AUX_PERFORMANCE_MAP
-            ]
-        )
+    # Check and overload filling parameter
+    check_filling_parameter(overloaded_conf)
 
     checker_auxiliary = Checker(auxiliary_schema)
     checker_auxiliary.validate(overloaded_conf[output_constants.AUXILIARY])
@@ -278,14 +229,150 @@ def check_output_parameters(  # noqa: C901 : too complex
     return overloaded_conf, overloaded_scaling_coeff
 
 
-def check_performance_classes(performance_map_classes):
+def check_filling_parameter(overloaded_conf):
+    """
+    Check and overload filling parameter
+    """
+
+    filling_param = overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_FILLING
+    ]
+
+    valid_names = [
+        "fill_with_geoid",
+        "interpolate_from_borders",
+        "fill_with_endogenous_dem",
+        "fill_with_exogenous_dem",
+        "other",
+    ]
+
+    if isinstance(filling_param, dict):
+        for _, value in filling_param.items():
+            if isinstance(value, str):
+                value = [value]
+            if any(elem not in valid_names for elem in value):
+                raise RuntimeError(
+                    "Those filling methods are not available in CARS"
+                )
+    elif filling_param is True:
+        overloaded_conf[output_constants.AUXILIARY][
+            output_constants.AUX_FILLING
+        ] = {i + 1: name for i, name in enumerate(valid_names)}
+
+
+def check_texture_bands(inputs, overloaded_conf):
+    """
+    Check and overload texture bands
+    """
+    texture_bands = overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_IMAGE
+    ]
+
+    if inputs[sens_cst.SENSORS] is not None:
+        first_key = list(inputs[sens_cst.SENSORS].keys())[0]
+        image = inputs[sens_cst.SENSORS][first_key][sens_cst.INPUT_IMG]
+        bands = set(image["bands"].keys())
+
+        if isinstance(texture_bands, list):
+            for elem in texture_bands:
+                if not isinstance(elem, str):
+                    raise RuntimeError(
+                        "The image parameter of auxiliary should "
+                        "be a boolean, a string or a list of string"
+                    )
+                if elem not in bands:
+                    raise RuntimeError(
+                        f"The band {elem} is "
+                        f"not an existing band of "
+                        f"the input image"
+                    )
+        elif isinstance(texture_bands, str):
+            overloaded_conf[output_constants.AUXILIARY][
+                output_constants.AUX_IMAGE
+            ] = [texture_bands]
+
+            if texture_bands not in bands:
+                raise RuntimeError(
+                    f"The band {texture_bands} is "
+                    f"not an existing band of "
+                    f"the input image"
+                )
+        elif texture_bands is True:
+            overloaded_conf[output_constants.AUXILIARY][
+                output_constants.AUX_IMAGE
+            ] = sorted(bands)
+
+
+def check_classification_parameter(inputs, overloaded_conf):
+    """
+    Check and overload classification parameter
+    """
+    classification_formatting = overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_CLASSIFICATION
+    ]
+
+    if inputs[sens_cst.SENSORS] is not None:
+        first_key = list(inputs[sens_cst.SENSORS].keys())[0]
+
+        if (
+            "classification" in inputs[sens_cst.SENSORS][first_key]
+            and inputs[sens_cst.SENSORS][first_key]["classification"]
+            is not None
+        ):
+            classif = inputs[sens_cst.SENSORS][first_key][
+                sens_cst.INPUT_CLASSIFICATION
+            ]
+            bands_classif = classif["values"]
+
+            if isinstance(classification_formatting, list):
+                overloaded_conf[output_constants.AUXILIARY][
+                    output_constants.AUX_CLASSIFICATION
+                ] = {val: val for val in classification_formatting}
+
+                for elem in classification_formatting:
+                    if not isinstance(elem, int):
+                        raise RuntimeError(
+                            "The image parameter of auxiliary should "
+                            "be a boolean, a string or a list of int"
+                        )
+
+                    if elem not in bands_classif:
+                        raise RuntimeError(
+                            f"If you want to use {elem} as a band num, "
+                            f"you should use a dictionary, not a list"
+                        )
+            elif classification_formatting is True:
+                overloaded_conf[output_constants.AUXILIARY][
+                    output_constants.AUX_CLASSIFICATION
+                ] = {int(name): name for val, name in enumerate(bands_classif)}
+            elif isinstance(classification_formatting, dict):
+                for _, value in classification_formatting.items():
+                    if isinstance(value, int):
+                        value = [value]
+
+                    if any(elem not in bands_classif for elem in value):
+                        raise RuntimeError(
+                            f"The band {value} is "
+                            f"not an existing band of "
+                            f"the input classification"
+                        )
+
+
+def check_performance_classes(overloaded_conf):
     """
     Check performance classes
-
-    :param performance_map_classes: list for step defining border of class
-    :type performance_map_classes: list or None
     """
-    if not isinstance(performance_map_classes, bool):
+    performance_map_classes = overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_PERFORMANCE_MAP
+    ]
+
+    if isinstance(performance_map_classes, list):
+        for elem in performance_map_classes:
+            if not isinstance(elem, (int, float)):
+                raise RuntimeError(
+                    "The performance_map parameter of auxiliary should"
+                    "be a boolean or a list of float/int"
+                )
         if len(performance_map_classes) < 2:
             raise RuntimeError("Not enough step for performance_map_classes")
         if performance_map_classes:
@@ -300,6 +387,21 @@ def check_performance_classes(performance_map_classes):
                         "performance_map_classes list must be ordered."
                     )
                 previous_step = step
+    elif performance_map_classes is True:
+        # default classes, in meters:
+        default_performance_classes = [
+            0,
+            0.968,
+            1.13375,
+            1.295,
+            1.604,
+            2.423,
+            3.428,
+        ]
+
+        overloaded_conf[output_constants.AUXILIARY][
+            output_constants.AUX_PERFORMANCE_MAP
+        ] = default_performance_classes
 
 
 def intialize_product_index(orchestrator, product_levels, input_pairs):
