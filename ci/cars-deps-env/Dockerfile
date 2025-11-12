@@ -26,7 +26,8 @@ RUN pip install uv
 RUN uv pip compile pyproject.toml --extra dev \
                                   --extra notebook \
                                   --extra docs \
-                                  --output-file requirements.txt
+                                  --output-file requirements.txt \
+                                  --prerelease if-necessary-or-explicit
 
 # uv variable defining default env
 ENV VIRTUAL_ENV=/app/cars/venv
