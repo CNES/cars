@@ -156,7 +156,7 @@ applications:
       elevation_delta_upper_bound: 1000
       strip_margin: 10
       epipolar_error_upper_bound: 10
-      epipolar_error_maximum_bias: 150
+      epipolar_error_maximum_bias: 50
       minimum_nb_matches: 90
       sift_matching_threshold: 0.7
       sift_n_octave: 8
@@ -339,7 +339,7 @@ applications:
       elevation_delta_upper_bound: 1000
       strip_margin: 10
       epipolar_error_upper_bound: 10
-      epipolar_error_maximum_bias: 150
+      epipolar_error_maximum_bias: 50
       minimum_nb_matches: 90
       sift_matching_threshold: 0.7
       sift_n_octave: 8
@@ -531,7 +531,7 @@ applications:
       elevation_delta_upper_bound: 1000
       strip_margin: 10
       epipolar_error_upper_bound: 10
-      epipolar_error_maximum_bias: 150
+      epipolar_error_maximum_bias: 50
       minimum_nb_matches: 90
       sift_matching_threshold: 0.7
       sift_n_octave: 8
