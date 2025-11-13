@@ -13,7 +13,7 @@ stages:
 
 variables: 
     # Token used to push reports to SonarQube
-    SONARQUBE_TOKEN: "${CARS_CI_SONARQUBE_TOKEN}"
+    SONAR_TOKEN: "${CARS_CI_SONARQUBE_TOKEN}"
 
     # Git variables
     # Limit git depth to speed up cloning
@@ -32,11 +32,9 @@ include:
       init_stage: init
       build_stage: build
 
-  - project: "usinelogicielle/public/gitlab-ci-templates" # Inclut le stage de qualité sonarqube
-    ref: v1.1.3 # référence de tag
-    file: "jobs/sonarqube-gitlab-ci.yml"
+  - component: $CI_SERVER_FQDN/usinelogicielle/public/gitlab-ci-components/sonarqube-component/sonarqube@1.1.0 
   # Variable defintion
-  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-variables@master
+  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-variables@1236-ajout-ci-docker
   # Jobs for gitlab-github synchronisation
   - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-github@master
   # Docker building and image selection
@@ -90,8 +88,6 @@ docker-image-build:
     ENV_IMAGE_TAG: ${CI_COMMIT_REF_NAME}
     ENV_DOCKERFILE: ${CARS_DOCKERFILE}
 
-    #todo move in cars-ci
-    CARS_URL: "https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.cnes.fr/dali/cars-park/cars"
     DOCKER_BUILD_OPTIONS: "--build-arg REGISTRY=${REGISTRY} --build-arg CREDS_USERNAME=${CARS_CI_DOCKER_RO_TOKEN_USERNAME} --build-arg CREDS_TOKEN=${CARS_CI_DOCKER_RO_TOKEN_PASSWORD} --build-arg USE_CERTS=true  --build-arg GIT_BRANCH=${CI_COMMIT_REF_NAME} --build-arg CARS_URL=${CARS_URL}"
 
 
