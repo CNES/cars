@@ -79,11 +79,11 @@ def cars_starter(cli_params: dict = None, **kwargs) -> None:
             )
         config = kwargs
 
-    cars_config = {"inputs": {"sensors": {}}, "output": {}}
+    cars_config = {"input": {"sensors": {}}, "output": {}}
     pipeline_name = "default"
 
     for idx, inputfilename in enumerate(config["il"]):
-        cars_config["inputs"]["sensors"][str(idx)] = inputfilename_to_sensor(
+        cars_config["input"]["sensors"][str(idx)] = inputfilename_to_sensor(
             inputfilename
         )
 
@@ -95,7 +95,7 @@ def cars_starter(cli_params: dict = None, **kwargs) -> None:
         )
     )
 
-    cars_config["inputs"]["pairing"] = pairing
+    cars_config["input"]["pairing"] = pairing
     cars_config["output"]["directory"] = config["out"]
 
     check = config["check"] if "check" in config.keys() else False
@@ -149,7 +149,7 @@ def cli():
         "--full", action="store_true", help="Fill all default values"
     )
 
-    parser.add_argument("--check", action="store_true", help="Check inputs")
+    parser.add_argument("--check", action="store_true", help="Check input")
 
     parser.add_argument(
         "--format",
