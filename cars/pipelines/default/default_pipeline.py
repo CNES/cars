@@ -163,13 +163,10 @@ class DefaultPipeline(PipelineTemplate):
             self.epipolar_resolutions
         ):
             first_res = epipolar_resolution_index == 0
-            intermediate_res = (
-                epipolar_resolution_index == len(self.epipolar_resolutions) - 1
-                or len(self.epipolar_resolutions) == 1
-            )
             last_res = (
                 epipolar_resolution_index == len(self.epipolar_resolutions) - 1
             )
+            intermediate_res = not first_res and not last_res
 
             # set computed bool
             self.positions[epipolar_resolution_index] = {
