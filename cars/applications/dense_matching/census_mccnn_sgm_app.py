@@ -459,17 +459,17 @@ class CensusMccnnSgm(
         )
         overloaded_conf["confidence_filtering"]["risk_ratio_threshold"] = (
             overloaded_conf["confidence_filtering"].get(
-                "risk_ratio_threshold", 0.8
+                "risk_ratio_threshold", 0.75
             )
         )
         overloaded_conf["confidence_filtering"]["bounds_range_threshold"] = (
             overloaded_conf["confidence_filtering"].get(
-                "bounds_range_threshold", 4
+                "bounds_range_threshold", 3
             )
         )
         overloaded_conf["confidence_filtering"]["risk_range_threshold"] = (
             overloaded_conf["confidence_filtering"].get(
-                "risk_range_threshold", 12
+                "risk_range_threshold", 9
             )
         )
         overloaded_conf["confidence_filtering"]["nan_threshold"] = (
@@ -1443,7 +1443,6 @@ def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
     ):
         dm_wrappers.confidence_filtering(
             disp_dataset,
-            disp_map,
             requested_confidence,
             conf_filtering,
         )

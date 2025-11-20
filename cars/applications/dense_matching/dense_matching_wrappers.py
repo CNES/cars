@@ -897,7 +897,6 @@ def nan_ratio_func(window):
 
 def confidence_filtering(
     dataset,
-    disp_map,
     requested_confidence,
     conf_filtering,
 ):
@@ -928,12 +927,6 @@ def confidence_filtering(
     risk_ratio = risk_range / (disp_max - disp_min)
     bounds_ratio = bounds_range / (disp_max - disp_min)
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        nan_ratio = generic_filter(
-            disp_map, nan_ratio_func, size=conf_filtering["win_nanratio"]
-        )
-
     bounds_mask = (bounds_ratio > conf_filtering["bounds_ratio_threshold"]) & (
         bounds_range > conf_filtering["bounds_range_threshold"]
     )
@@ -943,6 +936,12 @@ def confidence_filtering(
     mask = bounds_mask | risk_mask
     dataset["disp"].values[mask] = np.nan
     dataset["disp_msk"].values[mask] = 0
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        nan_ratio = generic_filter(
+            dataset["disp"], nan_ratio_func, size=conf_filtering["win_nanratio"]
+        )
 
     mask = (nan_ratio > conf_filtering["nan_threshold"]) & (
         (bounds_range > conf_filtering["bounds_range_threshold"])

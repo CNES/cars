@@ -1832,7 +1832,7 @@ def test_end2end_use_epipolar_a_priori():
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
-                "max_ram_per_worker": 1000,
+                "max_ram_per_worker": 1500,
             },
         )
         # no srtm
@@ -1846,7 +1846,7 @@ def test_end2end_use_epipolar_a_priori():
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "nb_points_threshold": 150,
-                    "connection_distance": 3.0,
+                    "connection_distance": 12.0,
                 },
                 "sparse_matching": {
                     "method": "sift",
@@ -1918,11 +1918,11 @@ def test_end2end_use_epipolar_a_priori():
                 )
             with check:
                 assert (
-                    -35
+                    -50
                     < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["minimum_disparity"]
-                    < -25
+                    < -45
                 )
             with check:
                 assert (
@@ -3608,7 +3608,7 @@ def test_end2end_quality_stats():
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
-                "max_ram_per_worker": 1000,
+                "max_ram_per_worker": 1500,
             },
         )
 
@@ -3622,7 +3622,7 @@ def test_end2end_quality_stats():
                 "point_cloud_outlier_removal.1": {
                     "method": "small_components",
                     "nb_points_threshold": 150,
-                    "connection_distance": 3.0,
+                    "connection_distance": 12.0,
                 },
                 "sparse_matching": {
                     "method": "sift",
@@ -3700,9 +3700,9 @@ def test_end2end_quality_stats():
                 "left_right"
             ]
             with check:
-                assert out_disp_compute["global_disp_min"] > -35
+                assert out_disp_compute["global_disp_min"] > -50
             with check:
-                assert out_disp_compute["global_disp_min"] < -25
+                assert out_disp_compute["global_disp_min"] < -45
             with check:
                 assert out_disp_compute["global_disp_max"] > 25
             with check:
