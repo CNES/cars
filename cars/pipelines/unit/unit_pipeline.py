@@ -2352,7 +2352,7 @@ class UnitPipeline(PipelineTemplate):
                     out_cst.DSM_DIRECTORY,
                     "contributing_pair.tif",
                 )
-                if "source_pc" in dict_path
+                if "contributing_pair" in dict_path
                 else None
             )
 
