@@ -52,7 +52,25 @@
 - Robustify filling with nodata.
 - Fix offset bug in dsm merging.
 - Fix bug on very high and low latitudes. [#1095]
-- Espg not in texture.tid. [#1190]
+- Espg not in texture.tif. [#1190]
+
+## 0.12.3  Bugfix release (October 2025)
+
+- Robustify pandora tile size computation [#1221]
+
+
+## 0.12.2  Bugfix release (October 2025)
+
+- Fix a bug where the DEM min was higher than DEM max in dem generation [#1211]
+
+
+## 0.12.1  Bugfix release (August 2025)
+
+- Cleanup sequential orchestrator [#1123].
+- Fix missing tiles in auxiliary filling outputs [#1061].
+- Fix classification fusion artifacts in dense matching [#1109].
+
+
 
 ## 0.12.0  Improving Dem generations (June 2025)
 
