@@ -1,5 +1,77 @@
 # Changelog
 
+## 1.0.0.rc1 CARS 1.0 : Multi resolutions /  Release Candidate (November 2025)
+
+### Added
+
+- Shared memory availability check for Docker usage. [#1216]
+- Cars-extractroi: use local elevation. [#1129]
+- Use elevation in roi computation. [#1142]
+- Optimization of disparity range grid generation. [#1144]
+- Possibility to use yaml configuration files. [#1131]
+- Automatically scale parameters values according to image resolution. [#1054]
+- Use a worldcover classification file to automatically select the best configuration for dense matching. [#1106]
+- Add vertical referential in output products. [#1000]
+- Usage of dynamic keys for same-state applications. [#1175]
+- Add citation file. [#1204]
+- Use Pandora criteria to invalidate points if disparity range not fully explored. [#1080]
+
+### Changed
+
+- Refactoring of Documentation.
+- CARS pipeline changed to multi-resolution processing. [#1105]
+- Refactoring of input and output configuration. [#1097]
+- Input classification changed from multi bands to single band. [#1217]
+- Alignment of auxiliary file names. [#1130]
+- Change format of rectification grids. [#1092]
+- Disparity map default nodata value changed. [#838]
+- Color default nodata value changed. [#850]
+- Fix Json path in cars_bundle_adjustment script. [#1168]
+- Dumped configuration and metadata files now saved as yaml files. [#1222]
+- Plane dense matching filling method removed. [#958]
+- Mask for matching application are now induced from classes in classification files used as filling masks. [#1219]
+- Dichotomic dem generation method removed. [#1216]
+- Bulldozer dem generation used on lower resoltion dsm.
+- Removal of .geom geometry files. [#1136]
+- Removal of depth maps re entrance. [#1210]
+- Update pylint to 3.*.*. [#993]
+- Update Pandora to 1.7.2. [#1231]
+- Update Shareloc to 0.2.11.
+
+
+### Fixed
+
+- Cleanup sequential orchestrator temporary files. [#1123]
+- Fix bug extractroi. [#1129]
+- Fix confidence filtering. [#1158]
+- Robustify dense matching auto mode with loader_conf overide.
+- Minimum number of matches not applied. [#1140]
+- Robustify crash error when wrong initial elevation is given. [#1101]
+- Fix geoid offset applied twice in dem generation. [#1169]
+- Robustify the use of negative transform in sensor images. [#1144]
+- Robustify filling with nodata.
+- Fix offset bug in dsm merging.
+- Fix bug on very high and low latitudes. [#1095]
+- Espg not in texture.tif. [#1190]
+
+## 0.12.3  Bugfix release (October 2025)
+
+- Robustify pandora tile size computation [#1221]
+
+
+## 0.12.2  Bugfix release (October 2025)
+
+- Fix a bug where the DEM min was higher than DEM max in dem generation [#1211]
+
+
+## 0.12.1  Bugfix release (August 2025)
+
+- Cleanup sequential orchestrator [#1123].
+- Fix missing tiles in auxiliary filling outputs [#1061].
+- Fix classification fusion artifacts in dense matching [#1109].
+
+
+
 ## 0.12.0  Improving Dem generations (June 2025)
 
 ### Added

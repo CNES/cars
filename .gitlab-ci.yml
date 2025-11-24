@@ -123,6 +123,7 @@ test-end2end:
       changes:
        - "tests/test_end2end.py"
        - "cars/**/*"
+       - "pyproject.toml"
 
     - if: '$CI_COMMIT_REF_NAME == "master"'
 
