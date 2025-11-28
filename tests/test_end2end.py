@@ -36,7 +36,8 @@ import tempfile
 
 # Third party imports
 import pyproj
-import pytest
+
+# import pytest
 import rasterio
 import yaml
 from pytest_check import check
@@ -61,7 +62,7 @@ from .helpers import (
 NB_WORKERS = 2
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_dsm_fusion():
     """
     End to end processing
@@ -441,7 +442,7 @@ def test_end2end_dsm_fusion():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_color_after_dsm_reentrance():
     """
     End to end processing
@@ -530,7 +531,7 @@ def test_end2end_color_after_dsm_reentrance():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_gizeh_rectangle_epi_image_performance_map():
     """
     End to end processing
@@ -789,7 +790,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_ventoux_sparse_dsm_8bits():
     """
     End to end processing
@@ -982,7 +983,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_ventoux_unique():
     """
     End to end processing with ventoux data
@@ -1673,7 +1674,7 @@ def test_end2end_ventoux_unique():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_ventoux_unique_epsg_4326():
     """
     Tes 4326 epsg
@@ -1815,7 +1816,7 @@ def test_end2end_ventoux_unique_epsg_4326():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_use_epipolar_a_priori():
     """
     End to end processing sparse dsm pipeline
@@ -2178,7 +2179,7 @@ def test_end2end_use_epipolar_a_priori():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_prepare_ventoux_bias():
     """
     Dask prepare with bias geoms
@@ -2269,7 +2270,7 @@ def test_prepare_ventoux_bias():
                 assert out_disp_compute["maximum_disparity"] < 5
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_ventoux_full_output_no_elevation():
     """
     End to end processing with all outputs activated, and no input elevation
@@ -2674,7 +2675,7 @@ def test_end2end_ventoux_full_output_no_elevation():
                 }
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_ventoux_with_color():
     """
     End to end processing with color
@@ -3051,7 +3052,7 @@ def test_end2end_ventoux_with_color():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_ventoux_with_classif():
     """
     End to end processing with p+xs fusion
@@ -3300,7 +3301,7 @@ def test_end2end_ventoux_with_classif():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_compute_dsm_with_roi_ventoux():
     """
     Dask compute dsm processing with input roi (cars_stereo)
@@ -3467,7 +3468,7 @@ def test_compute_dsm_with_roi_ventoux():
             assert math.ceil(ref_ymax / resolution) * resolution == ymax
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_compute_dsm_with_snap_to_img1():
     """
     test sensor to dense dsm pipeline with snap_to_img1 triangulation option
@@ -3592,7 +3593,7 @@ def test_compute_dsm_with_snap_to_img1():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_quality_stats():
     """
     End to end processing, with no srtm
@@ -3897,7 +3898,7 @@ def test_end2end_quality_stats():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_ventoux_egm96_geoid():
     """
     End to end processing
@@ -4282,7 +4283,7 @@ def test_end2end_ventoux_egm96_geoid():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_paca_with_mask():
     """
     End to end processing sensor to dense pipeline with a mask on paca data.
@@ -4542,7 +4543,7 @@ def test_end2end_paca_with_mask():
         )
 
 
-@pytest.mark.end2end_tests
+# @pytest.mark.end2end_tests
 def test_end2end_disparity_filling_with_zeros():
     """
     End to end processing, test with mask and
