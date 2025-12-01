@@ -1,0 +1,8 @@
+input:
+  sensors:
+    image1: path/to/img_1.tif
+    image2: path/to/img_2.tif
+
+  rectification_grids:
+    image1: path/to/grid_1.tif
+    image2: path/to/grid_2.tif

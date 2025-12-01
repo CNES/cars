@@ -1,3 +1,5 @@
+.. _dense_match_filling_app:
+
 Dense match filling
 ===================
 

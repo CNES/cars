@@ -1,3 +1,5 @@
+.. _point_cloud_outlier_removal_app:
+
 Point Cloud outlier removal
 ===========================
 

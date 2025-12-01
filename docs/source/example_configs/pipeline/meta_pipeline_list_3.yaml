@@ -1,0 +1,14 @@
+input:
+  sensors:
+    img1: {} # a sensor image
+    img2: {} # a sensor image
+
+pipeline:
+  subsampling: true
+  surface_modeling: true
+  edge_detection: true
+  surface_modeling: true
+  tiepoints: false
+  formatting: true
+  merging: false
+  filling: false

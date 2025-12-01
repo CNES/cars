@@ -1,3 +1,5 @@
+.. _triangulation_app:
+
 Triangulation
 =============
 

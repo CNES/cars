@@ -1,0 +1,18 @@
+input:
+  sensors:
+    img1: path/to/img1.tif
+    img2: path/to/img2.tif
+
+  rectification_grids:
+    img1: path/to/grid1.tif
+    img2: path/to/grid2.tif
+
+tiepoints:
+  applications:
+    resampling:
+      strip_height: 80
+    sparse_matching:
+      used_band: b2
+
+  advanced:
+    save_intermediate_data: true

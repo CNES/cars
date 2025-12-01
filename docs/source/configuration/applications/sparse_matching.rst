@@ -1,3 +1,5 @@
+.. _sparse_matching_app:
+
 Sparse matching
 ===============
 

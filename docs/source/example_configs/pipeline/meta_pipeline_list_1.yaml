@@ -1,0 +1,9 @@
+input:
+  sensors:
+    img_1:
+      image: path/to/image.tif
+      # pass the regularization mask as a surface_modeling input
+      regularization_mask: path/to/mask.tif
+    img_2: path/to/image.tif
+
+pipeline: [surface_modeling, formatting]

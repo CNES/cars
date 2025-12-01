@@ -1,0 +1,28 @@
+input:
+  sensors:
+    # sensor input images
+
+pipeline: auto # use the meta pipeline
+
+subsampling:
+  # set the resolutions at which the pipeline will be ran 
+  advanced: 
+    resolutions: [16, 4, 1]
+
+# pipelines ran at each resolution (surface_modeling and tiepoints) can have their
+# parameters and application parameters set for all resolutions or a specific one separately.
+surface_modeling: 
+  applications:
+    all:
+      triangulation:
+        snap_to_img1: true
+    4:
+      triangulation:
+        snap_to_img1: false
+      dense_matching:
+        method: census_sgm_default
+  advanced:
+    all:
+      correct_grid_with_tiepoints: true
+    16:
+      correct_grid_with_tiepoints: false

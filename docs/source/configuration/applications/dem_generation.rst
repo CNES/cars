@@ -1,3 +1,5 @@
+.. _dem_generation_app:
+
 DEM Generation
 ==============
 

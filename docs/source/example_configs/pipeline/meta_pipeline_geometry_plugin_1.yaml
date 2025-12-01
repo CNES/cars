@@ -16,5 +16,7 @@ input:
     - two
   initial_elevation:
     dem: path/to/srtm_file.tif
-advanced:
-  geometry_plugin: SharelocGeometry
+
+pipeline_name:
+  advanced:
+    geometry_plugin: SharelocGeometry

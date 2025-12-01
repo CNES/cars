@@ -1,26 +1,28 @@
-.. _grid_generation_app:
+.. _grid_correction_app:
 
-Grid Generation
+Grid Correction
 ===============
 
-**Name**: "grid_generation"
+**Name**: "grid_correction"
 
 **Description**
 
-From sensors image, compute the stereo-rectification grids
+Using stereo-rectification grids and sparse matches (i.e provided by Tiepoints), correct the grid for any global deformation.
 
 **Configuration**
+
+**WIP**
 
 +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
 | Name                    | Description                                   | Type    |     Available values              | Default value | Required |
 +=========================+===============================================+=========+===================================+===============+==========+
-| method                  | Method for grid generation                    | string  | "epipolar"                        | epipolar      | No       |
-+-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-| epi_step                | Step of the deformation grid in nb. of pixels | int     | should be > 0                     | 30            | No       |
+| method                  | Method for grid correction                    | string  | ?                                 | ?             | No       |
 +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
 | save_intermediate_data  | Save the generated grids                      | boolean |                                   | false         | No       |
 +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
 
 **Example**
 
-.. include-cars-config:: ../../example_configs/configuration/applications_grid_generation
+**WIP**
+
+.. .. include-cars-config:: ../../example_configs/configuration/applications_grid_generation

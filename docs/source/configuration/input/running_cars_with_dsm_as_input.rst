@@ -1,3 +1,5 @@
+.. _input_dsm:
+
 Running CARS with DSM as input
 ------------------------------
 

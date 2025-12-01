@@ -1,0 +1,7 @@
+---
+pipeline_name:
+  advanced:
+    16:
+      save_intermediate_data: true
+    1:
+      save_intermediate_data: false

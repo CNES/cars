@@ -1,0 +1,8 @@
+subsampling:
+  applications:
+    future_application:
+      method: fft
+
+  advanced:
+    save_intermediate_data: true
+    resolutions: [32, 8, 1]

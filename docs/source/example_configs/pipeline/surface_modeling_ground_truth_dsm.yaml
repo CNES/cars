@@ -1,0 +1,11 @@
+surface_modeling:
+  advanced:
+    1:
+      ground_truth_dsm:
+        dsm: path/to/ground/truth/dsm.tif
+        auxiliary_data:
+          classification: path/to/classification.tif
+          texture: path/to/image.tif
+        auxiliary_data_interpolation:
+          classification: nearest
+          texture: linear

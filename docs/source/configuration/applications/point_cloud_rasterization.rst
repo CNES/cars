@@ -1,3 +1,5 @@
+.. _point_cloud_rasterization_app:
+
 Point Cloud Rasterization
 =========================
 

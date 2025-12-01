@@ -1,3 +1,5 @@
+.. _dense_matching_app:
+
 Dense matching
 ==============
 

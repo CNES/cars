@@ -1,0 +1,8 @@
+---
+merging:
+  advanced:
+    phasing:
+      point:
+      - 32000
+      - 30000
+      epsg: 32530

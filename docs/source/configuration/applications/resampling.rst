@@ -1,3 +1,5 @@
+.. _resampling_app:
+
 Resampling
 ==========
 

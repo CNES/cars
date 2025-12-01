@@ -12,7 +12,7 @@ Only the configuration file is required to launch CARS with the command :
     cars config.yaml
 
 A simple configuration file only needs two sections : ``input`` and ``output``. 
-It is not recommended to use the other sections at first use : the default value of their parameters must work for your case.
+It is not recommended to use the other sections at first use : the default value of their parameters will work for most basic use cases.
 
 The full structure follows this organization:
 
