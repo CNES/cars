@@ -25,7 +25,6 @@ CARS module containing functions to check advanced parameters configuration
 import logging
 import os
 
-import numpy as np
 import rasterio as rio
 from json_checker import And, Checker, OptionalKey, Or
 
@@ -35,7 +34,6 @@ from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
-from cars.pipelines.pipeline_constants import ADVANCED
 
 
 def get_epipolar_resolutions(conf):
@@ -54,9 +52,7 @@ def get_epipolar_resolutions(conf):
     return [16, 4, 1]
 
 
-def check_advanced_parameters(
-    inputs, conf, check_epipolar_a_priori=True, output_dem_dir=None
-):
+def check_advanced_parameters(inputs, conf, output_dem_dir=None):
     """
     Check the advanced parameters consistency
 
@@ -64,8 +60,6 @@ def check_advanced_parameters(
     :type inputs: dict
     :param conf: configuration of advanced parameters
     :type conf: dict
-    :param check_epipolar_a_priori: use epipolar a priori parameters
-    :type check_epipolar_a_priori: bool
 
     :return: overloaded configuration
     :rtype: dict
@@ -124,16 +118,6 @@ def check_advanced_parameters(
         )
         check_ground_truth_dsm_data(overloaded_conf[adv_cst.GROUND_TRUTH_DSM])
 
-    if check_epipolar_a_priori:
-        # Retrieve epipolar_a_priori if it is provided
-        overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI] = conf.get(
-            adv_cst.EPIPOLAR_A_PRIORI, None
-        )
-        # Retrieve terrain_a_priori if it is provided
-        overloaded_conf[adv_cst.TERRAIN_A_PRIORI] = conf.get(
-            adv_cst.TERRAIN_A_PRIORI, None
-        )
-
     # Check geometry plugin
     geom_plugin_without_dem_and_geoid = None
     geom_plugin_with_dem_and_geoid = None
@@ -188,48 +172,9 @@ def check_advanced_parameters(
         adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: str,
         adv_cst.USE_ENDOGENOUS_DEM: bool,
     }
-    if check_epipolar_a_priori:
-        schema[adv_cst.EPIPOLAR_A_PRIORI] = Or(None, dict)
-        schema[adv_cst.TERRAIN_A_PRIORI] = Or(None, dict)
 
     checker_advanced_parameters = Checker(schema)
     checker_advanced_parameters.validate(overloaded_conf)
-
-    # Validate epipolar schema
-    epipolar_schema = {
-        adv_cst.GRID_CORRECTION: Or(list, None),
-        adv_cst.DISPARITY_RANGE: list,
-        adv_cst.REFERENCE_DEM: Or(str, None),
-    }
-    checker_epipolar = Checker(epipolar_schema)
-
-    # Check terrain a priori
-    if check_epipolar_a_priori and overloaded_conf[adv_cst.TERRAIN_A_PRIORI]:
-        overloaded_conf[adv_cst.TERRAIN_A_PRIORI][adv_cst.DEM_MEDIAN] = (
-            overloaded_conf[adv_cst.TERRAIN_A_PRIORI].get(
-                adv_cst.DEM_MEDIAN, None
-            )
-        )
-        overloaded_conf[adv_cst.TERRAIN_A_PRIORI][adv_cst.DEM_MIN] = (
-            overloaded_conf[adv_cst.TERRAIN_A_PRIORI].get(adv_cst.DEM_MIN, None)
-        )
-        overloaded_conf[adv_cst.TERRAIN_A_PRIORI][adv_cst.DEM_MAX] = (
-            overloaded_conf[adv_cst.TERRAIN_A_PRIORI].get(adv_cst.DEM_MAX, None)
-        )
-        terrain_a_priori_schema = {
-            adv_cst.DEM_MEDIAN: str,
-            adv_cst.DEM_MIN: Or(str, None),  # TODO mandatory with local disp
-            adv_cst.DEM_MAX: Or(str, None),
-        }
-        checker_terrain = Checker(terrain_a_priori_schema)
-        checker_terrain.validate(overloaded_conf[adv_cst.TERRAIN_A_PRIORI])
-
-    # check epipolar a priori for each image pair
-    if check_epipolar_a_priori and (
-        not overloaded_conf[adv_cst.TERRAIN_A_PRIORI] in (None, {})
-        or not overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI] in (None, {})
-    ):
-        validate_epipolar_a_priori(overloaded_conf, checker_epipolar)
 
     return (
         inputs,
@@ -241,28 +186,6 @@ def check_advanced_parameters(
         overloaded_conf[adv_cst.LAND_COVER_MAP],
         overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],
     )
-
-
-def validate_epipolar_a_priori(
-    overloaded_conf,
-    checker_epipolar,
-):
-    """
-    Validate inner epipolar configuration
-
-    :param conf : input configuration json
-    :type conf: dict
-    :param overloaded_conf : overloaded configuration json
-    :type overloaded_conf: dict
-    :param checker_epipolar : json checker
-    :type checker_epipolar: Checker
-    """
-
-    if overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI] is not None:
-        for key_image_pair in overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI]:
-            checker_epipolar.validate(
-                overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI][key_image_pair]
-            )
 
 
 def check_ground_truth_dsm_data(conf):
@@ -341,77 +264,3 @@ def check_ground_truth_dsm_data(conf):
                     "quintic",
                 ):
                     raise RuntimeError("interpolator does not exist")
-
-
-def update_conf(  # pylint: disable=too-many-positional-arguments  # noqa: C901
-    conf,
-    grid_correction_coef=None,
-    reference_dem=None,
-    dmin=None,
-    dmax=None,
-    pair_key=None,
-    dem_median=None,
-    dem_min=None,
-    dem_max=None,
-):
-    """
-    Update the conf with grid correction and disparity range
-    :param grid_correction_coef: grid correction coefficient
-    :type grid_correction_coef: list
-    :param reference_dem: Dem used to compute epipolar grids
-    :type reference_dem: str
-    :param dmin: disparity range minimum
-    :type dmin: float
-    :param dmax: disparity range maximum
-    :type dmax: float
-    :param pair_key: name of the inputs key pair
-    :type pair_key: str
-    """
-
-    if pair_key is not None:
-        if ADVANCED not in conf:
-            conf[ADVANCED] = {}
-        if adv_cst.EPIPOLAR_A_PRIORI not in conf[ADVANCED]:
-            conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = {}
-        if conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] is None:
-            conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = {}
-        if pair_key not in conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI]:
-            conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][pair_key] = {}
-        if grid_correction_coef is not None and reference_dem is not None:
-            conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][pair_key][
-                "reference_dem"
-            ] = reference_dem
-            if len(grid_correction_coef) == 2:
-                conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][pair_key][
-                    "grid_correction"
-                ] = (
-                    np.concatenate(grid_correction_coef[0], axis=0).tolist()[
-                        :-1
-                    ]
-                    + np.concatenate(grid_correction_coef[1], axis=0).tolist()[
-                        :-1
-                    ]
-                )
-            else:
-                conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][pair_key][
-                    "grid_correction"
-                ] = list(grid_correction_coef)
-        if None not in (dmin, dmax):
-            conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][pair_key][
-                "disparity_range"
-            ] = [
-                dmin,
-                dmax,
-            ]
-
-    if adv_cst.TERRAIN_A_PRIORI not in conf[ADVANCED]:
-        conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {}
-    if conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] is None:
-        conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {}
-
-    if dem_median is not None:
-        conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_median"] = dem_median
-    if dem_min is not None:
-        conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_min"] = dem_min
-    if dem_max is not None:
-        conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_max"] = dem_max

@@ -189,6 +189,7 @@ class DefaultPipeline(PipelineTemplate):
                 self.first_res_out_dir_with_sensors = current_conf[OUTPUT][
                     "directory"
                 ]
+                previous_scaling_coeff = None
 
             if not isinstance(epipolar_res, int) or epipolar_res < 0:
                 raise RuntimeError("The resolution has to be an int > 0")
@@ -198,8 +199,13 @@ class DefaultPipeline(PipelineTemplate):
             # This pipeline will not be run
 
             current_unit_pipeline = UnitPipeline(
-                current_conf, config_dir=self.config_dir
+                current_conf,
+                config_dir=self.config_dir,
+                previous_scaling_coeff=previous_scaling_coeff,
             )
+
+            previous_scaling_coeff = current_unit_pipeline.scaling_coeff
+
             self.unit_pipelines[epipolar_resolution_index] = (
                 current_unit_pipeline
             )
@@ -261,7 +267,6 @@ class DefaultPipeline(PipelineTemplate):
             advanced_parameters.check_advanced_parameters(
                 conf[INPUT],
                 conf.get(ADVANCED, {}),
-                check_epipolar_a_priori=True,
             )
         )
         return advanced
@@ -326,42 +331,6 @@ class DefaultPipeline(PipelineTemplate):
                 f"been deleted"
             )
 
-    def override_with_apriori(self, conf, previous_out_dir, first_res):
-        """
-        Override configuration with terrain a priori
-
-        :param new_conf: configuration
-        :type new_conf: dict
-        """
-
-        new_conf = copy.deepcopy(conf)
-
-        # Extract avanced parameters configuration
-        # epipolar and terrain a priori can only be used on first resolution
-        if not first_res:
-            dem_min = os.path.join(previous_out_dir, "dsm/dem_min.tif")
-            dem_max = os.path.join(previous_out_dir, "dsm/dem_max.tif")
-            dem_median = os.path.join(previous_out_dir, "dsm/dem_median.tif")
-
-            new_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {
-                "dem_min": dem_min,
-                "dem_max": dem_max,
-                "dem_median": dem_median,
-            }
-            # Use initial elevation or dem median according to use wish
-            if new_conf[INPUT][sens_cst.INITIAL_ELEVATION]["dem"] is None:
-                new_conf[INPUT][sens_cst.INITIAL_ELEVATION] = dem_median
-            else:
-                new_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_median"] = (
-                    new_conf[INPUT][sens_cst.INITIAL_ELEVATION]["dem"]
-                )
-            if new_conf[ADVANCED][adv_cst.USE_ENDOGENOUS_DEM] and not first_res:
-                new_conf[INPUT][sens_cst.INITIAL_ELEVATION] = dem_median
-
-            new_conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = None
-
-        return new_conf
-
     @cars_profile(name="Run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
         """
@@ -379,6 +348,7 @@ class DefaultPipeline(PipelineTemplate):
 
         previous_out_dir = None
         updated_conf = {}
+        step = 0
         for resolution_index, epipolar_res in enumerate(
             self.epipolar_resolutions
         ):
@@ -433,11 +403,23 @@ class DefaultPipeline(PipelineTemplate):
                 generate_dems = False
 
             # Overide with a priori
-            overridden_conf = self.override_with_apriori(
-                used_pipeline.used_conf, previous_out_dir, first_res
-            )
+            if not first_res:
+                dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
+                used_pipeline.used_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
+                if step != 1:
+                    dem_median = os.path.join(
+                        previous_out_dir, "dsm/dem_median.tif"
+                    )
+                    used_pipeline.used_conf[INPUT][
+                        sens_cst.INITIAL_ELEVATION
+                    ] = dem_median
+            else:
+                previous_scaling_coeff = None
+
             updated_pipeline = UnitPipeline(
-                overridden_conf, config_dir=self.config_dir
+                used_pipeline.used_conf,
+                config_dir=self.config_dir,
+                previous_scaling_coeff=previous_scaling_coeff,
             )
             updated_pipeline.run(
                 generate_dems=generate_dems,
@@ -450,12 +432,17 @@ class DefaultPipeline(PipelineTemplate):
             # update previous out dir
             previous_out_dir = current_out_dir
 
+            # keep previous scaling coeff for dem_generation
+            previous_scaling_coeff = updated_pipeline.scaling_coeff
+
             # generate summary
             log_wrapper.generate_summary(
                 current_log_dir, updated_pipeline.used_conf
             )
 
             updated_conf[epipolar_res] = updated_pipeline.used_conf
+
+            step += 1
 
         # Generate full used_conf
         full_used_conf = merge_used_conf(
@@ -595,6 +582,17 @@ def extract_conf_with_resolution(
         overiding_conf.get(APPLICATIONS, {}),
         filling_applications,
     )
+
+    overiding_conf = {
+        OUTPUT: {
+            out_cst.AUXILIARY: {
+                out_cst.AUX_DEM_MAX: True,
+                out_cst.AUX_DEM_MIN: True,
+                out_cst.AUX_DEM_MEDIAN: True,
+            },
+        },
+    }
+    new_conf = overide_pipeline_conf(new_conf, overiding_conf)
 
     # Overide output to not compute data
     # Overide resolution to let unit pipeline manage it

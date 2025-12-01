@@ -98,7 +98,9 @@ class UnitPipeline(PipelineTemplate):
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, conf, config_dir=None):  # noqa: C901
+    def __init__(
+        self, conf, config_dir=None, previous_scaling_coeff=None
+    ):  # noqa: C901
         """
         Creates pipeline
 
@@ -132,6 +134,8 @@ class UnitPipeline(PipelineTemplate):
         # Check global conf
         self.check_global_schema(conf)
 
+        self.previous_scaling_coeff = previous_scaling_coeff
+
         # Check conf orchestrator
         self.used_conf[ORCHESTRATOR] = self.check_orchestrator(
             conf.get(ORCHESTRATOR, None)
@@ -160,7 +164,6 @@ class UnitPipeline(PipelineTemplate):
         ) = advanced_parameters.check_advanced_parameters(
             inputs,
             conf.get(ADVANCED, {}),
-            check_epipolar_a_priori=True,
             output_dem_dir=output_dem_dir,
         )
         self.used_conf[ADVANCED] = advanced
@@ -626,7 +629,11 @@ class UnitPipeline(PipelineTemplate):
             self.dem_generation_application = Application(
                 "dem_generation",
                 cfg=used_conf.get("dem_generation", {}),
-                scaling_coeff=scaling_coeff,
+                scaling_coeff=(
+                    self.previous_scaling_coeff
+                    if self.previous_scaling_coeff is not None
+                    else scaling_coeff
+                ),
             )
             used_conf["dem_generation"] = (
                 self.dem_generation_application.get_conf()
@@ -1046,6 +1053,96 @@ class UnitPipeline(PipelineTemplate):
             self.pairs[pair_key]["sensor_image_left"] = sensor_image_left
             self.pairs[pair_key]["sensor_image_right"] = sensor_image_right
 
+            # Calculate dems
+            dems = {}
+            if self.used_conf[INPUT][sens_cst.LOW_RES_DSM] is not None:
+                # Create dsm directory
+                dsm_dir = os.path.join(
+                    self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY],
+                    "dsm",
+                )
+                safe_makedirs(dsm_dir)
+
+                # DSM file name
+                dsm_file_name = self.used_conf[INPUT][sens_cst.LOW_RES_DSM]
+
+                dem_generation_output_dir = os.path.join(
+                    self.dump_dir, "dem_generation"
+                )
+                safe_makedirs(dem_generation_output_dir)
+                if not self.dem_generation_application.used_config[
+                    "save_intermediate_data"
+                ]:
+                    self.cars_orchestrator.add_to_clean(
+                        dem_generation_output_dir
+                    )
+
+                # Use initial elevation if provided, and generate dems
+                _, paths, _ = self.dem_generation_application.run(
+                    dsm_file_name,
+                    dem_generation_output_dir,
+                    input_geoid=self.used_conf[INPUT][
+                        sens_cst.INITIAL_ELEVATION
+                    ][sens_cst.GEOID],
+                    output_geoid=self.used_conf[OUTPUT][out_cst.OUT_GEOID],
+                    initial_elevation=(
+                        self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
+                            sens_cst.DEM_PATH
+                        ]
+                    ),
+                    default_alt=self.geom_plugin_with_dem_and_geoid.default_alt,
+                    cars_orchestrator=self.cars_orchestrator,
+                )
+
+                dem_median = paths["dem_median"]
+                dem_min = paths["dem_min"]
+                dem_max = paths["dem_max"]
+
+                dems["dem_median"] = dem_median
+                dems["dem_min"] = dem_min
+                dems["dem_max"] = dem_max
+
+                # Override initial elevation
+                if (
+                    inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                    is None
+                    or "dem_median"
+                    in inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                ):
+                    inputs[sens_cst.INITIAL_ELEVATION][
+                        sens_cst.DEM_PATH
+                    ] = dem_median
+                elif (
+                    inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                    is not None
+                    and self.used_conf[ADVANCED][USE_ENDOGENOUS_DEM]
+                ):
+                    inputs[sens_cst.INITIAL_ELEVATION][
+                        sens_cst.DEM_PATH
+                    ] = dem_median
+
+                # Check advanced parameters with new initial elevation
+                output_dem_dir = os.path.join(
+                    self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY],
+                    "dump_dir",
+                    "initial_elevation",
+                )
+                safe_makedirs(output_dem_dir)
+                (
+                    inputs,
+                    _,
+                    self.geometry_plugin,
+                    self.geom_plugin_without_dem_and_geoid,
+                    self.geom_plugin_with_dem_and_geoid,
+                    _,
+                    _,
+                    _,
+                ) = advanced_parameters.check_advanced_parameters(
+                    inputs,
+                    self.used_conf.get(ADVANCED, {}),
+                    output_dem_dir=output_dem_dir,
+                )
+
             # Run applications
 
             # Run grid generation
@@ -1080,10 +1177,10 @@ class UnitPipeline(PipelineTemplate):
             if self.quit_on_app("grid_generation"):
                 continue  # keep iterating over pairs, but don't go further
 
-            if self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (
+            if dems in (
                 None,
                 {},
-            ):
+            ) or self.which_resolution in ("single", "first"):
                 # Run resampling only if needed:
                 # no a priori
 
@@ -1114,10 +1211,10 @@ class UnitPipeline(PipelineTemplate):
                 if self.quit_on_app("resampling"):
                     continue  # keep iterating over pairs, but don't go further
 
-            if self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (
+            if dems in (
                 None,
                 {},
-            ):
+            ) or self.which_resolution in ("single", "first"):
                 # Run epipolar sparse_matching application
                 (
                     self.pairs[pair_key]["epipolar_matches_left"],
@@ -1140,7 +1237,10 @@ class UnitPipeline(PipelineTemplate):
             minimum_nb_matches = self.sparse_mtch_app.get_minimum_nb_matches()
 
             # Run grid correction application
-            if self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (None, {}):
+            if dems in (None, {}) or self.which_resolution in (
+                "single",
+                "first",
+            ):
                 # Estimate grid correction if no epipolar a priori
                 # Filter and save matches
                 self.pairs[pair_key]["matches_array"] = (
@@ -1281,18 +1381,6 @@ class UnitPipeline(PipelineTemplate):
         ):
             return True
 
-        if not self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (None, {}):
-            # Use a priori
-            dem_median = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
-                adv_cst.DEM_MEDIAN
-            ]
-            dem_min = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
-                adv_cst.DEM_MIN
-            ]
-            dem_max = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
-                adv_cst.DEM_MAX
-            ]
-
         # Define param
         use_global_disp_range = self.dense_matching_app.use_global_disp_range
 
@@ -1304,7 +1392,7 @@ class UnitPipeline(PipelineTemplate):
             # Geometry plugin with dem will be used for the grid generation
             geom_plugin = self.geom_plugin_with_dem_and_geoid
 
-            if self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] in (None, {}):
+            if dems in (None, {}) and self.which_resolution != "single":
                 save_matches = True
 
                 (
@@ -1319,55 +1407,7 @@ class UnitPipeline(PipelineTemplate):
                     ),
                     save_matches=save_matches,
                 )
-            elif (
-                not self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]
-                in (None, {})
-                and not self.use_sift_a_priori
-            ):
-                # Use epipolar a priori
-                # load the disparity range
-                if use_global_disp_range:
-                    [dmin, dmax] = self.used_conf[ADVANCED][
-                        adv_cst.EPIPOLAR_A_PRIORI
-                    ][pair_key][adv_cst.DISPARITY_RANGE]
-
-                    advanced_parameters.update_conf(
-                        self.refined_conf,
-                        dmin=dmin,
-                        dmax=dmax,
-                        pair_key=pair_key,
-                    )
-                else:
-
-                    # load the grid correction coefficient
-                    self.pairs[pair_key][
-                        "grid_correction_coef"
-                    ] = self.used_conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI][
-                        pair_key
-                    ][
-                        adv_cst.GRID_CORRECTION
-                    ]
-                    self.pairs[pair_key]["corrected_grid_left"] = self.pairs[
-                        pair_key
-                    ]["grid_left"]
-                    # no correction if the grid correction coefs are None
-                    if self.pairs[pair_key]["grid_correction_coef"] is None:
-                        self.pairs[pair_key]["corrected_grid_right"] = (
-                            self.pairs[pair_key]["grid_right"]
-                        )
-                    else:
-                        # Correct grid right with provided epipolar a priori
-                        self.pairs[pair_key]["corrected_grid_right"] = (
-                            grid_correction_app.correct_grid_from_1d(
-                                self.pairs[pair_key]["grid_right"],
-                                self.pairs[pair_key]["grid_correction_coef"],
-                                save_corrected_grid,
-                                os.path.join(
-                                    self.dump_dir, "grid_correction", pair_key
-                                ),
-                            )
-                        )
-            else:
+            elif self.use_sift_a_priori and self.which_resolution != "single":
                 # Correct grids with former matches
                 # Transform matches to new grids
 
@@ -1453,17 +1493,6 @@ class UnitPipeline(PipelineTemplate):
                 right=True,
             )
 
-            # Update refined_conf configuration with epipolar a priori
-            advanced_parameters.update_conf(
-                self.refined_conf,
-                grid_correction_coef=self.pairs[pair_key][
-                    "grid_correction_coef"
-                ],
-                pair_key=pair_key,
-                reference_dem=self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
-                    sens_cst.DEM_PATH
-                ],
-            )
             # saved used configuration
             self.save_configurations()
 
@@ -1474,9 +1503,10 @@ class UnitPipeline(PipelineTemplate):
                 self.dump_dir, "dense_matching", pair_key
             )
 
-            if self.which_resolution in ("first", "single") and self.used_conf[
-                ADVANCED
-            ][adv_cst.TERRAIN_A_PRIORI] in (None, {}):
+            if self.which_resolution in ("first", "single") and dems in (
+                None,
+                {},
+            ):
                 dmin = disp_min / self.res_resamp
                 dmax = disp_max / self.res_resamp
                 # generate_disparity_grids runs orchestrator.breakpoint()
@@ -1505,13 +1535,6 @@ class UnitPipeline(PipelineTemplate):
                     }
                 }
                 self.cars_orchestrator.update_out_info(updating_infos)
-
-                advanced_parameters.update_conf(
-                    self.refined_conf,
-                    dmin=dmin,
-                    dmax=dmax,
-                    pair_key=pair_key,
-                )
             else:
                 # Generate min and max disp grids from dems
                 # generate_disparity_grids runs orchestrator.breakpoint()
@@ -1556,13 +1579,6 @@ class UnitPipeline(PipelineTemplate):
                         }
                         self.cars_orchestrator.update_out_info(updating_infos)
 
-                        advanced_parameters.update_conf(
-                            self.refined_conf,
-                            dmin=dmin,
-                            dmax=dmax,
-                            pair_key=pair_key,
-                        )
-
                     # generate_disparity_grids runs orchestrator.breakpoint()
                     self.pairs[pair_key]["disp_range_grid"] = (
                         self.dense_matching_app.generate_disparity_grids(
@@ -1575,22 +1591,6 @@ class UnitPipeline(PipelineTemplate):
                             orchestrator=self.cars_orchestrator,
                         )
                     )
-
-            # TODO add in metadata.json max diff max - min
-            # Update used_conf configuration with epipolar a priori
-            # Add global min and max computed with grids
-            advanced_parameters.update_conf(
-                self.refined_conf,
-                dmin=self.pairs[pair_key]["disp_range_grid"]["global_min"],
-                dmax=self.pairs[pair_key]["disp_range_grid"]["global_max"],
-                pair_key=pair_key,
-            )
-            advanced_parameters.update_conf(
-                self.refined_conf,
-                dmin=self.pairs[pair_key]["disp_range_grid"]["global_min"],
-                dmax=self.pairs[pair_key]["disp_range_grid"]["global_max"],
-                pair_key=pair_key,
-            )
 
             # saved used configuration
             self.save_configurations()
@@ -2137,132 +2137,6 @@ class UnitPipeline(PipelineTemplate):
 
         # dsm needs to be saved before filling
         self.cars_orchestrator.breakpoint()
-
-        if self.generate_dems:
-            dsm_file_name = (
-                os.path.join(
-                    self.out_dir,
-                    out_cst.DSM_DIRECTORY,
-                    "dsm.tif",
-                )
-                if self.save_output_dsm
-                else None
-            )
-
-            dem_min_file_name = (
-                os.path.join(
-                    self.out_dir,
-                    out_cst.DSM_DIRECTORY,
-                    "dem_min.tif",
-                )
-                if self.save_output_dsm
-                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_DEM_MIN
-                ]
-                else None
-            )
-
-            dem_max_file_name = (
-                os.path.join(
-                    self.out_dir,
-                    out_cst.DSM_DIRECTORY,
-                    "dem_max.tif",
-                )
-                if self.save_output_dsm
-                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_DEM_MAX
-                ]
-                else None
-            )
-
-            dem_median_file_name = (
-                os.path.join(
-                    self.out_dir,
-                    out_cst.DSM_DIRECTORY,
-                    "dem_median.tif",
-                )
-                if self.save_output_dsm
-                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_DEM_MEDIAN
-                ]
-                else None
-            )
-
-            dem_generation_output_dir = os.path.join(
-                self.dump_dir, "dem_generation"
-            )
-            safe_makedirs(dem_generation_output_dir)
-            if not self.dem_generation_application.used_config[
-                "save_intermediate_data"
-            ]:
-                self.cars_orchestrator.add_to_clean(dem_generation_output_dir)
-
-            # Use initial elevation if provided, and generate dems
-            _, paths, _ = self.dem_generation_application.run(
-                dsm_file_name,
-                dem_generation_output_dir,
-                dem_min_file_name,
-                dem_max_file_name,
-                dem_median_file_name,
-                input_geoid=self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
-                    sens_cst.GEOID
-                ],
-                output_geoid=self.used_conf[OUTPUT][out_cst.OUT_GEOID],
-                initial_elevation=(
-                    self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
-                        sens_cst.DEM_PATH
-                    ]
-                ),
-                default_alt=self.geom_plugin_with_dem_and_geoid.default_alt,
-                cars_orchestrator=self.cars_orchestrator,
-            )
-
-            # Update refined conf configuration with dem paths
-            dem_median = paths["dem_median"]
-            dem_min = paths["dem_min"]
-            dem_max = paths["dem_max"]
-
-            advanced_parameters.update_conf(
-                self.refined_conf,
-                dem_median=dem_median,
-                dem_min=dem_min,
-                dem_max=dem_max,
-            )
-
-            if self.used_conf[ADVANCED][USE_ENDOGENOUS_DEM]:
-                # Generate new geom plugin with dem
-                output_dem_dir = os.path.join(
-                    self.dump_dir, "initial_elevation"
-                )
-                new_geom_plugin = (
-                    sensor_inputs.generate_geometry_plugin_with_dem(
-                        self.geometry_plugin,
-                        self.used_conf[INPUT],
-                        dem=dem_median,
-                        output_dem_dir=output_dem_dir,
-                    )
-                )
-
-                for (
-                    pair_key,
-                    _,
-                    _,
-                ) in self.list_sensor_pairs:
-                    new_grid_correction_coef = (
-                        self.generate_grid_correction_on_dem(
-                            pair_key,
-                            new_geom_plugin,
-                        )
-                    )
-                    if new_grid_correction_coef is not None:
-                        # Update refined_conf configuration with epipolar
-                        # a priori
-                        advanced_parameters.update_conf(
-                            self.refined_conf,
-                            grid_correction_coef=new_grid_correction_coef,
-                            pair_key=pair_key,
-                            reference_dem=dem_median,
-                        )
 
         # saved used configuration
         self.save_configurations()

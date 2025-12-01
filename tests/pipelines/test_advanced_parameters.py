@@ -39,32 +39,6 @@ def test_advanced_parameters_full_config():
 
     config = {
         "debug_with_roi": True,
-        "epipolar_a_priori": {
-            "left_right": {
-                "grid_correction": [
-                    4.288258198116454,
-                    -5.126994797702842e-05,
-                    -0.0001868504592756687,
-                    0.7633338209640762,
-                    0.00017551039816977979,
-                    7.416961236000771e-05,
-                ],
-                "disparity_range": [-26.157764557028997, 26.277429517242638],
-                "reference_dem": "input/data_gizeh_crop/dump_dir/"
-                + "dem_generation/dem_median.tif",
-            },
-        },
-        "terrain_a_priori": {
-            "dem_median": absolute_data_path(
-                "input/data_gizeh_crop/dump_dir/dem_generation/dem_median.tif"
-            ),
-            "dem_min": absolute_data_path(
-                "input/data_gizeh_crop/dump_dir/dem_generation/dem_min.tif"
-            ),
-            "dem_max": absolute_data_path(
-                "input/data_gizeh_crop/dump_dir/dem_generation/dem_max.tif"
-            ),
-        },
         "ground_truth_dsm": {
             "dsm": "tests/data/input/phr_gizeh/img1.tif",
             "geoid": True,
@@ -128,43 +102,18 @@ def test_advanced_parameters_update_conf():
 
     # First config check without epipolar a priori
     _, updated_config, _, _, _, _, _, _ = (
-        advanced_parameters.check_advanced_parameters(
-            inputs_config, config, check_epipolar_a_priori=False
-        )
+        advanced_parameters.check_advanced_parameters(inputs_config, config)
     )
 
     # TODO: maybe move this inside update conf
-    updated_config["epipolar_a_priori"] = {}
-    updated_config["terrain_a_priori"] = {}
     updated_config["ground_truth_dsm"] = {}
 
     # Cars level conf
     full_config = {"advanced": updated_config}
 
-    # Update config
-    advanced_parameters.update_conf(
-        full_config,
-        grid_correction_coef=[1, 2, 3, 4, 5, 6],
-        reference_dem=absolute_data_path(
-            "input/data_gizeh_crop/dump_dir/dem_generation/dem_median.tif"
-        ),
-        dmin=-10,
-        dmax=10,
-        pair_key="pair_key",
-        dem_median=absolute_data_path(
-            "input/data_gizeh_crop/dump_dir/dem_generation/dem_median.tif"
-        ),
-        dem_min=absolute_data_path(
-            "input/data_gizeh_crop/dump_dir/dem_generation/dem_min.tif"
-        ),
-        dem_max=absolute_data_path(
-            "input/data_gizeh_crop/dump_dir/dem_generation/dem_max.tif"
-        ),
-    )
-
     # First config check without epipolar a priori
     _ = advanced_parameters.check_advanced_parameters(
-        inputs_config, full_config["advanced"], check_epipolar_a_priori=True
+        inputs_config, full_config["advanced"]
     )
 
 

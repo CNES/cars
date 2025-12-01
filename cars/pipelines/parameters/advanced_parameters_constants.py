@@ -32,7 +32,6 @@ CLASSIFICATION_TO_CONFIGURATION_MAPPING = (
     "classification_to_configuration_mapping"
 )
 
-EPIPOLAR_A_PRIORI = "epipolar_a_priori"
 RESOLUTION_A_PRIORI = "resolution_a_priori"
 GROUND_TRUTH_DSM = "ground_truth_dsm"
 
@@ -46,7 +45,6 @@ GRID_CORRECTION = "grid_correction"
 DISPARITY_RANGE = "disparity_range"
 REFERENCE_DEM = "reference_dem"
 
-TERRAIN_A_PRIORI = "terrain_a_priori"
 USE_ENDOGENOUS_DEM = "use_endogenous_dem"
 DEM_MEDIAN = "dem_median"
 DEM_MIN = "dem_min"

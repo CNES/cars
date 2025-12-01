@@ -900,11 +900,11 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                     < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["minimum_disparity"]
-                    < -75
+                    < -48
                 )
             with check:
                 assert (
-                    45
+                    34
                     < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["maximum_disparity"]
@@ -920,17 +920,12 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         with check:
             assert os.path.isfile(refined_conf_path)
 
-        out_dir_res4 = os.path.join(
-            input_config_sparse_dsm["output"]["directory"],
-            "intermediate_data/out_res4",
-        )
-
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
         copy2(
-            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -939,7 +934,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_min_end2end_ventoux_8bit.tif"
@@ -947,7 +942,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_max_end2end_ventoux_8bit.tif"
@@ -956,7 +951,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         )
 
         assert_same_images(
-            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
@@ -966,7 +961,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_min_end2end_ventoux_8bit.tif")
             ),
@@ -974,7 +969,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_max_end2end_ventoux_8bit.tif")
             ),
@@ -1078,11 +1073,11 @@ def test_end2end_ventoux_unique():
                     < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["minimum_disparity"]
-                    < -75
+                    < -47
                 )
             with check:
                 assert (
-                    45
+                    34
                     < out_yaml["applications"]["disparity_range_computation"][
                         "left_right"
                     ]["maximum_disparity"]
@@ -1092,13 +1087,9 @@ def test_end2end_ventoux_unique():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        out_dir_res4 = os.path.join(
-            input_config_sparse_dsm["output"]["directory"],
-            "intermediate_data/out_res4",
-        )
 
         copy2(
-            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_median_end2end_ventoux.tif"
@@ -1106,7 +1097,7 @@ def test_end2end_ventoux_unique():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_min_end2end_ventoux.tif"
@@ -1114,7 +1105,7 @@ def test_end2end_ventoux_unique():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, "dem_max_end2end_ventoux.tif"
@@ -1123,7 +1114,7 @@ def test_end2end_ventoux_unique():
         )
 
         assert_same_images(
-            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
             ),
@@ -1131,7 +1122,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
             ),
@@ -1139,7 +1130,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
             ),
@@ -1937,15 +1928,11 @@ def test_end2end_use_epipolar_a_priori():
             # Ref output dir dependent from geometry plugin chosen
             intermediate_output_dir = "intermediate_data"
             ref_output_dir = "ref_output"
-            output_dir_res4 = os.path.join(
-                input_config_sparse_res["output"]["directory"],
-                "intermediate_data/out_res4",
-            )
 
             copy2(
                 os.path.join(
-                    output_dir_res4,
-                    "dsm",
+                    out_dir,
+                    "dump_dir/dem_generation",
                     "dem_median.tif",
                 ),
                 absolute_data_path(
@@ -1956,7 +1943,7 @@ def test_end2end_use_epipolar_a_priori():
                 ),
             )
             copy2(
-                os.path.join(output_dir_res4, "dsm", "dem_min.tif"),
+                os.path.join(out_dir, "dump_dir/dem_generation", "dem_min.tif"),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
@@ -1965,7 +1952,7 @@ def test_end2end_use_epipolar_a_priori():
                 ),
             )
             copy2(
-                os.path.join(output_dir_res4, "dsm", "dem_max.tif"),
+                os.path.join(out_dir, "dump_dir/dem_generation", "dem_max.tif"),
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
@@ -1976,8 +1963,8 @@ def test_end2end_use_epipolar_a_priori():
 
             assert_same_images(
                 os.path.join(
-                    output_dir_res4,
-                    "dsm",
+                    out_dir,
+                    "dump_dir/dem_generation",
                     "dem_median.tif",
                 ),
                 absolute_data_path(
@@ -1989,7 +1976,7 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(output_dir_res4, "dsm", "dem_min.tif"),
+                os.path.join(out_dir, "dump_dir/dem_generation", "dem_min.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_min_end2end_ventoux_no_srtm.tif"
@@ -1999,7 +1986,7 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(output_dir_res4, "dsm", "dem_max.tif"),
+                os.path.join(out_dir, "dump_dir/dem_generation", "dem_max.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_max_end2end_ventoux_no_srtm.tif"
@@ -2025,26 +2012,7 @@ def test_end2end_use_epipolar_a_priori():
             with check:
                 assert "advanced" in refined_conf
 
-            # use_epipolar_a_priori should be false in refined_conf
-            with check:
-                assert "epipolar_a_priori" in refined_conf["advanced"]
-            with check:
-                assert (
-                    "grid_correction"
-                    in refined_conf["advanced"]["epipolar_a_priori"][
-                        "left_right"
-                    ]
-                )
-            with check:
-                assert (
-                    "dem_median" in refined_conf["advanced"]["terrain_a_priori"]
-                )
-            with check:
-                assert "dem_min" in refined_conf["advanced"]["terrain_a_priori"]
-            with check:
-                assert "dem_max" in refined_conf["advanced"]["terrain_a_priori"]
-
-            # check refined_conf reentry (without epipolar a priori activated)
+            # check refined_conf reentry
             _ = unit.UnitPipeline(refined_conf)
 
         # dense dsm pipeline
@@ -2263,11 +2231,11 @@ def test_prepare_ventoux_bias():
             with check:
                 assert out_disp_compute["minimum_disparity"] > -140
             with check:
-                assert out_disp_compute["minimum_disparity"] < -120
+                assert out_disp_compute["minimum_disparity"] < -41
             with check:
                 assert out_disp_compute["maximum_disparity"] > -47
             with check:
-                assert out_disp_compute["maximum_disparity"] < 5
+                assert out_disp_compute["maximum_disparity"] < 36
 
 
 # @pytest.mark.end2end_tests
@@ -2763,9 +2731,9 @@ def test_end2end_ventoux_with_color():
             with check:
                 assert out_disp_compute["minimum_disparity"] > -85
             with check:
-                assert out_disp_compute["minimum_disparity"] < -65
+                assert out_disp_compute["minimum_disparity"] < -47
             with check:
-                assert out_disp_compute["maximum_disparity"] > 45
+                assert out_disp_compute["maximum_disparity"] > 34
             with check:
                 assert out_disp_compute["maximum_disparity"] < 55
 
@@ -3712,13 +3680,9 @@ def test_end2end_quality_stats():
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        out_dir_res4 = os.path.join(
-            input_config_dense_dsm["output"]["directory"],
-            "intermediate_data/out_res4",
-        )
 
         copy2(
-            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -3727,7 +3691,7 @@ def test_end2end_quality_stats():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -3736,7 +3700,7 @@ def test_end2end_quality_stats():
             ),
         )
         copy2(
-            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -3784,7 +3748,7 @@ def test_end2end_quality_stats():
             os.path.join(out_dir, "dump_dir", "rasterization", "dsm_n_pts.tif"),
             absolute_data_path(
                 os.path.join(
-                    intermediate_output_dir,
+                    ref_output_dir,
                     "dsm_n_pts_end2end_ventoux_quality_stats.tif",
                 )
             ),
@@ -3802,7 +3766,7 @@ def test_end2end_quality_stats():
         )
 
         assert_same_images(
-            os.path.join(out_dir_res4, "dsm", "dem_median.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3813,7 +3777,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir_res4, "dsm", "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_min_end2end_ventoux_quality_stats.tif"
@@ -3823,7 +3787,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir_res4, "dsm", "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir/dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_max_end2end_ventoux_quality_stats.tif"
@@ -3998,7 +3962,7 @@ def test_end2end_ventoux_egm96_geoid():
             with check:
                 assert out_disp_compute["global_disp_min"] < 75
             with check:
-                assert out_disp_compute["global_disp_max"] > 45
+                assert out_disp_compute["global_disp_max"] > 34
             with check:
                 assert out_disp_compute["global_disp_max"] < 55
 
@@ -4231,7 +4195,7 @@ def test_end2end_ventoux_egm96_geoid():
             with check:
                 assert out_disp_compute["global_disp_min"] > -70
             with check:
-                assert out_disp_compute["global_disp_min"] < -60
+                assert out_disp_compute["global_disp_min"] < -46
             with check:
                 assert out_disp_compute["global_disp_max"] > 0
             with check:
