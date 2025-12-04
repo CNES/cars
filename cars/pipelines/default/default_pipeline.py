@@ -435,7 +435,8 @@ class DefaultPipeline(PipelineTemplate):
                 used_pipeline.used_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
                 if step != 1:
                     dem_median = os.path.join(
-                        previous_out_dir, "dsm/dem_median.tif"
+                        previous_out_dir,
+                        "dump_dir/dem_generation/dem_median.tif",
                     )
                     used_pipeline.used_conf[INPUT][
                         sens_cst.INITIAL_ELEVATION

@@ -1047,12 +1047,6 @@ class UnitPipeline(PipelineTemplate):
                     self.dump_dir, "dem_generation"
                 )
                 safe_makedirs(dem_generation_output_dir)
-                if not self.dem_generation_application.used_config[
-                    "save_intermediate_data"
-                ]:
-                    self.cars_orchestrator.add_to_clean(
-                        dem_generation_output_dir
-                    )
 
                 # Use initial elevation if provided, and generate dems
                 _, paths, _ = self.dem_generation_application.run(
@@ -1358,17 +1352,6 @@ class UnitPipeline(PipelineTemplate):
             # Geometry plugin with dem will be used for the grid generation
             geom_plugin = self.geom_plugin_with_dem_and_geoid
 
-            # Update refined_conf configuration with epipolar a priori
-            advanced_parameters.update_conf(
-                self.refined_conf,
-                grid_correction_coef=self.pairs[pair_key][
-                    "grid_correction_coef"
-                ],
-                pair_key=pair_key,
-                reference_dem=self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
-                    sens_cst.DEM_PATH
-                ],
-            )
             # saved used configuration
             self.save_configurations()
 
@@ -1379,9 +1362,11 @@ class UnitPipeline(PipelineTemplate):
                 self.dump_dir, "dense_matching", pair_key
             )
 
-            if self.which_resolution in ("first", "single") and self.used_conf[
-                ADVANCED
-            ][adv_cst.TERRAIN_A_PRIORI] in (None, {}):
+            if self.which_resolution in ("first", "single") and dems in (
+                None,
+                {},
+            ):
+
                 dmin = disp_min
                 dmax = disp_max
 

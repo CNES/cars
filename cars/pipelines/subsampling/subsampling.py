@@ -167,7 +167,6 @@ class SubsamplingPipeline(PipelineTemplate):
             advanced_parameters.check_advanced_parameters(
                 conf[INPUT],
                 conf.get(ADVANCED, {}),
-                check_epipolar_a_priori=True,
             )
         )
         return advanced
