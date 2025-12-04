@@ -37,8 +37,11 @@ from tests.helpers import (
 )
 from tests.helpers import cars_copy2 as copy2
 from tests.helpers import (
+    generate_input_json,
     temporary_dir,
 )
+
+NB_WORKERS = 2
 
 
 @pytest.mark.parametrize(
@@ -56,63 +59,43 @@ def test_subsampling(resolution):
     Test subsampling pipeline
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        path = "tutorials/data_gizeh_small/"
-        conf = {
-            "input": {
-                "loaders": {"image": "pivot"},
-                "sensors": {
-                    "one": {
-                        "image": {
-                            "bands": {
-                                "b0": {
-                                    "path": os.path.join(path, "img1.tif"),
-                                    "band": 0,
-                                },
-                                "b1": {
-                                    "path": os.path.join(path, "color1.tif"),
-                                    "band": 1,
-                                },
-                                "b2": {
-                                    "path": os.path.join(path, "color1.tif"),
-                                    "band": 2,
-                                },
-                                "b3": {
-                                    "path": os.path.join(path, "color1.tif"),
-                                    "band": 2,
-                                },
-                            }
-                        },
-                        "classification": os.path.join(path, "classif1.tif"),
-                    },
-                    "two": {
-                        "image": {
-                            "bands": {
-                                "b0": {
-                                    "path": os.path.join(path, "img2.tif"),
-                                    "band": 0,
-                                }
-                            }
-                        },
-                        "classification": os.path.join(path, "classif2.tif"),
-                    },
-                },
+        conf = absolute_data_path(
+            "input/phr_ventoux/input_with_color_and_classif.json"
+        )
+
+        # Run dense dsm pipeline
+        _, input_conf = generate_input_json(
+            conf,
+            directory,
+            "multiprocessing",
+            orchestrator_parameters={
+                "nb_workers": NB_WORKERS,
+                "max_ram_per_worker": 500,
             },
-            "output": {"directory": os.path.join(directory, "test")},
-            "advanced": {"epipolar_resolutions": resolution},
-        }
+        )
+
+        input_conf["output"]["directory"] = os.path.join(
+            input_conf["output"]["directory"], "test"
+        )
+        input_conf["advanced"]["epipolar_resolutions"] = resolution
+
         dense_dsm_pipeline = subsampling.SubsamplingPipeline(
-            conf, absolute_data_path(directory)
+            input_conf, absolute_data_path(directory)
         )
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.dirname(os.path.join(conf["output"]["directory"]))
+        out_dir = os.path.dirname(
+            os.path.join(input_conf["output"]["directory"])
+        )
 
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
         for res in resolution:
             copy2(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "one/img1.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "left/left_image.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -124,7 +107,9 @@ def test_subsampling(resolution):
 
             copy2(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "two/img2.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "right/right_image.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -136,7 +121,9 @@ def test_subsampling(resolution):
 
             copy2(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "one/color1.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "left/color_image.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -148,7 +135,9 @@ def test_subsampling(resolution):
 
             copy2(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "one/classif1.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "left/left_classif.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -160,7 +149,9 @@ def test_subsampling(resolution):
 
             copy2(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "two/classif2.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "right/right_classif.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -172,7 +163,9 @@ def test_subsampling(resolution):
 
             assert_same_images(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "one/img1.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "left/left_image.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -186,7 +179,9 @@ def test_subsampling(resolution):
 
             assert_same_images(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "two/img2.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "right/right_image.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -200,7 +195,9 @@ def test_subsampling(resolution):
 
             assert_same_images(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "one/color1.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "left/color_image.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -214,7 +211,9 @@ def test_subsampling(resolution):
 
             assert_same_images(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "one/classif1.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "left/left_classif.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -228,7 +227,9 @@ def test_subsampling(resolution):
 
             assert_same_images(
                 os.path.join(
-                    out_dir, "subsampling/res_" + str(res), "two/classif2.tif"
+                    out_dir,
+                    "subsampling/res_" + str(res),
+                    "right/right_classif.tif",
                 ),
                 absolute_data_path(
                     os.path.join(

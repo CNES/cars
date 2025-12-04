@@ -307,8 +307,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
 
-        step = self.step
-
         # Create zeros margins if not provided
         if margins_fun is None:
 
@@ -602,7 +600,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         self.interpolator_image,
                         self.interpolator_classif,
                         self.interpolator_mask,
-                        step,
+                        self.step,
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],
                         add_classif=add_classif,
