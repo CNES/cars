@@ -123,11 +123,7 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
     geom_plugin_with_dem_and_geoid = None
 
     scaling_coeff = None
-    # Get last resolution for scaling
-    if isinstance(overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS], list):
-        epipolar_resolution = overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS][-1]
-    else:
-        epipolar_resolution = overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS]
+
     if inputs[sens_cst.SENSORS] is not None:
         # Check geometry plugin and overwrite geomodel in conf inputs
         (
@@ -139,7 +135,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         ) = sensor_inputs.check_geometry_plugin(
             inputs,
             conf.get(adv_cst.GEOMETRY_PLUGIN, None),
-            epipolar_resolution,
             output_dem_dir,
         )
     elif dsm_cst.DSMS in inputs:

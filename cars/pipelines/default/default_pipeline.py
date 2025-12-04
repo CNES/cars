@@ -31,6 +31,7 @@ CARS default pipeline class file
 from __future__ import print_function
 
 import copy
+import json
 import logging
 import os
 import shutil
@@ -60,6 +61,7 @@ from cars.pipelines.pipeline_constants import (
     OUTPUT,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
+from cars.pipelines.subsampling.subsampling import SubsamplingPipeline
 from cars.pipelines.unit.unit_pipeline import UnitPipeline
 
 package_path = os.path.dirname(__file__)
@@ -132,6 +134,7 @@ class DefaultPipeline(PipelineTemplate):
         self.check_applications(conf)
         # Check input
         conf[INPUT] = self.check_inputs(conf)
+
         # check advanced
         conf[ADVANCED] = self.check_advanced(conf)
         # check output
@@ -149,6 +152,7 @@ class DefaultPipeline(PipelineTemplate):
         used_configurations = {}
         self.unit_pipelines = {}
         self.positions = {}
+        self.used_conf_before_subsampling = {}
 
         self.intermediate_data_dir = os.path.join(
             self.out_dir, "intermediate_data"
@@ -193,6 +197,10 @@ class DefaultPipeline(PipelineTemplate):
 
             if not isinstance(epipolar_res, int) or epipolar_res < 0:
                 raise RuntimeError("The resolution has to be an int > 0")
+
+            self.used_conf_before_subsampling[epipolar_resolution_index] = (
+                current_conf
+            )
 
             # Initialize unit pipeline in order to retrieve the
             # used configuration
@@ -249,10 +257,8 @@ class DefaultPipeline(PipelineTemplate):
         :return overloader output
         :rtype : dict
         """
-        conf_output, self.scaling_coeff = (
-            output_parameters.check_output_parameters(
-                conf[INPUT], conf[OUTPUT], self.scaling_coeff
-            )
+        conf_output, _ = output_parameters.check_output_parameters(
+            conf[INPUT], conf[OUTPUT]
         )
         return conf_output
 
@@ -263,7 +269,7 @@ class DefaultPipeline(PipelineTemplate):
         :return: overridden advanced conf
         :rtype: dict
         """
-        (_, advanced, _, _, _, self.scaling_coeff, _, _) = (
+        (_, advanced, _, _, _, _, _, _) = (
             advanced_parameters.check_advanced_parameters(
                 conf[INPUT],
                 conf.get(ADVANCED, {}),
@@ -354,8 +360,29 @@ class DefaultPipeline(PipelineTemplate):
         ):
 
             # Get tested unit pipeline
-            used_pipeline = self.unit_pipelines[resolution_index]
-            current_out_dir = used_pipeline.used_conf[OUTPUT]["directory"]
+            current_conf = self.used_conf_before_subsampling[resolution_index]
+            current_out_dir = current_conf[OUTPUT]["directory"]
+
+            if epipolar_res != 1:
+                subsampling_pipeline = SubsamplingPipeline(
+                    current_conf, self.config_dir
+                )
+                subsampling_pipeline.run()
+                yaml_file = os.path.join(
+                    self.intermediate_data_dir,
+                    "subsampling/res_" + str(epipolar_res) + "/input.yaml",
+                )
+                with open(yaml_file, encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+
+                json_str = json.dumps(data, indent=4)
+                data = json.loads(json_str)
+
+                current_conf[INPUT] = data
+
+            used_pipeline = UnitPipeline(
+                current_conf, config_dir=self.config_dir
+            )
 
             # get position
             first_res, _, last_res = (
@@ -764,7 +791,7 @@ def merge_used_conf(used_configurations, epipolar_resolutions):
     used_configurations = copy.deepcopy(used_configurations)
 
     merged_conf = {
-        INPUT: used_configurations[epipolar_resolutions[0]][INPUT],
+        INPUT: used_configurations[epipolar_resolutions[-1]][INPUT],
         ADVANCED: used_configurations[epipolar_resolutions[0]][ADVANCED],
         OUTPUT: used_configurations[epipolar_resolutions[0]][OUTPUT],
         ORCHESTRATOR: used_configurations[epipolar_resolutions[0]][

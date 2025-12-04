@@ -31,7 +31,6 @@ import numpy as np
 import rasterio as rio
 import resample as cresample
 from rasterio.windows import Window, bounds
-from scipy.fft import fft2, fftshift, ifft2, ifftshift
 
 from cars.conf import mask_cst as msk_cst
 
@@ -54,7 +53,6 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
     interpolator_classif="nearest",
     interpolator_mask="nearest",
     step=None,
-    resolution=1,
     mask1=None,
     mask2=None,
     left_classifs=None,
@@ -117,7 +115,6 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
         grid1,
         [epipolar_size_x, epipolar_size_y],
         step=step,
-        resolution=resolution,
         region=left_region,
         nodata=nodata1,
         mask=mask1,
@@ -145,7 +142,6 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
         grid2,
         [epipolar_size_x, epipolar_size_y],
         step=step,
-        resolution=resolution,
         region=right_region,
         nodata=nodata2,
         mask=mask2,
@@ -175,7 +171,6 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
                 left_classifs,
                 grid1,
                 [epipolar_size_x, epipolar_size_y],
-                resolution=resolution,
                 region=left_region,
                 band_coords=cst.BAND_CLASSIF,
                 interpolator_img=interpolator_classif,
@@ -187,7 +182,6 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
                 right_classifs,
                 grid2,
                 [epipolar_size_x, epipolar_size_y],
-                resolution=resolution,
                 region=right_region,
                 band_coords=cst.BAND_CLASSIF,
                 interpolator_img=interpolator_classif,
@@ -209,7 +203,6 @@ def resample_image(  # noqa: C901
     grid,
     largest_size,
     step=None,
-    resolution=1,
     region=None,
     nodata=None,
     mask=None,
@@ -318,7 +311,6 @@ def resample_image(  # noqa: C901
                         img_reader,
                         img_transform,
                         block_region,
-                        resolution,
                         interpolator_img,
                         band_coords,
                         nb_bands,
@@ -372,7 +364,6 @@ def oversampling_func(  # pylint: disable=too-many-positional-arguments
     img_reader,
     img_transform,
     block_region,
-    resolution,
     interpolator_img,
     band_coords,
     nb_bands,
@@ -489,21 +480,6 @@ def oversampling_func(  # pylint: disable=too-many-positional-arguments
             )
         # get the nodata mask before blurring
         img_nan_mask = img_as_array == nodata
-
-        # blur the image to avoid moiré artefacts if downsampling
-        if resolution != 1 and interpolator_img == "bicubic":
-            fourier = fftshift(fft2(img_as_array))
-
-            _, rows, cols = img_as_array.shape
-            crow, ccol = rows // 2, cols // 2
-            radius = min(rows, cols) / (2 * resolution)
-
-            row_mesh, col_mesh = np.ogrid[:rows, :cols]
-            dist = (col_mesh - ccol) ** 2 + (row_mesh - crow) ** 2
-            gaussian_mask = np.exp(-dist / (2 * radius**2))
-            f_filtered = fourier * gaussian_mask
-
-            img_as_array = np.real(ifft2(ifftshift(f_filtered)))
 
         # set the nodata values back
         if nodata is not None:

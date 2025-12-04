@@ -30,6 +30,7 @@ CARS subsampling pipeline class file
 # Standard imports
 from __future__ import print_function
 
+import copy
 import os
 from pathlib import Path
 
@@ -116,7 +117,7 @@ class SubsamplingPipeline(PipelineTemplate):
         self.used_conf[ADVANCED] = conf[ADVANCED]
 
         self.used_conf[APPLICATIONS] = self.check_applications(
-            conf[APPLICATIONS]
+            conf.get(APPLICATIONS, {})
         )
 
         self.intermediate_data_dir = os.path.join(
@@ -230,7 +231,7 @@ class SubsamplingPipeline(PipelineTemplate):
         """
         Run pipeline
         """
-        inputs = self.used_conf[INPUT]
+        inputs = copy.deepcopy(self.used_conf[INPUT])
 
         self.log_dir = os.path.join(self.out_dir, "logs")
 

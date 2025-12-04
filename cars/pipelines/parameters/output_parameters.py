@@ -51,7 +51,7 @@ def is_valid_epsg(epsg) -> bool:
 
 
 def check_output_parameters(  # noqa: C901 : too complex
-    inputs, conf, scaling_coeff
+    inputs, conf, scaling_coeff=None
 ):
     """
     Check the output json configuration and fill in default values
@@ -92,24 +92,26 @@ def check_output_parameters(  # noqa: C901 : too complex
 
     resolution = None
     overloaded_scaling_coeff = scaling_coeff
-    if overloaded_conf.get(output_constants.RESOLUTION, None) is not None:
-        resolution = overloaded_conf[output_constants.RESOLUTION]
-        # update scaling coeff so the parameters are right for the dsm
-        # overloaded_scaling_coeff = 2*resolution
+    if scaling_coeff is not None:
+        if overloaded_conf.get(output_constants.RESOLUTION, None) is not None:
+            resolution = overloaded_conf[output_constants.RESOLUTION]
+            # update scaling coeff so the parameters are right for the dsm
+            # overloaded_scaling_coeff = 2*resolution
 
-        if resolution < 0.5 * scaling_coeff:
-            logging.warning(
-                "The requested DSM resolution of "
-                f"{overloaded_conf[output_constants.RESOLUTION]} seems "
-                "too low for the sensor images' resolution. "
-                "The pipeline will still continue with it."
+            if resolution < 0.5 * scaling_coeff:
+                logging.warning(
+                    "The requested DSM resolution of "
+                    f"{overloaded_conf[output_constants.RESOLUTION]} seems "
+                    "too low for the sensor images' resolution. "
+                    "The pipeline will still continue with it."
+                )
+
+        else:
+            resolution = float(0.5 * scaling_coeff)
+            logging.info(
+                "The resolution of the output DSM will be "
+                f"{resolution} meters. "
             )
-
-    else:
-        resolution = float(0.5 * scaling_coeff)
-        logging.info(
-            "The resolution of the output DSM will be " f"{resolution} meters. "
-        )
 
     overloaded_conf[output_constants.RESOLUTION] = resolution
 
@@ -180,7 +182,7 @@ def check_output_parameters(  # noqa: C901 : too complex
         output_constants.PRODUCT_LEVEL: list,
         output_constants.OUT_GEOID: Or(bool, str),
         output_constants.EPSG: And(Or(int, str, None), is_valid_epsg),
-        output_constants.RESOLUTION: Or(int, float),
+        output_constants.RESOLUTION: Or(int, float, None),
         output_constants.SAVE_BY_PAIR: bool,
         output_constants.AUXILIARY: dict,
     }

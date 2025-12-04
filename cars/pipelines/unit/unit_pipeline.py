@@ -52,14 +52,12 @@ from cars.applications.dem_generation import (
     dem_generation_wrappers as dem_wrappers,
 )
 from cars.applications.grid_generation import grid_correction_app
-from cars.applications.grid_generation.transform_grid import transform_grid_func
 from cars.core import preprocessing, projection, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import (
     get_descriptions_bands,
     rasterio_get_crs,
     rasterio_get_epsg,
-    rasterio_get_size,
     read_vector,
 )
 from cars.core.utils import safe_makedirs
@@ -166,6 +164,7 @@ class UnitPipeline(PipelineTemplate):
             conf.get(ADVANCED, {}),
             output_dem_dir=output_dem_dir,
         )
+
         self.used_conf[ADVANCED] = advanced
 
         self.refined_conf[ADVANCED] = copy.deepcopy(advanced)
@@ -258,7 +257,7 @@ class UnitPipeline(PipelineTemplate):
         if self.sensors_in_inputs and not self.dsms_in_inputs:
             # Check conf application vs inputs application
             application_conf = self.check_applications_with_inputs(
-                self.used_conf[INPUT], application_conf, self.res_resamp
+                self.used_conf[INPUT], application_conf
             )
 
         self.used_conf[APPLICATIONS] = application_conf
@@ -787,7 +786,7 @@ class UnitPipeline(PipelineTemplate):
         return res_as_string_list
 
     def check_applications_with_inputs(  # noqa: C901 : too complex
-        self, inputs_conf, application_conf, epipolar_resolution
+        self, inputs_conf, application_conf
     ):
         """
         Check for each application the input and output configuration
@@ -797,8 +796,6 @@ class UnitPipeline(PipelineTemplate):
         :type inputs_conf: dict
         :param application_conf: application checked configuration
         :type application_conf: dict
-        :param epipolar_resolution: epipolar resolution
-        :type epipolar_resolution: int
         """
 
         initial_elevation = (
@@ -896,26 +893,6 @@ class UnitPipeline(PipelineTemplate):
                     values_classif_right,
                 )
             )
-
-        # Change the step regarding the resolution
-        # For the small resolution, the resampling perform better
-        # with a small step
-        # For the higher ones, a step at 30 should be better
-        first_image_path = next(iter(inputs_conf["sensors"].values()))["image"][
-            "bands"
-        ]["b0"]["path"]
-        first_image_size = rasterio_get_size(first_image_path)
-        size_low_res_img_row = first_image_size[0] // epipolar_resolution
-        size_low_res_img_col = first_image_size[1] // epipolar_resolution
-        if epipolar_resolution > 1:
-            if size_low_res_img_row <= 900 and size_low_res_img_col <= 900:
-                application_conf["grid_generation"]["epi_step"] = (
-                    epipolar_resolution * 5
-                )
-            else:
-                application_conf["grid_generation"]["epi_step"] = (
-                    epipolar_resolution * 30
-                )
 
         return application_conf
 
@@ -1177,59 +1154,51 @@ class UnitPipeline(PipelineTemplate):
             if self.quit_on_app("grid_generation"):
                 continue  # keep iterating over pairs, but don't go further
 
-            if dems in (
-                None,
-                {},
-            ) or self.which_resolution in ("single", "first"):
-                # Run resampling only if needed:
-                # no a priori
+            # Run resampling only if needed:
+            # no a priori
 
-                # Get required bands of first resampling
-                required_bands = self.sparse_mtch_app.get_required_bands()
+            # Get required bands of first resampling
+            required_bands = self.sparse_mtch_app.get_required_bands()
 
-                # Run first epipolar resampling
-                (
-                    self.pairs[pair_key]["epipolar_image_left"],
-                    self.pairs[pair_key]["epipolar_image_right"],
-                ) = self.resampling_application.run(
-                    self.pairs[pair_key]["sensor_image_left"],
-                    self.pairs[pair_key]["sensor_image_right"],
-                    self.pairs[pair_key]["grid_left"],
-                    self.pairs[pair_key]["grid_right"],
-                    geom_plugin,
-                    orchestrator=self.cars_orchestrator,
-                    pair_folder=os.path.join(
-                        self.dump_dir, "resampling", "initial", pair_key
-                    ),
-                    pair_key=pair_key,
-                    margins_fun=self.sparse_mtch_app.get_margins_fun(),
-                    tile_width=None,
-                    tile_height=None,
-                    required_bands=required_bands,
-                )
+            # Run first epipolar resampling
+            (
+                self.pairs[pair_key]["epipolar_image_left"],
+                self.pairs[pair_key]["epipolar_image_right"],
+            ) = self.resampling_application.run(
+                self.pairs[pair_key]["sensor_image_left"],
+                self.pairs[pair_key]["sensor_image_right"],
+                self.pairs[pair_key]["grid_left"],
+                self.pairs[pair_key]["grid_right"],
+                geom_plugin,
+                orchestrator=self.cars_orchestrator,
+                pair_folder=os.path.join(
+                    self.dump_dir, "resampling", "initial", pair_key
+                ),
+                pair_key=pair_key,
+                margins_fun=self.sparse_mtch_app.get_margins_fun(),
+                tile_width=None,
+                tile_height=None,
+                required_bands=required_bands,
+            )
 
-                if self.quit_on_app("resampling"):
-                    continue  # keep iterating over pairs, but don't go further
+            if self.quit_on_app("resampling"):
+                continue  # keep iterating over pairs, but don't go further
 
-            if dems in (
-                None,
-                {},
-            ) or self.which_resolution in ("single", "first"):
-                # Run epipolar sparse_matching application
-                (
-                    self.pairs[pair_key]["epipolar_matches_left"],
-                    _,
-                ) = self.sparse_mtch_app.run(
-                    self.pairs[pair_key]["epipolar_image_left"],
-                    self.pairs[pair_key]["epipolar_image_right"],
-                    self.pairs[pair_key]["grid_left"]["disp_to_alt_ratio"],
-                    orchestrator=self.cars_orchestrator,
-                    pair_folder=os.path.join(
-                        self.dump_dir, "sparse_matching", pair_key
-                    ),
-                    pair_key=pair_key,
-                    classif_bands_to_mask=self.used_classif_values_for_filling,
-                )
+            # Run epipolar sparse_matching application
+            (
+                self.pairs[pair_key]["epipolar_matches_left"],
+                _,
+            ) = self.sparse_mtch_app.run(
+                self.pairs[pair_key]["epipolar_image_left"],
+                self.pairs[pair_key]["epipolar_image_right"],
+                self.pairs[pair_key]["grid_left"]["disp_to_alt_ratio"],
+                orchestrator=self.cars_orchestrator,
+                pair_folder=os.path.join(
+                    self.dump_dir, "sparse_matching", pair_key
+                ),
+                pair_key=pair_key,
+                classif_bands_to_mask=self.used_classif_values_for_filling,
+            )
 
             # Run cluster breakpoint to compute sifts: force computation
             self.cars_orchestrator.breakpoint()
@@ -1237,127 +1206,124 @@ class UnitPipeline(PipelineTemplate):
             minimum_nb_matches = self.sparse_mtch_app.get_minimum_nb_matches()
 
             # Run grid correction application
-            if dems in (None, {}) or self.which_resolution in (
-                "single",
-                "first",
-            ):
-                # Estimate grid correction if no epipolar a priori
-                # Filter and save matches
-                self.pairs[pair_key]["matches_array"] = (
-                    self.sparse_mtch_app.filter_matches(
-                        self.pairs[pair_key]["epipolar_matches_left"],
-                        self.pairs[pair_key]["grid_left"],
-                        self.pairs[pair_key]["grid_right"],
-                        geom_plugin,
-                        orchestrator=self.cars_orchestrator,
-                        pair_key=pair_key,
-                        pair_folder=os.path.join(
-                            self.dump_dir, "sparse_matching", pair_key
-                        ),
-                        save_matches=(self.sparse_mtch_app.get_save_matches()),
-                    )
-                )
 
-                # Compute grid correction
-                (
-                    self.pairs[pair_key]["grid_correction_coef"],
-                    self.pairs[pair_key]["corrected_matches_array"],
-                    _,
-                    _,
-                ) = grid_correction_app.estimate_right_grid_correction(
-                    self.pairs[pair_key]["matches_array"],
+            # Estimate grid correction if no epipolar a priori
+            # Filter and save matches
+            self.pairs[pair_key]["matches_array"] = (
+                self.sparse_mtch_app.filter_matches(
+                    self.pairs[pair_key]["epipolar_matches_left"],
+                    self.pairs[pair_key]["grid_left"],
                     self.pairs[pair_key]["grid_right"],
-                    save_matches=save_matches,
-                    minimum_nb_matches=minimum_nb_matches,
-                    pair_folder=os.path.join(
-                        self.dump_dir, "grid_correction", "initial", pair_key
-                    ),
-                    pair_key=pair_key,
+                    geom_plugin,
                     orchestrator=self.cars_orchestrator,
+                    pair_key=pair_key,
+                    pair_folder=os.path.join(
+                        self.dump_dir, "sparse_matching", pair_key
+                    ),
+                    save_matches=(self.sparse_mtch_app.get_save_matches()),
                 )
-                # Correct grid right
-                self.pairs[pair_key]["corrected_grid_right"] = (
-                    grid_correction_app.correct_grid(
-                        self.pairs[pair_key]["grid_right"],
-                        self.pairs[pair_key]["grid_correction_coef"],
-                        os.path.join(
-                            self.dump_dir,
-                            "grid_correction",
-                            "initial",
-                            pair_key,
-                        ),
-                        save_corrected_grid,
-                    )
+            )
+
+            # Compute grid correction
+            (
+                self.pairs[pair_key]["grid_correction_coef"],
+                self.pairs[pair_key]["corrected_matches_array"],
+                _,
+                _,
+            ) = grid_correction_app.estimate_right_grid_correction(
+                self.pairs[pair_key]["matches_array"],
+                self.pairs[pair_key]["grid_right"],
+                save_matches=save_matches,
+                minimum_nb_matches=minimum_nb_matches,
+                pair_folder=os.path.join(
+                    self.dump_dir, "grid_correction", "initial", pair_key
+                ),
+                pair_key=pair_key,
+                orchestrator=self.cars_orchestrator,
+            )
+            # Correct grid right
+            self.pairs[pair_key]["corrected_grid_right"] = (
+                grid_correction_app.correct_grid(
+                    self.pairs[pair_key]["grid_right"],
+                    self.pairs[pair_key]["grid_correction_coef"],
+                    os.path.join(
+                        self.dump_dir,
+                        "grid_correction",
+                        "initial",
+                        pair_key,
+                    ),
+                    save_corrected_grid,
+                )
+            )
+
+            self.pairs[pair_key]["corrected_grid_left"] = self.pairs[pair_key][
+                "grid_left"
+            ]
+
+            if self.quit_on_app("sparse_matching"):
+                continue
+
+            # Shrink disparity intervals according to SIFT disparities
+            disp_to_alt_ratio = self.pairs[pair_key]["grid_left"][
+                "disp_to_alt_ratio"
+            ]
+            disp_bounds_params = (
+                self.sparse_mtch_app.disparity_bounds_estimation
+            )
+
+            if disp_bounds_params["activated"]:
+                matches = self.pairs[pair_key]["matches_array"]
+                sift_disp = matches[:, 2] - matches[:, 0]
+                disp_min = np.percentile(
+                    sift_disp, disp_bounds_params["percentile"]
+                )
+                disp_max = np.percentile(
+                    sift_disp, 100 - disp_bounds_params["percentile"]
+                )
+                logging.info(
+                    "Global disparity interval without margin : "
+                    f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
+                )
+                disp_min -= (
+                    disp_bounds_params["upper_margin"] / disp_to_alt_ratio
+                )
+                disp_max += (
+                    disp_bounds_params["lower_margin"] / disp_to_alt_ratio
+                )
+                logging.info(
+                    "Global disparity interval with margin : "
+                    f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
+                )
+            else:
+                disp_min = (
+                    -self.sparse_mtch_app.elevation_delta_upper_bound
+                    / disp_to_alt_ratio
+                )
+                disp_max = (
+                    -self.sparse_mtch_app.elevation_delta_lower_bound
+                    / disp_to_alt_ratio
+                )
+                logging.info(
+                    "Global disparity interval : "
+                    f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                 )
 
-                self.pairs[pair_key]["corrected_grid_left"] = self.pairs[
-                    pair_key
-                ]["grid_left"]
-
-                if self.quit_on_app("sparse_matching"):
-                    continue
-
-                # Shrink disparity intervals according to SIFT disparities
-                disp_to_alt_ratio = self.pairs[pair_key]["grid_left"][
-                    "disp_to_alt_ratio"
-                ]
-                disp_bounds_params = (
-                    self.sparse_mtch_app.disparity_bounds_estimation
+            if self.epsg is None:
+                # compute epsg
+                # Epsg uses global disparity min and max
+                self.epsg = preprocessing.compute_epsg(
+                    self.pairs[pair_key]["sensor_image_left"],
+                    self.pairs[pair_key]["sensor_image_right"],
+                    self.pairs[pair_key]["corrected_grid_left"],
+                    self.pairs[pair_key]["corrected_grid_right"],
+                    self.geom_plugin_with_dem_and_geoid,
+                    disp_min=0,
+                    disp_max=0,
                 )
-
-                if disp_bounds_params["activated"]:
-                    matches = self.pairs[pair_key]["matches_array"]
-                    sift_disp = matches[:, 2] - matches[:, 0]
-                    disp_min = np.percentile(
-                        sift_disp, disp_bounds_params["percentile"]
-                    )
-                    disp_max = np.percentile(
-                        sift_disp, 100 - disp_bounds_params["percentile"]
-                    )
-                    logging.info(
-                        "Global disparity interval without margin : "
-                        f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
-                    )
-                    disp_min -= (
-                        disp_bounds_params["upper_margin"] / disp_to_alt_ratio
-                    )
-                    disp_max += (
-                        disp_bounds_params["lower_margin"] / disp_to_alt_ratio
-                    )
-                    logging.info(
-                        "Global disparity interval with margin : "
-                        f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
-                    )
-                else:
-                    disp_min = (
-                        -self.sparse_mtch_app.elevation_delta_upper_bound
-                        / disp_to_alt_ratio
-                    )
-                    disp_max = (
-                        -self.sparse_mtch_app.elevation_delta_lower_bound
-                        / disp_to_alt_ratio
-                    )
-                    logging.info(
-                        "Global disparity interval : "
-                        f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
-                    )
-
-                if self.epsg is None:
-                    # compute epsg
-                    # Epsg uses global disparity min and max
-                    self.epsg = preprocessing.compute_epsg(
-                        self.pairs[pair_key]["sensor_image_left"],
-                        self.pairs[pair_key]["sensor_image_right"],
-                        self.pairs[pair_key]["corrected_grid_left"],
-                        self.pairs[pair_key]["corrected_grid_right"],
-                        self.geom_plugin_with_dem_and_geoid,
-                        disp_min=0,
-                        disp_max=0,
-                    )
-                    # Compute roi polygon, in input EPSG
-                    self.roi_poly = preprocessing.compute_roi_poly(
-                        self.input_roi_poly, self.input_roi_epsg, self.epsg
-                    )
+                # Compute roi polygon, in input EPSG
+                self.roi_poly = preprocessing.compute_roi_poly(
+                    self.input_roi_poly, self.input_roi_epsg, self.epsg
+                )
 
         # Clean grids at the end of processing if required. Note that this will
         # also clean refined grids
@@ -1392,107 +1358,17 @@ class UnitPipeline(PipelineTemplate):
             # Geometry plugin with dem will be used for the grid generation
             geom_plugin = self.geom_plugin_with_dem_and_geoid
 
-            if dems in (None, {}) and self.which_resolution != "single":
-                save_matches = True
-
-                (
-                    self.pairs[pair_key]["sensor_matches_left"],
-                    self.pairs[pair_key]["sensor_matches_right"],
-                ) = geom_plugin.get_sensor_matches(
-                    self.pairs[pair_key]["corrected_matches_array"],
-                    self.pairs[pair_key]["corrected_grid_left"],
-                    self.pairs[pair_key]["corrected_grid_right"],
-                    pair_folder=os.path.join(
-                        self.out_dir, "dsm/sensor_matches", pair_key
-                    ),
-                    save_matches=save_matches,
-                )
-            elif self.use_sift_a_priori and self.which_resolution != "single":
-                # Correct grids with former matches
-                # Transform matches to new grids
-
-                save_matches = self.sparse_mtch_app.get_save_matches()
-
-                self.sensor_matches_left = os.path.join(
-                    self.first_res_out_dir,
-                    "dsm/sensor_matches",
-                    pair_key,
-                    "sensor_matches_left.npy",
-                )
-                self.sensor_matches_right = os.path.join(
-                    self.first_res_out_dir,
-                    "dsm/sensor_matches",
-                    pair_key,
-                    "sensor_matches_right.npy",
-                )
-
-                self.pairs[pair_key]["sensor_matches_left"] = np.load(
-                    self.sensor_matches_left
-                )
-                self.pairs[pair_key]["sensor_matches_right"] = np.load(
-                    self.sensor_matches_right
-                )
-
-                new_grid_matches_array = (
-                    geom_plugin.transform_matches_from_grids(
-                        self.pairs[pair_key]["sensor_matches_left"],
-                        self.pairs[pair_key]["sensor_matches_right"],
-                        self.pairs[pair_key]["grid_left"],
-                        self.pairs[pair_key]["grid_right"],
-                    )
-                )
-
-                # Estimate grid_correction
-                (
-                    self.pairs[pair_key]["grid_correction_coef"],
-                    self.pairs[pair_key]["corrected_matches_array"],
-                    _,
-                    _,
-                ) = grid_correction_app.estimate_right_grid_correction(
-                    new_grid_matches_array,
-                    self.pairs[pair_key]["grid_right"],
-                    save_matches=save_matches,
-                    minimum_nb_matches=minimum_nb_matches,
-                    pair_folder=os.path.join(
-                        self.dump_dir, "grid_correction", "new", pair_key
-                    ),
-                    pair_key=pair_key,
-                    orchestrator=self.cars_orchestrator,
-                )
-
-                # Correct grid right
-
-                self.pairs[pair_key]["corrected_grid_right"] = (
-                    grid_correction_app.correct_grid(
-                        self.pairs[pair_key]["grid_right"],
-                        self.pairs[pair_key]["grid_correction_coef"],
-                        os.path.join(
-                            self.dump_dir,
-                            "grid_correction",
-                            "new",
-                            pair_key,
-                        ),
-                        save_corrected_grid,
-                    )
-                )
-
-                # Use the new grid as uncorrected grid
-                self.pairs[pair_key]["corrected_grid_left"] = self.pairs[
-                    pair_key
-                ]["grid_left"]
-
-            # Run epipolar resampling
-            self.pairs[pair_key]["corrected_grid_left"] = transform_grid_func(
-                self.pairs[pair_key]["corrected_grid_left"],
-                self.res_resamp,
+            # Update refined_conf configuration with epipolar a priori
+            advanced_parameters.update_conf(
+                self.refined_conf,
+                grid_correction_coef=self.pairs[pair_key][
+                    "grid_correction_coef"
+                ],
+                pair_key=pair_key,
+                reference_dem=self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
+                    sens_cst.DEM_PATH
+                ],
             )
-
-            self.pairs[pair_key]["corrected_grid_right"] = transform_grid_func(
-                self.pairs[pair_key]["corrected_grid_right"],
-                self.res_resamp,
-                right=True,
-            )
-
             # saved used configuration
             self.save_configurations()
 
@@ -1503,12 +1379,12 @@ class UnitPipeline(PipelineTemplate):
                 self.dump_dir, "dense_matching", pair_key
             )
 
-            if self.which_resolution in ("first", "single") and dems in (
-                None,
-                {},
-            ):
-                dmin = disp_min / self.res_resamp
-                dmax = disp_max / self.res_resamp
+            if self.which_resolution in ("first", "single") and self.used_conf[
+                ADVANCED
+            ][adv_cst.TERRAIN_A_PRIORI] in (None, {}):
+                dmin = disp_min
+                dmax = disp_max
+
                 # generate_disparity_grids runs orchestrator.breakpoint()
                 self.pairs[pair_key]["disp_range_grid"] = (
                     self.dense_matching_app.generate_disparity_grids(
@@ -1650,10 +1526,6 @@ class UnitPipeline(PipelineTemplate):
                 )
             )
 
-            # Quick fix to reduce memory usage
-            if self.res_resamp >= 16:
-                optimum_tile_size = 200
-
             # Run third epipolar resampling
             (
                 new_epipolar_image_left,
@@ -1674,11 +1546,9 @@ class UnitPipeline(PipelineTemplate):
                 tile_height=optimum_tile_size,
                 add_classif=True,
                 epipolar_roi=epipolar_roi,
-                resolution=self.res_resamp,
                 required_bands=required_bands,
                 texture_bands=self.texture_bands,
             )
-
             # Run ground truth dsm computation
             if self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM]:
                 self.used_conf["applications"]["ground_truth_reprojection"][

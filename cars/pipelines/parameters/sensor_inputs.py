@@ -384,9 +384,7 @@ def get_sensor_resolution(
     return (res_x + res_y) / 2
 
 
-def check_geometry_plugin(
-    conf_inputs, conf_geom_plugin, epipolar_resolution, output_dem_dir
-):
+def check_geometry_plugin(conf_inputs, conf_geom_plugin, output_dem_dir):
     """
     Check the geometry plugin with inputs
 
@@ -396,8 +394,6 @@ def check_geometry_plugin(
     :type conf_advanced: type
     :param conf_geom_plugin: name of geometry plugin
     :type conf_geom_plugin: str
-    :param epipolar_resolution: epipolar resolution
-    :type epipolar_resolution: int
     :return: overload inputs conf
              overloaded geometry plugin conf
              geometry plugin without dem
@@ -421,9 +417,8 @@ def check_geometry_plugin(
             sensor,
             geomodel,
         ) = temp_geom_plugin.check_product_consistency(sensor, geomodel)
-        average_sensor_resolution += (
-            get_sensor_resolution(temp_geom_plugin, sensor, geomodel)
-            * epipolar_resolution
+        average_sensor_resolution += get_sensor_resolution(
+            temp_geom_plugin, sensor, geomodel
         )
     average_sensor_resolution /= len(conf_inputs[sens_cst.SENSORS])
     # approximate resolution to the highest digit:

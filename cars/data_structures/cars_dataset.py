@@ -1134,7 +1134,10 @@ def save_dataset(
         new_profile["dtype"] = "float32"
 
     bands_description = None
-    if tag in (cst.EPI_CLASSIFICATION, cst.RASTER_CLASSIF, cst.DSM_CLASSIF):
+    if (
+        tag in (cst.EPI_CLASSIFICATION, cst.RASTER_CLASSIF, cst.DSM_CLASSIF)
+        and cst.BAND_CLASSIF in dataset.coords
+    ):
         bands_description = dataset.coords[cst.BAND_CLASSIF].values
     if tag in (cst.EPI_TEXTURE, cst.POINT_CLOUD_CLR_KEY_ROOT, cst.DSM_COLOR):
         bands_description = dataset.coords[cst.BAND_IM].values
