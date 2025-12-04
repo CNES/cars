@@ -433,14 +433,6 @@ class DefaultPipeline(PipelineTemplate):
             if not first_res:
                 dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
                 used_pipeline.used_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
-                if step != 1:
-                    dem_median = os.path.join(
-                        previous_out_dir,
-                        "dump_dir/dem_generation/dem_median.tif",
-                    )
-                    used_pipeline.used_conf[INPUT][
-                        sens_cst.INITIAL_ELEVATION
-                    ] = dem_median
             else:
                 previous_scaling_coeff = None
 
