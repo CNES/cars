@@ -68,9 +68,10 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
             pipeline_constants.INPUT: dict,
             pipeline_constants.OUTPUT: dict,
             OptionalKey(pipeline_constants.SUBSAMPLING): dict,
-            OptionalKey(pipeline_constants.APPLICATIONS): dict,
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
-            OptionalKey(pipeline_constants.ADVANCED): dict,
+            OptionalKey("tie_points"): dict,
+            OptionalKey("surface_modeling"): dict,
+            OptionalKey("merging"): dict,
         }
 
         checker_inputs = Checker(global_schema)

@@ -428,8 +428,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
                     nb_matches, self.get_minimum_nb_matches()
                 )
             )
-            logging.error(error_message_matches)
-            raise ValueError(error_message_matches)
+            logging.warning(error_message_matches)
 
         logging.info(
             "Number of matches kept for epipolar "
