@@ -18,9 +18,20 @@ variables:
     # Git variables
     # Limit git depth to speed up cloning
     GIT_DEPTH: 1
+    
+    DOCKERFILE: "Dockerfile"
+
+    CARS_IMAGE_NAME: "${CARS_DOCKER_REGISTRY}/cnes/cars"
+    CARS_DOCKERFILE: "${CI_PROJECT_DIR}/${DOCKERFILE}"
+
 
 include:
   # Sonarqube job
+  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-docker@1236-ajout-ci-docker
+    inputs:
+      init_stage: init
+      build_stage: build
+
   - project: "usinelogicielle/public/gitlab-ci-templates" # Inclut le stage de qualité sonarqube
     ref: v1.1.3 # référence de tag
     file: "jobs/sonarqube-gitlab-ci.yml"
@@ -68,11 +79,84 @@ include:
     # All dependencies should already be installed in the docker env
     - pip install --no-build-isolation --editable .[dev,docs,notebook]
 
+# job to test the build of cars Dockerfile
+docker-image-build:
+  extends:
+    - .podman-build
+  variables:
+    # docker generation
+    REGISTRY: "artifactory.cnes.fr/publicremotes-docker/"
+    ENV_IMAGE_NAME: ${CARS_IMAGE_NAME}
+    ENV_IMAGE_TAG: ${CI_COMMIT_REF_NAME}
+    ENV_DOCKERFILE: ${CARS_DOCKERFILE}
+
+    #todo move in cars-ci
+    CARS_URL: "https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.cnes.fr/dali/cars-park/cars"
+    DOCKER_BUILD_OPTIONS: "--build-arg REGISTRY=${REGISTRY} --build-arg CREDS_USERNAME=${CARS_CI_DOCKER_RO_TOKEN_USERNAME} --build-arg CREDS_TOKEN=${CARS_CI_DOCKER_RO_TOKEN_PASSWORD} --build-arg USE_CERTS=true  --build-arg GIT_BRANCH=${CI_COMMIT_REF_NAME} --build-arg CARS_URL=${CARS_URL}"
+
+
+# Quality step for docker image
+hadolint-cars-docker:
+  extends:
+    - .hadolint
+  needs:
+    - job : docker-image-build
+      artifacts: false
+  variables:
+    HADOLINT_CONFIG_FILE: ci/hadolint_RNC_A_B_C_D.yaml
+    ENV_DOCKERFILE: ${CARS_DOCKERFILE}
+  rules:
+    - changes:
+      - ${DOCKERFILE}
+
+
+# Small helper job that untar the data gizeh archive from the tutorial directory
+# and provide it to docker-image-test as artifacts
+prepare-docker-image-test:
+  stage: test 
+  # todo: maybe a lighter image, but this one has bzip2
+  image: ${UL_ARTIFACTORY_HOST}/${CARS_ENV_IMAGE_NAME}:${CARS_ENV_IMAGE_TAG}
+  script:
+    - tar -xjf tutorials/data_gizeh.tar.bz2
+  artifacts:
+    paths:
+      - ./data_gizeh
+    expire_in: 1 day
+
+# Job that test the image from cars Dockerfile on the Gizeh dataset
+# The job is written to be as close as possible to the docker tutorial in 
+# cars's README.md
+docker-image-test:
+  stage: test
+  needs:
+    - job: prepare-docker-image-test
+      artifacts: true
+    - job: docker-image-build
+      artifacts: false
+  image: 
+    name: ${UL_ARTIFACTORY_HOST}/${CARS_IMAGE_NAME}:${CI_COMMIT_REF_NAME}
+    entrypoint: [""]
+  script:
+    - cars data_gizeh/configfile.yaml
+  artifacts:
+    expose_as: "gizeh from docker image test"
+    paths:
+      - outresults/
+    expire_in: 1 day
+  variables:
+    # Set git strategy to none to prevent gitlab-ci from cloning cars source into
+    # the container
+    GIT_STRATEGY: none
 
 # run unit tests before other tasks (lint, quality, end2end ...) to catch early
 # errors
 unit-test:
   stage: test
+  needs:
+    # add an optional dependency to cars-dep-env-build, which might not exist in
+    # the pipeline
+    - job: cars-dep-env-build
+      optional: true
   extends:
     - .cars-python-job
   script:
@@ -114,8 +198,9 @@ test-end2end:
     - source /app/cars/venv/bin/activate
     - pytest --log-cli-level=21 --log-cli-format="%(asctime)s - %(levelname)s - %(message)s" --color=yes -m "end2end_tests"
   artifacts:
+    expose_as: "test end2end intermediate data"
     paths:
-      - tests/data/intermediate_data
+      - tests/data/intermediate_data/
     when: always
     expire_in: 1 day
   rules:
@@ -126,7 +211,6 @@ test-end2end:
        - "pyproject.toml"
 
     - if: '$CI_COMMIT_REF_NAME == "master"'
-
 
 
 # All lint tasks are performed in the same job to save up on job initialization
@@ -146,6 +230,7 @@ lint:
     expire_in: 1 day
 
 
+# Build cars documentation and push it as artifacts
 doc:
   stage: test
   needs:
@@ -156,12 +241,13 @@ doc:
     - CARS_VENV="/app/cars/venv" make docs
   artifacts:
     # Export documentation in artifact, it can be opened directly from gitlab
+    expose_as: "documentation"
     paths:
       - ./docs/build/html/
     expire_in: 1 day
 
 
-# Push git project from gitlab to github
+# Push git project from gitlab to github on master commits
 github-sync:
   extends:
     - .github-sync-base
@@ -169,3 +255,4 @@ github-sync:
   variables:
     BRANCH: "master"
     GITHUB_URL: github.com/CNES/cars.git
+
