@@ -28,14 +28,12 @@ import fileinput
 import subprocess
 import tempfile
 
-# Third party imports
-import pytest
-
 # CARS Tests imports
 from .helpers import cars_path, temporary_dir
 
+# Third party imports
 
-@pytest.mark.notebook_tests
+
 def test_sensor_to_dense_dsm_dsm_step_by_step():
     """
     Sensor to dense dsm step by step notebook test:
@@ -98,7 +96,6 @@ def test_sensor_to_dense_dsm_dsm_step_by_step():
         out.check_returncode()
 
 
-@pytest.mark.notebook_tests
 def test_sensor_to_dense_dsm_matching_methods_comparison():
     """
     sensor_to_dense_dsm_matching_methods_comparison notebook test:
