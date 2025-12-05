@@ -88,9 +88,7 @@ class SubsamplingPipeline(PipelineTemplate):
 
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
-        self.subsampling_dir = os.path.join(
-            os.path.dirname(self.out_dir), "subsampling"
-        )
+        self.subsampling_dir = os.path.join(self.out_dir, "subsampling")
 
         # Get epipolar resolutions to use
         self.epipolar_resolutions = (
@@ -118,10 +116,6 @@ class SubsamplingPipeline(PipelineTemplate):
 
         self.used_conf[APPLICATIONS] = self.check_applications(
             conf.get(APPLICATIONS, {})
-        )
-
-        self.intermediate_data_dir = os.path.join(
-            self.out_dir, "intermediate_data"
         )
 
     def check_inputs(self, conf, config_json_dir=None):
@@ -232,14 +226,14 @@ class SubsamplingPipeline(PipelineTemplate):
         """
         inputs = copy.deepcopy(self.used_conf[INPUT])
 
-        self.log_dir = os.path.join(self.out_dir, "logs")
+        self.log_dir = os.path.join(self.subsampling_dir, "logs")
 
         with orchestrator.Orchestrator(
             orchestrator_conf=self.used_conf[ORCHESTRATOR],
-            out_dir=self.out_dir,
+            out_dir=self.subsampling_dir,
             log_dir=self.log_dir,
             out_yaml_path=os.path.join(
-                self.out_dir,
+                self.subsampling_dir,
                 out_cst.INFO_FILENAME,
             ),
         ) as self.cars_orchestrator:

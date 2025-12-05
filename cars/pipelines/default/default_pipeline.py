@@ -152,7 +152,7 @@ class DefaultPipeline(PipelineTemplate):
         used_configurations = {}
         self.unit_pipelines = {}
         self.positions = {}
-        self.used_conf_before_subsampling = {}
+        self.used_conf = {}
 
         self.intermediate_data_dir = os.path.join(
             self.out_dir, "intermediate_data"
@@ -198,9 +198,7 @@ class DefaultPipeline(PipelineTemplate):
             if not isinstance(epipolar_res, int) or epipolar_res < 0:
                 raise RuntimeError("The resolution has to be an int > 0")
 
-            self.used_conf_before_subsampling[epipolar_resolution_index] = (
-                current_conf
-            )
+            self.used_conf[epipolar_resolution_index] = current_conf
 
             # Initialize unit pipeline in order to retrieve the
             # used configuration
@@ -337,6 +335,21 @@ class DefaultPipeline(PipelineTemplate):
                 f"been deleted"
             )
 
+    def construct_subsampling_conf(self):
+        """
+        Construct the right conf for subsampling
+        """
+        subsampling_conf = {}
+        subsampling_conf[INPUT] = copy.deepcopy(self.used_conf[0][INPUT])
+        subsampling_conf[OUTPUT] = {}
+        subsampling_conf[OUTPUT]["directory"] = self.intermediate_data_dir
+        subsampling_conf[ADVANCED] = {}
+        subsampling_conf[ADVANCED][
+            "epipolar_resolutions"
+        ] = self.epipolar_resolutions
+
+        return subsampling_conf
+
     @cars_profile(name="Run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
         """
@@ -355,19 +368,24 @@ class DefaultPipeline(PipelineTemplate):
         previous_out_dir = None
         updated_conf = {}
         step = 0
+
+        subsampling_conf = self.construct_subsampling_conf()
+
+        subsampling_pipeline = SubsamplingPipeline(
+            subsampling_conf, self.config_dir
+        )
+        subsampling_pipeline.run()
+
         for resolution_index, epipolar_res in enumerate(
             self.epipolar_resolutions
         ):
 
             # Get tested unit pipeline
-            current_conf = self.used_conf_before_subsampling[resolution_index]
+            current_conf = self.used_conf[resolution_index]
             current_out_dir = current_conf[OUTPUT]["directory"]
 
+            # Put right directory for subsampling
             if epipolar_res != 1:
-                subsampling_pipeline = SubsamplingPipeline(
-                    current_conf, self.config_dir
-                )
-                subsampling_pipeline.run()
                 yaml_file = os.path.join(
                     self.intermediate_data_dir,
                     "subsampling/res_" + str(epipolar_res) + "/input.yaml",
@@ -379,6 +397,9 @@ class DefaultPipeline(PipelineTemplate):
                 data = json.loads(json_str)
 
                 current_conf[INPUT] = data
+
+            # update directory for unit pipeline
+            current_conf[OUTPUT]["directory"] = current_out_dir
 
             used_pipeline = UnitPipeline(
                 current_conf, config_dir=self.config_dir

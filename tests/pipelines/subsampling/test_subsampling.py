@@ -74,9 +74,6 @@ def test_subsampling(resolution):
             },
         )
 
-        input_conf["output"]["directory"] = os.path.join(
-            input_conf["output"]["directory"], "test"
-        )
         input_conf["advanced"]["epipolar_resolutions"] = resolution
 
         dense_dsm_pipeline = subsampling.SubsamplingPipeline(
@@ -84,9 +81,7 @@ def test_subsampling(resolution):
         )
         dense_dsm_pipeline.run()
 
-        out_dir = os.path.dirname(
-            os.path.join(input_conf["output"]["directory"])
-        )
+        out_dir = os.path.join(input_conf["output"]["directory"])
 
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
