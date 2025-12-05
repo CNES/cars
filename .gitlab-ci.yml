@@ -27,14 +27,14 @@ variables:
 
 include:
   # Sonarqube job
-  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-docker@1236-ajout-ci-docker
+  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-docker@master
     inputs:
       init_stage: init
       build_stage: build
 
   - component: $CI_SERVER_FQDN/usinelogicielle/public/gitlab-ci-components/sonarqube-component/sonarqube@1.1.0 
   # Variable defintion
-  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-variables@1236-ajout-ci-docker
+  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-variables@master
   # Jobs for gitlab-github synchronisation
   - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-github@master
   # Docker building and image selection
