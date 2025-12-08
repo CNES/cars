@@ -42,7 +42,7 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import output_constants as out_cst
-from cars.pipelines.parameters import output_parameters
+from cars.pipelines.parameters import output_parameters, sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
@@ -53,7 +53,6 @@ from cars.pipelines.pipeline_constants import (
     OUTPUT,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.unit.unit_pipeline import UnitPipeline
 
 
 @Pipeline.register(
@@ -98,7 +97,7 @@ class SubsamplingPipeline(PipelineTemplate):
             self.epipolar_resolutions = [self.epipolar_resolutions]
 
         # Check input
-        conf[INPUT] = self.check_inputs(conf)
+        conf[INPUT] = self.check_inputs(conf[INPUT], config_json_dir=config_dir)
         # check advanced
         conf[ADVANCED] = self.check_advanced(conf)
         # check output
@@ -131,8 +130,8 @@ class SubsamplingPipeline(PipelineTemplate):
         :return: overloader inputs
         :rtype: dict
         """
-        return UnitPipeline.check_inputs(
-            conf[INPUT], config_dir=self.config_dir
+        return sensor_inputs.sensors_check_inputs(
+            conf, config_dir=config_json_dir
         )
 
     def check_output(self, conf):

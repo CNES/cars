@@ -45,7 +45,7 @@ from cars.applications.sensors_subsampling import (
     subsampling_algo,
 )
 from cars.core import constants as cst
-from cars.core import tiling
+from cars.core import inputs, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -125,7 +125,7 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
 
         overloaded_conf["overlap"] = conf.get("overlap", 2)
 
-        triangulation_schema = {
+        subsampling_schema = {
             "method": str,
             "tile_size": int,
             "save_intermediate_data": bool,
@@ -136,7 +136,7 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
         }
 
         # Check conf
-        checker = Checker(triangulation_schema)
+        checker = Checker(subsampling_schema)
         checker.validate(overloaded_conf)
 
         return overloaded_conf
@@ -217,10 +217,19 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
 
         paths_dictionary = {"im": image, "mask": mask, "classif": classif_path}
 
-        step = 0
-        for key in list(image_dict.keys())[1:]:
-            paths_dictionary["texture_" + str(step)] = key
-            step += 1
+        for step, key in enumerate(list(image_dict.keys())[1:]):
+            paths_dictionary[f"texture_{step}"] = key
+
+        for key, path in paths_dictionary.items():
+            paths_dictionary[key] = {"path": path}
+
+            paths_dictionary[key]["nodata"] = None
+            paths_dictionary[key]["dtype"] = None
+            if path is not None:
+                paths_dictionary[key]["nodata"] = inputs.rasterio_get_nodata(
+                    path
+                )
+                paths_dictionary[key]["dtype"] = inputs.rasterio_get_dtype(path)
 
         return paths_dictionary
 
@@ -295,18 +304,18 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
 
         # Save files
         safe_makedirs(os.path.join(out_directory, id_image))
-        for key, path in paths_dictionary.items():
+        for key, val in paths_dictionary.items():
+            path = val["path"]
+            dtype_val = val["dtype"]
+            nodata_val = val["nodata"]
+
             if key == "classif":
-                dtype = np.uint8
+                dtype = dtype_val
                 optional_data = True
-                nodata = 255
-            elif key == "mask":
-                dtype = np.uint8
-                nodata = 0
-                optional_data = False
+                nodata = nodata_val
             else:
-                dtype = "float32"
-                nodata = 0
+                dtype = dtype_val
+                nodata = nodata_val
                 optional_data = False
 
             if path is not None:
@@ -387,7 +396,8 @@ def generate_subsampled_images_wrapper(
     """
 
     global_dataset = None
-    for key, path in paths_dictionary.items():
+    for key, val in paths_dictionary.items():
+        path = val["path"]
         # Rectify images
         if path is not None:
             interpolator = "bilinear"
