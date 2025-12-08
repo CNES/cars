@@ -95,7 +95,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "img1_data_gizeh_res_" + str(res) + ".tif",
+                        "img1_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
             )
@@ -109,7 +109,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "img2_data_gizeh_res_" + str(res) + ".tif",
+                        "img2_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
             )
@@ -123,7 +123,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "color1_data_gizeh_res_" + str(res) + ".tif",
+                        "color1_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
             )
@@ -137,7 +137,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "classif1_data_gizeh_res_" + str(res) + ".tif",
+                        "classif1_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
             )
@@ -151,7 +151,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         intermediate_output_dir,
-                        "classif2_data_gizeh_res_" + str(res) + ".tif",
+                        "classif2_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
             )
@@ -165,7 +165,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "img1_data_gizeh_res_" + str(res) + ".tif",
+                        "img1_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
                 atol=0.0001,
@@ -181,7 +181,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "img2_data_gizeh_res_" + str(res) + ".tif",
+                        "img2_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
                 atol=0.0001,
@@ -197,7 +197,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "color1_data_gizeh_res_" + str(res) + ".tif",
+                        "color1_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
                 atol=0.0001,
@@ -213,7 +213,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "classif1_data_gizeh_res_" + str(res) + ".tif",
+                        "classif1_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
                 atol=0.0001,
@@ -229,7 +229,7 @@ def test_subsampling(resolution):
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
-                        "classif2_data_gizeh_res_" + str(res) + ".tif",
+                        "classif2_phr_ventoux_res_" + str(res) + ".tif",
                     )
                 ),
                 atol=0.0001,
