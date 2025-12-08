@@ -95,35 +95,262 @@ def test_pipeline_unphased_dsm():
     """
     End to end pipeline processing
     """
-    conf = {
-        "input": {
-            "dsms": {
-                "dsm1": {
-                    "dsm": absolute_data_path(
-                        "input/phr_gizeh/dsm1_unphased.tif"
-                    ),
-                    "weights": absolute_data_path(
-                        "input/phr_gizeh/weights1_unphased.tif"
-                    ),
-                },
-                "dsm2": {
-                    "dsm": absolute_data_path(
-                        "input/phr_gizeh/dsm2_unphased.tif"
-                    ),
-                    "weights": absolute_data_path(
-                        "input/phr_gizeh/weights2_unphased.tif"
-                    ),
-                },
-            }
-        },
-        "merging": {
-            "applications": {"dsm_merging": {"method": "weighted_fusion"}},
-            "advanced": {"save_intermediate_data": True},
-        },
-        "output": {"directory": "test_merging_pipeline_unphased_dsm"},
-    }
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "dsms": {
+                    "dsm1": {
+                        "dsm": absolute_data_path(
+                            "input/phr_gizeh/dsm1_unphased.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "input/phr_gizeh/weights1_unphased.tif"
+                        ),
+                    },
+                    "dsm2": {
+                        "dsm": absolute_data_path(
+                            "input/phr_gizeh/dsm2_unphased.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "input/phr_gizeh/weights2_unphased.tif"
+                        ),
+                    },
+                }
+            },
+            "merging": {
+                "applications": {"dsm_merging": {"method": "weighted_fusion"}},
+                "advanced": {"save_intermediate_data": True},
+            },
+            "output": {"directory": directory},
+        }
 
-    with pytest.raises(RuntimeError) as error:
-        _ = MergingPipeline(conf)
+        with pytest.raises(RuntimeError) as error:
+            _ = MergingPipeline(conf)
 
-    assert str(error.value) == "DSM dsm2 and dsm1 are not phased"
+        assert str(error.value) == "DSM dsm2 and dsm1 are not phased"
+
+
+@pytest.mark.end2end_tests
+def test_pipeline_auxiliary():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "dsms": {
+                    "dsm1": {
+                        "dsm": absolute_data_path(
+                            "input/phr_gizeh_small/dsm.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "input/phr_gizeh_small/weights.tif"
+                        ),
+                        "ambiguity": absolute_data_path(
+                            "input/phr_gizeh_small/ambiguity.tif"
+                        ),
+                        "classification": absolute_data_path(
+                            "input/phr_gizeh_small/classification.tif"
+                        ),
+                        "contributing_pair": absolute_data_path(
+                            "input/phr_gizeh_small/contributing_pair.tif"
+                        ),
+                        "filling": absolute_data_path(
+                            "input/phr_gizeh_small/filling.tif"
+                        ),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh_small/image.tif"
+                        ),
+                        "performance_map": absolute_data_path(
+                            "input/phr_gizeh_small/performance_map.tif"
+                        ),
+                    },
+                    "dsm2": {
+                        "dsm": absolute_data_path(
+                            "input/phr_gizeh_small/dsm.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "input/phr_gizeh_small/weights.tif"
+                        ),
+                        "ambiguity": absolute_data_path(
+                            "input/phr_gizeh_small/ambiguity.tif"
+                        ),
+                        "classification": absolute_data_path(
+                            "input/phr_gizeh_small/classification.tif"
+                        ),
+                        "contributing_pair": absolute_data_path(
+                            "input/phr_gizeh_small/contributing_pair.tif"
+                        ),
+                        "filling": absolute_data_path(
+                            "input/phr_gizeh_small/filling.tif"
+                        ),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh_small/image.tif"
+                        ),
+                        "performance_map": absolute_data_path(
+                            "input/phr_gizeh_small/performance_map.tif"
+                        ),
+                    },
+                }
+            },
+            "merging": {
+                "applications": {"dsm_merging": {"method": "weighted_fusion"}},
+                "advanced": {"save_intermediate_data": True},
+            },
+            "output": {
+                "directory": directory,
+                "auxiliary": {
+                    "ambiguity": True,
+                    "classification": True,
+                    "contributing_pair": True,
+                    "filling": True,
+                    "image": True,
+                    "performance_map": True,
+                },
+            },
+        }
+
+        out_dir = conf["output"]["directory"]
+        merging_pipeline = MergingPipeline(conf)
+        merging_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "ambiguity.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "ambiguity_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "classification_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "contributing_pair_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "filling_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "performance_map_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "dsm_test_pipeline_merging_auxiliary.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "ambiguity.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "ambiguity_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "classification_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "contributing_pair_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "filling_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "image_test_pipeline_merging_auxiliary.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "performance_map_test_pipeline_merging_auxiliary.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )

@@ -353,6 +353,7 @@ class MergingPipeline(PipelineTemplate):
                 os.path.join(
                     self.out_dir,
                     out_cst.DSM_DIRECTORY,
+                    "ambiguity.tif",
                 )
                 if ambiguity_bool
                 else None
