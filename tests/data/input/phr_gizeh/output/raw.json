@@ -1,0 +1,33 @@
+{
+  "inputs": {
+    "sensors": {
+      "one": {
+        "image": "/home/mroux/Code/cars/tests/data/input/phr_gizeh/img1.tif",
+        "geomodel": "/home/mroux/Code/cars/tests/data/input/phr_gizeh/img1.geom"
+      },
+      "two": {
+        "image": "/home/mroux/Code/cars/tests/data/input/phr_gizeh/img2.tif",
+        "geomodel": "/home/mroux/Code/cars/tests/data/input/phr_gizeh/img2.geom"
+      },
+      "three": {
+        "image": "/home/mroux/Code/cars/tests/data/input/phr_gizeh/img3.tif",
+        "geomodel": "/home/mroux/Code/cars/tests/data/input/phr_gizeh/img3.geom"
+      }
+    },
+    "pairing": [
+      [
+        "one",
+        "two"
+      ],
+      [
+        "one",
+        "three"
+      ]
+    ],
+    "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif"
+  },
+  "output": {
+    "directory": "/home/mroux/Code/cars/tests/data/input/phr_gizeh/output/raw"
+  },
+  "applications": {}
+}

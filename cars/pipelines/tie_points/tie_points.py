@@ -175,7 +175,6 @@ class TiePointsPipeline(PipelineTemplate):
         ) = sensor_inputs.check_geometry_plugin(
             inputs,
             conf.get(adv_cst.GEOMETRY_PLUGIN, None),
-            1,
             output_dem_dir,
         )
 

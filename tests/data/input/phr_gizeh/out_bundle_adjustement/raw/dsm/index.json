@@ -1,0 +1,10 @@
+{
+  "dsm": "dsm.tif",
+  "color": "color.tif",
+  "mask": null,
+  "classification": null,
+  "performance_map": null,
+  "contributing_pair": null,
+  "filling": null,
+  "weights": null
+}
