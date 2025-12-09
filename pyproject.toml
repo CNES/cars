@@ -83,7 +83,7 @@ dev = [
     "pytest-check",
     "pre-commit",
     "isort>=5.8.0",                   # Check imports
-    "black==25",                      # PEP8 format code
+    "black==25.*",                    # PEP8 format code
     "flake8>=3.9.1",                  # General linter
     "flake8-pyproject",               # Support configuration in pyproject.toml
     "flake8-comprehensions>=3.4.0",   # Check list/dict/set
