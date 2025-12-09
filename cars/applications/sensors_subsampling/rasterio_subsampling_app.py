@@ -32,7 +32,7 @@ import numpy as np
 import rasterio
 import xarray as xr
 from affine import Affine
-from json_checker import Checker
+from json_checker import And, Checker
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications.resampling import (
@@ -72,9 +72,6 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
 
         self.tile_size = self.used_config["tile_size"]
 
-        # Saving files
-        self.save_intermediate_data = self.used_config["save_intermediate_data"]
-
         self.interpolator_image = self.used_config["interpolator_image"]
         self.interpolator_classif = self.used_config["interpolator_classif"]
         self.interpolator_mask = self.used_config["interpolator_mask"]
@@ -108,11 +105,6 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
 
         overloaded_conf["tile_size"] = conf.get("tile_size", 10000)
 
-        # Saving files
-        overloaded_conf["save_intermediate_data"] = conf.get(
-            "save_intermediate_data", False
-        )
-
         overloaded_conf["interpolator_image"] = conf.get(
             "interpolator_image", "bilinear"
         )
@@ -128,11 +120,10 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
         subsampling_schema = {
             "method": str,
             "tile_size": int,
-            "save_intermediate_data": bool,
             "interpolator_image": str,
             "interpolator_mask": str,
             "interpolator_classif": str,
-            "overlap": int,
+            "overlap": And(int, lambda x: x > 0),
         }
 
         # Check conf

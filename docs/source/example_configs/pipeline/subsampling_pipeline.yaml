@@ -1,7 +1,7 @@
 subsampling:
   applications:
-    future_application:
-      method: fft
+    sensors_subsampling:
+      method: "rasterio"
 
   advanced:
     save_intermediate_data: true

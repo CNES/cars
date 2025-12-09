@@ -272,7 +272,7 @@ class DefaultPipeline(PipelineTemplate):
         Check the subsampling section
 
         :param conf: configuration of subsampling
-        type conf: dict
+        :type conf: dict
         """
 
         pipeline = SubsamplingPipeline(conf)
