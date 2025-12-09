@@ -67,6 +67,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         global_schema = {
             pipeline_constants.INPUT: dict,
             pipeline_constants.OUTPUT: dict,
+            pipeline_constants.SUBSAMPLING: dict,
             OptionalKey(pipeline_constants.APPLICATIONS): dict,
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
             OptionalKey(pipeline_constants.ADVANCED): dict,

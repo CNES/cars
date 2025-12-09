@@ -46,6 +46,7 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
@@ -140,6 +141,15 @@ class DefaultPipeline(PipelineTemplate):
         # check output
         conf[OUTPUT] = self.check_output(conf)
 
+        self.intermediate_data_dir = os.path.join(
+            self.out_dir, "intermediate_data"
+        )
+
+        self.subsampling_conf = self.construct_subsampling_conf(conf)
+        conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
+            self.subsampling_conf
+        )
+
         if dsm_cst.DSMS in conf[INPUT] and len(self.epipolar_resolutions) != 1:
             logging.info(
                 "For the use of those pipelines, "
@@ -153,10 +163,6 @@ class DefaultPipeline(PipelineTemplate):
         self.unit_pipelines = {}
         self.positions = {}
         self.used_conf = {}
-
-        self.intermediate_data_dir = os.path.join(
-            self.out_dir, "intermediate_data"
-        )
 
         self.keep_low_res_dir = conf[ADVANCED][adv_cst.KEEP_LOW_RES_DIR]
 
@@ -203,6 +209,7 @@ class DefaultPipeline(PipelineTemplate):
             # Initialize unit pipeline in order to retrieve the
             # used configuration
             # This pipeline will not be run
+            _ = current_conf.pop(pipeline_cst.SUBSAMPLING, None)
 
             current_unit_pipeline = UnitPipeline(
                 current_conf,
@@ -260,6 +267,23 @@ class DefaultPipeline(PipelineTemplate):
         )
         return conf_output
 
+    def check_subsampling(self, conf):
+        """
+        Check the subsampling section
+
+        :param conf: configuration of subsampling
+        type conf: dict
+        """
+
+        pipeline = SubsamplingPipeline(conf)
+        conf_subsampling = conf.get(pipeline_cst.SUBSAMPLING, {})
+        advanced = pipeline.check_advanced(conf_subsampling.get(ADVANCED, {}))
+        applications = pipeline.check_applications(
+            conf_subsampling.get(APPLICATIONS, {})
+        )
+
+        return {"advanced": advanced, "applications": applications}
+
     def check_advanced(self, conf):
         """
         Check all conf for advanced configuration
@@ -273,6 +297,7 @@ class DefaultPipeline(PipelineTemplate):
                 conf.get(ADVANCED, {}),
             )
         )
+
         return advanced
 
     def check_applications(self, conf):
@@ -335,18 +360,21 @@ class DefaultPipeline(PipelineTemplate):
                 f"been deleted"
             )
 
-    def construct_subsampling_conf(self):
+    def construct_subsampling_conf(self, conf):
         """
         Construct the right conf for subsampling
         """
         subsampling_conf = {}
-        subsampling_conf[INPUT] = copy.deepcopy(self.used_conf[0][INPUT])
+        subsampling_conf[INPUT] = copy.deepcopy(conf[INPUT])
         subsampling_conf[OUTPUT] = {}
         subsampling_conf[OUTPUT]["directory"] = self.intermediate_data_dir
-        subsampling_conf[ADVANCED] = {}
-        subsampling_conf[ADVANCED][
-            "epipolar_resolutions"
-        ] = self.epipolar_resolutions
+
+        subsampling_conf[pipeline_cst.ADVANCED] = conf.get(
+            pipeline_cst.SUBSAMPLING, {}
+        ).get(ADVANCED, {})
+        subsampling_conf[pipeline_cst.APPLICATIONS] = conf.get(
+            pipeline_cst.SUBSAMPLING, {}
+        ).get(APPLICATIONS, {})
 
         return subsampling_conf
 
@@ -369,10 +397,8 @@ class DefaultPipeline(PipelineTemplate):
         updated_conf = {}
         step = 0
 
-        subsampling_conf = self.construct_subsampling_conf()
-
         subsampling_pipeline = SubsamplingPipeline(
-            subsampling_conf, self.config_dir
+            self.subsampling_conf, self.config_dir
         )
         subsampling_pipeline.run()
 

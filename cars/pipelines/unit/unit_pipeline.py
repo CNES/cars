@@ -39,6 +39,7 @@ from collections import OrderedDict
 
 import numpy as np
 import rasterio
+from json_checker import Checker, OptionalKey
 from pyproj import CRS
 from rasterio.errors import NodataShadowWarning
 
@@ -64,6 +65,7 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import application_parameters, dsm_inputs
@@ -263,6 +265,23 @@ class UnitPipeline(PipelineTemplate):
         self.used_conf[APPLICATIONS] = application_conf
 
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+
+    def check_global_schema(self, conf):
+        """
+        Check the global conf
+        """
+
+        # Validate inputs
+        global_schema = {
+            pipeline_cst.INPUT: dict,
+            pipeline_cst.OUTPUT: dict,
+            OptionalKey(pipeline_cst.APPLICATIONS): dict,
+            OptionalKey(pipeline_cst.ORCHESTRATOR): dict,
+            OptionalKey(pipeline_cst.ADVANCED): dict,
+        }
+
+        checker_inputs = Checker(global_schema)
+        checker_inputs.validate(conf)
 
     def quit_on_app(self, app_name):
         """

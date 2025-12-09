@@ -31,16 +31,20 @@ CARS subsampling pipeline class file
 from __future__ import print_function
 
 import copy
+import logging
 import os
 from pathlib import Path
 
 import yaml
+from json_checker import Checker, OptionalKey, Or
 
 from cars.applications.application import Application
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.parameters import advanced_parameters
+from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters, sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -99,7 +103,7 @@ class SubsamplingPipeline(PipelineTemplate):
         # Check input
         conf[INPUT] = self.check_inputs(conf[INPUT], config_json_dir=config_dir)
         # check advanced
-        conf[ADVANCED] = self.check_advanced(conf)
+        conf[ADVANCED] = self.check_advanced(conf.get(ADVANCED, {}))
         # check output
         conf[OUTPUT] = self.check_output(conf)
 
@@ -116,6 +120,23 @@ class SubsamplingPipeline(PipelineTemplate):
         self.used_conf[APPLICATIONS] = self.check_applications(
             conf.get(APPLICATIONS, {})
         )
+
+    def check_global_schema(self, conf):
+        """
+        Check the global conf
+        """
+
+        # Validate inputs
+        global_schema = {
+            pipeline_cst.INPUT: dict,
+            pipeline_cst.OUTPUT: dict,
+            OptionalKey(pipeline_cst.APPLICATIONS): dict,
+            OptionalKey(pipeline_cst.ORCHESTRATOR): dict,
+            OptionalKey(pipeline_cst.ADVANCED): dict,
+        }
+
+        checker_inputs = Checker(global_schema)
+        checker_inputs.validate(conf)
 
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -156,13 +177,27 @@ class SubsamplingPipeline(PipelineTemplate):
         :return: overridden advanced conf
         :rtype: dict
         """
-        (_, advanced, _, _, _, _, _, _) = (
-            advanced_parameters.check_advanced_parameters(
-                conf[INPUT],
-                conf.get(ADVANCED, {}),
-            )
+        conf_advanced = conf.get(ADVANCED, {})
+
+        overloaded_conf = conf_advanced.copy()
+
+        overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
+            adv_cst.SAVE_INTERMEDIATE_DATA, False
         )
-        return advanced
+
+        overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS] = conf.get(
+            adv_cst.EPIPOLAR_RESOLUTIONS, [16, 4, 1]
+        )
+
+        schema = {
+            adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
+            adv_cst.EPIPOLAR_RESOLUTIONS: Or(int, list),
+        }
+
+        checker_advanced_parameters = Checker(schema)
+        checker_advanced_parameters.validate(overloaded_conf)
+
+        return overloaded_conf
 
     def check_applications(self, conf):
         """
@@ -171,6 +206,20 @@ class SubsamplingPipeline(PipelineTemplate):
         :param conf: configuration of applications
         :type conf: dict
         """
+
+        needed_applications = ["sensors_subsampling"]
+
+        # Check if all specified applications are used
+        # Application in terrain_application are note used in
+        # the sensors_to_dense_depth_maps pipeline
+        for app_key in conf.keys():
+            if app_key not in needed_applications:
+                msg = (
+                    f"No {app_key} application used in the "
+                    + "default Cars pipeline"
+                )
+                logging.error(msg)
+                raise NameError(msg)
 
         used_conf = {}
 
