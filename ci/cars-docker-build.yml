@@ -4,25 +4,18 @@ spec:
 ---
 
 variables:
-  # CARS environment image configuration
-  DOCKERFILE: "ci/cars-deps-env/Dockerfile"
   CARS_ENV_IMAGE_NAME: "${CARS_DOCKER_REGISTRY}/cars-deps-env"
-  #CARS_ENV_IMAGE_TAG: "latest"
-  CARS_ENV_DOCKERFILE: "${CI_PROJECT_DIR}/${DOCKERFILE}"
   CARS_ENV_IMAGE_TAG: "$[[ inputs.tag ]]"
-
-# Jobs building cars-deps-env docker image
-include:
-  - component: $CI_SERVER_FQDN/dali/cars-park/cars-ci/cars-ci-docker@master
-    inputs:
-      init_stage: init
-      build_stage: build
 
 # Build cars env
 cars-dep-env-build:
   extends:
-    - .kaniko_build
+    - .podman-build
   variables:
+    # CARS environment image configuration
+    DOCKERFILE: "ci/cars-deps-env/Dockerfile"
+    #CARS_ENV_IMAGE_TAG: "latest"
+    CARS_ENV_DOCKERFILE: "${CI_PROJECT_DIR}/${DOCKERFILE}"
     # docker generation
     ENV_IMAGE_NAME: "${CARS_ENV_IMAGE_NAME}"
     ENV_IMAGE_TAG: "${CARS_ENV_IMAGE_TAG}"
@@ -30,8 +23,14 @@ cars-dep-env-build:
     DOCKER_BUILD_OPTIONS: "--build-arg PIP_INDEX_URL=${PIP_INDEX_URL} --build-arg BASE_IMAGE=${PYTHON_IMAGE}"
 
 # Set variables for templated hadolint build
-hadolint:
+hadolint_dep-env:
+  extends:
+    - .hadolint
   variables:
+    # CARS environment image configuration
+    DOCKERFILE: "ci/cars-deps-env/Dockerfile"
+    #CARS_ENV_IMAGE_TAG: "latest"
+    CARS_ENV_DOCKERFILE: "${CI_PROJECT_DIR}/${DOCKERFILE}"
     HADOLINT_CONFIG_FILE: ci/hadolint_RNC_A_B_C_D.yaml
-    ENV_DOCKERFILE: "${CARS_ENV_DOCKERFILE}"
+    ENV_DOCKERFILE: "${CI_PROJECT_DIR}/${DOCKERFILE}"
   allow_failure: true
