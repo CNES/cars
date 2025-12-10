@@ -101,7 +101,6 @@ def test_low_res_dsm_args():
             "sequential",
         )
         args.conf = filled_absolute_path_input
-        conf_["advanced"]["epipolar_resolutions"] = 1
 
         with open(filled_absolute_path_input, "w", encoding="utf8") as fstream:
             json.dump(conf_, fstream, indent=2)
@@ -136,7 +135,6 @@ def test_full_res_dsm_args():
             "sequential",
         )
         args.conf = filled_absolute_path_input
-        conf_["advanced"]["epipolar_resolutions"] = 1
 
         with open(filled_absolute_path_input, "w", encoding="utf8") as fstream:
             json.dump(conf_, fstream, indent=2)
