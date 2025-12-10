@@ -30,6 +30,7 @@ from json_checker import Checker, OptionalKey
 # CARS imports
 from cars.orchestrator import orchestrator
 from cars.pipelines import pipeline_constants
+from cars.pipelines.pipeline import Pipeline
 
 # Disable pylint error: too few public method
 
@@ -67,12 +68,11 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         global_schema = {
             pipeline_constants.INPUT: dict,
             pipeline_constants.OUTPUT: dict,
-            OptionalKey(pipeline_constants.SUBSAMPLING): dict,
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
-            OptionalKey("tie_points"): dict,
-            OptionalKey("surface_modeling"): dict,
-            OptionalKey("merging"): dict,
         }
+
+        for pipeline_name in Pipeline.available_pipeline:
+            global_schema = global_schema | {OptionalKey(pipeline_name): dict}
 
         checker_inputs = Checker(global_schema)
         checker_inputs.validate(conf)

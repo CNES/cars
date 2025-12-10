@@ -42,9 +42,11 @@ from cars.pipelines.pipeline_constants import (
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 
+PIPELINE = "tie_points"
+
 
 @Pipeline.register(
-    "tie_points",
+    PIPELINE,
 )
 class TiePointsPipeline(PipelineTemplate):
     """
@@ -90,7 +92,8 @@ class TiePointsPipeline(PipelineTemplate):
             conf[OUTPUT][out_cst.OUT_DIRECTORY], "dump_dir", "initial_elevation"
         )
         safe_makedirs(output_dem_dir)
-        pipeline_conf = conf.get("tie_points", {})
+        pipeline_conf = conf.get(PIPELINE, {})
+        self.used_conf[PIPELINE] = {}
         (
             inputs,
             advanced,
@@ -102,7 +105,7 @@ class TiePointsPipeline(PipelineTemplate):
             pipeline_conf.get(ADVANCED, {}),
             output_dem_dir=output_dem_dir,
         )
-        self.used_conf[ADVANCED] = advanced
+        self.used_conf[PIPELINE][ADVANCED] = advanced
 
         # Check conf output
         output = self.check_output(conf[OUTPUT])
@@ -111,7 +114,7 @@ class TiePointsPipeline(PipelineTemplate):
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
         self.dump_dir = os.path.join(self.out_dir, "dump_dir")
 
-        self.save_all_intermediate_data = self.used_conf[ADVANCED][
+        self.save_all_intermediate_data = self.used_conf[PIPELINE][ADVANCED][
             adv_cst.SAVE_INTERMEDIATE_DATA
         ]
 
@@ -120,7 +123,7 @@ class TiePointsPipeline(PipelineTemplate):
             pipeline_conf.get(APPLICATIONS, {})
         )
 
-        self.used_conf[APPLICATIONS] = application_conf
+        self.used_conf[PIPELINE][APPLICATIONS] = application_conf
 
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
@@ -138,11 +141,44 @@ class TiePointsPipeline(PipelineTemplate):
         :return: overloaded inputs
         :rtype: dict
         """
+        return sensor_inputs.sensors_check_inputs(conf, config_dir=config_dir)
 
-        input_config = sensor_inputs.sensors_check_inputs(
-            conf, config_dir=config_dir
+    def check_applications_with_inputs(  # noqa: C901 : too complex
+        self, inputs_conf, application_conf
+    ):
+        """
+        Check for each application the input and output configuration
+        consistency
+
+        :param inputs_conf: inputs checked configuration
+        :type inputs_conf: dict
+        :param application_conf: application checked configuration
+        :type application_conf: dict
+        """
+        initial_elevation = (
+            inputs_conf[sens_cst.INITIAL_ELEVATION]["dem"] is not None
         )
-        return input_config
+        if self.sparse_matching_app.elevation_delta_lower_bound is None:
+            self.sparse_matching_app.used_config[
+                "elevation_delta_lower_bound"
+            ] = (-500 if initial_elevation else -1000)
+            self.sparse_matching_app.elevation_delta_lower_bound = (
+                self.sparse_matching_app.used_config[
+                    "elevation_delta_lower_bound"
+                ]
+            )
+        if self.sparse_matching_app.elevation_delta_upper_bound is None:
+            self.sparse_matching_app.used_config[
+                "elevation_delta_upper_bound"
+            ] = (1000 if initial_elevation else 9000)
+            self.sparse_matching_app.elevation_delta_upper_bound = (
+                self.sparse_matching_app.used_config[
+                    "elevation_delta_upper_bound"
+                ]
+            )
+        application_conf["sparse_matching"] = (
+            self.sparse_matching_app.get_conf()
+        )
 
     @staticmethod
     def check_advanced_parameters(inputs, conf, output_dem_dir=None):
@@ -272,7 +308,7 @@ class TiePointsPipeline(PipelineTemplate):
 
         return used_conf
 
-    def run(self, log_dir=None):
+    def run(self, log_dir=None, disp_range_grid=None):
         """
         Run pipeline
 
@@ -281,15 +317,14 @@ class TiePointsPipeline(PipelineTemplate):
             log_dir = os.path.join(self.out_dir, "logs")
 
         # Load geomodels directly on conf object
+        sensor_inputs.load_geomodels(
+            self.used_conf[INPUT], self.geom_plugin_without_dem_and_geoid
+        )
         (
             pair_key,
             sensor_image_left,
             sensor_image_right,
-        ) = sensor_inputs.generate_inputs(
-            self.used_conf[INPUT], self.geom_plugin_without_dem_and_geoid
-        )[
-            0
-        ]
+        ) = sensor_inputs.generate_pairs(self.used_conf[INPUT])[0]
 
         with orchestrator.Orchestrator(
             orchestrator_conf=self.used_conf[ORCHESTRATOR],
@@ -305,12 +340,7 @@ class TiePointsPipeline(PipelineTemplate):
 
             # Run grid generation
             # We generate grids with dem if it is provided.
-            if (
-                self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][
-                    sens_cst.DEM_PATH
-                ]
-                is None
-            ):
+            if self.geom_plugin_with_dem_and_geoid.dem is None:
                 geom_plugin = self.geom_plugin_without_dem_and_geoid
             else:
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
@@ -354,6 +384,17 @@ class TiePointsPipeline(PipelineTemplate):
                 tile_height=None,
                 required_bands=required_bands,
             )
+
+            if disp_range_grid is not None:
+                disp_min = disp_range_grid["global_min"]
+                disp_max = disp_range_grid["global_max"]
+                disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
+                self.sparse_matching_app.elevation_delta_lower_bound = (
+                    -disp_max * disp_to_alt_ratio
+                )
+                self.sparse_matching_app.elevation_delta_upper_bound = (
+                    -disp_min * disp_to_alt_ratio
+                )
 
             # Compute sparse matching
             (

@@ -63,7 +63,9 @@ from cars.pipelines.pipeline_constants import (
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.subsampling.subsampling import SubsamplingPipeline
-from cars.pipelines.unit.unit_pipeline import UnitPipeline
+from cars.pipelines.surface_modeling.surface_modeling import (
+    SurfaceModelingPipeline,
+)
 
 package_path = os.path.dirname(__file__)
 FIRST_RES = "first_resolution"
@@ -168,9 +170,6 @@ class DefaultPipeline(PipelineTemplate):
 
         self.keep_low_res_dir = conf[ADVANCED][adv_cst.KEEP_LOW_RES_DIR]
 
-        # Get first res outdir for sift matches
-        self.first_res_out_dir_with_sensors = None
-
         subsampling_used_conf = conf[pipeline_cst.SUBSAMPLING]
 
         for epipolar_resolution_index, epipolar_res in enumerate(
@@ -200,9 +199,6 @@ class DefaultPipeline(PipelineTemplate):
             )
 
             if first_res:
-                self.first_res_out_dir_with_sensors = current_conf[OUTPUT][
-                    "directory"
-                ]
                 previous_scaling_coeff = None
 
             if not isinstance(epipolar_res, int) or epipolar_res < 0:
@@ -215,7 +211,7 @@ class DefaultPipeline(PipelineTemplate):
             # This pipeline will not be run
             _ = current_conf.pop(pipeline_cst.SUBSAMPLING, None)
 
-            current_unit_pipeline = UnitPipeline(
+            current_unit_pipeline = SurfaceModelingPipeline(
                 current_conf,
                 config_dir=self.config_dir,
                 previous_scaling_coeff=previous_scaling_coeff,
@@ -254,7 +250,7 @@ class DefaultPipeline(PipelineTemplate):
         :return: overloader inputs
         :rtype: dict
         """
-        return UnitPipeline.check_inputs(
+        return SurfaceModelingPipeline.check_inputs(
             conf[INPUT], config_dir=self.config_dir
         )
 
@@ -431,10 +427,8 @@ class DefaultPipeline(PipelineTemplate):
             # update directory for unit pipeline
             current_conf[OUTPUT]["directory"] = current_out_dir
 
-            used_pipeline = UnitPipeline(
-                current_conf,
-                config_dir=self.config_dir,
-                previous_scaling_coeff=previous_scaling_coeff,
+            used_pipeline = SurfaceModelingPipeline(
+                current_conf, config_dir=self.config_dir
             )
 
             # get position
@@ -462,11 +456,6 @@ class DefaultPipeline(PipelineTemplate):
                 "Starting pipeline for resolution 1/" + str(epipolar_res)
             )
 
-            # use sift a priori if not first
-            use_sift_a_priori = False
-            if not first_res:
-                use_sift_a_priori = True
-
             # define wich resolution
             if first_res and last_res:
                 which_resolution = "single"
@@ -487,7 +476,7 @@ class DefaultPipeline(PipelineTemplate):
                 dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
                 used_pipeline.used_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
 
-            updated_pipeline = UnitPipeline(
+            updated_pipeline = SurfaceModelingPipeline(
                 used_pipeline.used_conf,
                 config_dir=self.config_dir,
                 previous_scaling_coeff=previous_scaling_coeff,
@@ -495,8 +484,6 @@ class DefaultPipeline(PipelineTemplate):
             updated_pipeline.run(
                 generate_dems=generate_dems,
                 which_resolution=which_resolution,
-                use_sift_a_priori=use_sift_a_priori,
-                first_res_out_dir=self.first_res_out_dir_with_sensors,
                 log_dir=current_log_dir,
             )
 

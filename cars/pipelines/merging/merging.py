@@ -46,9 +46,11 @@ from cars.pipelines.pipeline_constants import (
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 
+PIPELINE = "merging"
+
 
 @Pipeline.register(
-    "merging",
+    PIPELINE,
 )
 class MergingPipeline(PipelineTemplate):
     """
@@ -90,7 +92,7 @@ class MergingPipeline(PipelineTemplate):
         self.used_conf[INPUT] = inputs
 
         # Check advanced parameters
-        pipeline_conf = conf.get("merging", {})
+        pipeline_conf = conf.get(PIPELINE, {})
         advanced = self.check_advanced_parameters(
             pipeline_conf.get(ADVANCED, {})
         )

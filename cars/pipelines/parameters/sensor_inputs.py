@@ -805,8 +805,23 @@ def check_all_nbits_equal_one(nbits):
     return False
 
 
-@cars_profile(name="Generate inputs")
-def generate_inputs(conf, geometry_plugin):
+@cars_profile(name="Load geomodels")
+def load_geomodels(conf, geometry_plugin):
+    """
+    Load geomodels directly on conf object
+    :param conf: input conf
+    :type conf: dict
+    """
+    # Load geomodels directly on conf object
+    sensors = conf[sens_cst.SENSORS]
+    for key in sensors:
+        geomodel = sensors[key][sens_cst.INPUT_GEO_MODEL]
+        loaded_geomodel = geometry_plugin.load_geomodel(geomodel)
+        sensors[key][sens_cst.INPUT_GEO_MODEL] = loaded_geomodel
+
+
+@cars_profile(name="Generate pairs")
+def generate_pairs(conf):
     """
     Generate sensors inputs form inputs conf :
 
@@ -817,15 +832,7 @@ def generate_inputs(conf, geometry_plugin):
 
     :return: list of sensors pairs
     :rtype: list(tuple(dict, dict))
-
     """
-    # Load geomodels directly on conf object
-    sensors = conf[sens_cst.SENSORS]
-    for key in sensors:
-        geomodel = sensors[key][sens_cst.INPUT_GEO_MODEL]
-        loaded_geomodel = geometry_plugin.load_geomodel(geomodel)
-        sensors[key][sens_cst.INPUT_GEO_MODEL] = loaded_geomodel
-
     # Get needed pairs
     pairs = conf[sens_cst.PAIRING]
 
