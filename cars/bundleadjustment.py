@@ -595,8 +595,12 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
     ]
     sparse_matching_config["output"]["directory"] = sparse_matching
     sparse_matching_config["output"]["product_level"] = []
-    sparse_matching_config["advanced"] = {}
-    sparse_matching_config["advanced"]["epipolar_resolutions"] = [1]
+
+    sparse_matching_config["subsampling"] = {}
+    sparse_matching_config["subsampling"]["advanced"] = {}
+    sparse_matching_config["subsampling"]["advanced"][
+        "epipolar_resolutions"
+    ] = [1]
     if "sparse_matching" not in sparse_matching_config["applications"]:
         sparse_matching_config["applications"]["all"] = {"sparse_matching": {}}
     sparse_matching_config["applications"]["all"]["sparse_matching"][
