@@ -171,6 +171,8 @@ class DefaultPipeline(PipelineTemplate):
         # Get first res outdir for sift matches
         self.first_res_out_dir_with_sensors = None
 
+        subsampling_used_conf = conf[pipeline_cst.SUBSAMPLING]
+
         for epipolar_resolution_index, epipolar_res in enumerate(
             self.epipolar_resolutions
         ):
@@ -231,6 +233,8 @@ class DefaultPipeline(PipelineTemplate):
         full_used_conf = merge_used_conf(
             used_configurations, self.epipolar_resolutions
         )
+
+        full_used_conf[pipeline_cst.SUBSAMPLING] = subsampling_used_conf
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,
