@@ -1407,7 +1407,7 @@ class UnitPipeline(PipelineTemplate):
                         self.geom_plugin_with_dem_and_geoid,
                         dem_min=dem_min,
                         dem_max=dem_max,
-                        dem_median=dem_median,
+                        dem_median=inputs[sens_cst.INITIAL_ELEVATION]["dem"],
                         pair_folder=dense_matching_pair_folder,
                         orchestrator=self.cars_orchestrator,
                     )

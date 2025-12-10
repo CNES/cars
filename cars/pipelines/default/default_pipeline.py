@@ -127,7 +127,7 @@ class DefaultPipeline(PipelineTemplate):
         # Get epipolar resolutions to use
         self.epipolar_resolutions = (
             advanced_parameters.get_epipolar_resolutions(
-                conf.get(pipeline_cst.SUBSAMPLING).get(ADVANCED, {})
+                conf.get(pipeline_cst.SUBSAMPLING, {}).get(ADVANCED, {})
             )
         )
         if isinstance(self.epipolar_resolutions, int):
