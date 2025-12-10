@@ -231,24 +231,6 @@ class UnitPipeline(PipelineTemplate):
             adv_cst.SAVE_INTERMEDIATE_DATA
         ]
 
-        if isinstance(
-            self.used_conf[ADVANCED][adv_cst.EPIPOLAR_RESOLUTIONS], list
-        ):
-            if len(self.used_conf[ADVANCED][adv_cst.EPIPOLAR_RESOLUTIONS]) > 1:
-                raise RuntimeError(
-                    "For the unit pipeline, "
-                    "the epipolar resolution has to "
-                    "be a single value"
-                )
-
-            self.res_resamp = self.used_conf[ADVANCED][
-                adv_cst.EPIPOLAR_RESOLUTIONS
-            ][0]
-        else:
-            self.res_resamp = self.used_conf[ADVANCED][
-                adv_cst.EPIPOLAR_RESOLUTIONS
-            ]
-
         self.save_all_point_clouds_by_pair = self.used_conf[OUTPUT].get(
             out_cst.SAVE_BY_PAIR, False
         )

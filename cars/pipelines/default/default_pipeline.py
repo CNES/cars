@@ -126,7 +126,9 @@ class DefaultPipeline(PipelineTemplate):
 
         # Get epipolar resolutions to use
         self.epipolar_resolutions = (
-            advanced_parameters.get_epipolar_resolutions(conf.get(ADVANCED, {}))
+            advanced_parameters.get_epipolar_resolutions(
+                conf.get(pipeline_cst.SUBSAMPLING).get(ADVANCED, {})
+            )
         )
         if isinstance(self.epipolar_resolutions, int):
             self.epipolar_resolutions = [self.epipolar_resolutions]
@@ -276,11 +278,8 @@ class DefaultPipeline(PipelineTemplate):
         """
 
         pipeline = SubsamplingPipeline(conf)
-        conf_subsampling = conf.get(pipeline_cst.SUBSAMPLING, {})
-        advanced = pipeline.check_advanced(conf_subsampling.get(ADVANCED, {}))
-        applications = pipeline.check_applications(
-            conf_subsampling.get(APPLICATIONS, {})
-        )
+        advanced = pipeline.check_advanced(conf.get(ADVANCED, {}))
+        applications = pipeline.check_applications(conf.get(APPLICATIONS, {}))
 
         return {"advanced": advanced, "applications": applications}
 
@@ -402,6 +401,7 @@ class DefaultPipeline(PipelineTemplate):
         )
         subsampling_pipeline.run()
 
+        previous_scaling_coeff = None
         for resolution_index, epipolar_res in enumerate(
             self.epipolar_resolutions
         ):
@@ -428,7 +428,9 @@ class DefaultPipeline(PipelineTemplate):
             current_conf[OUTPUT]["directory"] = current_out_dir
 
             used_pipeline = UnitPipeline(
-                current_conf, config_dir=self.config_dir
+                current_conf,
+                config_dir=self.config_dir,
+                previous_scaling_coeff=previous_scaling_coeff,
             )
 
             # get position
@@ -480,8 +482,6 @@ class DefaultPipeline(PipelineTemplate):
             if not first_res:
                 dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
                 used_pipeline.used_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
-            else:
-                previous_scaling_coeff = None
 
             updated_pipeline = UnitPipeline(
                 used_pipeline.used_conf,
@@ -616,9 +616,6 @@ def extract_conf_with_resolution(
         new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA] = new_conf[ADVANCED][
             adv_cst.SAVE_INTERMEDIATE_DATA
         ].get("resolution_" + str(res), False)
-
-    # Overide epipolar resolution
-    new_conf[ADVANCED][adv_cst.EPIPOLAR_RESOLUTIONS] = res
 
     # Overide  configuration with pipeline conf
     if first_res:

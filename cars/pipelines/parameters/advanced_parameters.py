@@ -90,10 +90,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
 
     overloaded_conf[adv_cst.PHASING] = conf.get(adv_cst.PHASING, None)
 
-    overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS] = get_epipolar_resolutions(
-        conf
-    )
-
     # use endogenous dm when generated
     overloaded_conf[adv_cst.USE_ENDOGENOUS_DEM] = conf.get(
         adv_cst.USE_ENDOGENOUS_DEM,
@@ -162,7 +158,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
         adv_cst.PIPELINE: str,
         adv_cst.DSM_MERGING_TILE_SIZE: And(int, lambda x: x > 0),
-        adv_cst.EPIPOLAR_RESOLUTIONS: Or(int, list),
         adv_cst.LAND_COVER_MAP: str,
         adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: str,
         adv_cst.USE_ENDOGENOUS_DEM: bool,
