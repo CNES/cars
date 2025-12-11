@@ -417,10 +417,10 @@ class DefaultPipeline(PipelineTemplate):
         filling_conf[OUTPUT] = copy.deepcopy(conf[OUTPUT])
         filling_conf[OUTPUT]["directory"] = self.intermediate_data_dir
         filling_conf[pipeline_cst.ADVANCED] = conf.get(
-            pipeline_cst.FILLING
+            pipeline_cst.FILLING, {}
         ).get(ADVANCED, {})
         filling_conf[pipeline_cst.APPLICATIONS] = conf.get(
-            pipeline_cst.FILLING
+            pipeline_cst.FILLING, {}
         ).get(APPLICATIONS, {})
 
         return filling_conf
