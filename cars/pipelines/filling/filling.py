@@ -227,7 +227,6 @@ class FillingPipeline(PipelineTemplate):
         overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
             adv_cst.SAVE_INTERMEDIATE_DATA, False
         )
-
         # Check geometry plugin and overwrite geomodel in conf inputs
         (
             inputs_conf,
@@ -246,7 +245,6 @@ class FillingPipeline(PipelineTemplate):
             adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
             adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
         }
-
         checker_advanced_parameters = Checker(schema)
         checker_advanced_parameters.validate(overloaded_conf)
 
@@ -875,11 +873,11 @@ class FillingPipeline(PipelineTemplate):
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
                     dump_dir=app_dump_dir,
-                    dsm_dir=dsm_filled_dir,
                     roi_polys=self.list_intersection_poly,
                     roi_epsg=self.epsg,
                     output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
                     geom_plugin=self.geom_plugin_with_dem_and_geoid,
+                    dsm_dir=dsm_filled_dir,
                 )
             elif app.get_conf()["method"] == "bulldozer":
                 dtm_file_name = app.run(
@@ -887,10 +885,10 @@ class FillingPipeline(PipelineTemplate):
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
                     dump_dir=app_dump_dir,
-                    dsm_dir=dsm_filled_dir,
                     roi_polys=self.list_intersection_poly,
                     roi_epsg=self.epsg,
                     orchestrator=self.cars_orchestrator,
+                    dsm_dir=dsm_filled_dir,
                 )
             elif app.get_conf()["method"] == "border_interpolation":
                 _ = app.run(
@@ -899,9 +897,9 @@ class FillingPipeline(PipelineTemplate):
                     filling_file=filling_file_name,
                     dtm_file=dtm_file_name,
                     dump_dir=app_dump_dir,
-                    dsm_dir=dsm_filled_dir,
                     roi_polys=self.list_intersection_poly,
                     roi_epsg=self.epsg,
+                    dsm_dir=dsm_filled_dir,
                 )
 
             if not app.save_intermediate_data:
@@ -912,13 +910,13 @@ class FillingPipeline(PipelineTemplate):
             color_file=color_file_name,
             classif_file=classif_file_name,
             dump_dir=self.dump_dir,
-            dsm_dir=dsm_filled_dir,
             sensor_inputs=self.used_conf[INPUT].get("sensors"),
             pairing=self.used_conf[INPUT].get("pairing"),
             geom_plugin=self.geom_plugin_with_dem_and_geoid,
             texture_bands=self.texture_bands,
             output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
             orchestrator=self.cars_orchestrator,
+            dsm_dir=dsm_filled_dir,
         )
         self.cars_orchestrator.breakpoint()
 

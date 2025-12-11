@@ -22,11 +22,209 @@
 Test  pipeline
 """
 
+import os
+import tempfile
+
 import pytest
+
+from cars.pipelines.default import default_pipeline
+
+# CARS Tests imports
+from tests.helpers import (
+    absolute_data_path,
+    assert_same_images,
+)
+from tests.helpers import cars_copy2 as copy2
+from tests.helpers import (
+    generate_input_json,
+    temporary_dir,
+)
+
+NB_WORKERS = 2
 
 
 @pytest.mark.end2end_tests
 def test_pipeline():
     """
-    End to end pipeline processing
+    Test filling pipeline
     """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = absolute_data_path(
+            "input/phr_ventoux/input_with_color_and_classif.json"
+        )
+
+        # Run dense dsm pipeline
+        _, input_conf = generate_input_json(
+            conf,
+            directory,
+            "multiprocessing",
+            orchestrator_parameters={
+                "nb_workers": NB_WORKERS,
+                "max_ram_per_worker": 500,
+            },
+        )
+
+        input_conf["input"]["filling"] = {
+            "fill_with_exogenous_dem": 4,
+            "interpolate_from_borders": 2,
+            "fill_with_endogenous_dem": 1,
+            "fill_with_geoid": 3,
+        }
+
+        input_conf["advanced"]["epipolar_resolutions"] = [4, 1]
+        input_conf["advanced"]["keep_low_res_dir"] = True
+
+        input_conf["filling"] = {}
+
+        input_conf["filling"]["applications"] = {
+            "auxiliary_filling": {
+                "method": "auxiliary_filling_from_sensors",
+                "activated": True,
+                "mode": "full",
+                "save_intermediate_data": True,
+            }
+        }
+
+        input_conf["output"]["auxiliary"] = {
+            "filling": True,
+            "classification": True,
+        }
+
+        pipeline = default_pipeline.DefaultPipeline(
+            input_conf, absolute_data_path(directory)
+        )
+        pipeline.run()
+
+        out_dir = os.path.join(input_conf["output"]["directory"])
+
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+
+        copy2(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "filling/dsm",
+                "dsm.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_filled_phr_ventoux_pipeline_filling.tif",
+                )
+            ),
+        )
+
+        copy2(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "filling/dsm",
+                "image.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_filled_phr_ventoux_pipeline_filling.tif",
+                )
+            ),
+        )
+
+        copy2(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "filling/dsm",
+                "classification.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "classification_phr_ventoux_pipeline_filling.tif",
+                )
+            ),
+        )
+
+        copy2(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "filling/dsm",
+                "filling.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "filling_phr_ventoux_pipeline_filling.tif",
+                )
+            ),
+        )
+
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "filling/dsm",
+                "dsm.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_filled_phr_ventoux_pipeline_filling.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "filling/dsm",
+                "image.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_filled_phr_ventoux_pipeline_filling.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "filling/dsm",
+                "classification.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "classification_phr_ventoux_pipeline_filling.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "filling/dsm",
+                "filling.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "filling_phr_ventoux_pipeline_filling.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )

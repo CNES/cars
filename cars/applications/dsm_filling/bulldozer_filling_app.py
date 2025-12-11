@@ -112,10 +112,10 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         classif_file,
         filling_file,
         dump_dir,
-        dsm_dir,
         roi_polys,
         roi_epsg,
         orchestrator,
+        dsm_dir=None,
     ):
         """
         Run dsm filling using initial elevation and the current dsm
@@ -137,8 +137,12 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
         new_dsm_path = os.path.join(dump_dir, "dsm_filled.tif")
 
-        dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
-        filling_path_out = os.path.join(dsm_dir, "filling.tif")
+        if dsm_dir is not None:
+            dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
+            filling_path_out = os.path.join(dsm_dir, "filling.tif")
+        else:
+            dsm_path_out = dsm_file
+            filling_path_out = filling_file
 
         # create the config for the bulldozer execution
         bull_conf_path = os.path.join(

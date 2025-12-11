@@ -112,9 +112,9 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         filling_file,
         dtm_file,
         dump_dir,
-        dsm_dir,
         roi_polys,
         roi_epsg,
+        dsm_dir=None,
     ):
         """
         Run dsm filling using initial elevation and the current dsm
@@ -127,8 +127,12 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             - a Shapely Polygon
         """
 
-        dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
-        filling_path_out = os.path.join(dsm_dir, "filling.tif")
+        if dsm_dir is not None:
+            dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
+            filling_path_out = os.path.join(dsm_dir, "filling.tif")
+        else:
+            dsm_path_out = dsm_file
+            filling_path_out = filling_file
 
         if self.classification is None:
             self.classification = ["nodata"]

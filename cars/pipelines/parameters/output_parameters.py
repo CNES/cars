@@ -329,7 +329,6 @@ def check_classification_parameter(inputs, overloaded_conf):
                 overloaded_conf[output_constants.AUXILIARY][
                     output_constants.AUX_CLASSIFICATION
                 ] = {int(name): name for val, name in enumerate(bands_classif)}
-                print(bands_classif)
             elif isinstance(classification_formatting, dict):
                 for _, value in classification_formatting.items():
                     if isinstance(value, int):

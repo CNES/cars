@@ -117,11 +117,11 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         classif_file,
         filling_file,
         dump_dir,
-        dsm_dir,
         roi_polys,
         roi_epsg,
         output_geoid,
         geom_plugin,
+        dsm_dir=None,
     ):
         """
         Run dsm filling using initial elevation and the current dsm
@@ -134,8 +134,12 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             - a Shapely Polygon
         """
 
-        dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
-        filling_path_out = os.path.join(dsm_dir, "filling.tif")
+        if dsm_dir is not None:
+            dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
+            filling_path_out = os.path.join(dsm_dir, "filling.tif")
+        else:
+            dsm_path_out = dsm_file
+            filling_path_out = filling_file
 
         if self.classification is None:
             self.classification = ["nodata"]

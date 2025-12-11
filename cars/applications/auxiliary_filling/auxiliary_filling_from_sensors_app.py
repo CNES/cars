@@ -136,13 +136,13 @@ class AuxiliaryFillingFromSensors(
         color_file,
         classif_file,
         dump_dir,
-        dsm_dir,
         sensor_inputs,
         pairing,
         geom_plugin,
         texture_bands,
         output_geoid,
         orchestrator=None,
+        dsm_dir=None,
     ):
         """
         run AuxiliaryFillingFromSensors
@@ -172,7 +172,10 @@ class AuxiliaryFillingFromSensors(
         :type orchestrator: Orchestrator
         """
 
-        image_path_out = os.path.join(dsm_dir, "image.tif")
+        if dsm_dir is not None:
+            image_path_out = os.path.join(dsm_dir, "image.tif")
+        else:
+            image_path_out = color_file
 
         if not self.used_config["activated"]:
             return None
