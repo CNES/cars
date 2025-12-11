@@ -48,7 +48,6 @@ from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.parameters import advanced_parameters
-from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters
@@ -135,13 +134,9 @@ class DefaultPipeline(PipelineTemplate):
         if isinstance(self.epipolar_resolutions, int):
             self.epipolar_resolutions = [self.epipolar_resolutions]
 
-        # Check application
-        self.check_applications(conf)
         # Check input
         conf[INPUT] = self.check_inputs(conf)
 
-        # check advanced
-        conf[ADVANCED] = self.check_advanced(conf)
         # check output
         conf[OUTPUT] = self.check_output(conf)
 
@@ -164,11 +159,10 @@ class DefaultPipeline(PipelineTemplate):
             self.epipolar_resolutions = [1]
 
         used_configurations = {}
-        self.unit_pipelines = {}
         self.positions = {}
         self.used_conf = {}
 
-        self.keep_low_res_dir = conf[ADVANCED][adv_cst.KEEP_LOW_RES_DIR]
+        self.keep_low_res_dir = True
 
         subsampling_used_conf = conf[pipeline_cst.SUBSAMPLING]
 
@@ -198,9 +192,6 @@ class DefaultPipeline(PipelineTemplate):
                 self.intermediate_data_dir,
             )
 
-            if first_res:
-                previous_scaling_coeff = None
-
             if not isinstance(epipolar_res, int) or epipolar_res < 0:
                 raise RuntimeError("The resolution has to be an int > 0")
 
@@ -214,13 +205,6 @@ class DefaultPipeline(PipelineTemplate):
             current_unit_pipeline = SurfaceModelingPipeline(
                 current_conf,
                 config_dir=self.config_dir,
-                previous_scaling_coeff=previous_scaling_coeff,
-            )
-
-            previous_scaling_coeff = current_unit_pipeline.scaling_coeff
-
-            self.unit_pipelines[epipolar_resolution_index] = (
-                current_unit_pipeline
             )
             # Get used_conf
             used_configurations[epipolar_res] = current_unit_pipeline.used_conf
@@ -394,14 +378,12 @@ class DefaultPipeline(PipelineTemplate):
 
         previous_out_dir = None
         updated_conf = {}
-        step = 0
 
         subsampling_pipeline = SubsamplingPipeline(
             self.subsampling_conf, self.config_dir
         )
         subsampling_pipeline.run()
 
-        previous_scaling_coeff = None
         for resolution_index, epipolar_res in enumerate(
             self.epipolar_resolutions
         ):
@@ -466,11 +448,6 @@ class DefaultPipeline(PipelineTemplate):
             else:
                 which_resolution = "intermediate"
 
-            # Generate dem
-            generate_dems = True
-            if last_res:
-                generate_dems = False
-
             # Overide with a priori
             if not first_res:
                 dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
@@ -479,10 +456,8 @@ class DefaultPipeline(PipelineTemplate):
             updated_pipeline = SurfaceModelingPipeline(
                 used_pipeline.used_conf,
                 config_dir=self.config_dir,
-                previous_scaling_coeff=previous_scaling_coeff,
             )
             updated_pipeline.run(
-                generate_dems=generate_dems,
                 which_resolution=which_resolution,
                 log_dir=current_log_dir,
             )
@@ -490,17 +465,12 @@ class DefaultPipeline(PipelineTemplate):
             # update previous out dir
             previous_out_dir = current_out_dir
 
-            # keep previous scaling coeff for dem_generation
-            previous_scaling_coeff = updated_pipeline.scaling_coeff
-
             # generate summary
             log_wrapper.generate_summary(
                 current_log_dir, updated_pipeline.used_conf
             )
 
             updated_conf[epipolar_res] = updated_pipeline.used_conf
-
-            step += 1
 
         # Generate full used_conf
         full_used_conf = merge_used_conf(
@@ -601,13 +571,6 @@ def extract_conf_with_resolution(
 
     new_conf = copy.deepcopy(current_conf)
 
-    # Get save intermediate data
-    if isinstance(new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA], dict):
-        # If save_intermediate_data is not a dict, we set it to False
-        new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA] = new_conf[ADVANCED][
-            adv_cst.SAVE_INTERMEDIATE_DATA
-        ].get("resolution_" + str(res), False)
-
     # Overide  configuration with pipeline conf
     if first_res:
         # read the first resolution conf with json package
@@ -631,7 +594,8 @@ def extract_conf_with_resolution(
         filling_applications = {}
 
     # extract application
-    new_conf[APPLICATIONS] = extract_applications(
+    new_conf["surface_modeling"] = {}
+    new_conf["surface_modeling"][APPLICATIONS] = extract_applications(
         current_conf.get(APPLICATIONS, {}),
         res,
         overiding_conf.get(APPLICATIONS, {}),
@@ -655,17 +619,12 @@ def extract_conf_with_resolution(
         overiding_conf = {
             OUTPUT: {
                 out_cst.OUT_DIRECTORY: new_dir_out_dir,
-                out_cst.RESOLUTION: None,
-                out_cst.SAVE_BY_PAIR: True,
-                out_cst.AUXILIARY: {
-                    out_cst.AUX_DEM_MAX: True,
-                    out_cst.AUX_DEM_MIN: True,
-                    out_cst.AUX_DEM_MEDIAN: True,
-                },
             },
-            APPLICATIONS: {
-                "dense_matching": {
-                    "performance_map_method": ["risk", "intervals"]
+            "surface_modeling": {
+                APPLICATIONS: {
+                    "dense_matching": {
+                        "performance_map_method": ["risk", "intervals"]
+                    }
                 }
             },
         }
@@ -677,12 +636,10 @@ def extract_conf_with_resolution(
         # epipolar resolution
         new_conf[OUTPUT]["resolution"] = None
 
-        if not new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA]:
-            # Save the less possible things
-            aux_items = new_conf[OUTPUT][out_cst.AUXILIARY].items()
-            for aux_key, _ in aux_items:
-                if aux_key not in ("dem_min", "dem_max", "dem_median", "image"):
-                    new_conf[OUTPUT][out_cst.AUXILIARY][aux_key] = False
+        # Save the less possible things
+        for aux_key in new_conf[OUTPUT][out_cst.AUXILIARY]:
+            if aux_key != "image":
+                new_conf[OUTPUT][out_cst.AUXILIARY][aux_key] = False
 
     return new_conf
 
@@ -820,20 +777,10 @@ def merge_used_conf(used_configurations, epipolar_resolutions):
 
     merged_conf = {
         INPUT: used_configurations[epipolar_resolutions[-1]][INPUT],
-        ADVANCED: used_configurations[epipolar_resolutions[0]][ADVANCED],
         OUTPUT: used_configurations[epipolar_resolutions[0]][OUTPUT],
         ORCHESTRATOR: used_configurations[epipolar_resolutions[0]][
             ORCHESTRATOR
         ],
     }
 
-    merged_conf[APPLICATIONS] = {}
-    merged_conf[APPLICATIONS]["all"] = {}
-
-    # Merge applications
-    for res in epipolar_resolutions:
-        merged_conf[APPLICATIONS][res] = used_configurations[res][APPLICATIONS]
-
-    # apply epipolar resolutions
-    merged_conf[ADVANCED]["epipolar_resolutions"] = epipolar_resolutions
     return merged_conf

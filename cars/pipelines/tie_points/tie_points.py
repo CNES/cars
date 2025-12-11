@@ -123,6 +123,11 @@ class TiePointsPipeline(PipelineTemplate):
             pipeline_conf.get(APPLICATIONS, {})
         )
 
+        # Check conf application vs inputs application
+        application_conf = self.check_applications_with_inputs(
+            self.used_conf[INPUT], application_conf
+        )
+
         self.used_conf[PIPELINE][APPLICATIONS] = application_conf
 
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
@@ -141,11 +146,57 @@ class TiePointsPipeline(PipelineTemplate):
         :return: overloaded inputs
         :rtype: dict
         """
-        return sensor_inputs.sensors_check_inputs(conf, config_dir=config_dir)
+        overloaded_conf = conf.copy()
 
-    def check_applications_with_inputs(  # noqa: C901 : too complex
-        self, inputs_conf, application_conf
-    ):
+        overloaded_conf[sens_cst.RECTIFICATION_GRIDS] = conf.get(
+            sens_cst.RECTIFICATION_GRIDS, None
+        )
+
+        overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
+
+        overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
+
+        overloaded_conf[sens_cst.INITIAL_ELEVATION] = (
+            sensor_inputs.get_initial_elevation(
+                conf.get(sens_cst.INITIAL_ELEVATION, None)
+            )
+        )
+        overloaded_conf[sens_cst.LOADERS] = sensor_inputs.check_loaders(
+            conf.get(sens_cst.LOADERS, {})
+        )
+
+        classif_loader = overloaded_conf[sens_cst.LOADERS][
+            sens_cst.INPUT_CLASSIFICATION
+        ]
+
+        overloaded_conf[sens_cst.FILLING] = sensor_inputs.check_filling(
+            conf.get(sens_cst.FILLING, {}), classif_loader
+        )
+
+        # Validate inputs
+        inputs_schema = {
+            sens_cst.SENSORS: dict,
+            sens_cst.PAIRING: Or([[str]], None),
+            sens_cst.RECTIFICATION_GRIDS: Or(dict, None),
+            sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
+            sens_cst.ROI: Or(str, dict, None),
+            sens_cst.LOADERS: dict,
+            sens_cst.FILLING: dict,
+        }
+
+        checker_inputs = Checker(inputs_schema)
+        checker_inputs.validate(overloaded_conf)
+
+        sensor_inputs.check_sensors(conf, overloaded_conf, config_dir)
+
+        # Check srtm dir
+        sensor_inputs.check_srtm(
+            overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+        )
+
+        return overloaded_conf
+
+    def check_applications_with_inputs(self, inputs_conf, application_conf):
         """
         Check for each application the input and output configuration
         consistency
@@ -179,6 +230,8 @@ class TiePointsPipeline(PipelineTemplate):
         application_conf["sparse_matching"] = (
             self.sparse_matching_app.get_conf()
         )
+
+        return application_conf
 
     @staticmethod
     def check_advanced_parameters(inputs, conf, output_dem_dir=None):
@@ -345,22 +398,31 @@ class TiePointsPipeline(PipelineTemplate):
             else:
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
 
-            # Generate rectification grids
-            (
-                grid_left,
-                grid_right,
-            ) = self.epipolar_grid_generation_application.run(
-                sensor_image_left,
-                sensor_image_right,
-                geom_plugin,
-                orchestrator=cars_orchestrator,
-                pair_folder=os.path.join(
-                    self.dump_dir,
-                    "epipolar_grid_generation",
-                    "initial",
-                ),
-                pair_key=pair_key,
-            )
+            if self.used_conf[INPUT][sens_cst.RECTIFICATION_GRIDS] is None:
+                # Generate rectification grids
+                (
+                    grid_left,
+                    grid_right,
+                ) = self.epipolar_grid_generation_application.run(
+                    sensor_image_left,
+                    sensor_image_right,
+                    geom_plugin,
+                    orchestrator=cars_orchestrator,
+                    pair_folder=os.path.join(
+                        self.dump_dir,
+                        "epipolar_grid_generation",
+                        "initial",
+                    ),
+                    pair_key=pair_key,
+                )
+            else:
+                image_keys = list(self.used_conf[INPUT][sens_cst.SENSORS])
+                grid_left = self.used_conf[INPUT][sens_cst.RECTIFICATION_GRIDS][
+                    image_keys[0]
+                ]
+                grid_right = self.used_conf[INPUT][
+                    sens_cst.RECTIFICATION_GRIDS
+                ][image_keys[1]]
 
             # Get required bands of resampling
             required_bands = self.sparse_matching_app.get_required_bands()

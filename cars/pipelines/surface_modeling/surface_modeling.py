@@ -58,12 +58,19 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
-from cars.pipelines.parameters import advanced_parameters
+from cars.pipelines.parameters import (
+    advanced_parameters,
+)
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import application_parameters
+from cars.pipelines.parameters import (
+    application_parameters,
+)
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
-from cars.pipelines.parameters import output_parameters, sensor_inputs
+from cars.pipelines.parameters import (
+    output_parameters,
+    sensor_inputs,
+)
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.advanced_parameters_constants import (
     USE_ENDOGENOUS_DEM,
@@ -152,13 +159,17 @@ class SurfaceModelingPipeline(PipelineTemplate):
         for key1, key2 in inputs[sens_cst.PAIRING]:
             pair_key = key1 + "_" + key2
             tie_points_config = {}
-            tie_points_input = copy.deepcopy(inputs)
+            tie_points_input = {}
             tie_points_input[sens_cst.SENSORS] = {
                 key1: inputs[sens_cst.SENSORS][key1],
                 key2: inputs[sens_cst.SENSORS][key2],
             }
-            del tie_points_input[sens_cst.PAIRING]
-            tie_points_config["input"] = tie_points_input
+            tie_points_input[sens_cst.PAIRING] = [[key1, key2]]
+            tie_points_input[sens_cst.LOADERS] = inputs[sens_cst.LOADERS]
+            tie_points_input[sens_cst.INITIAL_ELEVATION] = inputs[
+                sens_cst.INITIAL_ELEVATION
+            ]
+            tie_points_config[INPUT] = tie_points_input
             tie_points_output = os.path.join(
                 self.out_dir, "tie_points", pair_key
             )
@@ -268,11 +279,10 @@ class SurfaceModelingPipeline(PipelineTemplate):
             pipeline_conf.get(APPLICATIONS, {})
         )
 
-        if self.sensors_in_inputs and not self.dsms_in_inputs:
-            # Check conf application vs inputs application
-            application_conf = self.check_applications_with_inputs(
-                self.used_conf[INPUT], application_conf
-            )
+        # Check conf application vs inputs application
+        application_conf = self.check_applications_with_inputs(
+            self.used_conf[INPUT], application_conf
+        )
 
         self.used_conf[PIPELINE][APPLICATIONS] = application_conf
 
@@ -1045,30 +1055,42 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 continue  # keep iterating over pairs, but don't go further
 
             # Prepare tie point pipeline
-            tie_points_output = self.tie_points_pipelines[pair_key].used_conf[
-                OUTPUT
-            ][out_cst.OUT_DIRECTORY]
+
+            # Update tie points pipeline with rectification grids
+            tie_points_config = self.tie_points_pipelines[pair_key].used_conf
+            image_keys = list(tie_points_config[INPUT][sens_cst.SENSORS])
+            tie_points_config[INPUT][sens_cst.RECTIFICATION_GRIDS] = {
+                image_keys[0]: self.pairs[pair_key]["grid_left"],
+                image_keys[1]: self.pairs[pair_key]["grid_right"],
+            }
+            tie_points_pipeline = TiePointsPipeline(
+                tie_points_config,
+                config_dir=self.config_dir,
+            )
+
+            tie_points_output = tie_points_config[OUTPUT][out_cst.OUT_DIRECTORY]
 
             # If dem are provided, launch disparity grids generation
             disp_range_grid_dir = os.path.join(
                 tie_points_output, "disparity_grids"
             )
-            print(self.geom_plugin_with_dem_and_geoid.dem)
-            disp_range_grid = self.dense_matching_app.generate_disparity_grids(
-                self.pairs[pair_key]["sensor_image_right"],
-                self.pairs[pair_key]["grid_right"],
-                self.geom_plugin_with_dem_and_geoid,
-                dem_min=dem_min,
-                dem_max=dem_max,
-                dem_median=self.geom_plugin_with_dem_and_geoid.dem,
-                pair_folder=disp_range_grid_dir,
-                orchestrator=self.cars_orchestrator,
-            )
+            disp_range_grid = None
+            if dems:
+                disp_range_grid = (
+                    self.dense_matching_app.generate_disparity_grids(
+                        self.pairs[pair_key]["sensor_image_right"],
+                        self.pairs[pair_key]["grid_right"],
+                        self.geom_plugin_with_dem_and_geoid,
+                        dem_min=dem_min,
+                        dem_max=dem_max,
+                        dem_median=self.geom_plugin_with_dem_and_geoid.dem,
+                        pair_folder=disp_range_grid_dir,
+                        orchestrator=self.cars_orchestrator,
+                    )
+                )
 
             # Launch tie points pipeline
-            self.tie_points_pipelines[pair_key].run(
-                disp_range_grid=disp_range_grid
-            )
+            tie_points_pipeline.run(disp_range_grid=disp_range_grid)
             self.pairs[pair_key]["matches_array"] = np.load(
                 os.path.join(tie_points_output, "filtered_matches.npy")
             )
@@ -1213,10 +1235,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 None,
                 {},
             ):
-
                 dmin = disp_min
                 dmax = disp_max
-
                 # generate_disparity_grids runs orchestrator.breakpoint()
                 self.pairs[pair_key]["disp_range_grid"] = (
                     self.dense_matching_app.generate_disparity_grids(
@@ -2052,7 +2072,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
     @cars_profile(name="run_surface_modeling_pipeline", interval=0.5)
     def run(  # pylint: disable=too-many-positional-arguments
         self,
-        generate_dems=False,
         which_resolution="single",
         log_dir=None,
     ):  # noqa C901
@@ -2070,8 +2089,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
         ]
 
         self.auxiliary = self.used_conf[OUTPUT][out_cst.AUXILIARY]
-
-        self.generate_dems = generate_dems
 
         self.which_resolution = which_resolution
 
