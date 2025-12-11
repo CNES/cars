@@ -48,6 +48,7 @@ from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.formating.formating import FormatingPipeline
+from cars.pipelines.filling.filling import FillingPipeline
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
@@ -173,7 +174,12 @@ class DefaultPipeline(PipelineTemplate):
 
         self.keep_low_res_dir = True
 
+        self.filling_conf = self.construct_filling_conf(conf)
+        conf[pipeline_cst.FILLING] = self.check_filling(self.filling_conf)
+
         subsampling_used_conf = conf[pipeline_cst.SUBSAMPLING]
+
+        filling_used_conf = conf[pipeline_cst.FILLING]
 
         for epipolar_resolution_index, epipolar_res in enumerate(
             self.epipolar_resolutions
@@ -210,6 +216,7 @@ class DefaultPipeline(PipelineTemplate):
             # used configuration
             # This pipeline will not be run
             _ = current_conf.pop(pipeline_cst.SUBSAMPLING, None)
+            _ = current_conf.pop(pipeline_cst.FILLING, None)
 
             current_unit_pipeline = SurfaceModelingPipeline(
                 current_conf,
@@ -227,6 +234,9 @@ class DefaultPipeline(PipelineTemplate):
 
         full_used_conf[pipeline_cst.SUBSAMPLING] = subsampling_used_conf
         full_used_conf[pipeline_cst.PIPELINE] = conf[PIPELINE]
+
+        full_used_conf[pipeline_cst.FILLING] = filling_used_conf
+
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,
@@ -328,6 +338,20 @@ class DefaultPipeline(PipelineTemplate):
 
         return {"advanced": advanced, "applications": applications}
 
+    def check_filling(self, conf):
+        """
+        Check the filling section
+
+        :param conf: configuration of subsampling
+        :type conf: dict
+        """
+
+        pipeline = FillingPipeline(conf, pre_check=True)
+        advanced = pipeline.check_advanced(conf)
+        applications = pipeline.check_applications(conf.get(APPLICATIONS, {}))
+
+        return {"advanced": advanced, "applications": applications}
+
     def cleanup_low_res_dir(self):
         """
         Clean low res dir
@@ -383,6 +407,23 @@ class DefaultPipeline(PipelineTemplate):
         formating_conf[OUTPUT]["directory"] = self.out_dir
 
         return formating_conf
+
+    def construct_filling_conf(self, conf):
+        """
+        Construct the right conf for filling
+        """
+        filling_conf = {}
+        filling_conf[INPUT] = copy.deepcopy(conf[INPUT])
+        filling_conf[OUTPUT] = copy.deepcopy(conf[OUTPUT])
+        filling_conf[OUTPUT]["directory"] = self.intermediate_data_dir
+        filling_conf[pipeline_cst.ADVANCED] = conf.get(
+            pipeline_cst.FILLING
+        ).get(ADVANCED, {})
+        filling_conf[pipeline_cst.APPLICATIONS] = conf.get(
+            pipeline_cst.FILLING
+        ).get(APPLICATIONS, {})
+
+        return filling_conf
 
     @cars_profile(name="Run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
@@ -502,6 +543,34 @@ class DefaultPipeline(PipelineTemplate):
 
             updated_conf[epipolar_res] = updated_pipeline.used_conf
 
+        # METTRE CONDITION SI FILLING ACTIVÉ
+        last_key = list(updated_conf.keys())[-1]
+        self.filling_conf[INPUT]["dsm_to_fill"] = {}
+        aux_path = os.path.join(self.out_dir, "dsm/")
+        self.filling_conf[INPUT]["dsm_to_fill"]["dsm"] = os.path.join(
+            aux_path, "dsm.tif"
+        )
+
+        if (
+            "dem_median"
+            in updated_conf[last_key][INPUT][sens_cst.INITIAL_ELEVATION]["dem"]
+        ):
+            self.filling_conf[INPUT][sens_cst.INITIAL_ELEVATION] = None
+
+        for aux_output, val in updated_conf[last_key][OUTPUT][
+            out_cst.AUXILIARY
+        ].items():
+            if val:
+                self.filling_conf[INPUT]["dsm_to_fill"][aux_output] = (
+                    os.path.join(aux_path, aux_output + ".tif")
+                )
+
+        filling_pipeline = FillingPipeline(self.filling_conf, self.config_dir)
+        filling_pipeline.run()
+
+        updated_conf[last_key][APPLICATIONS].update(
+            filling_pipeline.used_conf[APPLICATIONS]
+        )
         last_key = list(updated_conf.keys())[-1]
         formating_conf = self.construct_formating_conf(updated_conf[last_key])
         formating_pipeline = FormatingPipeline(formating_conf, self.config_dir)

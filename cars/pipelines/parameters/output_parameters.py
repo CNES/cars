@@ -131,21 +131,6 @@ def check_output_parameters(  # noqa: C901 : too complex
         )
     )
     overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_DEM_MIN
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_DEM_MIN, False
-    )
-    overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_DEM_MAX
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_DEM_MAX, False
-    )
-    overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_DEM_MEDIAN
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_DEM_MEDIAN, False
-    )
-    overloaded_conf[output_constants.AUXILIARY][
         output_constants.AUX_WEIGHTS
     ] = overloaded_conf[output_constants.AUXILIARY].get(
         output_constants.AUX_WEIGHTS, False
@@ -198,9 +183,6 @@ def check_output_parameters(  # noqa: C901 : too complex
         output_constants.AUX_CONTRIBUTING_PAIR: bool,
         output_constants.AUX_FILLING: Or(bool, dict),
         output_constants.AUX_AMBIGUITY: bool,
-        output_constants.AUX_DEM_MIN: bool,
-        output_constants.AUX_DEM_MAX: bool,
-        output_constants.AUX_DEM_MEDIAN: bool,
     }
 
     # Check and overload classification parameter
@@ -347,6 +329,7 @@ def check_classification_parameter(inputs, overloaded_conf):
                 overloaded_conf[output_constants.AUXILIARY][
                     output_constants.AUX_CLASSIFICATION
                 ] = {int(name): name for val, name in enumerate(bands_classif)}
+                print(bands_classif)
             elif isinstance(classification_formatting, dict):
                 for _, value in classification_formatting.items():
                     if isinstance(value, int):

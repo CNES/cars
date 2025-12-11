@@ -56,6 +56,8 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
 
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
 
+    overloaded_conf["dsm_to_fill"] = conf.get("dsm_to_fill", None)
+
     overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
 
     overloaded_conf[sens_cst.INITIAL_ELEVATION] = get_initial_elevation(
@@ -85,6 +87,7 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         sens_cst.ROI: Or(str, dict, None),
         sens_cst.LOADERS: dict,
         sens_cst.FILLING: dict,
+        "dsm_to_fill": Or(str, dict, None),
     }
 
     checker_inputs = Checker(inputs_schema)

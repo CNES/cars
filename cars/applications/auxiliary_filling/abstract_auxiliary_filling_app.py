@@ -92,6 +92,7 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
         color_file,
         classif_file,
         dump_dir,
+        dsm_dir,
         sensor_inputs,
         pairing,
         geom_plugin,

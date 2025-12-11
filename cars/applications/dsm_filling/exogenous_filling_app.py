@@ -117,6 +117,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         classif_file,
         filling_file,
         dump_dir,
+        dsm_dir,
         roi_polys,
         roi_epsg,
         output_geoid,
@@ -132,6 +133,9 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             - a list of Shapely Polygons
             - a Shapely Polygon
         """
+
+        dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
+        filling_path_out = os.path.join(dsm_dir, "filling.tif")
 
         if self.classification is None:
             self.classification = ["nodata"]
@@ -313,10 +317,10 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
-        with rio.open(dsm_file, "w", **dsm_meta) as out_dsm:
+        with rio.open(dsm_path_out, "w", **dsm_meta) as out_dsm:
             out_dsm.write(dsm, 1)
         if self.save_intermediate_data:
-            shutil.copy2(dsm_file, new_dsm_path)
+            shutil.copy2(dsm_path_out, new_dsm_path)
 
         if filling_file is not None:
             with rio.open(filling_file, "r") as src:
@@ -327,7 +331,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             bands.append(combined_mask)
             bands_desc.append("filling_exogenous")
 
-            with rio.open(filling_file, "w", **fill_meta) as out:
+            with rio.open(filling_path_out, "w", **fill_meta) as out:
                 for i, band in enumerate(bands):
                     out.write(band, i + 1)
                     out.set_band_description(i + 1, bands_desc[i])

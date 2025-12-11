@@ -19,19 +19,8 @@
 # limitations under the License.
 #
 """
-this module contains the constants used for all pipelines
+CARS default pipeline module init file
 """
 
-# Sensor input
-
-INPUT = "input"
-OUTPUT = "output"
-APPLICATIONS = "applications"
-ADVANCED = "advanced"
-ORCHESTRATOR = "orchestrator"
-FILLING = "filling"
-PIPELINE = "pipeline"
-SUBSAMPLING = "subsampling"
-TIE_POINTS = "tie_points"
-MERGING = "merging"
-SURFACE_MODELING = "surface_modeling"
+# Cars imports
+from cars.pipelines.filling import filling  # noqa: F401
