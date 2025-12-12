@@ -526,7 +526,9 @@ def exception_safe(func):
 
 
 @exception_safe
-def generate_summary(out_dir, used_conf, clean_worker_logs=False):
+def generate_summary(
+    out_dir, used_conf, pipeline_name, clean_worker_logs=False
+):
     """
     Generate Profiling summary
     """
@@ -740,7 +742,9 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
     )
 
     (_, [pipeline_time]) = filter_lists(
-        summary_names, summary_total_time, lambda name: "unit_pipeline" in name
+        summary_names,
+        summary_total_time,
+        lambda name: pipeline_name in name,
     )
 
     (_, [multiprocessing_time]) = filter_lists(

@@ -148,6 +148,10 @@ class DefaultPipeline(PipelineTemplate):
         conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
             self.subsampling_conf
         )
+        conf[pipeline_cst.SURFACE_MODELING] = conf.get(
+            pipeline_cst.SURFACE_MODELING, {}
+        )
+        conf[pipeline_cst.TIE_POINTS] = conf.get(pipeline_cst.TIE_POINTS, {})
 
         if dsm_cst.DSMS in conf[INPUT] and len(self.epipolar_resolutions) != 1:
             logging.info(
@@ -409,10 +413,6 @@ class DefaultPipeline(PipelineTemplate):
             # update directory for unit pipeline
             current_conf[OUTPUT]["directory"] = current_out_dir
 
-            used_pipeline = SurfaceModelingPipeline(
-                current_conf, config_dir=self.config_dir
-            )
-
             # get position
             first_res, _, last_res = (
                 self.positions[resolution_index]["first_res"],
@@ -451,10 +451,10 @@ class DefaultPipeline(PipelineTemplate):
             # Overide with a priori
             if not first_res:
                 dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
-                used_pipeline.used_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
+                current_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
 
             updated_pipeline = SurfaceModelingPipeline(
-                used_pipeline.used_conf,
+                current_conf,
                 config_dir=self.config_dir,
             )
             updated_pipeline.run(
@@ -467,7 +467,9 @@ class DefaultPipeline(PipelineTemplate):
 
             # generate summary
             log_wrapper.generate_summary(
-                current_log_dir, updated_pipeline.used_conf
+                current_log_dir,
+                updated_pipeline.used_conf,
+                pipeline_cst.SURFACE_MODELING,
             )
 
             updated_conf[epipolar_res] = updated_pipeline.used_conf
@@ -490,8 +492,11 @@ class DefaultPipeline(PipelineTemplate):
             self.cleanup_low_res_dir()
 
 
-def extract_applications(
-    current_applications_conf, res, default_conf_for_res, filling_applications
+def extract_conf_section(
+    current_conf_section,
+    res,
+    default_conf_for_res=None,
+    filling_applications=None,
 ):
     """
     Extract applications for current resolution
@@ -512,25 +517,29 @@ def extract_applications(
     # "all" : applied to all conf
     # int  (1, 2, 4, 8, 16, ...) applied for specified resolution
 
-    all_conf = current_applications_conf.get("all", {})
+    all_conf = current_conf_section.get("all", {})
     # Overide with default_conf_for_res
-    all_conf = overide_pipeline_conf(all_conf, default_conf_for_res)
+    if default_conf_for_res is not None:
+        all_conf = overide_pipeline_conf(all_conf, default_conf_for_res)
     # Get configuration for current res
-    if res in current_applications_conf:
+    if res in current_conf_section:
         # key is int
         key = res
     else:
         key = str(res)
 
-    res_conf = current_applications_conf.get(key, {})
+    res_conf = current_conf_section.get(key, {})
 
     # Overide all conf with current res conf
     new_application_conf = overide_pipeline_conf(all_conf, res_conf)
 
     # Overide with filling applications
-    new_application_conf = overide_pipeline_conf(
-        new_application_conf, filling_applications, append_classification=True
-    )
+    if filling_applications is not None:
+        new_application_conf = overide_pipeline_conf(
+            new_application_conf,
+            filling_applications,
+            append_classification=True,
+        )
     return new_application_conf
 
 
@@ -587,19 +596,39 @@ def extract_conf_with_resolution(
 
     if last_res and dsm_cst.DSMS not in current_conf[INPUT]:
         # Use filling applications only for last resolution
-        filling_applications = generate_filling_applications(
-            current_conf[INPUT]
+        filling_applications_for_surface_modeling = (
+            generate_filling_applications_for_surface_modeling(
+                current_conf[INPUT]
+            )
         )
     else:
-        filling_applications = {}
+        filling_applications_for_surface_modeling = {}
 
-    # extract application
-    new_conf["surface_modeling"] = {}
-    new_conf["surface_modeling"][APPLICATIONS] = extract_applications(
-        current_conf.get(APPLICATIONS, {}),
+    # Extract surface modeling conf
+    new_conf[pipeline_cst.SURFACE_MODELING] = {}
+    new_conf[pipeline_cst.SURFACE_MODELING][APPLICATIONS] = (
+        extract_conf_section(
+            current_conf[pipeline_cst.SURFACE_MODELING].get(APPLICATIONS, {}),
+            res,
+            overiding_conf.get(APPLICATIONS, {}),
+            filling_applications_for_surface_modeling,
+        )
+    )
+    new_conf[pipeline_cst.SURFACE_MODELING][ADVANCED] = extract_conf_section(
+        current_conf[pipeline_cst.SURFACE_MODELING].get(ADVANCED, {}),
+        res,
+    )
+
+    # Extract tie points conf
+    new_conf[pipeline_cst.TIE_POINTS] = {}
+    new_conf[pipeline_cst.TIE_POINTS][APPLICATIONS] = extract_conf_section(
+        current_conf[pipeline_cst.TIE_POINTS].get(APPLICATIONS, {}),
         res,
         overiding_conf.get(APPLICATIONS, {}),
-        filling_applications,
+    )
+    new_conf[pipeline_cst.TIE_POINTS][ADVANCED] = extract_conf_section(
+        current_conf[pipeline_cst.TIE_POINTS].get(ADVANCED, {}),
+        res,
     )
 
     overiding_conf = {
@@ -620,7 +649,7 @@ def extract_conf_with_resolution(
             OUTPUT: {
                 out_cst.OUT_DIRECTORY: new_dir_out_dir,
             },
-            "surface_modeling": {
+            pipeline_cst.SURFACE_MODELING: {
                 APPLICATIONS: {
                     "dense_matching": {
                         "performance_map_method": ["risk", "intervals"]
@@ -644,6 +673,40 @@ def extract_conf_with_resolution(
     return new_conf
 
 
+def generate_filling_applications_for_surface_modeling(inputs_conf):
+    """
+    Generate filling applications configuration according to inputs
+
+    :param inputs_conf: inputs configuration
+    :type inputs_conf: dict
+    """
+
+    filling_applications = {}
+
+    # Generate applications configuration
+    for _, classif_values in inputs_conf[sens_cst.FILLING].items():
+        # No filling
+        if classif_values is None:
+            continue
+
+        classif_values = list(map(str, classif_values))
+
+        # Update application configuration
+        new_filling_conf = {
+            "dense_match_filling": {
+                "method": "zero_padding",
+                "classification": classif_values,
+            }
+        }
+
+        # Update application configuration
+        filling_applications = overide_pipeline_conf(
+            filling_applications, new_filling_conf, append_classification=True
+        )
+
+    return filling_applications
+
+
 def generate_filling_applications(inputs_conf):
     """
     Generate filling applications configuration according to inputs
@@ -665,10 +728,6 @@ def generate_filling_applications(inputs_conf):
         # Update application configuration
         if filling_name == "fill_with_geoid":
             new_filling_conf = {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": classif_values,
-                },
                 "dsm_filling.1": {
                     "method": "exogenous_filling",
                     "classification": classif_values,
@@ -677,10 +736,6 @@ def generate_filling_applications(inputs_conf):
             }
         elif filling_name == "interpolate_from_borders":
             new_filling_conf = {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": classif_values,
-                },
                 "dsm_filling.2": {
                     "method": "bulldozer",
                     "classification": classif_values,
@@ -692,10 +747,6 @@ def generate_filling_applications(inputs_conf):
             }
         elif filling_name == "fill_with_endogenous_dem":
             new_filling_conf = {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": classif_values,
-                },
                 "dsm_filling.1": {
                     "method": "exogenous_filling",
                     "classification": classif_values,
@@ -707,10 +758,6 @@ def generate_filling_applications(inputs_conf):
             }
         elif filling_name == "fill_with_exogenous_dem":
             new_filling_conf = {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": classif_values,
-                },
                 "dsm_filling.2": {
                     "method": "bulldozer",
                     "classification": classif_values,

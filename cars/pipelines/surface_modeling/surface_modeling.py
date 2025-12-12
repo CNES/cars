@@ -152,7 +152,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.dem_scaling_coeff = None
         if inputs[sens_cst.LOW_RES_DSM] is not None:
             low_res_dsm = rasterio.open(inputs[sens_cst.LOW_RES_DSM])
-            self.dem_scaling_coeff = np.mean(low_res_dsm.res)
+            self.dem_scaling_coeff = np.mean(low_res_dsm.res) * 2
 
         # Init tie points pipelines
         self.tie_points_pipelines = {}
@@ -1083,14 +1083,15 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         self.geom_plugin_with_dem_and_geoid,
                         dem_min=dem_min,
                         dem_max=dem_max,
-                        dem_median=self.geom_plugin_with_dem_and_geoid.dem,
                         pair_folder=disp_range_grid_dir,
                         orchestrator=self.cars_orchestrator,
                     )
                 )
 
             # Launch tie points pipeline
-            tie_points_pipeline.run(disp_range_grid=disp_range_grid)
+            tie_points_pipeline.run(
+                disp_range_grid=disp_range_grid, log_dir=self.log_dir
+            )
             self.pairs[pair_key]["matches_array"] = np.load(
                 os.path.join(tie_points_output, "filtered_matches.npy")
             )
@@ -1273,7 +1274,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         self.geom_plugin_with_dem_and_geoid,
                         dem_min=dem_min,
                         dem_max=dem_max,
-                        dem_median=self.geom_plugin_with_dem_and_geoid.dem,
                         pair_folder=dense_matching_pair_folder,
                         orchestrator=self.cars_orchestrator,
                     )

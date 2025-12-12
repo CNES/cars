@@ -748,7 +748,6 @@ class CensusMccnnSgm(
         geom_plugin_with_dem_and_geoid,
         dmin=None,
         dmax=None,
-        dem_median=None,
         dem_min=None,
         dem_max=None,
         pair_folder=None,
@@ -772,8 +771,6 @@ class CensusMccnnSgm(
         :type dmin: float
         :param dmax: maximum disparity
         :type dmax: float
-        :param dem_median: path to median dem
-        :type dem_median: str
         :param dem_min: path to minimum dem
         :type dem_min: str
         :param dem_max: path to maximum dem
@@ -847,7 +844,7 @@ class CensusMccnnSgm(
             # Only one tile
             grid_disp_range.tiling_grid = np.array([[[0, nb_rows, 0, nb_cols]]])
 
-        elif None not in (dem_min, dem_max, dem_median):
+        elif None not in (dem_min, dem_max):
 
             # Generate multiple tiles
             grid_tile_size = self.epi_disp_grid_tile_size
@@ -930,7 +927,7 @@ class CensusMccnnSgm(
                 saving_info_global_infos_full,
             )
 
-        elif None not in (dem_min, dem_max, dem_median):
+        elif None not in (dem_min, dem_max):
 
             # use filter to propagate min and max
             filter_overlap = (
@@ -964,7 +961,6 @@ class CensusMccnnSgm(
                         sensor_image_right,
                         grid_right,
                         geom_plugin_with_dem_and_geoid,
-                        dem_median,
                         dem_min,
                         dem_max,
                         raster_profile,

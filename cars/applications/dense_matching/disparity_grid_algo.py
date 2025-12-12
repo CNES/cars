@@ -161,7 +161,6 @@ def generate_disp_range_from_dem_wrapper(
     sensor_image_right,
     grid_right,
     geom_plugin_with_dem_and_geoid,
-    dem_median,
     dem_min,
     dem_max,
     raster_profile,
@@ -187,8 +186,6 @@ def generate_disp_range_from_dem_wrapper(
     :type grid_right: dict
     :param geom_plugin_with_dem_and_geoid: The geometry plugin with DEM.
     :type geom_plugin_with_dem_and_geoid: object
-    :param dem_median: Path of dem median.
-    :type dem_median: str
     :param dem_min: Path of dem min.
     :type dem_min: str
     :param dem_max: Path of dem max.
@@ -221,6 +218,7 @@ def generate_disp_range_from_dem_wrapper(
 
     # Geometry plugin
     geo_plugin = geom_plugin_with_dem_and_geoid
+    dem_median = geo_plugin.dem
 
     # get epsg
     terrain_epsg = inputs.rasterio_get_epsg(dem_median)
