@@ -33,7 +33,7 @@ from ...helpers import absolute_data_path, temporary_dir
 
 
 @pytest.mark.end2end_tests
-def test_pipeline_with_low_res_dsm():
+def test_pipeline_gizeh_with_low_res_dsm():
     """
     End to end pipeline processing
     """
@@ -65,6 +65,135 @@ def test_pipeline_with_low_res_dsm():
             },
             "surface_modeling": {"advanced": {"save_intermediate_data": True}},
             "tie_points": {"advanced": {"save_intermediate_data": True}},
+            "output": {"directory": directory},
+        }
+        # outdir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+
+
+@pytest.mark.end2end_tests
+def test_pipeline_ventoux():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/left_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/left_image.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/right_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/right_image.geom"
+                        ),
+                    },
+                },
+                "initial_elevation": absolute_data_path(
+                    "input/phr_ventoux/srtm/N44E005.hgt"
+                ),
+            },
+            "surface_modeling": {"advanced": {"save_intermediate_data": True}},
+            "output": {"directory": directory},
+        }
+        # outdir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+
+
+@pytest.mark.end2end_tests
+def test_pipeline_ventoux_without_filter_incomplete_disparity_range():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/left_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/left_image.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/right_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/right_image.geom"
+                        ),
+                    },
+                },
+                "initial_elevation": absolute_data_path(
+                    "input/phr_ventoux/srtm/N44E005.hgt"
+                ),
+            },
+            "surface_modeling": {
+                "advanced": {"save_intermediate_data": True},
+                "applications": {
+                    "dense_matching": {
+                        "filter_incomplete_disparity_range": False
+                    }
+                },
+            },
+            "output": {"directory": directory},
+        }
+        # outdir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+
+
+@pytest.mark.end2end_tests
+def test_pipeline_ventoux_with_disparity_thresholds():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/left_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/left_image.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/right_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/right_image.geom"
+                        ),
+                    },
+                },
+                "initial_elevation": absolute_data_path(
+                    "input/phr_ventoux/srtm/N44E005.hgt"
+                ),
+            },
+            "surface_modeling": {
+                "advanced": {"save_intermediate_data": True},
+                "applications": {
+                    "dense_matching": {
+                        "disp_min_threshold": -20,
+                        "disp_max_threshold": 15,
+                    }
+                },
+            },
             "output": {"directory": directory},
         }
         # outdir = conf["output"]["directory"]

@@ -1096,37 +1096,55 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 os.path.join(tie_points_output, "filtered_matches.npy")
             )
 
-            # Compute grid correction
-            (
-                self.pairs[pair_key]["grid_correction_coef"],
-                self.pairs[pair_key]["corrected_matches_array"],
-                _,
-                _,
-            ) = grid_correction_app.estimate_right_grid_correction(
-                self.pairs[pair_key]["matches_array"],
-                self.pairs[pair_key]["grid_right"],
-                save_matches=save_matches,
-                minimum_nb_matches=30,
-                pair_folder=os.path.join(
-                    self.dump_dir, "grid_correction", "initial", pair_key
-                ),
-                pair_key=pair_key,
-                orchestrator=self.cars_orchestrator,
+            minimum_nb_matches = (
+                tie_points_pipeline.sparse_matching_app.minimum_nb_matches
             )
-            # Correct grid right
-            self.pairs[pair_key]["corrected_grid_right"] = (
-                grid_correction_app.correct_grid(
-                    self.pairs[pair_key]["grid_right"],
+            nb_matches = self.pairs[pair_key]["matches_array"].shape[0]
+
+            if nb_matches > minimum_nb_matches:
+                # Compute grid correction
+                (
                     self.pairs[pair_key]["grid_correction_coef"],
-                    os.path.join(
-                        self.dump_dir,
-                        "grid_correction",
-                        "initial",
-                        pair_key,
+                    self.pairs[pair_key]["corrected_matches_array"],
+                    _,
+                    _,
+                ) = grid_correction_app.estimate_right_grid_correction(
+                    self.pairs[pair_key]["matches_array"],
+                    self.pairs[pair_key]["grid_right"],
+                    save_matches=save_matches,
+                    minimum_nb_matches=30,
+                    pair_folder=os.path.join(
+                        self.dump_dir, "grid_correction", "initial", pair_key
                     ),
-                    save_corrected_grid,
+                    pair_key=pair_key,
+                    orchestrator=self.cars_orchestrator,
                 )
-            )
+                # Correct grid right
+                self.pairs[pair_key]["corrected_grid_right"] = (
+                    grid_correction_app.correct_grid(
+                        self.pairs[pair_key]["grid_right"],
+                        self.pairs[pair_key]["grid_correction_coef"],
+                        os.path.join(
+                            self.dump_dir,
+                            "grid_correction",
+                            "initial",
+                            pair_key,
+                        ),
+                        save_corrected_grid,
+                    )
+                )
+            else:
+                logging.warning(
+                    "Grid correction is not applied because numer of matches "
+                    "found ({}) is less than minimum numer of matches "
+                    "required for grid correction ({})".format(
+                        nb_matches,
+                        minimum_nb_matches,
+                    )
+                )
+                self.pairs[pair_key]["corrected_grid_right"] = self.pairs[
+                    pair_key
+                ]["grid_right"]
 
             self.pairs[pair_key]["corrected_grid_left"] = self.pairs[pair_key][
                 "grid_left"

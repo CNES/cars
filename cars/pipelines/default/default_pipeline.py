@@ -148,6 +148,10 @@ class DefaultPipeline(PipelineTemplate):
         conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
             self.subsampling_conf
         )
+        if pipeline_cst.SURFACE_MODELING not in conf:
+            conf[pipeline_cst.SURFACE_MODELING] = {}
+        if pipeline_cst.TIE_POINTS not in conf:
+            conf[pipeline_cst.TIE_POINTS] = {}
 
         if dsm_cst.DSMS in conf[INPUT] and len(self.epipolar_resolutions) != 1:
             logging.info(

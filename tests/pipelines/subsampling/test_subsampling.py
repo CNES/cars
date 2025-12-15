@@ -74,7 +74,7 @@ def test_subsampling(resolution):
             },
         )
 
-        input_conf["advanced"]["epipolar_resolutions"] = resolution
+        input_conf["advanced"] = {"epipolar_resolutions": resolution}
 
         dense_dsm_pipeline = subsampling.SubsamplingPipeline(
             input_conf, absolute_data_path(directory)

@@ -153,7 +153,6 @@ def generate_input_json(
     output_directory,
     orchestrator_mode,
     orchestrator_parameters=None,
-    geometry_plugin_name=None,
 ):
     """
     Load a partially filled input.json, fill it with output directory
@@ -184,27 +183,6 @@ def generate_input_json(
         config["orchestrator"].update(orchestrator_parameters)
     # Overload output directory
     config["output"] = {"directory": os.path.join(output_directory, "output")}
-
-    # set installed (Shareloc) geometry plugin if not specified
-    if geometry_plugin_name is None:
-        geometry_plugin_name = get_geometry_plugin().plugin_name
-
-    # Create keys
-    if "surface_modeling" not in config:
-        config["surface_modeling"] = {}
-
-    if "tie_points" not in config:
-        config["tie_points"] = {}
-
-    if "subsampling" not in config:
-        config["subsampling"] = {}
-
-    config["surface_modeling"]["advanced"] = {
-        "geometry_plugin": geometry_plugin_name,
-    }
-    config["tie_points"]["advanced"] = {
-        "geometry_plugin": geometry_plugin_name,
-    }
 
     # transform paths
     new_config = config.copy()
