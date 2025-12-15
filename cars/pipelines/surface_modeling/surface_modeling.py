@@ -1851,6 +1851,49 @@ class SurfaceModelingPipeline(PipelineTemplate):
         # saved used configuration
         self.save_configurations()
 
+        classif_file_name = (
+            os.path.join(
+                self.out_dir,
+                out_cst.DSM_DIRECTORY,
+                "classification.tif",
+            )
+            if self.save_output_dsm
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                out_cst.AUX_CLASSIFICATION
+            ]
+            else None
+        )
+
+        if classif_file_name is None and self.save_output_classif_for_filling:
+            classif_file_name = os.path.join(
+                self.rasterization_dump_dir,
+                "classification_for_filling.tif",
+            )
+
+        if (
+            classif_file_name is not None
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                out_cst.AUX_CLASSIFICATION
+            ]
+        ):
+            self.merge_classif_bands(
+                classif_file_name,
+                self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_CLASSIFICATION
+                ],
+                dsm_file_name,
+            )
+
+        if (
+            filling_file_name is not None
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]
+        ):
+            self.merge_filling_bands(
+                filling_file_name,
+                self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING],
+                dsm_file_name,
+            )
+
         return False
 
     @cars_profile(name="merge filling bands", interval=0.5)
@@ -1881,18 +1924,16 @@ class SurfaceModelingPipeline(PipelineTemplate):
             filling_mono_bands[filling_mask == 0] = 0
 
             filling_bands_list = {
-                "fill_with_geoid": ["zeros_padding", "filling_exogenous"],
+                "fill_with_geoid": ["filling_exogenous"],
                 "interpolate_from_borders": [
-                    "zeros_padding",
                     "bulldozer",
                     "border_interpolation",
                 ],
                 "fill_with_endogenous_dem": [
-                    "zeros_padding",
                     "filling_exogenous",
                     "bulldozer",
                 ],
-                "fill_with_exogenous_dem": ["zeros_padding", "bulldozer"],
+                "fill_with_exogenous_dem": ["bulldozer"],
             }
 
             # To get the right footprint

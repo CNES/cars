@@ -582,6 +582,12 @@ class DefaultPipeline(PipelineTemplate):
             self.epipolar_resolutions,
             os.path.abspath(self.out_dir),
         )
+
+        full_used_conf[pipeline_cst.FILLING] = {
+            ADVANCED: filling_pipeline.used_conf[ADVANCED],
+            APPLICATIONS: filling_pipeline.used_conf[APPLICATIONS],
+        }
+
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,

@@ -237,7 +237,6 @@ class FillingPipeline(PipelineTemplate):
         ) = sensor_inputs.check_geometry_plugin(
             inputs_conf,
             conf.get(adv_cst.GEOMETRY_PLUGIN, None),
-            1,
             output_dem_dir,
         )
 
@@ -717,7 +716,9 @@ class FillingPipeline(PipelineTemplate):
         input_classif = inputs_conf[sens_cst.SENSORS][first_key][
             sens_cst.INPUT_CLASSIFICATION
         ]
-        bands_classif = input_classif["values"]
+        bands_classif = None
+        if input_classif is not None:
+            bands_classif = input_classif["values"]
 
         classif_file_name = (
             self.monoband_to_multiband(
@@ -803,9 +804,11 @@ class FillingPipeline(PipelineTemplate):
                 ]
                 is not None
             ):
-                self.list_sensor_pairs = sensor_inputs.generate_inputs(
-                    self.used_conf[INPUT],
-                    self.geom_plugin_without_dem_and_geoid,
+                sensor_inputs.load_geomodels(
+                    inputs_conf, self.geom_plugin_without_dem_and_geoid
+                )
+                self.list_sensor_pairs = sensor_inputs.generate_pairs(
+                    self.used_conf[INPUT]
                 )
 
                 self.list_intersection_poly = []
