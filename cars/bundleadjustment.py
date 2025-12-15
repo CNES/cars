@@ -35,7 +35,6 @@ from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.los import LOS
 from shareloc.proj_utils import coordinates_conversion
 
-from cars.pipelines.parameters import sensor_inputs
 from cars.pipelines.pipeline import Pipeline
 
 
@@ -428,8 +427,6 @@ def new_rpcs_from_matches(  # pylint: disable=too-many-positional-arguments
     for pair in pairing:
         matches_filename = os.path.join(
             sparse_matching_directory,
-            "dump_dir",
-            "sparse_matching",
             "_".join(pair),
             "filtered_matches.npy",
         )
@@ -583,7 +580,7 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
         os.path.join(conf_dirname, conf_as_dict["output"]["directory"])
     )
 
-    bundle_adjustment_config = conf_as_dict["applications"].pop(
+    bundle_adjustment_config = conf_as_dict["tie_points"]["applications"].pop(
         "bundle_adjustment"
     )
 
@@ -594,22 +591,16 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
         "pairing"
     ]
     sparse_matching_config["output"]["directory"] = sparse_matching
-    sparse_matching_config["output"]["product_level"] = []
 
     sparse_matching_config["subsampling"] = {}
     sparse_matching_config["subsampling"]["advanced"] = {}
     sparse_matching_config["subsampling"]["advanced"][
         "epipolar_resolutions"
     ] = [1]
-    if "sparse_matching" not in sparse_matching_config["applications"]:
-        sparse_matching_config["applications"]["all"] = {"sparse_matching": {}}
-    sparse_matching_config["applications"]["all"]["sparse_matching"][
-        "save_intermediate_data"
-    ] = True
-
-    sparse_matching_config["applications"]["all"]["sparse_matching"][
-        "decimation_factor"
-    ] = 100
+    if "tie_points" not in sparse_matching_config:
+        sparse_matching_config["tie_points"] = {
+            "applications": {"sparse_matching": {"decimation_factor": 100}}
+        }
 
     sparse_matching_pipeline = Pipeline(
         "tie_points", sparse_matching_config, conf_dirname
@@ -619,7 +610,7 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
         sparse_matching_pipeline.run()
 
     # create new refined rpcs
-    conf_as_dict["input"] = sensor_inputs.sensors_check_inputs(
+    conf_as_dict["input"] = sparse_matching_pipeline.check_inputs(
         conf_as_dict["input"], config_dir=conf_dirname
     )
     separate = bundle_adjustment_config.pop("separate")

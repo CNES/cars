@@ -373,11 +373,7 @@ class TiePointsPipeline(PipelineTemplate):
         sensor_inputs.load_geomodels(
             self.used_conf[INPUT], self.geom_plugin_without_dem_and_geoid
         )
-        (
-            pair_key,
-            sensor_image_left,
-            sensor_image_right,
-        ) = sensor_inputs.generate_pairs(self.used_conf[INPUT])[0]
+        list_sensor_pairs = sensor_inputs.generate_pairs(self.used_conf[INPUT])
 
         with orchestrator.Orchestrator(
             orchestrator_conf=self.used_conf[ORCHESTRATOR],
@@ -398,92 +394,103 @@ class TiePointsPipeline(PipelineTemplate):
             else:
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
 
-            if self.used_conf[INPUT][sens_cst.RECTIFICATION_GRIDS] is None:
-                # Generate rectification grids
+            for (
+                pair_key,
+                sensor_image_left,
+                sensor_image_right,
+            ) in list_sensor_pairs:
+
+                if self.used_conf[INPUT][sens_cst.RECTIFICATION_GRIDS] is None:
+                    # Generate rectification grids
+                    (
+                        grid_left,
+                        grid_right,
+                    ) = self.epipolar_grid_generation_application.run(
+                        sensor_image_left,
+                        sensor_image_right,
+                        geom_plugin,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=os.path.join(
+                            self.dump_dir,
+                            "epipolar_grid_generation",
+                            "initial",
+                            pair_key,
+                        ),
+                        pair_key=pair_key,
+                    )
+                else:
+                    image_keys = list(self.used_conf[INPUT][sens_cst.SENSORS])
+                    grid_left = self.used_conf[INPUT][
+                        sens_cst.RECTIFICATION_GRIDS
+                    ][image_keys[0]]
+                    grid_right = self.used_conf[INPUT][
+                        sens_cst.RECTIFICATION_GRIDS
+                    ][image_keys[1]]
+
+                # Get required bands of resampling
+                required_bands = self.sparse_matching_app.get_required_bands()
+
                 (
-                    grid_left,
-                    grid_right,
-                ) = self.epipolar_grid_generation_application.run(
+                    epipolar_image_left,
+                    epipolar_image_right,
+                ) = self.resampling_application.run(
                     sensor_image_left,
                     sensor_image_right,
+                    grid_left,
+                    grid_right,
                     geom_plugin,
                     orchestrator=cars_orchestrator,
                     pair_folder=os.path.join(
+                        self.dump_dir, "resampling", "initial", pair_key
+                    ),
+                    pair_key=pair_key,
+                    margins_fun=self.sparse_matching_app.get_margins_fun(),
+                    tile_width=None,
+                    tile_height=None,
+                    required_bands=required_bands,
+                )
+
+                if disp_range_grid is not None:
+                    disp_min = disp_range_grid["global_min"]
+                    disp_max = disp_range_grid["global_max"]
+                    disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
+                    self.sparse_matching_app.elevation_delta_lower_bound = (
+                        -disp_max * disp_to_alt_ratio
+                    )
+                    self.sparse_matching_app.elevation_delta_upper_bound = (
+                        -disp_min * disp_to_alt_ratio
+                    )
+
+                # Compute sparse matching
+                (
+                    epipolar_matches_left,
+                    _,
+                ) = self.sparse_matching_app.run(
+                    epipolar_image_left,
+                    epipolar_image_right,
+                    grid_left["disp_to_alt_ratio"],
+                    orchestrator=cars_orchestrator,
+                    pair_folder=os.path.join(
                         self.dump_dir,
-                        "epipolar_grid_generation",
-                        "initial",
+                        "sparse_matching",
+                        pair_key,
                     ),
                     pair_key=pair_key,
                 )
-            else:
-                image_keys = list(self.used_conf[INPUT][sens_cst.SENSORS])
-                grid_left = self.used_conf[INPUT][sens_cst.RECTIFICATION_GRIDS][
-                    image_keys[0]
-                ]
-                grid_right = self.used_conf[INPUT][
-                    sens_cst.RECTIFICATION_GRIDS
-                ][image_keys[1]]
 
-            # Get required bands of resampling
-            required_bands = self.sparse_matching_app.get_required_bands()
+                cars_orchestrator.breakpoint()
 
-            (
-                epipolar_image_left,
-                epipolar_image_right,
-            ) = self.resampling_application.run(
-                sensor_image_left,
-                sensor_image_right,
-                grid_left,
-                grid_right,
-                geom_plugin,
-                orchestrator=cars_orchestrator,
-                pair_folder=os.path.join(
-                    self.dump_dir, "resampling", "initial"
-                ),
-                pair_key=pair_key,
-                margins_fun=self.sparse_matching_app.get_margins_fun(),
-                tile_width=None,
-                tile_height=None,
-                required_bands=required_bands,
-            )
-
-            if disp_range_grid is not None:
-                disp_min = disp_range_grid["global_min"]
-                disp_max = disp_range_grid["global_max"]
-                disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
-                self.sparse_matching_app.elevation_delta_lower_bound = (
-                    -disp_max * disp_to_alt_ratio
+                # Filter and save matches
+                _ = self.sparse_matching_app.filter_matches(
+                    epipolar_matches_left,
+                    grid_left,
+                    grid_right,
+                    geom_plugin,
+                    orchestrator=cars_orchestrator,
+                    pair_folder=os.path.join(
+                        self.out_dir,
+                        pair_key,
+                    ),
+                    pair_key=pair_key,
+                    save_matches=True,
                 )
-                self.sparse_matching_app.elevation_delta_upper_bound = (
-                    -disp_min * disp_to_alt_ratio
-                )
-
-            # Compute sparse matching
-            (
-                epipolar_matches_left,
-                _,
-            ) = self.sparse_matching_app.run(
-                epipolar_image_left,
-                epipolar_image_right,
-                grid_left["disp_to_alt_ratio"],
-                orchestrator=cars_orchestrator,
-                pair_folder=os.path.join(
-                    self.dump_dir,
-                    "sparse_matching",
-                ),
-                pair_key=pair_key,
-            )
-
-            cars_orchestrator.breakpoint()
-
-            # Filter and save matches
-            _ = self.sparse_matching_app.filter_matches(
-                epipolar_matches_left,
-                grid_left,
-                grid_right,
-                geom_plugin,
-                orchestrator=cars_orchestrator,
-                pair_folder=self.out_dir,
-                pair_key=pair_key,
-                save_matches=True,
-            )

@@ -63,7 +63,7 @@ def test_pipeline_ventoux():
             "tie_points": {"advanced": {"save_intermediate_data": False}},
             "output": {"directory": directory},
         }
-        outdir = conf["output"]["directory"]
+        outdir = os.path.join(conf["output"]["directory"], "image1_image2")
         tie_points_pipeline = TiePointsPipeline(conf)
         tie_points_pipeline.run()
         raw_matches = np.load(os.path.join(outdir, "raw_matches.npy"))
@@ -121,7 +121,7 @@ def test_pipeline_ventoux_with_dem():
             "tie_points": {"advanced": {"save_intermediate_data": False}},
             "output": {"directory": directory},
         }
-        outdir = conf["output"]["directory"]
+        outdir = os.path.join(conf["output"]["directory"], "image1_image2")
         tie_points_pipeline = TiePointsPipeline(conf)
         tie_points_pipeline.run()
         raw_matches = np.load(os.path.join(outdir, "raw_matches.npy"))
@@ -182,7 +182,7 @@ def test_pipeline_ventoux_with_mask():
             "tie_points": {"advanced": {"save_intermediate_data": False}},
             "output": {"directory": directory},
         }
-        outdir = conf["output"]["directory"]
+        outdir = os.path.join(conf["output"]["directory"], "image1_image2")
         tie_points_pipeline = TiePointsPipeline(conf)
         tie_points_pipeline.run()
         raw_matches = np.load(os.path.join(outdir, "raw_matches.npy"))

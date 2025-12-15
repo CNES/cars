@@ -51,5 +51,6 @@ def test_cars_bundle_adjustment():
                 "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 500,
             },
+            pipeline="tie_points",
         )
         cars_bundle_adjustment(conf_path, no_run_sparse=False)

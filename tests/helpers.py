@@ -61,6 +61,7 @@ from cars.core import constants_disparity as cst_disp
 from cars.core.datasets import get_color_bands
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.pipelines.parameters import sensor_inputs
+from cars.pipelines.tie_points.tie_points import TiePointsPipeline
 
 # Specific values
 # 0 = valid pixels
@@ -153,6 +154,7 @@ def generate_input_json(
     output_directory,
     orchestrator_mode,
     orchestrator_parameters=None,
+    pipeline="default",
 ):
     """
     Load a partially filled input.json, fill it with output directory
@@ -187,9 +189,14 @@ def generate_input_json(
     # transform paths
     new_config = config.copy()
 
-    new_config["input"] = sensor_inputs.sensors_check_inputs(
-        new_config["input"], config_dir=json_dir_path
-    )
+    if pipeline == "tie_points":
+        new_config["input"] = TiePointsPipeline.check_inputs(
+            new_config["input"], config_dir=json_dir_path
+        )
+    else:
+        new_config["input"] = sensor_inputs.sensors_check_inputs(
+            new_config["input"], config_dir=json_dir_path
+        )
 
     # dump json
     new_json_path = os.path.join(output_directory, "new_input.json")
