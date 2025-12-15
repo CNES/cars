@@ -6,4 +6,4 @@ input:
       regularization_mask: path/to/mask.tif
     img_2: path/to/image.tif
 
-pipeline: [surface_modeling, formatting]
+pipeline: [surface_modeling, formating]

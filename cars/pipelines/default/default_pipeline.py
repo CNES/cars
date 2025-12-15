@@ -47,6 +47,7 @@ from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines import pipeline_constants as pipeline_cst
+from cars.pipelines.formating.formating import FormatingPipeline
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
@@ -219,7 +220,9 @@ class DefaultPipeline(PipelineTemplate):
 
         # Generate full used_conf
         full_used_conf = merge_used_conf(
-            used_configurations, self.epipolar_resolutions
+            used_configurations,
+            self.epipolar_resolutions,
+            os.path.abspath(self.out_dir),
         )
 
         full_used_conf[pipeline_cst.SUBSAMPLING] = subsampling_used_conf
@@ -368,6 +371,19 @@ class DefaultPipeline(PipelineTemplate):
 
         return subsampling_conf
 
+    def construct_formating_conf(self, conf):
+        """
+        Construct the right conf for formatting
+        """
+
+        formating_conf = {}
+        formating_conf[INPUT] = {}
+        formating_conf[INPUT]["input_path"] = conf[OUTPUT]["directory"]
+        formating_conf[OUTPUT] = {}
+        formating_conf[OUTPUT]["directory"] = self.out_dir
+
+        return formating_conf
+
     @cars_profile(name="Run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
         """
@@ -486,9 +502,16 @@ class DefaultPipeline(PipelineTemplate):
 
             updated_conf[epipolar_res] = updated_pipeline.used_conf
 
+        last_key = list(updated_conf.keys())[-1]
+        formating_conf = self.construct_formating_conf(updated_conf[last_key])
+        formating_pipeline = FormatingPipeline(formating_conf, self.config_dir)
+        formating_pipeline.run()
+
         # Generate full used_conf
         full_used_conf = merge_used_conf(
-            updated_conf, self.epipolar_resolutions
+            updated_conf,
+            self.epipolar_resolutions,
+            os.path.abspath(self.out_dir),
         )
         # Save used_conf
         cars_dataset.save_dict(
@@ -823,7 +846,7 @@ def overide_pipeline_conf(conf, overiding_conf, append_classification=False):
     return result
 
 
-def merge_used_conf(used_configurations, epipolar_resolutions):
+def merge_used_conf(used_configurations, epipolar_resolutions, out_dir):
     """
     Merge all used configuration
     """
@@ -831,11 +854,13 @@ def merge_used_conf(used_configurations, epipolar_resolutions):
 
     merged_conf = {
         INPUT: used_configurations[epipolar_resolutions[-1]][INPUT],
-        OUTPUT: used_configurations[epipolar_resolutions[0]][OUTPUT],
+        OUTPUT: used_configurations[epipolar_resolutions[0]][ORCHESTRATOR],
         ORCHESTRATOR: used_configurations[epipolar_resolutions[0]][
             ORCHESTRATOR
         ],
     }
+
+    merged_conf[OUTPUT]["directory"] = out_dir
 
     merged_conf[pipeline_cst.TIE_POINTS] = {APPLICATIONS: {}, ADVANCED: {}}
     merged_conf[pipeline_cst.SURFACE_MODELING] = {
