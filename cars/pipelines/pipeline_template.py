@@ -69,6 +69,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
             pipeline_constants.INPUT: dict,
             pipeline_constants.OUTPUT: dict,
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
+            OptionalKey(pipeline_constants.PIPELINE): str,
         }
 
         for pipeline_name in Pipeline.available_pipeline:
@@ -102,15 +103,6 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
 
         :return overloader output
         :rtype : dict
-        """
-
-    @abstractmethod
-    def check_applications(self, conf, key=None, res=None, last_res=False):
-        """
-        Check the given configuration for applications
-
-        :param conf: configuration of applications
-        :type conf: dict
         """
 
     @abstractmethod

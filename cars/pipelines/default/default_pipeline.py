@@ -148,10 +148,6 @@ class DefaultPipeline(PipelineTemplate):
         conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
             self.subsampling_conf
         )
-        conf[pipeline_cst.SURFACE_MODELING] = conf.get(
-            pipeline_cst.SURFACE_MODELING, {}
-        )
-        conf[pipeline_cst.TIE_POINTS] = conf.get(pipeline_cst.TIE_POINTS, {})
 
         if dsm_cst.DSMS in conf[INPUT] and len(self.epipolar_resolutions) != 1:
             logging.info(
@@ -270,57 +266,6 @@ class DefaultPipeline(PipelineTemplate):
         applications = pipeline.check_applications(conf.get(APPLICATIONS, {}))
 
         return {"advanced": advanced, "applications": applications}
-
-    def check_advanced(self, conf):
-        """
-        Check all conf for advanced configuration
-
-        :return: overridden advanced conf
-        :rtype: dict
-        """
-        (_, advanced, _, _, _, _, _, _) = (
-            advanced_parameters.check_advanced_parameters(
-                conf[INPUT],
-                conf.get(ADVANCED, {}),
-            )
-        )
-
-        return advanced
-
-    def check_applications(self, conf):
-        """
-        Check the given configuration for applications
-
-        :param conf: configuration of applications
-        :type conf: dict
-        """
-        applications_conf = conf.get(APPLICATIONS, {})
-        # check format: contains "all" of "resolutions
-
-        int_keys = [int(epi_res) for epi_res in self.epipolar_resolutions]
-        string_keys = [str(key) for key in int_keys]
-
-        possible_keys = ["all"] + int_keys + string_keys
-
-        # Check conf keys in possible keys
-        for app_base_key in applications_conf.keys():
-            if app_base_key not in possible_keys:
-                raise RuntimeError(
-                    "Application key {} not in possibles keys in : 'all', {} , "
-                    "as int or str".format(app_base_key, string_keys)
-                )
-
-        # Key str and int key are not defined for the same resolution
-        for resolution in int_keys:
-            if (
-                resolution in applications_conf
-                and str(resolution) in applications_conf
-            ):
-                raise RuntimeError(
-                    "Application configuration for {} resolution "
-                    "is defined both "
-                    "with int and str key".format(resolution)
-                )
 
     def cleanup_low_res_dir(self):
         """

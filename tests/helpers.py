@@ -189,17 +189,22 @@ def generate_input_json(
     if geometry_plugin_name is None:
         geometry_plugin_name = get_geometry_plugin().plugin_name
 
-    config["advanced"] = {
-        "geometry_plugin": geometry_plugin_name,
-        "pipeline": "default",
-    }
-
     # Create keys
-    if "applications" not in config:
-        config["applications"] = {}
+    if "surface_modeling" not in config:
+        config["surface_modeling"] = {}
 
-    if "advanced" not in config:
-        config["advanced"] = {}
+    if "tie_points" not in config:
+        config["tie_points"] = {}
+
+    if "subsampling" not in config:
+        config["subsampling"] = {}
+
+    config["surface_modeling"]["advanced"] = {
+        "geometry_plugin": geometry_plugin_name,
+    }
+    config["tie_points"]["advanced"] = {
+        "geometry_plugin": geometry_plugin_name,
+    }
 
     # transform paths
     new_config = config.copy()

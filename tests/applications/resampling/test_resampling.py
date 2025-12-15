@@ -393,9 +393,8 @@ def test_check_tiles_in_sensor():
         )
 
         inputs = input_data["input"]
-        list_sensor_pairs = sensor_inputs.generate_inputs(
-            inputs, get_geometry_plugin()
-        )
+        sensor_inputs.load_geomodels(inputs, get_geometry_plugin())
+        list_sensor_pairs = sensor_inputs.generate_pairs(inputs)
 
         sensor_image_left = list_sensor_pairs[0][1]
 

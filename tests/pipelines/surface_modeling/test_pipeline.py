@@ -33,7 +33,7 @@ from ...helpers import absolute_data_path, temporary_dir
 
 
 @pytest.mark.end2end_tests
-def test_pipeline():
+def test_pipeline_with_low_res_dsm():
     """
     End to end pipeline processing
     """
