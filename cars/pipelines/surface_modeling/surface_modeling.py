@@ -1091,7 +1091,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 disp_range_grid=disp_range_grid, log_dir=self.log_dir
             )
             self.pairs[pair_key]["matches_array"] = np.load(
-                os.path.join(tie_points_output, "filtered_matches.npy")
+                os.path.join(
+                    tie_points_output, pair_key, "filtered_matches.npy"
+                )
             )
 
             minimum_nb_matches = sparse_mtch_app.minimum_nb_matches
