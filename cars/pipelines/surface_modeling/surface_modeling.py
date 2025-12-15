@@ -83,6 +83,7 @@ from cars.pipelines.pipeline_constants import (
     INPUT,
     ORCHESTRATOR,
     OUTPUT,
+    TIE_POINTS,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.tie_points.tie_points import TiePointsPipeline
@@ -170,16 +171,23 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 sens_cst.INITIAL_ELEVATION
             ]
             tie_points_config[INPUT] = tie_points_input
-            tie_points_output = os.path.join(
-                self.out_dir, "tie_points", pair_key
-            )
+            tie_points_output = os.path.join(self.out_dir, TIE_POINTS, pair_key)
             tie_points_config["output"] = {"directory": tie_points_output}
-            if "tie_points" in conf:
-                tie_points_config["tie_points"] = conf["tie_points"]
+            if TIE_POINTS in conf:
+                tie_points_config[TIE_POINTS] = conf[TIE_POINTS]
             self.tie_points_pipelines[pair_key] = TiePointsPipeline(
                 tie_points_config,
                 config_dir=self.config_dir,
             )
+            self.used_conf[TIE_POINTS] = {}
+            self.used_conf[TIE_POINTS][APPLICATIONS] = (
+                self.tie_points_pipelines[pair_key].used_conf[TIE_POINTS][
+                    APPLICATIONS
+                ]
+            )
+            self.used_conf[TIE_POINTS][ADVANCED] = self.tie_points_pipelines[
+                pair_key
+            ].used_conf[TIE_POINTS][ADVANCED]
 
         # Check advanced parameters
         # TODO static method in the base class
@@ -313,7 +321,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
         sensor_to_depth_apps = {
             "grid_generation": 1,  # and 5
             "resampling": 2,  # and 8
-            "sparse_matching": 4,
             "ground_truth_reprojection": 6,
             "dense_matching": 8,
             "dense_match_filling": 9,
@@ -559,14 +566,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
             scaling_coeff=scaling_coeff,
         )
         used_conf["dense_match_filling"] = self.dense_match_filling.get_conf()
-
-        # Sparse Matching
-        self.sparse_mtch_app = Application(
-            "sparse_matching",
-            cfg=used_conf.get("sparse_matching", {"method": "sift"}),
-            scaling_coeff=scaling_coeff,
-        )
-        used_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
         # Matching
         generate_performance_map = bool(
@@ -921,8 +920,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
         # used in dem generation
         self.triangulated_matches_list = []
 
-        save_matches = self.sparse_mtch_app.get_save_matches()
-
         save_corrected_grid = (
             self.epipolar_grid_generation_application.get_save_grids()
         )
@@ -1067,6 +1064,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 tie_points_config,
                 config_dir=self.config_dir,
             )
+            sparse_mtch_app = tie_points_pipeline.sparse_matching_app
 
             tie_points_output = tie_points_config[OUTPUT][out_cst.OUT_DIRECTORY]
 
@@ -1096,10 +1094,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 os.path.join(tie_points_output, "filtered_matches.npy")
             )
 
-            minimum_nb_matches = (
-                tie_points_pipeline.sparse_matching_app.minimum_nb_matches
-            )
+            minimum_nb_matches = sparse_mtch_app.minimum_nb_matches
             nb_matches = self.pairs[pair_key]["matches_array"].shape[0]
+            save_matches = sparse_mtch_app.get_save_matches()
 
             if nb_matches > minimum_nb_matches:
                 # Compute grid correction
@@ -1112,7 +1109,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     self.pairs[pair_key]["matches_array"],
                     self.pairs[pair_key]["grid_right"],
                     save_matches=save_matches,
-                    minimum_nb_matches=30,
+                    minimum_nb_matches=minimum_nb_matches,
                     pair_folder=os.path.join(
                         self.dump_dir, "grid_correction", "initial", pair_key
                     ),
@@ -1150,16 +1147,11 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 "grid_left"
             ]
 
-            if self.quit_on_app("sparse_matching"):
-                continue
-
             # Shrink disparity intervals according to SIFT disparities
             disp_to_alt_ratio = self.pairs[pair_key]["grid_left"][
                 "disp_to_alt_ratio"
             ]
-            disp_bounds_params = (
-                self.sparse_mtch_app.disparity_bounds_estimation
-            )
+            disp_bounds_params = sparse_mtch_app.disparity_bounds_estimation
 
             if disp_bounds_params["activated"]:
                 matches = self.pairs[pair_key]["matches_array"]
@@ -1209,7 +1201,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         # Clean grids at the end of processing if required. Note that this will
         # also clean refined grids
-        if not (save_corrected_grid or save_matches):
+        if not save_corrected_grid:
             self.cars_orchestrator.add_to_clean(
                 os.path.join(self.dump_dir, "grid_correction")
             )
@@ -1222,10 +1214,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
             )
 
         # quit if any app in the loop over the pairs was the last one
-        if (
-            self.quit_on_app("grid_generation")
-            or self.quit_on_app("resampling")
-            or self.quit_on_app("sparse_matching")
+        if self.quit_on_app("grid_generation") or self.quit_on_app(
+            "resampling"
         ):
             return True
 
@@ -1269,7 +1259,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     )
                 )
 
-                dsp_marg = self.sparse_mtch_app.get_disparity_margin()
+                dsp_marg = self.tie_points_pipelines[
+                    pair_key
+                ].sparse_matching_app.get_disparity_margin()
                 updating_infos = {
                     application_constants.APPLICATION_TAG: {
                         sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {

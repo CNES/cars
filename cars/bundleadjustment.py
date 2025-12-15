@@ -612,7 +612,7 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
     ] = 100
 
     sparse_matching_pipeline = Pipeline(
-        "default", sparse_matching_config, conf_dirname
+        "tie_points", sparse_matching_config, conf_dirname
     )
 
     if no_run_sparse is False:

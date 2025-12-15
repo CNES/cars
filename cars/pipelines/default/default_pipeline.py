@@ -779,4 +779,25 @@ def merge_used_conf(used_configurations, epipolar_resolutions):
         ],
     }
 
+    merged_conf[pipeline_cst.TIE_POINTS] = {APPLICATIONS: {}, ADVANCED: {}}
+    merged_conf[pipeline_cst.SURFACE_MODELING] = {
+        APPLICATIONS: {},
+        ADVANCED: {},
+    }
+
+    for resolution in epipolar_resolutions:
+        used_conf = used_configurations[resolution]
+        merged_conf[pipeline_cst.TIE_POINTS][APPLICATIONS][str(resolution)] = (
+            used_conf[pipeline_cst.TIE_POINTS][APPLICATIONS]
+        )
+        merged_conf[pipeline_cst.TIE_POINTS][ADVANCED][str(resolution)] = (
+            used_conf[pipeline_cst.TIE_POINTS][ADVANCED]
+        )
+        merged_conf[pipeline_cst.SURFACE_MODELING][APPLICATIONS][
+            str(resolution)
+        ] = used_conf[pipeline_cst.SURFACE_MODELING][APPLICATIONS]
+        merged_conf[pipeline_cst.SURFACE_MODELING][ADVANCED][
+            str(resolution)
+        ] = used_conf[pipeline_cst.SURFACE_MODELING][ADVANCED]
+
     return merged_conf

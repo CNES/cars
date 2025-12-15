@@ -20,8 +20,8 @@
         "two"
       ],
       [
-	"one",
-	"three"
+        "one",
+        "three"
       ]
     ],
     "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif"
