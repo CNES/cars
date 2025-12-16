@@ -59,6 +59,7 @@ from cars.pipelines.pipeline_constants import (
     INPUT,
     ORCHESTRATOR,
     OUTPUT,
+    PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.subsampling.subsampling import SubsamplingPipeline
@@ -134,6 +135,10 @@ class DefaultPipeline(PipelineTemplate):
         if isinstance(self.epipolar_resolutions, int):
             self.epipolar_resolutions = [self.epipolar_resolutions]
 
+        conf[PIPELINE] = self.check_pipeline(conf)
+
+        self.pipeline_to_use = conf[PIPELINE]
+
         # Check input
         conf[INPUT] = self.check_inputs(conf)
 
@@ -143,7 +148,6 @@ class DefaultPipeline(PipelineTemplate):
         self.intermediate_data_dir = os.path.join(
             self.out_dir, "intermediate_data"
         )
-
         self.subsampling_conf = self.construct_subsampling_conf(conf)
         conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
             self.subsampling_conf
@@ -219,6 +223,7 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         full_used_conf[pipeline_cst.SUBSAMPLING] = subsampling_used_conf
+        full_used_conf[pipeline_cst.PIPELINE] = conf[PIPELINE]
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,
@@ -256,6 +261,55 @@ class DefaultPipeline(PipelineTemplate):
             conf[INPUT], conf[OUTPUT]
         )
         return conf_output
+
+    def check_pipeline(self, conf):  # noqa: C901
+        """
+        Check the pipeline section
+        """
+        possible_pipeline = [
+            "subsampling",
+            "surface_modeling",
+            "filling",
+            "merging",
+            "formating",
+        ]
+        dict_pipeline = {}
+
+        if PIPELINE not in conf:
+            if dsm_cst.DSMS in conf[INPUT]:
+                conf[PIPELINE] = "merging"
+            elif sens_cst.SENSORS in conf[INPUT]:
+                conf[PIPELINE] = "surface_modeling"
+
+        if isinstance(conf[PIPELINE], str):
+            if conf[PIPELINE] not in possible_pipeline:
+                raise RuntimeError("This pipeline does not exist")
+            dict_pipeline = {conf[PIPELINE]: True}
+        elif isinstance(conf[PIPELINE], list):
+            for elem in conf[PIPELINE]:
+                if elem not in possible_pipeline:
+                    raise RuntimeError(f"The pipeline {elem} does not exist")
+                dict_pipeline.update({elem: True})
+        elif isinstance(conf[PIPELINE], dict):
+            for key, _ in conf[PIPELINE].items():
+                if key not in possible_pipeline:
+                    raise RuntimeError(f"The pipeline {key} does not exist")
+
+        for key in possible_pipeline:
+            if key not in dict_pipeline:
+                dict_pipeline.update({key: False})
+
+        if dsm_cst.DSMS in conf[INPUT] and not dict_pipeline["merging"]:
+            dict_pipeline["merging"] = True
+        elif dsm_cst.DSMS in conf[INPUT] and dict_pipeline["surface_modeling"]:
+            raise RuntimeError(
+                "You can not use the surface modeling pipeline with dsm inputs"
+            )
+
+        if "filling" in conf[INPUT] and not dict_pipeline["filling"]:
+            dict_pipeline["filling"] = True
+
+        return dict_pipeline
 
     def check_subsampling(self, conf):
         """

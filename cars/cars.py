@@ -122,6 +122,9 @@ def main_cli(args, dry_run=False):  # noqa: C901
         config_dir = os.path.abspath(os.path.dirname(config_path))
         pipeline_name = config.get("pipeline", "default")
 
+        if not isinstance(pipeline_name, str):
+            pipeline_name = "default"
+
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         out_dir = config["output"]["directory"]
