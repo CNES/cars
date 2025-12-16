@@ -546,7 +546,9 @@ class DefaultPipeline(PipelineTemplate):
         # METTRE CONDITION SI FILLING ACTIVÉ
         last_key = list(updated_conf.keys())[-1]
         self.filling_conf[INPUT]["dsm_to_fill"] = {}
-        aux_path = os.path.join(self.out_dir, "dsm/")
+        aux_path = os.path.join(
+            updated_conf[last_key][OUTPUT][out_cst.OUT_DIRECTORY], "dsm/"
+        )
         self.filling_conf[INPUT]["dsm_to_fill"]["dsm"] = os.path.join(
             aux_path, "dsm.tif"
         )
@@ -740,14 +742,7 @@ def extract_conf_with_resolution(
     )
 
     overiding_conf = {
-        OUTPUT: {
-            out_cst.OUT_DIRECTORY: surface_modeling_out_dir,
-            out_cst.AUXILIARY: {
-                out_cst.AUX_DEM_MAX: True,
-                out_cst.AUX_DEM_MIN: True,
-                out_cst.AUX_DEM_MEDIAN: True,
-            },
-        },
+        OUTPUT: {out_cst.OUT_DIRECTORY: surface_modeling_out_dir},
     }
     new_conf = overide_pipeline_conf(new_conf, overiding_conf)
 

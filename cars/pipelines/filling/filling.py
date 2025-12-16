@@ -64,7 +64,6 @@ from cars.pipelines.pipeline_constants import (
     OUTPUT,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.unit.unit_pipeline import UnitPipeline
 
 
 @Pipeline.register(
@@ -191,8 +190,8 @@ class FillingPipeline(PipelineTemplate):
         :return: overloader inputs
         :rtype: dict
         """
-        return UnitPipeline.check_inputs(
-            conf[INPUT], config_dir=self.config_dir
+        return sensor_inputs.sensors_check_inputs(
+            conf[INPUT], config_dir=config_json_dir
         )
 
     def check_output(self, conf):
