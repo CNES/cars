@@ -19,8 +19,9 @@
 # limitations under the License.
 #
 """
-Test  pipeline
+Test pipeline surface modeling
 """
+import os
 import tempfile
 
 import pytest
@@ -29,7 +30,9 @@ from cars.pipelines.surface_modeling.surface_modeling import (
     SurfaceModelingPipeline,
 )
 
-from ...helpers import absolute_data_path, temporary_dir
+from ...helpers import absolute_data_path, assert_same_images
+from ...helpers import cars_copy2 as copy2
+from ...helpers import temporary_dir
 
 
 @pytest.mark.end2end_tests
@@ -63,17 +66,57 @@ def test_pipeline_gizeh_with_low_res_dsm():
                 "nb_workers": 4,
                 "max_ram_per_worker": 1000,
             },
-            "surface_modeling": {"advanced": {"save_intermediate_data": True}},
-            "tie_points": {"advanced": {"save_intermediate_data": True}},
             "output": {"directory": directory},
         }
-        # outdir = conf["output"]["directory"]
+        out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_pipeline_surface_modeling_low_res_dsm.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_pipeline_surface_modeling_low_res_dsm.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_pipeline_surface_modeling_low_res_dsm.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_pipeline_surface_modeling_low_res_dsm.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
 
 
 @pytest.mark.end2end_tests
-def test_pipeline_ventoux():
+def test_pipeline_ventoux_full():
     """
     End to end pipeline processing
     """
@@ -102,12 +145,62 @@ def test_pipeline_ventoux():
                     "input/phr_ventoux/srtm/N44E005.hgt"
                 ),
             },
-            "surface_modeling": {"advanced": {"save_intermediate_data": True}},
-            "output": {"directory": directory},
+            "output": {
+                "directory": directory,
+                "auxiliary": {
+                    "ambiguity": True,
+                    "classification": True,
+                    "contributing_pair": True,
+                    "image": True,
+                    "performance_map": True,
+                },
+            },
         }
-        # outdir = conf["output"]["directory"]
+        out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
 
 
 @pytest.mark.end2end_tests
@@ -141,7 +234,6 @@ def test_pipeline_ventoux_without_filter_incomplete_disparity_range():
                 ),
             },
             "surface_modeling": {
-                "advanced": {"save_intermediate_data": True},
                 "applications": {
                     "dense_matching": {
                         "filter_incomplete_disparity_range": False
@@ -150,52 +242,48 @@ def test_pipeline_ventoux_without_filter_incomplete_disparity_range():
             },
             "output": {"directory": directory},
         }
-        # outdir = conf["output"]["directory"]
+        out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
-
-
-@pytest.mark.end2end_tests
-def test_pipeline_ventoux_with_disparity_thresholds():
-    """
-    End to end pipeline processing
-    """
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        conf = {
-            "input": {
-                "sensors": {
-                    "image1": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
-                        ),
-                        "geomodel": absolute_data_path(
-                            "input/phr_ventoux/left_image.geom"
-                        ),
-                    },
-                    "image2": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
-                        ),
-                        "geomodel": absolute_data_path(
-                            "input/phr_ventoux/right_image.geom"
-                        ),
-                    },
-                },
-                "initial_elevation": absolute_data_path(
-                    "input/phr_ventoux/srtm/N44E005.hgt"
-                ),
-            },
-            "surface_modeling": {
-                "advanced": {"save_intermediate_data": True},
-                "applications": {
-                    "dense_matching": {
-                        "disp_min_threshold": -20,
-                        "disp_max_threshold": 15,
-                    }
-                },
-            },
-            "output": {"directory": directory},
-        }
-        # outdir = conf["output"]["directory"]
-        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
-        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_pipeline_surface_modeling_ventoux_wo_fidr.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_pipeline_surface_modeling_ventoux_wo_fidr.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_pipeline_surface_modeling_ventoux_wo_fidr.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_pipeline_surface_modeling_ventoux_wo_fidr.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )

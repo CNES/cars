@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test  pipeline
+Test pipeline tie points
 """
 
 import os

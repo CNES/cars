@@ -21,6 +21,7 @@
 """
 CARS tie points pipeline class file
 """
+import logging
 import os
 
 from json_checker import Checker, Or
@@ -453,6 +454,11 @@ class TiePointsPipeline(PipelineTemplate):
                 if disp_range_grid is not None:
                     disp_min = disp_range_grid["global_min"]
                     disp_max = disp_range_grid["global_max"]
+                    logging.info(
+                        "Global disparity range for sparse matching : "
+                        "[{} pix, {} pix]".format(disp_min, disp_max)
+                    )
+
                     disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
                     self.sparse_matching_app.elevation_delta_lower_bound = (
                         -disp_max * disp_to_alt_ratio

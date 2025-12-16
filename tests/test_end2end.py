@@ -46,7 +46,7 @@ from shapely.ops import transform
 # CARS imports
 from cars.core import inputs, roi_tools
 from cars.pipelines.default import default_pipeline as default
-from cars.pipelines.unit import unit_pipeline as unit
+from cars.pipelines.surface_modeling import surface_modeling
 
 # CARS Tests imports
 from .helpers import (
@@ -425,7 +425,9 @@ def test_end2end_dsm_fusion():
         input_dsm_config_base["advanced"] = {}
         input_dsm_config_base["advanced"]["epipolar_resolutions"] = 1
 
-        dsm_merging_pipeline = unit.UnitPipeline(input_dsm_config_base)
+        dsm_merging_pipeline = surface_modeling.SurfaceModelingPipeline(
+            input_dsm_config_base
+        )
         dsm_merging_pipeline.run()
 
         assert_same_images(
@@ -506,7 +508,9 @@ def test_end2end_color_after_dsm_reentrance():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        dsm_merging_pipeline = unit.UnitPipeline(input_dsm_config)
+        dsm_merging_pipeline = surface_modeling.SurfaceModelingPipeline(
+            input_dsm_config
+        )
         dsm_merging_pipeline.run()
 
         copy2(
@@ -1186,7 +1190,7 @@ def test_end2end_ventoux_unique():
                 )
 
             # check used_conf reentry
-            _ = unit.UnitPipeline(used_conf)
+            _ = surface_modeling.SurfaceModelingPipeline(used_conf)
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1326,7 +1330,7 @@ def test_end2end_ventoux_unique():
                     == gt_used_conf_orchestrator["orchestrator"]
                 )
             # check used_conf reentry
-            _ = unit.UnitPipeline(used_conf)
+            _ = surface_modeling.SurfaceModelingPipeline(used_conf)
 
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -2013,7 +2017,7 @@ def test_end2end_use_epipolar_a_priori():
                 assert "advanced" in refined_conf
 
             # check refined_conf reentry
-            _ = unit.UnitPipeline(refined_conf)
+            _ = surface_modeling.SurfaceModelingPipeline(refined_conf)
 
         # dense dsm pipeline
         input_config_dense_dsm = refined_conf.copy()
@@ -2050,7 +2054,9 @@ def test_end2end_use_epipolar_a_priori():
         # Update outdir, write new dir
         input_config_dense_dsm["output"]["directory"] += "dense"
 
-        dense_dsm_pipeline = unit.UnitPipeline(input_config_dense_dsm)
+        dense_dsm_pipeline = surface_modeling.SurfaceModelingPipeline(
+            input_config_dense_dsm
+        )
 
         dense_dsm_pipeline.run()
 
@@ -2079,7 +2085,7 @@ def test_end2end_use_epipolar_a_priori():
                     == 0.3
                 )
             # check used_conf reentry
-            _ = unit.UnitPipeline(used_conf)
+            _ = surface_modeling.SurfaceModelingPipeline(used_conf)
 
         # Ref output dir dependent from geometry plugin chosen
         intermediate_output_dir = "intermediate_data"
