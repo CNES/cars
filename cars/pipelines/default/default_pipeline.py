@@ -379,7 +379,7 @@ class DefaultPipeline(PipelineTemplate):
             cars_logging.setup_logging(
                 loglevel,
                 out_dir=current_log_dir,
-                pipeline="unit_pipeline",
+                pipeline="surface_modeling",
                 global_log_file=global_log_file,
             )
 
