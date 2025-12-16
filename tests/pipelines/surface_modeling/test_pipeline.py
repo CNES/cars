@@ -131,6 +131,9 @@ def test_pipeline_ventoux_full():
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
                         ),
+                        "classification": absolute_data_path(
+                            "input/phr_ventoux/left_classif.tif"
+                        ),
                     },
                     "image2": {
                         "image": absolute_data_path(
@@ -138,6 +141,9 @@ def test_pipeline_ventoux_full():
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
+                        ),
+                        "classification": absolute_data_path(
+                            "input/phr_ventoux/right_classif.tif"
                         ),
                     },
                 },
@@ -179,6 +185,42 @@ def test_pipeline_ventoux_full():
                 )
             ),
         )
+        copy2(
+            os.path.join(out_dir, "dsm", "ambiguity.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "ambiguity_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "classif_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "cp_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "pm_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+        )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -196,6 +238,53 @@ def test_pipeline_ventoux_full():
                 os.path.join(
                     ref_output_dir,
                     "image_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "ambiguity.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "ambiguity_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "classif_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "cp_test_pipeline_surface_modeling_ventoux.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "pm_test_pipeline_surface_modeling_ventoux.tif",
                 )
             ),
             atol=0.0001,
