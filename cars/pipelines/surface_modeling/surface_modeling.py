@@ -1060,6 +1060,10 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 image_keys[0]: self.pairs[pair_key]["grid_left"],
                 image_keys[1]: self.pairs[pair_key]["grid_right"],
             }
+            if self.tie_points_out_dir is not None:
+                tie_points_config[OUTPUT][
+                    out_cst.OUT_DIRECTORY
+                ] = self.tie_points_out_dir
             tie_points_pipeline = TiePointsPipeline(
                 tie_points_config,
                 config_dir=self.config_dir,
@@ -2086,6 +2090,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self,
         which_resolution="single",
         log_dir=None,
+        tie_points_out_dir=None,
     ):  # noqa C901
         """
         Run pipeline
@@ -2103,6 +2108,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.auxiliary = self.used_conf[OUTPUT][out_cst.AUXILIARY]
 
         self.which_resolution = which_resolution
+
+        self.tie_points_out_dir = tie_points_out_dir
 
         # saved used configuration
         self.save_configurations()

@@ -402,6 +402,14 @@ class DefaultPipeline(PipelineTemplate):
                 dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
                 current_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
 
+            # Define tie points output dir
+            tie_points_out_dir = os.path.join(
+                self.intermediate_data_dir,
+                "tie_points",
+                "res" + str(epipolar_res),
+            )
+            safe_makedirs(tie_points_out_dir)
+
             updated_pipeline = SurfaceModelingPipeline(
                 current_conf,
                 config_dir=self.config_dir,
@@ -409,6 +417,7 @@ class DefaultPipeline(PipelineTemplate):
             updated_pipeline.run(
                 which_resolution=which_resolution,
                 log_dir=current_log_dir,
+                tie_points_out_dir=tie_points_out_dir,
             )
 
             # update previous out dir
@@ -520,12 +529,10 @@ def extract_conf_with_resolution(
     :type: previous_out_dir: str
     """
 
-    new_dir_out_dir = current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
-    if not last_res:
-        new_dir_out_dir = os.path.join(
-            intermediate_data_dir, "out_res" + str(res)
-        )
-        safe_makedirs(new_dir_out_dir)
+    surface_modeling_out_dir = os.path.join(
+        intermediate_data_dir, "surface_modeling", "res" + str(res)
+    )
+    safe_makedirs(surface_modeling_out_dir)
 
     new_conf = copy.deepcopy(current_conf)
 
@@ -582,6 +589,7 @@ def extract_conf_with_resolution(
 
     overiding_conf = {
         OUTPUT: {
+            out_cst.OUT_DIRECTORY: surface_modeling_out_dir,
             out_cst.AUXILIARY: {
                 out_cst.AUX_DEM_MAX: True,
                 out_cst.AUX_DEM_MIN: True,
@@ -592,12 +600,8 @@ def extract_conf_with_resolution(
     new_conf = overide_pipeline_conf(new_conf, overiding_conf)
 
     # Overide output to not compute data
-    # Overide resolution to let unit pipeline manage it
     if not last_res:
         overiding_conf = {
-            OUTPUT: {
-                out_cst.OUT_DIRECTORY: new_dir_out_dir,
-            },
             pipeline_cst.SURFACE_MODELING: {
                 APPLICATIONS: {
                     "dense_matching": {
