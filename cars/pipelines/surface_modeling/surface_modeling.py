@@ -26,7 +26,7 @@
 # pylint: disable=too-many-nested-blocks
 # pylint: disable=C0302
 """
-CARS unit pipeline class file
+CARS surface modeling pipeline class file
 """
 # Standard imports
 from __future__ import print_function
