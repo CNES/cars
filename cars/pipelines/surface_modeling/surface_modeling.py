@@ -65,7 +65,6 @@ from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import (
     application_parameters,
 )
-from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import (
     output_parameters,
@@ -254,22 +253,15 @@ class SurfaceModelingPipeline(PipelineTemplate):
             or self.save_output_depth_map
             or self.save_output_point_cloud
         )
-        self.sensors_in_inputs = sens_cst.SENSORS in self.used_conf[INPUT]
 
         # Used classification values, for filling -> will be masked
         self.used_classif_values_for_filling = self.get_classif_values_filling(
             self.used_conf[INPUT]
         )
 
-        self.dsms_in_inputs = dsm_cst.DSMS in self.used_conf[INPUT]
-
         self.phasing = self.used_conf[PIPELINE][ADVANCED][adv_cst.PHASING]
 
-        self.compute_depth_map = (
-            self.sensors_in_inputs
-            and (not self.output_level_none)
-            and not self.dsms_in_inputs
-        )
+        self.compute_depth_map = not self.output_level_none
 
         if self.output_level_none:
             self.infer_conditions_from_applications(conf)
@@ -352,41 +344,20 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 continue
 
             if key in sensor_to_depth_apps:
-
-                if not self.sensors_in_inputs:
-                    warn_msg = (
-                        "The application {} can only be used when sensor "
-                        "images are given as an input. "
-                        "Its configuration will be ignored."
-                    ).format(key)
-                    logging.warning(warn_msg)
-
-                elif self.sensors_in_inputs and not self.dsms_in_inputs:
-                    self.compute_depth_map = True
-                    self.last_application_to_run = max(
-                        self.last_application_to_run, self.app_values[key]
-                    )
+                self.compute_depth_map = True
+                self.last_application_to_run = max(
+                    self.last_application_to_run, self.app_values[key]
+                )
 
             elif key in depth_to_dsm_apps:
+                self.compute_depth_map = True
 
-                if not (self.sensors_in_inputs or self.dsms_in_inputs):
-                    warn_msg = (
-                        "The application {} can only be used when sensor "
-                        "images or depth maps are given as an input. "
-                        "Its configuration will be ignored."
-                    ).format(key)
-                    logging.warning(warn_msg)
+                # enabled to start the depth map to dsm process
+                self.save_output_dsm = True
 
-                else:
-                    if self.sensors_in_inputs and not self.dsms_in_inputs:
-                        self.compute_depth_map = True
-
-                    # enabled to start the depth map to dsm process
-                    self.save_output_dsm = True
-
-                    self.last_application_to_run = max(
-                        self.last_application_to_run, self.app_values[key]
-                    )
+                self.last_application_to_run = max(
+                    self.last_application_to_run, self.app_values[key]
+                )
 
             else:
                 warn_msg = (
@@ -474,7 +445,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         scaling_coeff = self.scaling_coeff
 
         needed_applications = application_parameters.get_needed_apps(
-            self.sensors_in_inputs,
+            True,
             self.save_output_dsm,
             self.save_output_point_cloud,
             conf,
@@ -2074,14 +2045,15 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 os.path.join(self.dump_dir, "tile_processing")
             )
 
+            self.cars_orchestrator.add_to_clean(
+                os.path.join(self.out_dir, "tie_points")
+            )
+
             # Remove dump_dir if no intermediate data should be written
-            if (
-                not any(
-                    app.get("save_intermediate_data", False) is True
-                    for app in self.used_conf[PIPELINE][APPLICATIONS].values()
-                    if app is not None
-                )
-                and not self.dsms_in_inputs
+            if not any(
+                app.get("save_intermediate_data", False) is True
+                for app in self.used_conf[PIPELINE][APPLICATIONS].values()
+                if app is not None
             ):
                 self.cars_orchestrator.add_to_clean(self.dump_dir)
 
