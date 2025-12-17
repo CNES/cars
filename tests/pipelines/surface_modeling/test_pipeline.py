@@ -36,7 +36,7 @@ from ...helpers import temporary_dir
 
 
 @pytest.mark.end2end_tests
-def test_pipeline_gizeh_with_low_res_dsm():
+def test_gizeh_with_low_res_dsm():
     """
     End to end pipeline processing
     """
@@ -78,7 +78,7 @@ def test_pipeline_gizeh_with_low_res_dsm():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "dsm_test_pipeline_surface_modeling_low_res_dsm.tif",
+                    "dsm_test_surface_modeling_low_res_dsm.tif",
                 )
             ),
         )
@@ -87,7 +87,7 @@ def test_pipeline_gizeh_with_low_res_dsm():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "image_test_pipeline_surface_modeling_low_res_dsm.tif",
+                    "image_test_surface_modeling_low_res_dsm.tif",
                 )
             ),
         )
@@ -96,7 +96,7 @@ def test_pipeline_gizeh_with_low_res_dsm():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "dsm_test_pipeline_surface_modeling_low_res_dsm.tif",
+                    "dsm_test_surface_modeling_low_res_dsm.tif",
                 )
             ),
             atol=0.0001,
@@ -107,7 +107,7 @@ def test_pipeline_gizeh_with_low_res_dsm():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "image_test_pipeline_surface_modeling_low_res_dsm.tif",
+                    "image_test_surface_modeling_low_res_dsm.tif",
                 )
             ),
             atol=0.0001,
@@ -116,7 +116,7 @@ def test_pipeline_gizeh_with_low_res_dsm():
 
 
 @pytest.mark.end2end_tests
-def test_pipeline_ventoux_full():
+def test_ventoux_full():
     """
     End to end pipeline processing
     """
@@ -172,7 +172,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "dsm_test_pipeline_surface_modeling_ventoux.tif",
+                    "dsm_test_surface_modeling_ventoux.tif",
                 )
             ),
         )
@@ -181,7 +181,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "image_test_pipeline_surface_modeling_ventoux.tif",
+                    "image_test_surface_modeling_ventoux.tif",
                 )
             ),
         )
@@ -190,7 +190,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "ambiguity_test_pipeline_surface_modeling_ventoux.tif",
+                    "ambiguity_test_surface_modeling_ventoux.tif",
                 )
             ),
         )
@@ -199,7 +199,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "classif_test_pipeline_surface_modeling_ventoux.tif",
+                    "classif_test_surface_modeling_ventoux.tif",
                 )
             ),
         )
@@ -208,7 +208,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "cp_test_pipeline_surface_modeling_ventoux.tif",
+                    "cp_test_surface_modeling_ventoux.tif",
                 )
             ),
         )
@@ -217,7 +217,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "pm_test_pipeline_surface_modeling_ventoux.tif",
+                    "pm_test_surface_modeling_ventoux.tif",
                 )
             ),
         )
@@ -226,7 +226,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "dsm_test_pipeline_surface_modeling_ventoux.tif",
+                    "dsm_test_surface_modeling_ventoux.tif",
                 )
             ),
             atol=0.0001,
@@ -237,7 +237,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "image_test_pipeline_surface_modeling_ventoux.tif",
+                    "image_test_surface_modeling_ventoux.tif",
                 )
             ),
             atol=0.0001,
@@ -248,7 +248,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "ambiguity_test_pipeline_surface_modeling_ventoux.tif",
+                    "ambiguity_test_surface_modeling_ventoux.tif",
                 )
             ),
             atol=0.0001,
@@ -260,7 +260,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "classif_test_pipeline_surface_modeling_ventoux.tif",
+                    "classif_test_surface_modeling_ventoux.tif",
                 )
             ),
             atol=0.0001,
@@ -272,7 +272,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "cp_test_pipeline_surface_modeling_ventoux.tif",
+                    "cp_test_surface_modeling_ventoux.tif",
                 )
             ),
             atol=0.0001,
@@ -284,7 +284,7 @@ def test_pipeline_ventoux_full():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "pm_test_pipeline_surface_modeling_ventoux.tif",
+                    "pm_test_surface_modeling_ventoux.tif",
                 )
             ),
             atol=0.0001,
@@ -293,7 +293,7 @@ def test_pipeline_ventoux_full():
 
 
 @pytest.mark.end2end_tests
-def test_pipeline_ventoux_without_filter_incomplete_disparity_range():
+def test_ventoux_without_filter_incomplete_disparity_range():
     """
     End to end pipeline processing
     """
@@ -341,7 +341,7 @@ def test_pipeline_ventoux_without_filter_incomplete_disparity_range():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "dsm_test_pipeline_surface_modeling_ventoux_wo_fidr.tif",
+                    "dsm_test_surface_modeling_ventoux_wo_fidr.tif",
                 )
             ),
         )
@@ -350,7 +350,7 @@ def test_pipeline_ventoux_without_filter_incomplete_disparity_range():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "image_test_pipeline_surface_modeling_ventoux_wo_fidr.tif",
+                    "image_test_surface_modeling_ventoux_wo_fidr.tif",
                 )
             ),
         )
@@ -359,7 +359,7 @@ def test_pipeline_ventoux_without_filter_incomplete_disparity_range():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "dsm_test_pipeline_surface_modeling_ventoux_wo_fidr.tif",
+                    "dsm_test_surface_modeling_ventoux_wo_fidr.tif",
                 )
             ),
             atol=0.0001,
@@ -370,7 +370,181 @@ def test_pipeline_ventoux_without_filter_incomplete_disparity_range():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "image_test_pipeline_surface_modeling_ventoux_wo_fidr.tif",
+                    "image_test_surface_modeling_ventoux_wo_fidr.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
+def test_ventoux_depth_maps_point_clouds():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/left_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/left_image.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/right_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/right_image.geom"
+                        ),
+                    },
+                },
+                "initial_elevation": absolute_data_path(
+                    "input/phr_ventoux/srtm/N44E005.hgt"
+                ),
+            },
+            "output": {
+                "directory": directory,
+                "product_level": ["depth_map", "point_cloud", "dsm"],
+            },
+        }
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "depth_map", "image1_image2", "Z.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dm_Z_test_surface_modeling_ventoux_dm_pc.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "depth_map", "image1_image2", "Z.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dm_Z_test_surface_modeling_ventoux_dm_pc.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert os.path.exists(
+            os.path.join(out_dir, "point_cloud", "image1_image2", "2_1.laz")
+        )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_dem_min_max_median():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+                "low_res_dsm": absolute_data_path(
+                    "input/phr_gizeh/low_res_dsm.tif"
+                ),
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "surface_modeling": {
+                "applications": {
+                    "dem_generation": {"save_intermediate_data": True}
+                }
+            },
+            "output": {"directory": directory, "product_level": []},
+        }
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dem_min_test_surface_modeling_dem_min_max_median.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dem_max_test_surface_modeling_dem_min_max_max.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dem_median_test_surface_modeling_dem_min_max_median.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dem_min_test_surface_modeling_dem_min_max_median.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dem_max_test_surface_modeling_dem_min_max_max.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dem_median_test_surface_modeling_dem_min_max_median.tif",
                 )
             ),
             atol=0.0001,

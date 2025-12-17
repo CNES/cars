@@ -264,7 +264,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.compute_depth_map = not self.output_level_none
 
         if self.output_level_none:
-            self.infer_conditions_from_applications(conf)
+            self.infer_conditions_from_applications(conf[PIPELINE])
 
         self.save_all_intermediate_data = self.used_conf[PIPELINE][ADVANCED][
             adv_cst.SAVE_INTERMEDIATE_DATA
@@ -311,8 +311,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.last_application_to_run = 0
 
         sensor_to_depth_apps = {
-            "grid_generation": 1,  # and 5
-            "resampling": 2,  # and 8
+            "dem_generation": 1,
+            "grid_generation": 2,
+            "resampling": 3,
             "ground_truth_reprojection": 6,
             "dense_matching": 8,
             "dense_match_filling": 9,
@@ -323,7 +324,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         depth_to_dsm_apps = {
             "point_cloud_rasterization": 15,
-            "dem_generation": 16,
             "dsm_filling.1": 17,
             "dsm_filling.2": 18,
             "dsm_filling.3": 19,
@@ -929,6 +929,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 default_alt=self.geom_plugin_with_dem_and_geoid.default_alt,
                 cars_orchestrator=self.cars_orchestrator,
             )
+
+            if self.quit_on_app("dem_generation"):
+                return True
 
             dem_median = paths["dem_median"]
             dem_min = paths["dem_min"]
