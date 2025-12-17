@@ -123,11 +123,43 @@ def test_ventoux_full():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf = {
             "input": {
+                "loaders": {"image": "pivot"},
                 "sensors": {
                     "image1": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
-                        ),
+                        "image": {
+                            "bands": {
+                                "b0": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/left_image.tif"
+                                    ),
+                                    "band": 0,
+                                },
+                                "b1": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/color_image.tif"
+                                    ),
+                                    "band": 0,
+                                },
+                                "b2": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/color_image.tif"
+                                    ),
+                                    "band": 1,
+                                },
+                                "b3": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/color_image.tif"
+                                    ),
+                                    "band": 2,
+                                },
+                                "b4": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/color_image.tif"
+                                    ),
+                                    "band": 3,
+                                },
+                            }
+                        },
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
                         ),
@@ -136,9 +168,16 @@ def test_ventoux_full():
                         ),
                     },
                     "image2": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
-                        ),
+                        "image": {
+                            "bands": {
+                                "b0": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/right_image.tif"
+                                    ),
+                                    "band": 0,
+                                }
+                            }
+                        },
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
                         ),
@@ -157,7 +196,7 @@ def test_ventoux_full():
                     "ambiguity": True,
                     "classification": True,
                     "contributing_pair": True,
-                    "image": True,
+                    "image": ["b1", "b2", "b3"],
                     "performance_map": True,
                 },
             },
