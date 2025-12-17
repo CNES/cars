@@ -72,8 +72,11 @@ def test_pipeline():
             "fill_with_geoid": 3,
         }
 
-        input_conf["advanced"]["epipolar_resolutions"] = [4, 1]
-        input_conf["advanced"]["keep_low_res_dir"] = True
+        input_conf["subsampling"] = {}
+        input_conf["subsampling"]["advanced"] = {}
+        input_conf["subsampling"]["advanced"]["epipolar_resolutions"] = 1
+
+        input_conf["pipeline"] = ["subsampling", "surface_modeling", "filling"]
 
         input_conf["filling"] = {}
 

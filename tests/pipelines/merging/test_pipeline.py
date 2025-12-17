@@ -147,13 +147,13 @@ def test_auxiliary():
                         "ambiguity": absolute_data_path(
                             "input/phr_gizeh_small/ambiguity.tif"
                         ),
-                        "classification": absolute_data_path(
+                        "merging_classification": absolute_data_path(
                             "input/phr_gizeh_small/classification.tif"
                         ),
                         "contributing_pair": absolute_data_path(
                             "input/phr_gizeh_small/contributing_pair.tif"
                         ),
-                        "filling": absolute_data_path(
+                        "merging_filling": absolute_data_path(
                             "input/phr_gizeh_small/filling.tif"
                         ),
                         "image": absolute_data_path(
@@ -173,13 +173,13 @@ def test_auxiliary():
                         "ambiguity": absolute_data_path(
                             "input/phr_gizeh_small/ambiguity.tif"
                         ),
-                        "classification": absolute_data_path(
+                        "merging_classification": absolute_data_path(
                             "input/phr_gizeh_small/classification.tif"
                         ),
                         "contributing_pair": absolute_data_path(
                             "input/phr_gizeh_small/contributing_pair.tif"
                         ),
-                        "filling": absolute_data_path(
+                        "merging_filling": absolute_data_path(
                             "input/phr_gizeh_small/filling.tif"
                         ),
                         "image": absolute_data_path(
