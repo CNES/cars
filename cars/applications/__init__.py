@@ -29,6 +29,7 @@ from . import dense_match_filling  # noqa: F401
 from . import dense_matching  # noqa: F401
 from . import dsm_filling  # noqa: F401
 from . import dsm_merging  # noqa: F401
+from . import grid_correction  # noqa: F401
 from . import grid_generation  # noqa: F401
 from . import ground_truth_reprojection  # noqa: F401
 from . import point_cloud_outlier_removal  # noqa: F401

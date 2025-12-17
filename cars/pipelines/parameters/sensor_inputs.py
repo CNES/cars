@@ -133,6 +133,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             + "_"
             + sens_cst.INPUT_IMG
         )
+
         image_loader = SensorLoader(loader_name, image, config_dir)
         image_as_pivot_format = (
             image_loader.get_pivot_format()  # pylint: disable=E1101

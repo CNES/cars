@@ -36,13 +36,12 @@ import os
 from pathlib import Path
 
 import yaml
-from json_checker import Checker, OptionalKey, Or
+from json_checker import Checker, Or
 
 from cars.applications.application import Application
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
-from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import output_constants as out_cst
@@ -58,9 +57,11 @@ from cars.pipelines.pipeline_constants import (
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 
+PIPELINE = "subsampling"
+
 
 @Pipeline.register(
-    "subsampling",
+    PIPELINE,
 )
 class SubsamplingPipeline(PipelineTemplate):
     """
@@ -102,8 +103,13 @@ class SubsamplingPipeline(PipelineTemplate):
 
         # Check input
         conf[INPUT] = self.check_inputs(conf[INPUT], config_json_dir=config_dir)
+
+        pipeline_conf = conf.get(PIPELINE, {})
+
         # check advanced
-        conf[ADVANCED] = self.check_advanced(conf.get(ADVANCED, {}))
+        conf[PIPELINE][ADVANCED] = self.check_advanced(
+            pipeline_conf.get(ADVANCED, {})
+        )
         # check output
         conf[OUTPUT] = self.check_output(conf)
 
@@ -115,28 +121,11 @@ class SubsamplingPipeline(PipelineTemplate):
         )
         self.used_conf[INPUT] = conf[INPUT]
         self.used_conf[OUTPUT] = conf[OUTPUT]
-        self.used_conf[ADVANCED] = conf[ADVANCED]
+        self.used_conf[ADVANCED] = conf[PIPELINE][ADVANCED]
 
         self.used_conf[APPLICATIONS] = self.check_applications(
-            conf.get(APPLICATIONS, {})
+            pipeline_conf.get(APPLICATIONS, {})
         )
-
-    def check_global_schema(self, conf):
-        """
-        Check the global conf
-        """
-
-        # Validate inputs
-        global_schema = {
-            pipeline_cst.INPUT: dict,
-            pipeline_cst.OUTPUT: dict,
-            OptionalKey(pipeline_cst.APPLICATIONS): dict,
-            OptionalKey(pipeline_cst.ORCHESTRATOR): dict,
-            OptionalKey(pipeline_cst.ADVANCED): dict,
-        }
-
-        checker_inputs = Checker(global_schema)
-        checker_inputs.validate(conf)
 
     def check_inputs(self, conf, config_json_dir=None):
         """

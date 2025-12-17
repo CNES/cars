@@ -38,7 +38,7 @@ from collections import OrderedDict
 
 import numpy as np
 import rasterio
-from json_checker import Checker, OptionalKey, Or
+from json_checker import Checker, Or
 from pyproj import CRS
 from rasterio.errors import NodataShadowWarning
 
@@ -48,7 +48,6 @@ from cars.core.inputs import read_vector
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
-from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import output_constants as out_cst
@@ -65,9 +64,11 @@ from cars.pipelines.pipeline_constants import (
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 
+PIPELINE = "filling"
+
 
 @Pipeline.register(
-    "filling",
+    PIPELINE,
 )
 class FillingPipeline(PipelineTemplate):
     """
@@ -102,8 +103,13 @@ class FillingPipeline(PipelineTemplate):
 
         # Check input
         conf[INPUT] = self.check_inputs(conf)
+
+        pipeline_conf = conf.get(PIPELINE, {})
+
         # check advanced
-        conf[ADVANCED] = self.check_advanced(conf)
+        conf[PIPELINE][ADVANCED] = self.check_advanced(
+            pipeline_conf, conf[INPUT]
+        )
         # check output
         conf[OUTPUT] = self.check_output(conf)
 
@@ -116,7 +122,7 @@ class FillingPipeline(PipelineTemplate):
         )
         self.used_conf[INPUT] = conf[INPUT]
         self.used_conf[OUTPUT] = conf[OUTPUT]
-        self.used_conf[ADVANCED] = conf[ADVANCED]
+        self.used_conf[ADVANCED] = conf[PIPELINE][ADVANCED]
         self.save_all_intermediate_data = self.used_conf[ADVANCED][
             adv_cst.SAVE_INTERMEDIATE_DATA
         ]
@@ -126,7 +132,7 @@ class FillingPipeline(PipelineTemplate):
         )
 
         applications_conf = self.overide_pipeline_conf(
-            conf.get(APPLICATIONS, {}),
+            pipeline_conf.get(APPLICATIONS, {}),
             filling_applications,
             append_classification=True,
         )
@@ -160,23 +166,6 @@ class FillingPipeline(PipelineTemplate):
                     self.dsm_to_fill["dsm"]
                 )
 
-    def check_global_schema(self, conf):
-        """
-        Check the global conf
-        """
-
-        # Validate inputs
-        global_schema = {
-            pipeline_cst.INPUT: dict,
-            pipeline_cst.OUTPUT: dict,
-            OptionalKey(pipeline_cst.APPLICATIONS): dict,
-            OptionalKey(pipeline_cst.ORCHESTRATOR): dict,
-            OptionalKey(pipeline_cst.ADVANCED): dict,
-        }
-
-        checker_inputs = Checker(global_schema)
-        checker_inputs.validate(conf)
-
     def check_inputs(self, conf, config_json_dir=None):
         """
         Check the inputs given
@@ -209,7 +198,7 @@ class FillingPipeline(PipelineTemplate):
         )
         return conf_output
 
-    def check_advanced(self, conf, output_dem_dir=None):
+    def check_advanced(self, conf, conf_input, output_dem_dir=None):
         """
         Check all conf for advanced configuration
 
@@ -219,7 +208,7 @@ class FillingPipeline(PipelineTemplate):
 
         conf_advanced = conf.get(ADVANCED, {})
 
-        inputs_conf = conf.get(INPUT, {})
+        inputs_conf = conf_input
 
         overloaded_conf = conf_advanced.copy()
 

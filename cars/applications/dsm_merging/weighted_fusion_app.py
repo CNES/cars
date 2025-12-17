@@ -382,11 +382,14 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
         if key in [cst.DSM_NB_PTS, cst.DSM_NB_PTS_IN_CELL]:
             method = "sum"
         elif key in [
-            cst.DSM_FILLING,
-            cst.DSM_CLASSIF,
             cst.DSM_SOURCE_PC,
         ]:
             method = "bool"
+        elif key in [
+            cst.DSM_FILLING,
+            cst.DSM_CLASSIF,
+        ]:
+            method = "max"
         else:
             method = "basic"
 
@@ -402,8 +405,6 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
             in [
                 cst.DSM_COLOR,
                 cst.DSM_SOURCE_PC,
-                cst.DSM_CLASSIF,
-                cst.DSM_FILLING,
             ]
             and None in band_descriptions
         ):
@@ -421,18 +422,6 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
                 full_sources_band_descriptions,
             )
             dim = [cst.BAND_SOURCE_PC, cst.Y, cst.X]
-        elif key == cst.DSM_CLASSIF:
-            dataset.coords[cst.BAND_CLASSIF] = (
-                cst.BAND_CLASSIF,
-                band_descriptions,
-            )
-            dim = [cst.BAND_CLASSIF, cst.Y, cst.X]
-        elif key == cst.DSM_FILLING:
-            dataset.coords[cst.BAND_FILLING] = (
-                cst.BAND_FILLING,
-                band_descriptions,
-            )
-            dim = [cst.BAND_FILLING, cst.Y, cst.X]
         else:
             dim = [cst.Y, cst.X]
 
@@ -557,7 +546,6 @@ def assemblage(  # pylint: disable=too-many-positional-arguments
         nb_bands = len(band_descriptions)
     else:
         nb_bands = inputs.rasterio_get_nb_bands(out[0])
-
     dtype = inputs.rasterio_get_dtype(out[0])
     nodata = inputs.rasterio_get_nodata(out[0])
 

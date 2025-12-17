@@ -623,6 +623,11 @@ def update_data(  # pylint: disable=too-many-positional-arguments
         elif method == "sum":
             new_data[old_valid] = old_data[old_valid]
             new_data[current_valid] += current_data[current_valid]
+        elif method == "max":
+            new_data[old_valid] = old_data[old_valid]
+            new_data[current_valid] = np.maximum(
+                new_data[current_valid], current_data[current_valid]
+            )
 
         # round result if saved as integer
         if np.issubdtype(current_data.dtype, np.integer):

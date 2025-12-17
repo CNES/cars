@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -19,20 +19,12 @@
 # limitations under the License.
 #
 """
-this module contains the constants used for all pipelines
+CARS grid_correction module init file
 """
+# flake8: noqa: F401
 
-# Sensor input
+from cars.applications.grid_correction.abstract_grid_correction_app import (
+    GridCorrection,
+)
 
-INPUT = "input"
-OUTPUT = "output"
-APPLICATIONS = "applications"
-ADVANCED = "advanced"
-ORCHESTRATOR = "orchestrator"
-FILLING = "filling"
-PIPELINE = "pipeline"
-SUBSAMPLING = "subsampling"
-TIE_POINTS = "tie_points"
-MERGING = "merging"
-SURFACE_MODELING = "surface_modeling"
-FORMATING = "formating"
+from . import grid_correction_app

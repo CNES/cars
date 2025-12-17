@@ -367,7 +367,7 @@ class MergingPipeline(PipelineTemplate):
                     out_cst.DSM_DIRECTORY,
                     "classification.tif",
                 )
-                if "classification" in dict_path
+                if "merging_classification" in dict_path
                 or self.used_conf[OUTPUT][out_cst.AUXILIARY][
                     out_cst.AUX_CLASSIFICATION
                 ]
@@ -390,7 +390,7 @@ class MergingPipeline(PipelineTemplate):
                     out_cst.DSM_DIRECTORY,
                     "filling.tif",
                 )
-                if "filling" in dict_path
+                if "merging_filling" in dict_path
                 else None
             )
 

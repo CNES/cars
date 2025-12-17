@@ -1135,7 +1135,7 @@ def save_dataset(
 
     bands_description = None
     if (
-        tag in (cst.EPI_CLASSIFICATION, cst.RASTER_CLASSIF, cst.DSM_CLASSIF)
+        tag in (cst.EPI_CLASSIFICATION, cst.RASTER_CLASSIF)
         and cst.BAND_CLASSIF in dataset.coords
     ):
         bands_description = dataset.coords[cst.BAND_CLASSIF].values
@@ -1143,7 +1143,7 @@ def save_dataset(
         bands_description = dataset.coords[cst.BAND_IM].values
     if tag in (cst.RASTER_SOURCE_PC, cst.DSM_SOURCE_PC):
         bands_description = dataset.coords[cst.BAND_SOURCE_PC].values
-    if tag in (cst.EPI_FILLING, cst.RASTER_FILLING, cst.DSM_FILLING):
+    if tag in (cst.EPI_FILLING, cst.RASTER_FILLING):
         bands_description = dataset.coords[cst.BAND_FILLING].values
     if tag in (
         cst.RASTER_PERFORMANCE_MAP,

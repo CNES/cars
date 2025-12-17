@@ -50,7 +50,6 @@ from cars.applications.application import Application
 from cars.applications.dem_generation import (
     dem_generation_wrappers as dem_wrappers,
 )
-from cars.applications.grid_generation import grid_correction_app
 from cars.core import preprocessing, projection, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands
@@ -313,21 +312,22 @@ class SurfaceModelingPipeline(PipelineTemplate):
         sensor_to_depth_apps = {
             "dem_generation": 1,
             "grid_generation": 2,
-            "resampling": 3,
-            "ground_truth_reprojection": 6,
-            "dense_matching": 8,
-            "dense_match_filling": 9,
-            "triangulation": 11,
-            "point_cloud_outlier_removal.1": 12,
-            "point_cloud_outlier_removal.2": 13,
+            "grid_correction":3
+            "resampling": 4,
+            "ground_truth_reprojection": 7,
+            "dense_matching": 9,
+            "dense_match_filling": 10,
+            "triangulation": 12,
+            "point_cloud_outlier_removal.1": 13,
+            "point_cloud_outlier_removal.2": 14,
         }
 
         depth_to_dsm_apps = {
-            "point_cloud_rasterization": 15,
-            "dsm_filling.1": 17,
-            "dsm_filling.2": 18,
-            "dsm_filling.3": 19,
-            "auxiliary_filling": 20,
+            "point_cloud_rasterization": 16,
+            "dsm_filling.1": 18,
+            "dsm_filling.2": 19,
+            "dsm_filling.3": 20,
+            "auxiliary_filling": 21,
         }
 
         self.app_values = {}
@@ -486,6 +486,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.pc_outlier_removal_apps = {}
         self.rasterization_application = None
         self.pc_fusion_application = None
+        self.grid_correction_app = None
 
         # Epipolar grid generation
         self.epipolar_grid_generation_application = Application(
@@ -496,6 +497,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
         used_conf["grid_generation"] = (
             self.epipolar_grid_generation_application.get_conf()
         )
+
+        # Epipolar grid correction
+        self.grid_correction_app = Application(
+            "grid_correction",
+            cfg=used_conf.get("grid_correction", {}),
+        )
+        used_conf["grid_correction"] = self.grid_correction_app.get_conf()
 
         # image resampling
         self.resampling_application = Application(
@@ -771,65 +779,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         return application_conf
 
-    def generate_grid_correction_on_dem(self, pair_key, geo_plugin_on_dem):
-        """
-        Generate the epipolar grid correction for a given pair, using given dem
-        """
-
-        # Generate new grids with dem
-        # Generate rectification grids
-        (
-            grid_left_new_dem,
-            grid_right_new_dem,
-        ) = self.epipolar_grid_generation_application.run(
-            self.pairs[pair_key]["sensor_image_left"],
-            self.pairs[pair_key]["sensor_image_right"],
-            geo_plugin_on_dem,
-            orchestrator=self.cars_orchestrator,
-            pair_folder=os.path.join(
-                self.dump_dir,
-                "epipolar_grid_generation",
-                "new_dem",
-                pair_key,
-            ),
-            pair_key=pair_key,
-        )
-
-        if self.pairs[pair_key].get("sensor_matches_left", None) is None:
-            logging.error(
-                "No sensor matches available to compute grid correction"
-            )
-            return None
-
-        # Generate new matches with new grids
-        new_grid_matches_array = geo_plugin_on_dem.transform_matches_from_grids(
-            self.pairs[pair_key]["sensor_matches_left"],
-            self.pairs[pair_key]["sensor_matches_right"],
-            grid_left_new_dem,
-            grid_right_new_dem,
-        )
-
-        # Generate grid_correction
-        # Compute grid correction
-        (
-            new_grid_correction_coef,
-            _,
-            _,
-            _,
-        ) = grid_correction_app.estimate_right_grid_correction(
-            new_grid_matches_array,
-            grid_right_new_dem,
-            save_matches=False,
-            minimum_nb_matches=0,
-            pair_folder=os.path.join(
-                self.dump_dir, "grid_correction", " new_dem", pair_key
-            ),
-            pair_key=pair_key,
-            orchestrator=self.cars_orchestrator,
-        )
-
-        return new_grid_correction_coef
-
     def sensor_to_depth_maps(self):  # noqa: C901
         """
         Creates the depth map from the sensor images given in the input,
@@ -1080,34 +1029,21 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
             if nb_matches > minimum_nb_matches:
                 # Compute grid correction
-                (
-                    self.pairs[pair_key]["grid_correction_coef"],
-                    self.pairs[pair_key]["corrected_matches_array"],
-                    _,
-                    _,
-                ) = grid_correction_app.estimate_right_grid_correction(
-                    self.pairs[pair_key]["matches_array"],
-                    self.pairs[pair_key]["grid_right"],
-                    save_matches=save_matches,
-                    minimum_nb_matches=minimum_nb_matches,
-                    pair_folder=os.path.join(
-                        self.dump_dir, "grid_correction", "initial", pair_key
-                    ),
-                    pair_key=pair_key,
-                    orchestrator=self.cars_orchestrator,
-                )
-                # Correct grid right
-                self.pairs[pair_key]["corrected_grid_right"] = (
-                    grid_correction_app.correct_grid(
+                (self.pairs[pair_key]["corrected_grid_right"], _, _, _) = (
+                    self.grid_correction_app.run(
+                        self.pairs[pair_key]["matches_array"],
                         self.pairs[pair_key]["grid_right"],
-                        self.pairs[pair_key]["grid_correction_coef"],
-                        os.path.join(
+                        save_matches=save_matches,
+                        minimum_nb_matches=minimum_nb_matches,
+                        pair_folder=os.path.join(
                             self.dump_dir,
                             "grid_correction",
                             "initial",
                             pair_key,
                         ),
-                        save_corrected_grid,
+                        pair_key=pair_key,
+                        orchestrator=self.cars_orchestrator,
+                        save_corrected_grid=save_corrected_grid,
                     )
                 )
             else:

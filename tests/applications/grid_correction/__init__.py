@@ -19,20 +19,5 @@
 # limitations under the License.
 #
 """
-this module contains the constants used for all pipelines
+Cars tests/grid_correction init file
 """
-
-# Sensor input
-
-INPUT = "input"
-OUTPUT = "output"
-APPLICATIONS = "applications"
-ADVANCED = "advanced"
-ORCHESTRATOR = "orchestrator"
-FILLING = "filling"
-PIPELINE = "pipeline"
-SUBSAMPLING = "subsampling"
-TIE_POINTS = "tie_points"
-MERGING = "merging"
-SURFACE_MODELING = "surface_modeling"
-FORMATING = "formating"
