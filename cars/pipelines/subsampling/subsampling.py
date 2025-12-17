@@ -94,17 +94,19 @@ class SubsamplingPipeline(PipelineTemplate):
 
         self.subsampling_dir = os.path.join(self.out_dir, "subsampling")
 
+        pipeline_conf = conf.get(PIPELINE, {})
+
         # Get epipolar resolutions to use
         self.epipolar_resolutions = (
-            advanced_parameters.get_epipolar_resolutions(conf.get(ADVANCED, {}))
+            advanced_parameters.get_epipolar_resolutions(
+                pipeline_conf.get(ADVANCED, {})
+            )
         )
         if isinstance(self.epipolar_resolutions, int):
             self.epipolar_resolutions = [self.epipolar_resolutions]
 
         # Check input
         conf[INPUT] = self.check_inputs(conf[INPUT], config_json_dir=config_dir)
-
-        pipeline_conf = conf.get(PIPELINE, {})
 
         # check advanced
         conf[PIPELINE][ADVANCED] = self.check_advanced(
