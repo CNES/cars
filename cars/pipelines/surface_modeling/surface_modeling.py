@@ -152,44 +152,57 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.used_conf[INPUT] = inputs
         self.refined_conf[INPUT] = copy.deepcopy(inputs)
 
+        initial_elevation = (
+            inputs[sens_cst.INITIAL_ELEVATION]["dem"] is not None
+        )
+        self.elevation_delta_lower_bound = -500 if initial_elevation else -1000
+        self.elevation_delta_upper_bound = 1000 if initial_elevation else 9000
+
         self.dem_scaling_coeff = None
         if inputs[sens_cst.LOW_RES_DSM] is not None:
             low_res_dsm = rasterio.open(inputs[sens_cst.LOW_RES_DSM])
             self.dem_scaling_coeff = np.mean(low_res_dsm.res) * 2
 
         # Init tie points pipelines
-        self.tie_points_pipelines = {}
-        for key1, key2 in inputs[sens_cst.PAIRING]:
-            pair_key = key1 + "_" + key2
-            tie_points_config = {}
-            tie_points_input = {}
-            tie_points_input[sens_cst.SENSORS] = {
-                key1: inputs[sens_cst.SENSORS][key1],
-                key2: inputs[sens_cst.SENSORS][key2],
-            }
-            tie_points_input[sens_cst.PAIRING] = [[key1, key2]]
-            tie_points_input[sens_cst.LOADERS] = inputs[sens_cst.LOADERS]
-            tie_points_input[sens_cst.INITIAL_ELEVATION] = inputs[
-                sens_cst.INITIAL_ELEVATION
-            ]
-            tie_points_config[INPUT] = tie_points_input
-            tie_points_output = os.path.join(self.out_dir, TIE_POINTS, pair_key)
-            tie_points_config["output"] = {"directory": tie_points_output}
-            if TIE_POINTS in conf:
-                tie_points_config[TIE_POINTS] = conf[TIE_POINTS]
-            self.tie_points_pipelines[pair_key] = TiePointsPipeline(
-                tie_points_config,
-                config_dir=self.config_dir,
-            )
-            self.used_conf[TIE_POINTS] = {}
-            self.used_conf[TIE_POINTS][APPLICATIONS] = (
-                self.tie_points_pipelines[pair_key].used_conf[TIE_POINTS][
-                    APPLICATIONS
+        if TIE_POINTS in conf and conf[TIE_POINTS] is None:
+            self.tie_points_pipelines = None
+        else:
+            self.tie_points_pipelines = {}
+            for key1, key2 in inputs[sens_cst.PAIRING]:
+                pair_key = key1 + "_" + key2
+                tie_points_config = {}
+                tie_points_input = {}
+                tie_points_input[sens_cst.SENSORS] = {
+                    key1: inputs[sens_cst.SENSORS][key1],
+                    key2: inputs[sens_cst.SENSORS][key2],
+                }
+                tie_points_input[sens_cst.PAIRING] = [[key1, key2]]
+                tie_points_input[sens_cst.LOADERS] = inputs[sens_cst.LOADERS]
+                tie_points_input[sens_cst.INITIAL_ELEVATION] = inputs[
+                    sens_cst.INITIAL_ELEVATION
                 ]
-            )
-            self.used_conf[TIE_POINTS][ADVANCED] = self.tie_points_pipelines[
-                pair_key
-            ].used_conf[TIE_POINTS][ADVANCED]
+                tie_points_config[INPUT] = tie_points_input
+                tie_points_output = os.path.join(
+                    self.out_dir, TIE_POINTS, pair_key
+                )
+                tie_points_config["output"] = {"directory": tie_points_output}
+                if TIE_POINTS in conf:
+                    tie_points_config[TIE_POINTS] = conf[TIE_POINTS]
+                self.tie_points_pipelines[pair_key] = TiePointsPipeline(
+                    tie_points_config,
+                    config_dir=self.config_dir,
+                )
+                self.used_conf[TIE_POINTS] = {}
+                self.used_conf[TIE_POINTS][APPLICATIONS] = (
+                    self.tie_points_pipelines[pair_key].used_conf[TIE_POINTS][
+                        APPLICATIONS
+                    ]
+                )
+                self.used_conf[TIE_POINTS][ADVANCED] = (
+                    self.tie_points_pipelines[pair_key].used_conf[TIE_POINTS][
+                        ADVANCED
+                    ]
+                )
 
         # Check advanced parameters
         # TODO static method in the base class
@@ -416,7 +429,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
         :return: overloaded inputs
         :rtype: dict
         """
-
         return sensor_inputs.sensors_check_inputs(conf, config_dir=config_dir)
 
     def save_configurations(self):
@@ -994,84 +1006,106 @@ class SurfaceModelingPipeline(PipelineTemplate):
             # Prepare tie point pipeline
 
             # Update tie points pipeline with rectification grids
-            tie_points_config = self.tie_points_pipelines[pair_key].used_conf
-            image_keys = list(tie_points_config[INPUT][sens_cst.SENSORS])
-            tie_points_config[INPUT][sens_cst.RECTIFICATION_GRIDS] = {
-                image_keys[0]: self.pairs[pair_key]["grid_left"],
-                image_keys[1]: self.pairs[pair_key]["grid_right"],
-            }
-            if self.tie_points_out_dir is not None:
-                tie_points_config[OUTPUT][
+            if self.tie_points_pipelines is not None:
+                tie_points_config = self.tie_points_pipelines[
+                    pair_key
+                ].used_conf
+                image_keys = list(tie_points_config[INPUT][sens_cst.SENSORS])
+                tie_points_config[INPUT][sens_cst.RECTIFICATION_GRIDS] = {
+                    image_keys[0]: self.pairs[pair_key]["grid_left"],
+                    image_keys[1]: self.pairs[pair_key]["grid_right"],
+                }
+                if self.tie_points_out_dir is not None:
+                    tie_points_config[OUTPUT][
+                        out_cst.OUT_DIRECTORY
+                    ] = self.tie_points_out_dir
+                tie_points_pipeline = TiePointsPipeline(
+                    tie_points_config,
+                    config_dir=self.config_dir,
+                )
+                sparse_mtch_app = tie_points_pipeline.sparse_matching_app
+
+                tie_points_output = tie_points_config[OUTPUT][
                     out_cst.OUT_DIRECTORY
-                ] = self.tie_points_out_dir
-            tie_points_pipeline = TiePointsPipeline(
-                tie_points_config,
-                config_dir=self.config_dir,
-            )
-            sparse_mtch_app = tie_points_pipeline.sparse_matching_app
+                ]
 
-            tie_points_output = tie_points_config[OUTPUT][out_cst.OUT_DIRECTORY]
+                # If dem are provided, launch disparity grids generation
+                disp_range_grid_dir = os.path.join(
+                    tie_points_output, "disparity_grids"
+                )
+                disp_range_grid = None
+                if dems:
+                    disp_range_grid = (
+                        self.dense_matching_app.generate_disparity_grids(
+                            self.pairs[pair_key]["sensor_image_right"],
+                            self.pairs[pair_key]["grid_right"],
+                            self.geom_plugin_with_dem_and_geoid,
+                            dem_min=dem_min,
+                            dem_max=dem_max,
+                            pair_folder=disp_range_grid_dir,
+                            orchestrator=self.cars_orchestrator,
+                        )
+                    )
 
-            # If dem are provided, launch disparity grids generation
-            disp_range_grid_dir = os.path.join(
-                tie_points_output, "disparity_grids"
-            )
-            disp_range_grid = None
-            if dems:
-                disp_range_grid = (
-                    self.dense_matching_app.generate_disparity_grids(
-                        self.pairs[pair_key]["sensor_image_right"],
-                        self.pairs[pair_key]["grid_right"],
-                        self.geom_plugin_with_dem_and_geoid,
-                        dem_min=dem_min,
-                        dem_max=dem_max,
-                        pair_folder=disp_range_grid_dir,
-                        orchestrator=self.cars_orchestrator,
+                # Launch tie points pipeline
+                tie_points_pipeline.run(
+                    disp_range_grid=disp_range_grid, log_dir=self.log_dir
+                )
+                self.pairs[pair_key]["matches_array"] = np.load(
+                    os.path.join(
+                        tie_points_output, pair_key, "filtered_matches.npy"
                     )
                 )
 
-            # Launch tie points pipeline
-            tie_points_pipeline.run(
-                disp_range_grid=disp_range_grid, log_dir=self.log_dir
-            )
-            self.pairs[pair_key]["matches_array"] = np.load(
-                os.path.join(
-                    tie_points_output, pair_key, "filtered_matches.npy"
-                )
-            )
+                minimum_nb_matches = sparse_mtch_app.minimum_nb_matches
+                nb_matches = self.pairs[pair_key]["matches_array"].shape[0]
+                save_matches = sparse_mtch_app.get_save_matches()
 
-            minimum_nb_matches = sparse_mtch_app.minimum_nb_matches
-            nb_matches = self.pairs[pair_key]["matches_array"].shape[0]
-            save_matches = sparse_mtch_app.get_save_matches()
-
-            if nb_matches > minimum_nb_matches:
-                # Compute grid correction
-                (self.pairs[pair_key]["corrected_grid_right"], _, _, _) = (
-                    self.grid_correction_app.run(
-                        self.pairs[pair_key]["matches_array"],
-                        self.pairs[pair_key]["grid_right"],
-                        save_matches=save_matches,
-                        minimum_nb_matches=minimum_nb_matches,
-                        pair_folder=os.path.join(
-                            self.dump_dir,
-                            "grid_correction",
-                            "initial",
-                            pair_key,
-                        ),
-                        pair_key=pair_key,
-                        orchestrator=self.cars_orchestrator,
-                        save_corrected_grid=save_corrected_grid,
+                if nb_matches > minimum_nb_matches:
+                    # Compute grid correction
+                    (self.pairs[pair_key]["corrected_grid_right"], _, _, _) = (
+                        self.grid_correction_app.run(
+                            self.pairs[pair_key]["matches_array"],
+                            self.pairs[pair_key]["grid_right"],
+                            save_matches=save_matches,
+                            minimum_nb_matches=minimum_nb_matches,
+                            pair_folder=os.path.join(
+                                self.dump_dir,
+                                "grid_correction",
+                                "initial",
+                                pair_key,
+                            ),
+                            pair_key=pair_key,
+                            orchestrator=self.cars_orchestrator,
+                            save_corrected_grid=save_corrected_grid,
+                        )
+                    # Correct grid right
+                    self.pairs[pair_key]["corrected_grid_right"] = (
+                        grid_correction_app.correct_grid(
+                            self.pairs[pair_key]["grid_right"],
+                            self.pairs[pair_key]["grid_correction_coef"],
+                            os.path.join(
+                                self.dump_dir,
+                                "grid_correction",
+                                "initial",
+                                pair_key,
+                            ),
+                            save_corrected_grid,
+                        )
                     )
-                )
+                else:
+                    logging.warning(
+                        "Grid correction is not applied because numer of "
+                        "matches found ({}) is less than minimum number of "
+                        "matches required for grid correction ({})".format(
+                            nb_matches,
+                            minimum_nb_matches,
+                        )
+                    )
+                    self.pairs[pair_key]["corrected_grid_right"] = self.pairs[
+                        pair_key
+                    ]["grid_right"]
             else:
-                logging.warning(
-                    "Grid correction is not applied because numer of matches "
-                    "found ({}) is less than minimum numer of matches "
-                    "required for grid correction ({})".format(
-                        nb_matches,
-                        minimum_nb_matches,
-                    )
-                )
                 self.pairs[pair_key]["corrected_grid_right"] = self.pairs[
                     pair_key
                 ]["grid_right"]
@@ -1084,32 +1118,45 @@ class SurfaceModelingPipeline(PipelineTemplate):
             disp_to_alt_ratio = self.pairs[pair_key]["grid_left"][
                 "disp_to_alt_ratio"
             ]
-            disp_bounds_params = sparse_mtch_app.disparity_bounds_estimation
-
-            if disp_bounds_params["activated"]:
-                matches = self.pairs[pair_key]["matches_array"]
-                sift_disp = matches[:, 2] - matches[:, 0]
-                disp_min = np.percentile(
-                    sift_disp, disp_bounds_params["percentile"]
-                )
-                disp_max = np.percentile(
-                    sift_disp, 100 - disp_bounds_params["percentile"]
-                )
-                logging.info(
-                    "Global disparity interval without margin : "
-                    f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
-                )
-                disp_min -= (
-                    disp_bounds_params["upper_margin"] / disp_to_alt_ratio
-                )
-                disp_max += (
-                    disp_bounds_params["lower_margin"] / disp_to_alt_ratio
-                )
-                logging.info(
-                    "Global disparity interval with margin : "
-                    f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
-                )
+            if self.tie_points_pipelines is not None:
+                disp_bounds_params = sparse_mtch_app.disparity_bounds_estimation
+                if disp_bounds_params["activated"]:
+                    matches = self.pairs[pair_key]["matches_array"]
+                    sift_disp = matches[:, 2] - matches[:, 0]
+                    disp_min = np.percentile(
+                        sift_disp, disp_bounds_params["percentile"]
+                    )
+                    disp_max = np.percentile(
+                        sift_disp, 100 - disp_bounds_params["percentile"]
+                    )
+                    logging.info(
+                        "Global disparity interval without margin : "
+                        f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
+                    )
+                    disp_min -= (
+                        disp_bounds_params["upper_margin"] / disp_to_alt_ratio
+                    )
+                    disp_max += (
+                        disp_bounds_params["lower_margin"] / disp_to_alt_ratio
+                    )
+                    logging.info(
+                        "Global disparity interval with margin : "
+                        f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
+                    )
+                else:
+                    disp_min = (
+                        -self.elevation_delta_upper_bound / disp_to_alt_ratio
+                    )
+                    disp_max = (
+                        -self.elevation_delta_lower_bound / disp_to_alt_ratio
+                    )
+                    logging.info(
+                        "Global disparity interval : "
+                        f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
+                    )
             else:
+                disp_min = -self.elevation_delta_upper_bound / disp_to_alt_ratio
+                disp_max = -self.elevation_delta_lower_bound / disp_to_alt_ratio
                 logging.info(
                     "Global disparity interval : "
                     f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
@@ -1192,14 +1239,10 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     )
                 )
 
-                dsp_marg = self.tie_points_pipelines[
-                    pair_key
-                ].sparse_matching_app.get_disparity_margin()
                 updating_infos = {
                     application_constants.APPLICATION_TAG: {
                         sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
                             pair_key: {
-                                sm_cst.DISPARITY_MARGIN_PARAM_TAG: dsp_marg,
                                 sm_cst.MINIMUM_DISPARITY_TAG: dmin,
                                 sm_cst.MAXIMUM_DISPARITY_TAG: dmax,
                             }
@@ -1230,12 +1273,10 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     dmax = self.pairs[pair_key]["disp_range_grid"]["global_max"]
 
                     # update orchestrator_out_json
-                    marg = self.sparse_mtch_app.get_disparity_margin()
                     updating_infos = {
                         application_constants.APPLICATION_TAG: {
                             sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
                                 pair_key: {
-                                    sm_cst.DISPARITY_MARGIN_PARAM_TAG: marg,
                                     sm_cst.MINIMUM_DISPARITY_TAG: dmin,
                                     sm_cst.MAXIMUM_DISPARITY_TAG: dmax,
                                 }
@@ -1340,9 +1381,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
             )
             # Run ground truth dsm computation
             if self.used_conf[PIPELINE][ADVANCED][adv_cst.GROUND_TRUTH_DSM]:
-                self.used_conf["applications"]["ground_truth_reprojection"][
-                    "save_intermediate_data"
-                ] = True
+                self.used_conf[PIPELINE][APPLICATIONS][
+                    "ground_truth_reprojection"
+                ]["save_intermediate_data"] = True
                 new_geomplugin_dsm = AbstractGeometry(  # pylint: disable=E0110
                     self.geometry_plugin,
                     dem=self.used_conf[PIPELINE][ADVANCED][
@@ -1469,17 +1510,17 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 # the dense matching app
                 # Because we kept the information regarding the ambiguity,
                 # performance_map calculus..
-                self.used_conf[PIPELINE]["applications"]["dense_matching"][
+                self.used_conf[PIPELINE][APPLICATIONS]["dense_matching"][
                     "loader_conf"
                 ] = conf
-                self.used_conf[PIPELINE]["applications"]["dense_matching"][
+                self.used_conf[PIPELINE][APPLICATIONS]["dense_matching"][
                     "method"
                 ] = "custom"
 
                 # Re initialization of the dense matching application
                 self.dense_matching_app = Application(
                     "dense_matching",
-                    cfg=self.used_conf[PIPELINE]["applications"][
+                    cfg=self.used_conf[PIPELINE][APPLICATIONS][
                         "dense_matching"
                     ],
                 )

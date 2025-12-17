@@ -550,3 +550,624 @@ def test_gizeh_dem_min_max_median():
             atol=0.0001,
             rtol=1e-6,
         )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_res4():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img1_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img2_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+        }
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res4.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_surface_modeling_gizeh_res4.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res4.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_surface_modeling_gizeh_res4.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_res16():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img1_res16.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img2_res16.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+        }
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res16.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_surface_modeling_gizeh_res16.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res16.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_surface_modeling_gizeh_res16.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_res4_with_roi():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img1_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img2_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+        }
+        roi_geo_json = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "coordinates": [
+                            [
+                                [320000, 3317850],
+                                [320000, 3318000],
+                                [320200, 3318000],
+                                [320200, 3317850],
+                                [320000, 3317850],
+                            ]
+                        ],
+                        "type": "Polygon",
+                    },
+                }
+            ],
+            "crs": {"type": "name", "properties": {"name": "EPSG:32636"}},
+        }
+
+        conf["input"]["roi"] = roi_geo_json
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_surface_modeling_gizeh_res4_with_roi.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_surface_modeling_gizeh_res4_with_roi.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_res4_with_gt_reprojection():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img1_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img2_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "surface_modeling": {
+                "applications": {
+                    "ground_truth_reprojection": {
+                        "method": "direct_loc",
+                        "target": "all",
+                        "save_intermediate_data": True,
+                    },
+                },
+                "advanced": {
+                    "ground_truth_dsm": {
+                        "dsm": absolute_data_path(
+                            "input/phr_gizeh/srtm_dir/N29E031_KHEOPS.tif"
+                        )
+                    }
+                },
+            },
+            "output": {"product_level": [], "directory": directory},
+        }
+
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "image1_image2",
+                "sensor_dsm_ground_truth_left.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "sensor_dsm_gt_left_test_gt_reprojection.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "image1_image2",
+                "sensor_dsm_ground_truth_right.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "sensor_dsm_gt_right_test_gt_reprojection.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "image1_image2",
+                "epipolar_disp_ground_truth_left.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "epipolar_disp_gt_left_test_gt_reprojection.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "image1_image2",
+                "epipolar_disp_ground_truth_right.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "epipolar_disp_gt_right_test_gt_reprojection.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "image1_image2",
+                "sensor_dsm_ground_truth_left.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "sensor_dsm_gt_left_test_gt_reprojection.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "image1_image2",
+                "sensor_dsm_ground_truth_right.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "sensor_dsm_gt_right_test_gt_reprojection.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "image1_image2",
+                "epipolar_disp_ground_truth_left.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epipolar_disp_gt_left_test_gt_reprojection.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "image1_image2",
+                "epipolar_disp_ground_truth_right.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epipolar_disp_gt_right_test_gt_reprojection.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_with_mask():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                        "mask": absolute_data_path(
+                            "input/phr_gizeh/new_mask1.tif"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                        "mask": absolute_data_path(
+                            "input/phr_gizeh/new_mask2.tif"
+                        ),
+                    },
+                },
+                "low_res_dsm": absolute_data_path(
+                    "input/phr_gizeh/low_res_dsm.tif"
+                ),
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+        }
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_surface_modeling_with_mask.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_surface_modeling_with_mask.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_surface_modeling_with_mask.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_surface_modeling_with_mask.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_res4_without_tie_points():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img1_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img2_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+            },
+            "tie_points": None,
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+        }
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )

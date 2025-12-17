@@ -73,7 +73,9 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         }
 
         for pipeline_name in Pipeline.available_pipeline:
-            global_schema = global_schema | {OptionalKey(pipeline_name): dict}
+            global_schema = global_schema | {
+                OptionalKey(pipeline_name): Or(None, dict)
+            }
 
         checker_inputs = Checker(global_schema)
         checker_inputs.validate(conf)

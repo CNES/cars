@@ -3349,17 +3349,18 @@ def test_compute_dsm_with_roi_ventoux():
                     "geometry": {
                         "coordinates": [
                             [
-                                [5.194, 44.2064],
-                                [5.194, 44.2059],
-                                [5.195, 44.2059],
-                                [5.195, 44.2064],
-                                [5.194, 44.2064],
+                                [320000, 3317800],
+                                [320000, 3318000],
+                                [320200, 3318000],
+                                [320200, 3317800],
+                                [320000, 3317800],
                             ]
                         ],
                         "type": "Polygon",
                     },
                 }
             ],
+            "crs": {"type": "name", "properties": {"name": "EPSG:32636"}},
         }
 
         input_config_dense_dsm["input"]["roi"] = roi_geo_json
