@@ -312,7 +312,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         sensor_to_depth_apps = {
             "dem_generation": 1,
             "grid_generation": 2,
-            "grid_correction":3
+            "grid_correction": 3,
             "resampling": 4,
             "ground_truth_reprojection": 7,
             "dense_matching": 9,
