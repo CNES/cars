@@ -35,7 +35,7 @@ from ...helpers import temporary_dir
 
 
 @pytest.mark.end2end_tests
-def test_pipeline_phased_dsm():
+def test_phased_dsm():
     """
     End to end pipeline processing
     """
@@ -75,15 +75,13 @@ def test_pipeline_phased_dsm():
         copy2(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir, "dsm_test_pipeline_merging.tif"
-                )
+                os.path.join(intermediate_output_dir, "dsm_test_merging.tif")
             ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_test_pipeline_merging.tif")
+                os.path.join(ref_output_dir, "dsm_test_merging.tif")
             ),
             atol=0.0001,
             rtol=1e-6,
@@ -91,7 +89,7 @@ def test_pipeline_phased_dsm():
 
 
 @pytest.mark.end2end_tests
-def test_pipeline_unphased_dsm():
+def test_unphased_dsm():
     """
     End to end pipeline processing
     """
@@ -131,7 +129,7 @@ def test_pipeline_unphased_dsm():
 
 
 @pytest.mark.end2end_tests
-def test_pipeline_auxiliary():
+def test_auxiliary():
     """
     End to end pipeline processing
     """
@@ -220,7 +218,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "dsm_test_pipeline_merging_auxiliary.tif",
+                    "dsm_test_merging_auxiliary.tif",
                 )
             ),
         )
@@ -229,7 +227,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "ambiguity_test_pipeline_merging_auxiliary.tif",
+                    "ambiguity_test_merging_auxiliary.tif",
                 )
             ),
         )
@@ -238,7 +236,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "classification_test_pipeline_merging_auxiliary.tif",
+                    "classification_test_merging_auxiliary.tif",
                 )
             ),
         )
@@ -247,7 +245,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "contributing_pair_test_pipeline_merging_auxiliary.tif",
+                    "contributing_pair_test_merging_auxiliary.tif",
                 )
             ),
         )
@@ -256,7 +254,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "filling_test_pipeline_merging_auxiliary.tif",
+                    "filling_test_merging_auxiliary.tif",
                 )
             ),
         )
@@ -265,7 +263,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "image_test_pipeline_merging_auxiliary.tif",
+                    "image_test_merging_auxiliary.tif",
                 )
             ),
         )
@@ -274,16 +272,14 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "performance_map_test_pipeline_merging_auxiliary.tif",
+                    "performance_map_test_merging_auxiliary.tif",
                 )
             ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "dsm_test_pipeline_merging_auxiliary.tif"
-                )
+                os.path.join(ref_output_dir, "dsm_test_merging_auxiliary.tif")
             ),
             atol=0.0001,
             rtol=1e-6,
@@ -293,7 +289,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "ambiguity_test_pipeline_merging_auxiliary.tif",
+                    "ambiguity_test_merging_auxiliary.tif",
                 )
             ),
             atol=0.0001,
@@ -304,7 +300,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "classification_test_pipeline_merging_auxiliary.tif",
+                    "classification_test_merging_auxiliary.tif",
                 )
             ),
             atol=0.0001,
@@ -316,7 +312,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "contributing_pair_test_pipeline_merging_auxiliary.tif",
+                    "contributing_pair_test_merging_auxiliary.tif",
                 )
             ),
             atol=0.0001,
@@ -327,7 +323,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "filling_test_pipeline_merging_auxiliary.tif",
+                    "filling_test_merging_auxiliary.tif",
                 )
             ),
             atol=0.0001,
@@ -336,9 +332,7 @@ def test_pipeline_auxiliary():
         assert_same_images(
             os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "image_test_pipeline_merging_auxiliary.tif"
-                )
+                os.path.join(ref_output_dir, "image_test_merging_auxiliary.tif")
             ),
             atol=0.0001,
             rtol=1e-6,
@@ -348,7 +342,7 @@ def test_pipeline_auxiliary():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "performance_map_test_pipeline_merging_auxiliary.tif",
+                    "performance_map_test_merging_auxiliary.tif",
                 )
             ),
             atol=0.0001,
