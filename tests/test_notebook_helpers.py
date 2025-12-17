@@ -28,10 +28,10 @@ import importlib.util
 import os
 import sys
 
-# Third party imports
-import pytest
-
 from .helpers import cars_path
+
+# Third party imports
+
 
 # Import notebook_helpers
 spec_notebook_helpers = importlib.util.spec_from_file_location(
@@ -43,7 +43,6 @@ sys.modules["notebook_helpers"] = notebook_helpers
 spec_notebook_helpers.loader.exec_module(notebook_helpers)
 
 
-@pytest.mark.notebook_tests
 def test_set_dask_config():
     """
     Test set_dask_config
