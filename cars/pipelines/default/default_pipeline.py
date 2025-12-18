@@ -471,7 +471,7 @@ class DefaultPipeline(PipelineTemplate):
 
     def construct_formating_conf(self, input_dir):
         """
-        Construct the right conf for formatting
+        Construct the right conf for formating
         """
 
         formating_conf = {}
