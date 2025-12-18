@@ -36,7 +36,6 @@ def test_check_full_conf():
     """
     conf = {
         "method": "sift",
-        "disparity_margin": 0.02,
         "elevation_delta_lower_bound": -100,
         "elevation_delta_upper_bound": 1000,
         "strip_margin": 10,

@@ -181,7 +181,6 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
     }
     dense_matching_app = CensusMccnnSgm()
     # Overide margin
-    dense_matching_app.disparity_margin = 0
     disp_range_grid = dense_matching_app.generate_disparity_grids(
         None,
         right_grid,
