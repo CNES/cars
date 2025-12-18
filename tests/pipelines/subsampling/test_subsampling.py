@@ -88,152 +88,153 @@ def test_subsampling(resolution):
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
         for res in resolution:
-            copy2(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "left/left_image.tif",
-                ),
-                absolute_data_path(
+            if res != 1:
+                copy2(
                     os.path.join(
-                        intermediate_output_dir,
-                        "img1_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "left/left_image.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            intermediate_output_dir,
+                            "img1_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                )
 
-            copy2(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "right/right_image.tif",
-                ),
-                absolute_data_path(
+                copy2(
                     os.path.join(
-                        intermediate_output_dir,
-                        "img2_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "right/right_image.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            intermediate_output_dir,
+                            "img2_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                )
 
-            copy2(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "left/color_image.tif",
-                ),
-                absolute_data_path(
+                copy2(
                     os.path.join(
-                        intermediate_output_dir,
-                        "color1_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "left/color_image.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            intermediate_output_dir,
+                            "color1_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                )
 
-            copy2(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "left/left_classif.tif",
-                ),
-                absolute_data_path(
+                copy2(
                     os.path.join(
-                        intermediate_output_dir,
-                        "classif1_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "left/left_classif.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            intermediate_output_dir,
+                            "classif1_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                )
 
-            copy2(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "right/right_classif.tif",
-                ),
-                absolute_data_path(
+                copy2(
                     os.path.join(
-                        intermediate_output_dir,
-                        "classif2_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "right/right_classif.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            intermediate_output_dir,
+                            "classif2_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                )
 
-            assert_same_images(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "left/left_image.tif",
-                ),
-                absolute_data_path(
+                assert_same_images(
                     os.path.join(
-                        ref_output_dir,
-                        "img1_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-                atol=0.0001,
-                rtol=1e-6,
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "left/left_image.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            ref_output_dir,
+                            "img1_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                    atol=0.0001,
+                    rtol=1e-6,
+                )
 
-            assert_same_images(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "right/right_image.tif",
-                ),
-                absolute_data_path(
+                assert_same_images(
                     os.path.join(
-                        ref_output_dir,
-                        "img2_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-                atol=0.0001,
-                rtol=1e-6,
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "right/right_image.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            ref_output_dir,
+                            "img2_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                    atol=0.0001,
+                    rtol=1e-6,
+                )
 
-            assert_same_images(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "left/color_image.tif",
-                ),
-                absolute_data_path(
+                assert_same_images(
                     os.path.join(
-                        ref_output_dir,
-                        "color1_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-                atol=0.0001,
-                rtol=1e-6,
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "left/color_image.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            ref_output_dir,
+                            "color1_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                    atol=0.0001,
+                    rtol=1e-6,
+                )
 
-            assert_same_images(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "left/left_classif.tif",
-                ),
-                absolute_data_path(
+                assert_same_images(
                     os.path.join(
-                        ref_output_dir,
-                        "classif1_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-                atol=0.0001,
-                rtol=1e-6,
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "left/left_classif.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            ref_output_dir,
+                            "classif1_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                    atol=0.0001,
+                    rtol=1e-6,
+                )
 
-            assert_same_images(
-                os.path.join(
-                    out_dir,
-                    "subsampling/res_" + str(res),
-                    "right/right_classif.tif",
-                ),
-                absolute_data_path(
+                assert_same_images(
                     os.path.join(
-                        ref_output_dir,
-                        "classif2_phr_ventoux_res_" + str(res) + ".tif",
-                    )
-                ),
-                atol=0.0001,
-                rtol=1e-6,
-            )
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "right/right_classif.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            ref_output_dir,
+                            "classif2_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                    atol=0.0001,
+                    rtol=1e-6,
+                )
