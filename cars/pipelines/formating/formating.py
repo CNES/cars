@@ -153,4 +153,12 @@ class FormatingPipeline(PipelineTemplate):
         destination_dir = Path(self.used_conf[OUTPUT]["directory"])
 
         for element in source_dir.iterdir():
-            shutil.move(str(element), destination_dir / element.name)
+            dest = destination_dir / element.name
+
+            if dest.exists():
+                if dest.is_dir():
+                    shutil.rmtree(dest)
+                else:
+                    dest.unlink()
+
+            shutil.move(element, dest)
