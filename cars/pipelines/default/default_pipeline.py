@@ -328,22 +328,22 @@ class DefaultPipeline(PipelineTemplate):
         Check the pipeline section
         """
         possible_pipeline = [
-            "subsampling",
-            "surface_modeling",
-            "filling",
-            "merging",
-            "formatting",
+            pipeline_cst.SUBSAMPLING,
+            pipeline_cst.SURFACE_MODELING,
+            pipeline_cst.FILLING,
+            pipeline_cst.MERGING,
+            pipeline_cst.FORMATTING,
         ]
         dict_pipeline = {}
 
         if PIPELINE not in conf:
             if dsm_cst.DSMS in conf[INPUT]:
-                conf[PIPELINE] = ["merging", "formatting"]
+                conf[PIPELINE] = [pipeline_cst.MERGING, pipeline_cst.FORMATTING]
             elif sens_cst.SENSORS in conf[INPUT]:
                 conf[PIPELINE] = [
-                    "subsampling",
-                    "surface_modeling",
-                    "formatting",
+                    pipeline_cst.SUBSAMPLING,
+                    pipeline_cst.SURFACE_MODELING,
+                    pipeline_cst.FORMATTING,
                 ]
 
         if isinstance(conf[PIPELINE], str):
@@ -364,26 +364,49 @@ class DefaultPipeline(PipelineTemplate):
             if key not in dict_pipeline:
                 dict_pipeline.update({key: False})
 
-        if dsm_cst.DSMS in conf[INPUT] and not dict_pipeline["merging"]:
-            dict_pipeline["merging"] = True
-        elif dsm_cst.DSMS in conf[INPUT] and dict_pipeline["surface_modeling"]:
+        if (
+            dsm_cst.DSMS in conf[INPUT]
+            and not dict_pipeline[pipeline_cst.MERGING]
+        ):
+            dict_pipeline[pipeline_cst.MERGING] = True
+        elif (
+            dsm_cst.DSMS in conf[INPUT]
+            and dict_pipeline[pipeline_cst.SURFACE_MODELING]
+        ):
             raise RuntimeError(
                 "You can not use the surface modeling pipeline with dsm inputs"
             )
         elif (
             sens_cst.SENSORS in conf[INPUT]
-            and dict_pipeline["merging"]
+            and dict_pipeline[pipeline_cst.MERGING]
             and dsm_cst.DSMS not in conf[INPUT]
         ):
             raise RuntimeError(
                 "You can not use the merging pipeline with sensors inputs only"
             )
 
-        if "filling" in conf[INPUT] and not dict_pipeline["filling"]:
-            logging.warning(
-                "To use the filling pipeline, you have to "
-                "specify it in the pipeline section"
-            )
+        if (
+            pipeline_cst.FILLING in conf[INPUT] or pipeline_cst.FILLING in conf
+        ) and not dict_pipeline[pipeline_cst.FILLING]:
+            dict_pipeline[pipeline_cst.FILLING] = True
+
+        if (
+            pipeline_cst.SURFACE_MODELING in conf[INPUT]
+            and not dict_pipeline[pipeline_cst.SURFACE_MODELING]
+        ):
+            dict_pipeline[pipeline_cst.SURFACE_MODELING] = True
+
+        if (
+            pipeline_cst.MERGING in conf[INPUT]
+            and not dict_pipeline[pipeline_cst.MERGING]
+        ):
+            dict_pipeline[pipeline_cst.MERGING] = True
+
+        if (
+            pipeline_cst.SUBSAMPLING in conf[INPUT]
+            and not dict_pipeline[pipeline_cst.SUBSAMPLING]
+        ):
+            dict_pipeline[pipeline_cst.SUBSAMPLING] = True
 
         return dict_pipeline
 
