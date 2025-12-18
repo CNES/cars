@@ -175,6 +175,7 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                     "width": new_width,
                     "transform": new_transform,
                     "driver": "GTiff",
+                    "compress": "lzw",
                 }
             )
 
@@ -310,9 +311,9 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                 optional_data = False
 
             if path is not None:
-                name_file = Path(path).name
+                name_file = Path(path).stem
                 orchestrator.add_to_save_lists(
-                    os.path.join(out_directory, id_image, name_file),
+                    os.path.join(out_directory, id_image, name_file + ".tif"),
                     key,
                     image_subsampled,
                     dtype=dtype,

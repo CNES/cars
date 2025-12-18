@@ -223,16 +223,16 @@ class SubsamplingPipeline(PipelineTemplate):
 
         return used_conf
 
-    def formatting(self, key, out_dir):
+    def formatting(self, key, out_dir, conf_to_save):
         """
         Format the input.yaml with new inputs
         """
 
-        inputs = self.used_conf[INPUT]
+        inputs = conf_to_save[INPUT]
         sensor = inputs[sens_cst.SENSORS][key]
 
         def replace_path(path):
-            return os.path.join(out_dir, key, Path(path).name)
+            return os.path.join(out_dir, key, Path(path).stem + ".tif")
 
         sensor[sens_cst.INPUT_IMG]["bands"]["b0"]["path"] = replace_path(
             sensor[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
@@ -279,30 +279,34 @@ class SubsamplingPipeline(PipelineTemplate):
             ),
         ) as self.cars_orchestrator:
             for res in self.epipolar_resolutions:
-                for key, val in inputs[sens_cst.SENSORS].items():
-                    # Define the output directory
-                    out_directory = os.path.join(
-                        self.subsampling_dir, "res_" + str(res)
-                    )
-                    safe_makedirs(out_directory)
+                if res != 1:
+                    conf_to_save = copy.deepcopy(self.used_conf)
+                    for key, val in inputs[sens_cst.SENSORS].items():
+                        # Define the output directory
+                        out_directory = os.path.join(
+                            self.subsampling_dir, "res_" + str(res)
+                        )
+                        safe_makedirs(out_directory)
 
-                    _ = self.sensors_subsampling.run(
-                        key,
-                        val,
-                        res,
-                        out_directory,
-                        self.cars_orchestrator,
-                    )
+                        _ = self.sensors_subsampling.run(
+                            key,
+                            val,
+                            res,
+                            out_directory,
+                            self.cars_orchestrator,
+                        )
 
-                    self.formatting(key, os.path.abspath(out_directory))
+                        self.formatting(
+                            key, os.path.abspath(out_directory), conf_to_save
+                        )
 
-                out_yaml = os.path.abspath(
-                    os.path.join(out_directory, "input.yaml")
-                )
-                with open(out_yaml, "w", encoding="utf-8") as f:
-                    yaml.dump(
-                        self.used_conf[INPUT],
-                        f,
-                        default_flow_style=False,
-                        sort_keys=False,
+                    out_yaml = os.path.abspath(
+                        os.path.join(out_directory, "input.yaml")
                     )
+                    with open(out_yaml, "w", encoding="utf-8") as f:
+                        yaml.dump(
+                            conf_to_save[INPUT],
+                            f,
+                            default_flow_style=False,
+                            sort_keys=False,
+                        )
