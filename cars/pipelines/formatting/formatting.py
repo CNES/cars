@@ -36,6 +36,7 @@ from pathlib import Path
 
 from json_checker import Checker
 
+from cars.core import cars_logging
 from cars.pipelines import pipeline_constants as pipeline_cst
 
 # CARS imports
@@ -49,9 +50,9 @@ from cars.pipelines.pipeline_template import PipelineTemplate
 
 
 @Pipeline.register(
-    "formating",
+    "formatting",
 )
-class FormatingPipeline(PipelineTemplate):
+class FormattingPipeline(PipelineTemplate):
     """
     DefaultPipeline
     """
@@ -113,11 +114,11 @@ class FormatingPipeline(PipelineTemplate):
 
         overloaded_conf["input_path"] = input_conf.get("input_path", None)
 
-        formating_schema_input = {
+        formatting_schema_input = {
             "input_path": str,
         }
 
-        checker_input = Checker(formating_schema_input)
+        checker_input = Checker(formatting_schema_input)
         checker_input.validate(overloaded_conf)
 
         return overloaded_conf
@@ -133,9 +134,9 @@ class FormatingPipeline(PipelineTemplate):
 
         overloaded_conf["directory"] = conf.get("directory", None)
 
-        formating_schema_output = {"directory": str}
+        formatting_schema_output = {"directory": str}
 
-        checker_input = Checker(formating_schema_output)
+        checker_input = Checker(formatting_schema_output)
         checker_input.validate(overloaded_conf)
 
         return overloaded_conf
@@ -147,8 +148,10 @@ class FormatingPipeline(PipelineTemplate):
 
     def run(self):
         """
-        Run the formating pipeline
+        Run the formatting pipeline
         """
+        cars_logging.add_progress_message("Starting formatting pipeline")
+
         source_dir = Path(self.used_conf[INPUT]["input_path"])
         destination_dir = Path(self.used_conf[OUTPUT]["directory"])
 

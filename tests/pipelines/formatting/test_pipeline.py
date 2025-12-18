@@ -69,7 +69,7 @@ def test_pipeline():
         input_conf["subsampling"]["advanced"] = {}
         input_conf["subsampling"]["advanced"]["epipolar_resolutions"] = 1
 
-        # without formating
+        # without formatting
         input_conf["pipeline"] = ["subsampling", "surface_modeling"]
 
         pipeline = default_pipeline.DefaultPipeline(
@@ -142,7 +142,7 @@ def test_pipeline():
             rtol=1e-6,
         )
 
-        # with formating
+        # with formatting
 
         # Run dense dsm pipeline
         _, input_conf = generate_input_json(
@@ -162,7 +162,7 @@ def test_pipeline():
         input_conf["pipeline"] = [
             "subsampling",
             "surface_modeling",
-            "formating",
+            "formatting",
         ]
 
         pipeline = default_pipeline.DefaultPipeline(

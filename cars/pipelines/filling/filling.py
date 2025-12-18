@@ -43,7 +43,7 @@ from pyproj import CRS
 from rasterio.errors import NodataShadowWarning
 
 from cars.applications.application import Application
-from cars.core import inputs, projection
+from cars.core import cars_logging, inputs, projection
 from cars.core.inputs import read_vector
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
@@ -941,6 +941,7 @@ class FillingPipeline(PipelineTemplate):
         """
         Run pipeline
         """
+        cars_logging.add_progress_message("Starting filling pipeline")
 
         self.log_dir = os.path.join(self.filling_dir, "logs")
 

@@ -39,6 +39,7 @@ import yaml
 from json_checker import Checker, Or
 
 from cars.applications.application import Application
+from cars.core import cars_logging
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -263,6 +264,7 @@ class SubsamplingPipeline(PipelineTemplate):
         """
         Run pipeline
         """
+        cars_logging.add_progress_message("Starting subsampling pipeline")
         inputs = copy.deepcopy(self.used_conf[INPUT])
 
         self.log_dir = os.path.join(self.subsampling_dir, "logs")

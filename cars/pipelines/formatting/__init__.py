@@ -19,8 +19,8 @@
 # limitations under the License.
 #
 """
-CARS formating pipeline module init file
+CARS formatting pipeline module init file
 """
 
 # Cars imports
-from cars.pipelines.formating import formating  # noqa: F401
+from cars.pipelines.formatting import formatting  # noqa: F401

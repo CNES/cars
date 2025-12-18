@@ -48,7 +48,7 @@ from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.filling.filling import FillingPipeline
-from cars.pipelines.formating.formating import FormatingPipeline
+from cars.pipelines.formatting.formatting import FormattingPipeline
 from cars.pipelines.merging.merging import MergingPipeline
 from cars.pipelines.parameters import advanced_parameters, dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
@@ -332,18 +332,18 @@ class DefaultPipeline(PipelineTemplate):
             "surface_modeling",
             "filling",
             "merging",
-            "formating",
+            "formatting",
         ]
         dict_pipeline = {}
 
         if PIPELINE not in conf:
             if dsm_cst.DSMS in conf[INPUT]:
-                conf[PIPELINE] = ["merging", "formating"]
+                conf[PIPELINE] = ["merging", "formatting"]
             elif sens_cst.SENSORS in conf[INPUT]:
                 conf[PIPELINE] = [
                     "subsampling",
                     "surface_modeling",
-                    "formating",
+                    "formatting",
                 ]
 
         if isinstance(conf[PIPELINE], str):
@@ -473,18 +473,18 @@ class DefaultPipeline(PipelineTemplate):
 
         return subsampling_conf
 
-    def construct_formating_conf(self, input_dir):
+    def construct_formatting_conf(self, input_dir):
         """
-        Construct the right conf for formating
+        Construct the right conf for formatting
         """
 
-        formating_conf = {}
-        formating_conf[INPUT] = {}
-        formating_conf[INPUT]["input_path"] = input_dir
-        formating_conf[OUTPUT] = {}
-        formating_conf[OUTPUT]["directory"] = self.out_dir
+        formatting_conf = {}
+        formatting_conf[INPUT] = {}
+        formatting_conf[INPUT]["input_path"] = input_dir
+        formatting_conf[OUTPUT] = {}
+        formatting_conf[OUTPUT]["directory"] = self.out_dir
 
-        return formating_conf
+        return formatting_conf
 
     def construct_filling_conf(self, conf):
         """
@@ -573,7 +573,8 @@ class DefaultPipeline(PipelineTemplate):
                 )
 
                 cars_logging.add_progress_message(
-                    "Starting pipeline for resolution 1/" + str(epipolar_res)
+                    "Starting surface modeling pipeline for resolution 1/"
+                    + str(epipolar_res)
                 )
 
                 # define wich resolution
@@ -644,7 +645,7 @@ class DefaultPipeline(PipelineTemplate):
         elif not updated_conf and final_conf is None:
             final_conf = self.used_conf
 
-        formating_input_dir = final_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+        formatting_input_dir = final_conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             if self.filling_conf[INPUT]["dsm_to_fill"] is None:
@@ -687,17 +688,19 @@ class DefaultPipeline(PipelineTemplate):
             )
             filling_pipeline.run()
 
-            formating_input_dir = os.path.join(
+            formatting_input_dir = os.path.join(
                 filling_pipeline.used_conf[OUTPUT][out_cst.OUT_DIRECTORY],
                 pipeline_cst.FILLING,
             )
 
-        if self.pipeline_to_use[pipeline_cst.FORMATING]:
-            formating_conf = self.construct_formating_conf(formating_input_dir)
-            formating_pipeline = FormatingPipeline(
-                formating_conf, self.config_dir
+        if self.pipeline_to_use[pipeline_cst.FORMATTING]:
+            formatting_conf = self.construct_formatting_conf(
+                formatting_input_dir
             )
-            formating_pipeline.run()
+            formatting_pipeline = FormattingPipeline(
+                formatting_conf, self.config_dir
+            )
+            formatting_pipeline.run()
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             full_used_conf[pipeline_cst.FILLING] = {
