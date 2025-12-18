@@ -153,6 +153,10 @@ class DefaultPipeline(PipelineTemplate):
             self.out_dir, "intermediate_data"
         )
 
+        conf[ORCHESTRATOR] = self.check_orchestrator(
+            conf.get(ORCHESTRATOR, None)
+        )
+
         for pipeline, val in self.pipeline_to_use.items():
             if pipeline in conf and not val:
                 logging.warning(
