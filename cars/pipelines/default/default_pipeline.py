@@ -968,7 +968,7 @@ def merge_used_conf(used_configurations, epipolar_resolutions, out_dir):
 
     merged_conf = {
         INPUT: used_configurations[epipolar_resolutions[-1]][INPUT],
-        OUTPUT: used_configurations[epipolar_resolutions[0]][ORCHESTRATOR],
+        OUTPUT: used_configurations[epipolar_resolutions[0]][OUTPUT],
         ORCHESTRATOR: used_configurations[epipolar_resolutions[0]][
             ORCHESTRATOR
         ],
