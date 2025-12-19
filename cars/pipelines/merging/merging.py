@@ -82,7 +82,9 @@ class MergingPipeline(PipelineTemplate):
         # Check global conf
         self.check_global_schema(conf)
 
-        self.check_pipeline_conf(conf)
+        if PIPELINE in conf:
+            self.check_pipeline_conf(conf)
+
         # Check conf orchestrator
         self.used_conf[ORCHESTRATOR] = self.check_orchestrator(
             conf.get(ORCHESTRATOR, None)

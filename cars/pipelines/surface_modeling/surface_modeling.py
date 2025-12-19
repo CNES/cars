@@ -137,7 +137,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
         # Check global conf
         self.check_global_schema(conf)
 
-        self.check_pipeline_conf(conf)
+        if PIPELINE in conf:
+            self.check_pipeline_conf(conf)
 
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
@@ -292,7 +293,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
         """
         Check pipeline configuration
         """
-
         # Validate inputs
         pipeline_schema = {
             OptionalKey(ADVANCED): dict,

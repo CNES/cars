@@ -36,7 +36,7 @@ import os
 from pathlib import Path
 
 import yaml
-from json_checker import Checker, Or
+from json_checker import Checker, OptionalKey, Or
 
 from cars.applications.application import Application
 from cars.core import cars_logging
@@ -91,6 +91,9 @@ class SubsamplingPipeline(PipelineTemplate):
         # Check global conf
         self.check_global_schema(conf)
 
+        if PIPELINE in conf:
+            self.check_pipeline_conf(conf)
+
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
         self.subsampling_dir = os.path.join(self.out_dir, "subsampling")
@@ -129,6 +132,20 @@ class SubsamplingPipeline(PipelineTemplate):
         self.used_conf[APPLICATIONS] = self.check_applications(
             pipeline_conf.get(APPLICATIONS, {})
         )
+
+    def check_pipeline_conf(self, conf):
+        """
+        Check pipeline configuration
+        """
+
+        # Validate inputs
+        pipeline_schema = {
+            OptionalKey(ADVANCED): dict,
+            OptionalKey(APPLICATIONS): dict,
+        }
+
+        checker_inputs = Checker(pipeline_schema)
+        checker_inputs.validate(conf[PIPELINE])
 
     def check_inputs(self, conf, config_json_dir=None):
         """
