@@ -197,6 +197,7 @@ def test_ventoux_full():
                     "classification": True,
                     "contributing_pair": True,
                     "image": ["b1", "b2", "b3"],
+                    "filling": True,
                     "performance_map": True,
                 },
             },
@@ -1210,3 +1211,63 @@ def test_gizeh_res4_without_tie_points():
             atol=0.0001,
             rtol=1e-6,
         )
+
+
+@pytest.mark.end2end_tests
+def test_ventoux_filling():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/left_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/left_image.geom"
+                        ),
+                        "classification": absolute_data_path(
+                            "input/phr_ventoux/left_classif.tif"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/right_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/right_image.geom"
+                        ),
+                        "classification": absolute_data_path(
+                            "input/phr_ventoux/right_classif.tif"
+                        ),
+                    },
+                },
+                "initial_elevation": absolute_data_path(
+                    "input/phr_ventoux/srtm/N44E005.hgt"
+                ),
+            },
+            "surface_modeling": {
+                "applications": {
+                    "dense_matching": {
+                        "filter_incomplete_disparity_range": False
+                    },
+                    "dense_match_filling": {
+                        "method": "zero_padding",
+                        "classification": ["3"],
+                    },
+                    "point_cloud_outlier_removal": None,
+                }
+            },
+            "output": {
+                "directory": directory,
+                "auxiliary": {
+                    "classification": True,
+                    "filling": True,
+                },
+            },
+        }
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()

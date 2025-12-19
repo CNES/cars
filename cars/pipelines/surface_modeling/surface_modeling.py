@@ -1079,23 +1079,10 @@ class SurfaceModelingPipeline(PipelineTemplate):
                             orchestrator=self.cars_orchestrator,
                             save_corrected_grid=save_corrected_grid,
                         )
-                    # Correct grid right
-                    self.pairs[pair_key]["corrected_grid_right"] = (
-                        grid_correction_app.correct_grid(
-                            self.pairs[pair_key]["grid_right"],
-                            self.pairs[pair_key]["grid_correction_coef"],
-                            os.path.join(
-                                self.dump_dir,
-                                "grid_correction",
-                                "initial",
-                                pair_key,
-                            ),
-                            save_corrected_grid,
-                        )
                     )
                 else:
                     logging.warning(
-                        "Grid correction is not applied because numer of "
+                        "Grid correction is not applied because number of "
                         "matches found ({}) is less than minimum number of "
                         "matches required for grid correction ({})".format(
                             nb_matches,
