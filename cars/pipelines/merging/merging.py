@@ -24,7 +24,7 @@ CARS merging pipeline class file
 
 import os
 
-from json_checker import Checker, Or
+from json_checker import Checker, OptionalKey, Or
 
 from cars.applications.application import Application
 from cars.core import preprocessing, roi_tools
@@ -82,6 +82,7 @@ class MergingPipeline(PipelineTemplate):
         # Check global conf
         self.check_global_schema(conf)
 
+        self.check_pipeline_conf(conf)
         # Check conf orchestrator
         self.used_conf[ORCHESTRATOR] = self.check_orchestrator(
             conf.get(ORCHESTRATOR, None)
@@ -117,6 +118,20 @@ class MergingPipeline(PipelineTemplate):
         self.used_conf[APPLICATIONS] = application_conf
 
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+
+    def check_pipeline_conf(self, conf):
+        """
+        Check pipeline configuration
+        """
+
+        # Validate inputs
+        pipeline_schema = {
+            OptionalKey(ADVANCED): dict,
+            OptionalKey(APPLICATIONS): dict,
+        }
+
+        checker_inputs = Checker(pipeline_schema)
+        checker_inputs.validate(conf[PIPELINE])
 
     @staticmethod
     def check_inputs(conf, config_dir=None):

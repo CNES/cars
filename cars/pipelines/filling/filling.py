@@ -38,7 +38,7 @@ from collections import OrderedDict
 
 import numpy as np
 import rasterio
-from json_checker import Checker, Or
+from json_checker import Checker, OptionalKey, Or
 from pyproj import CRS
 from rasterio.errors import NodataShadowWarning
 
@@ -96,6 +96,8 @@ class FillingPipeline(PipelineTemplate):
 
         # Check global conf
         self.check_global_schema(conf)
+
+        self.check_pipeline_conf(conf)
 
         self.out_dir = os.path.abspath(conf[OUTPUT][out_cst.OUT_DIRECTORY])
 
@@ -165,6 +167,20 @@ class FillingPipeline(PipelineTemplate):
                 self.vertical_crs = inputs.rasterio_get_crs(
                     self.dsm_to_fill["dsm"]
                 )
+
+    def check_pipeline_conf(self, conf):
+        """
+        Check pipeline configuration
+        """
+
+        # Validate inputs
+        pipeline_schema = {
+            OptionalKey(ADVANCED): dict,
+            OptionalKey(APPLICATIONS): dict,
+        }
+
+        checker_inputs = Checker(pipeline_schema)
+        checker_inputs.validate(conf[PIPELINE])
 
     def check_inputs(self, conf, config_json_dir=None):
         """

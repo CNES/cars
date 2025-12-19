@@ -37,7 +37,6 @@ from pathlib import Path
 from json_checker import Checker
 
 from cars.core import cars_logging
-from cars.pipelines import pipeline_constants as pipeline_cst
 
 # CARS imports
 from cars.pipelines.parameters import output_constants as out_cst
@@ -88,20 +87,6 @@ class FormattingPipeline(PipelineTemplate):
         self.used_conf[OUTPUT] = conf[OUTPUT]
 
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
-
-    def check_global_schema(self, conf):
-        """
-        Check the global schema
-        """
-
-        # Validate inputs
-        global_schema = {
-            pipeline_cst.INPUT: dict,
-            pipeline_cst.OUTPUT: dict,
-        }
-
-        checker_inputs = Checker(global_schema)
-        checker_inputs.validate(conf)
 
     def check_inputs(self, conf, config_json_dir=None):
         """

@@ -39,6 +39,7 @@ from collections import OrderedDict
 
 import numpy as np
 import rasterio
+from json_checker import Checker, OptionalKey
 from rasterio.errors import NodataShadowWarning
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
@@ -135,6 +136,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         # Check global conf
         self.check_global_schema(conf)
+
+        self.check_pipeline_conf(conf)
 
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
@@ -284,6 +287,20 @@ class SurfaceModelingPipeline(PipelineTemplate):
         )
 
         self.used_conf[PIPELINE][APPLICATIONS] = application_conf
+
+    def check_pipeline_conf(self, conf):
+        """
+        Check pipeline configuration
+        """
+
+        # Validate inputs
+        pipeline_schema = {
+            OptionalKey(ADVANCED): dict,
+            OptionalKey(APPLICATIONS): dict,
+        }
+
+        checker_inputs = Checker(pipeline_schema)
+        checker_inputs.validate(conf[PIPELINE])
 
     def quit_on_app(self, app_name):
         """
