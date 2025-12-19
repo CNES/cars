@@ -25,8 +25,6 @@ CARS dsm inputs
 import logging
 
 import numpy as np
-import rasterio
-import xarray as xr
 from json_checker import Checker, Or
 
 # CARS imports
