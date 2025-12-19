@@ -1269,5 +1269,48 @@ def test_ventoux_filling():
                 },
             },
         }
+        out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_surface_modeling_ventoux_filling.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_surface_modeling_ventoux_filling.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_surface_modeling_ventoux_filling.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_surface_modeling_ventoux_filling.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
