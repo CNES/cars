@@ -165,6 +165,8 @@ def test_pipeline():
             "formatting",
         ]
 
+        input_conf["input"].pop("filling", None)
+
         pipeline = default_pipeline.DefaultPipeline(
             input_conf, absolute_data_path(directory)
         )
