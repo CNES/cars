@@ -129,13 +129,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         out_dir = config["output"]["directory"]
 
-        # do not set logging if pipeline is default (already defined
-        if config.get("pipeline", "default") != "default":
-            cars_logging.setup_logging(
-                loglevel,
-                out_dir=os.path.join(out_dir, "logs"),
-                pipeline=pipeline_name,
-            )
+        cars_logging.setup_logging(
+            loglevel,
+            out_dir=os.path.join(out_dir, "logs"),
+            pipeline=pipeline_name,
+        )
 
         logging.debug("Show argparse arguments: {}".format(args))
 
