@@ -72,7 +72,7 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.nb_match = self.used_config["nb_match"]
+        self.nb_matches = self.used_config["nb_matches"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
     def check_conf(self, conf):
@@ -96,7 +96,7 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "epipolar")
-        overloaded_conf["nb_match"] = conf.get("nb_match", 100)
+        overloaded_conf["nb_matches"] = conf.get("nb_matches", 90)
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -112,6 +112,13 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
         checker.validate(overloaded_conf)
 
         return overloaded_conf
+
+    def get_minimum_nb_matches(self):
+        """
+        Get the minimul number of matches required for grid correction
+        """
+
+        return self.nb_matches
 
     @cars_profile(name="Correct grid")
     def correct_grid(self, grid, grid_correction, pair_folder, save_grid=None):

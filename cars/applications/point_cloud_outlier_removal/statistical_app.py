@@ -89,7 +89,6 @@ class Statistical(
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
-        self.save_by_pair = self.used_config["save_by_pair"]
         # Init orchestrator
         self.orchestrator = None
 
@@ -118,7 +117,6 @@ class Statistical(
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
-        overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
         overloaded_conf["use_median"] = conf.get("use_median", True)
 
         # statistical outlier filtering
@@ -145,7 +143,6 @@ class Statistical(
 
         point_cloud_outlier_removal_schema = {
             "method": str,
-            "save_by_pair": bool,
             "k": And(int, lambda x: x > 0),
             "filtering_constant": And(Or(float, int), lambda x: x >= 0),
             "mean_factor": And(Or(float, int), lambda x: x >= 0),

@@ -31,7 +31,7 @@ Method "exogenous_filling" fills with altitude of exogenous data (DEM/geoid).
 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
 | fill_with_geoid                     | Classes to fill with geoid                         | List[str]   |                         | None               | No       |
 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
-| interpolation_method                | Interpolation method for DEM and geoid resampling  | List[str]   | "bilinear", "cubic"     | None               | No       |
+| interpolation_method                | Interpolation method for DEM and geoid resampling  | List[str]   | "bilinear", "cubic"     | "bilinear"         | No       |
 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
 
 

@@ -20,11 +20,9 @@ Using stereo-rectification grids and sparse matches (i.e provided by Tiepoints),
 +-------------------------+-----------------------------------------------+----------+-----------------------------------+---------------+----------+
 | save_intermediate_data  | Save the generated grids                      | boolean  |                                   | false         | No       |
 +-------------------------+-----------------------------------------------+----------+-----------------------------------+---------------+----------+
-| nb_match                | number of matches                             | int > 0  |                                   | 100           | No       |
+| nb_matches              | number of matches required                    | int      |  should be > 0                    | 90            | No       |
 +-------------------------+-----------------------------------------------+----------+-----------------------------------+---------------+----------+
 
 **Example**
 
-**WIP**
-
-.. .. include-cars-config:: ../../example_configs/configuration/applications_grid_generation
+.. .. include-cars-config:: ../../example_configs/configuration/applications_grid_correction

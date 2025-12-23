@@ -84,9 +84,6 @@ class SmallComponents(
         ]
         self.half_epipolar_size = self.used_config["half_epipolar_size"]
 
-        # Saving files
-        self.save_by_pair = self.used_config.get("save_by_pair", False)
-
         # Init orchestrator
         self.orchestrator = None
 
@@ -114,7 +111,6 @@ class SmallComponents(
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
-        overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
 
         # small components
         # on_ground_margin:
@@ -152,7 +148,6 @@ class SmallComponents(
 
         point_cloud_fusion_schema = {
             "method": str,
-            "save_by_pair": bool,
             "on_ground_margin": int,
             "connection_distance": And(float, lambda x: x > 0),
             "nb_points_threshold": And(int, lambda x: x > 0),

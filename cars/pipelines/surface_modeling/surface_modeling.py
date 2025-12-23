@@ -1047,7 +1047,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     )
                 )
 
-                minimum_nb_matches = sparse_mtch_app.minimum_nb_matches
+                minimum_nb_matches = (
+                    self.grid_correction_app.get_minimum_nb_matches()
+                )
                 nb_matches = self.pairs[pair_key]["matches_array"].shape[0]
                 save_matches = sparse_mtch_app.get_save_matches()
 
@@ -1058,7 +1060,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
                             self.pairs[pair_key]["matches_array"],
                             self.pairs[pair_key]["grid_right"],
                             save_matches=save_matches,
-                            minimum_nb_matches=minimum_nb_matches,
                             pair_folder=os.path.join(
                                 self.dump_dir,
                                 "grid_correction",

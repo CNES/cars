@@ -21,6 +21,8 @@ The zero_padding method fills the disparity with zeros where the selected classi
 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 | classification                      | Values of classes to fill       | List[str] |                         | None               | No       |
 +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
+| fill_valid_pixels                   | To fill the valid pixels        | boolean   |                         | True               | No       |
++-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 
 .. note::
     - The classification of second input is not given. Only the first disparity will be filled with zero value.
