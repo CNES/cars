@@ -46,7 +46,6 @@ def test_check_full_conf_small_components():
     conf = {
         "method": "small_components",
         "save_intermediate_data": False,
-        "save_by_pair": False,
         "on_ground_margin": 11,
         "connection_distance": 3.0,
         "nb_points_threshold": 50,
@@ -64,7 +63,6 @@ def test_check_full_conf_statistical():
     conf = {
         "method": "statistical",
         "save_intermediate_data": False,
-        "save_by_pair": False,
         "k": 50,
         "filtering_constant": 0.0,
         "mean_factor": 1.0,
