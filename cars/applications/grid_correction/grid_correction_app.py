@@ -103,7 +103,7 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
 
         grid_generation_schema = {
             "method": str,
-            "nb_match": And(int, lambda x: x > 0),
+            "nb_matches": And(int, lambda x: x > 0),
             "save_intermediate_data": bool,
         }
 
