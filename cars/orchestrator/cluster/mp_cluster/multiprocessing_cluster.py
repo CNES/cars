@@ -58,7 +58,10 @@ from cars.orchestrator.cluster.mp_cluster.mp_objects import (
     MpFutureIterator,
     MpJob,
 )
-from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
+from cars.orchestrator.cluster.mp_cluster.mp_tools import (
+    compute_conf_auto_mode,
+    replace_data,
+)
 from cars.orchestrator.cluster.mp_cluster.multiprocessing_profiler import (
     MultiprocessingProfiler,
 )
@@ -99,7 +102,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         """
 
         # TODO: remove message
-        if conf_cluster["mode"] == "mp":
+        if conf_cluster is not None and conf_cluster["mode"] == "mp":
             message = (
                 " 'mp' keyword has been deprecated, use "
                 "'multiprocessing' instead"
@@ -248,14 +251,22 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         # set ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS = 1
 
         # Overload conf
-        overloaded_conf["mode"] = conf.get("mode", "mp")
+        overloaded_conf["mode"] = conf.get("mode", "multiprocessing")
         overloaded_conf["mp_mode"] = conf.get("mp_mode", "forkserver")
-        nb_workers = conf.get("nb_workers", 2)
-        overloaded_conf["nb_workers"] = min(available_cpu, nb_workers)
-        overloaded_conf["task_timeout"] = conf.get("task_timeout", 600)
         overloaded_conf["max_ram_per_worker"] = conf.get(
             "max_ram_per_worker", 2000
         )
+
+        nb_workers = conf.get("nb_workers", "auto")
+        if nb_workers == "auto":
+            logging.info("auto mode : nb_workers will be set automatically")
+            # Compute parameters for auto mode
+            nb_workers = compute_conf_auto_mode(
+                IS_WIN, overloaded_conf["max_ram_per_worker"]
+            )
+
+        overloaded_conf["nb_workers"] = min(available_cpu, nb_workers)
+        overloaded_conf["task_timeout"] = conf.get("task_timeout", 600)
         overloaded_conf["max_tasks_per_worker"] = conf.get(
             "max_tasks_per_worker", 10
         )

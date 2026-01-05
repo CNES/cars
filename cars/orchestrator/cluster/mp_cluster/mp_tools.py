@@ -22,6 +22,14 @@
 Contains tools for multiprocessing
 """
 
+import logging
+import multiprocessing
+import os
+import re
+import subprocess
+
+from cars.orchestrator.orchestrator import get_available_ram, get_total_ram
+
 
 def replace_data(list_or_dict, func_to_apply, *func_args):
     """
@@ -91,3 +99,110 @@ def replace_data_rec(list_or_dict, func_to_apply, *func_args):
         )
 
     return res
+
+
+def get_slurm_data():
+    """
+    Get slurm data
+    """
+
+    def get_data(chain, pattern):
+        """
+        Get data from pattern
+
+        :param chain: chain of character to parse
+        :param pattern: pattern to find
+
+        :return: found data
+        """
+
+        match = re.search(pattern, chain)
+        value = None
+        if match:
+            value = match.group(1)
+        return int(value)
+
+    on_slurm = False
+    slurm_nb_cpu = None
+    slurm_max_ram = None
+    try:
+        sub_res = subprocess.run(
+            "scontrol show job $SLURM_JOB_ID",
+            shell=True,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        slurm_infos = sub_res.stdout
+
+        slurm_nb_cpu = get_data(slurm_infos, r"ReqTRES=cpu=(\d+)")
+        slurm_max_ram = get_data(slurm_infos, r"ReqTRES=cpu=.*?mem=(\d+)")
+        # convert to Mb
+        slurm_max_ram *= 1024
+        logging.info("Available CPUs  in SLURM : {}".format(slurm_nb_cpu))
+        logging.info("Available RAM  in SLURM : {}".format(slurm_max_ram))
+
+    except Exception as exc:
+        logging.debug("Not on Slurm cluster")
+        logging.debug(str(exc))
+    if slurm_nb_cpu is not None and slurm_max_ram is not None:
+        on_slurm = True
+
+    return on_slurm, slurm_nb_cpu, slurm_max_ram
+
+
+def compute_conf_auto_mode(is_windows, max_ram_per_worker):
+    """
+    Compute confuration to use in auto mode
+
+    :param is_windows: True if runs on windows
+    :type is_windows: bool
+    :param max_ram_per_worker: max ram per worker in MB
+    :type max_ram_per_worker: int
+    """
+
+    on_slurm, nb_cpu_slurm, max_ram_slurm = get_slurm_data()
+
+    if on_slurm:
+        available_cpu = nb_cpu_slurm
+    else:
+        available_cpu = (
+            multiprocessing.cpu_count()
+            if is_windows
+            else len(os.sched_getaffinity(0))
+        )
+        logging.info("available cpu : {}".format(available_cpu))
+
+    if available_cpu == 1:
+        logging.warning("Only one CPU detected.")
+        available_cpu = 2
+    elif available_cpu == 0:
+        logging.warning("No CPU detected.")
+        available_cpu = 2
+
+    if on_slurm:
+        ram_to_use = max_ram_slurm
+    else:
+        ram_to_use = get_total_ram()
+        logging.info("total ram :  {}".format(ram_to_use))
+
+    # use 50% of total ram
+    ram_to_use *= 0.5
+
+    possible_workers = int(ram_to_use // max_ram_per_worker)
+    if possible_workers == 0:
+        logging.warning("Not enough memory available : failure might occur")
+    nb_workers_to_use = max(1, min(possible_workers, available_cpu - 1))
+
+    logging.info("Number of workers : {}".format(nb_workers_to_use))
+    logging.info("Max memory per worker : {} MB".format(max_ram_per_worker))
+
+    # Check with available ram
+    available_ram = get_available_ram()
+    if int(nb_workers_to_use) * int(max_ram_per_worker) > available_ram:
+        logging.warning(
+            "CARS will use 50% of total RAM, "
+            " more than currently available RAM"
+        )
+
+    return int(nb_workers_to_use)

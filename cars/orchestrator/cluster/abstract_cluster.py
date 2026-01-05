@@ -68,10 +68,11 @@ class AbstractCluster(metaclass=ABCMeta):
         """
 
         cluster_mode = "multiprocessing"
-        if "mode" not in conf_cluster:
-            logging.warning("Cluster mode not defined, default is used")
-        else:
-            cluster_mode = conf_cluster["mode"]
+        if conf_cluster is not None:
+            if "mode" not in conf_cluster:
+                logging.warning("Cluster mode not defined, default is used")
+            else:
+                cluster_mode = conf_cluster["mode"]
 
         if cluster_mode not in cls.available_modes:
             logging.error("No mode named {} registered".format(cluster_mode))
