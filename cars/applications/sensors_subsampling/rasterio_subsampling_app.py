@@ -47,7 +47,7 @@ from cars.applications.sensors_subsampling import (
 from cars.core import constants as cst
 from cars.core import inputs, tiling
 from cars.core.utils import safe_makedirs
-from cars.data_structures import cars_dataset, format_transformation
+from cars.data_structures import cars_dataset
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 # pylint: disable= C0302
@@ -115,7 +115,7 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
             "interpolator_mask", "nearest"
         )
 
-        overloaded_conf["overlap"] = conf.get("overlap", 2)
+        overloaded_conf["overlap"] = conf.get("overlap", 10)
 
         subsampling_schema = {
             "method": str,
@@ -267,6 +267,9 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
         # Define the scale factor
         scale_factor = 1 / resolution
 
+        # put a multiple of the resolution for tiling to avoid artefacts
+        self.tile_size = int(self.tile_size * scale_factor) * resolution
+
         # Define the path of each image
         img_path = sensor_dict[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
 
@@ -321,16 +324,6 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                     optional_data=optional_data,
                 )
 
-        # Compute overlaps
-        (
-            image_subsampled.overlaps,
-            _,
-            _,
-            _,
-        ) = format_transformation.grid_margins_2_overlaps(
-            image_subsampled.tiling_grid, self.margins_fun
-        )
-
         # Generate Image pair
         for col in range(image_subsampled.shape[1]):
             for row in range(image_subsampled.shape[0]):
@@ -338,9 +331,6 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                 # update saving infos  for potential replacement
                 full_saving_info = ocht.update_saving_infos(
                     saving_info, row=row, col=col
-                )
-                overlap = cars_dataset.overlap_array_to_dict(
-                    image_subsampled.overlaps[row, col]
                 )
 
                 window = image_subsampled.get_window_as_dict(row, col)
@@ -356,7 +346,6 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                     self.tile_size,
                     window=window,
                     saving_info=full_saving_info,
-                    overlap=overlap,
                 )
         return image_subsampled
 
@@ -369,7 +358,6 @@ def generate_subsampled_images_wrapper(
     tile_size=10000,
     window=None,
     saving_info=None,
-    overlap=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Subsampling wrapper
@@ -445,7 +433,6 @@ def generate_subsampled_images_wrapper(
         window=window_out_left,
         profile=profile,
         attributes=attributes,
-        overlaps=overlap,
     )
 
     return global_dataset
