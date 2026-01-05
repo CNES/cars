@@ -717,9 +717,9 @@ def check_nbits(mask):
     if mask is not None:
         nbits = inputs.rasterio_get_nbits(mask)
         if not check_all_nbits_equal_one(nbits):
-            raise RuntimeError(
-                "The mask {} have {} nbits per band. ".format(mask, nbits)
-                + "Only the mask with nbits=1 is supported! "
+            logging.warning(
+                "The mask {} have {} nbits per band."
+                "Only the mask with nbits=1 is supported!".format(mask, nbits)
             )
 
 

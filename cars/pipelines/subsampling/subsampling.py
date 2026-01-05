@@ -291,8 +291,8 @@ class SubsamplingPipeline(PipelineTemplate):
             sens_cst.INPUT_MSK in sensor
             and sensor[sens_cst.INPUT_MSK] is not None
         ):
-            sensor[sens_cst.INPUT_MSK]["path"] = replace_path(
-                sensor[sens_cst.INPUT_MSK]["path"]
+            sensor[sens_cst.INPUT_MSK] = replace_path(
+                sensor[sens_cst.INPUT_MSK]
             )
 
         for band_name, band_info in sensor[sens_cst.INPUT_IMG]["bands"].items():
