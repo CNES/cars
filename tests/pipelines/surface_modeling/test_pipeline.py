@@ -244,6 +244,15 @@ def test_ventoux_full():
             ),
         )
         copy2(
+            os.path.join(out_dir, "dsm", "filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "filling_test_surface_modeling_ventoux.tif",
+                )
+            ),
+        )
+        copy2(
             os.path.join(out_dir, "dsm", "contributing_pair.tif"),
             absolute_data_path(
                 os.path.join(
@@ -319,6 +328,17 @@ def test_ventoux_full():
             rtol=1e-6,
         )
 
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "filling_test_surface_modeling_ventoux.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
         assert_same_images(
             os.path.join(out_dir, "dsm", "performance_map.tif"),
             absolute_data_path(
