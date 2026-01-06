@@ -56,11 +56,20 @@ class AbstractDaskCluster(
     AbstractDaskCluster
     """
 
-    def __init__(self, conf_cluster, out_dir, log_dir, launch_worker=True):
+    def __init__(  # pylint: disable=R0917
+        self,
+        conf_cluster,
+        out_dir,
+        log_dir,
+        launch_worker=True,
+        data_to_propagate=None,
+    ):
         """
         Init function of AbstractDaskCluster
 
         :param conf_cluster: configuration for cluster
+        :param data_to_propagate: data to propagate to new cluster if reset
+        :type data_to_propagate: dict
 
         """
 

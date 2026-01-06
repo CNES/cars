@@ -65,7 +65,7 @@ class LocalDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
             self.nb_workers, activate_dashboard=self.activate_dashboard
         )
 
-    def cleanup(self):
+    def cleanup(self, **kwargs):
         """
         Cleanup cluster
 
