@@ -32,7 +32,7 @@ import numpy as np
 import rasterio
 import xarray as xr
 from affine import Affine
-from json_checker import And, Checker
+from json_checker import Checker
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications.resampling import (
@@ -115,15 +115,12 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
             "interpolator_mask", "nearest"
         )
 
-        overloaded_conf["overlap"] = conf.get("overlap", 10)
-
         subsampling_schema = {
             "method": str,
             "tile_size": int,
             "interpolator_image": str,
             "interpolator_mask": str,
             "interpolator_classif": str,
-            "overlap": And(int, lambda x: x > 0),
         }
 
         # Check conf
