@@ -157,6 +157,20 @@ def test_subsampling(resolution):
                     ),
                 )
 
+                copy2(
+                    os.path.join(
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "left/left_mask.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            ref_output_dir,
+                            "left_mask_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                )
+
                 assert_same_images(
                     os.path.join(
                         out_dir,
@@ -231,6 +245,22 @@ def test_subsampling(resolution):
                         os.path.join(
                             ref_output_dir,
                             "classif2_phr_ventoux_res_" + str(res) + ".tif",
+                        )
+                    ),
+                    atol=0.0001,
+                    rtol=1e-6,
+                )
+
+                assert_same_images(
+                    os.path.join(
+                        out_dir,
+                        "subsampling/res_" + str(res),
+                        "left/left_mask.tif",
+                    ),
+                    absolute_data_path(
+                        os.path.join(
+                            ref_output_dir,
+                            "left_mask_phr_ventoux_res_" + str(res) + ".tif",
                         )
                     ),
                     atol=0.0001,

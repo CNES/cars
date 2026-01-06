@@ -32,7 +32,8 @@
                 "geomodel": {
                     "path": "left_image.geom"
                 },
-                "classification": "left_classif.tif"
+                "classification": "left_classif.tif",
+                "mask": "left_mask.tif"
             },
             "right": {
                 "image": {
