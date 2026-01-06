@@ -28,7 +28,6 @@ from pathlib import Path
 # Standard imports
 from typing import Dict, Tuple
 
-import numpy as np
 import rasterio
 import xarray as xr
 from affine import Affine
@@ -75,8 +74,6 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
         self.interpolator_image = self.used_config["interpolator_image"]
         self.interpolator_classif = self.used_config["interpolator_classif"]
         self.interpolator_mask = self.used_config["interpolator_mask"]
-
-        self.overlap = self.used_config["overlap"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -128,21 +125,6 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
         checker.validate(overloaded_conf)
 
         return overloaded_conf
-
-    def margins_fun(  # pylint: disable=unused-argument
-        self, row_min, row_max, col_min, col_max
-    ):
-        """
-        Default margin function, returning zeros
-        """
-        corner = ["left", "up", "right", "down"]
-        data = [self.overlap] * len(corner)
-        col = np.arange(len(corner))
-        margins = xr.Dataset(
-            {"left_margin": (["col"], data)}, coords={"col": col}
-        )
-        margins["right_margin"] = xr.DataArray(data, dims=["col"])
-        return margins
 
     def update_profile(self, img_path, scale_factor):
         """
@@ -369,7 +351,6 @@ def generate_subsampled_images_wrapper(
     :param window: the current window
     :type window: Window
     :param saving_info: the saving information
-    :param overlap: the overlap
     """
 
     global_dataset = None
