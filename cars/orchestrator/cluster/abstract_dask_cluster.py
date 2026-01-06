@@ -73,8 +73,6 @@ class AbstractDaskCluster(
 
         """
 
-        print("cluster log_dir", log_dir)
-
         # call parent init
         super().__init__(
             conf_cluster, out_dir, log_dir, launch_worker=launch_worker
