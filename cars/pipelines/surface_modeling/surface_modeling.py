@@ -947,7 +947,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 _,
             ) = advanced_parameters.check_advanced_parameters(
                 inputs,
-                self.used_conf.get(ADVANCED, {}),
+                self.used_conf.get(PIPELINE, {}).get(ADVANCED, {}),
                 output_dem_dir=output_dem_dir,
             )
 
