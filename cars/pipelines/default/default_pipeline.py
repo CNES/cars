@@ -157,13 +157,16 @@ class DefaultPipeline(PipelineTemplate):
             conf.get(ORCHESTRATOR, None)
         )
 
-        for pipeline, val in self.pipeline_to_use.items():
-            if pipeline in conf and not val:
+        for pipeline, activated in self.pipeline_to_use.items():
+            if pipeline in conf and not activated:
                 logging.warning(
                     f"You tried to override the {pipeline} pipeline but "
                     f"didn't specify it in the pipeline section. "
                     "Therefore, this pipeline will not be used"
                 )
+            if pipeline in conf and activated:
+                # Check pipeline conf format
+                self.check_pipeline_section(pipeline, conf[pipeline])
 
         if pipeline_cst.SURFACE_MODELING not in conf:
             conf[pipeline_cst.SURFACE_MODELING] = {}
@@ -206,7 +209,6 @@ class DefaultPipeline(PipelineTemplate):
             conf[pipeline_cst.FILLING] = self.check_filling(self.filling_conf)
 
         subsampling_used_conf = conf.get(pipeline_cst.SUBSAMPLING, {})
-
         filling_used_conf = conf.get(pipeline_cst.FILLING, {})
 
         if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
@@ -439,6 +441,39 @@ class DefaultPipeline(PipelineTemplate):
         applications = pipeline.check_applications(conf.get(APPLICATIONS, {}))
 
         return {"advanced": advanced, "applications": applications}
+
+    def check_pipeline_section(self, pipeline_name, pipeline_conf):
+        """
+        Check any pipeline section
+
+        :param pipeline_name: key name in conf
+        :type pipeline_name: str
+        :param pipeline_conf: pipeline configuration
+        :type pipeline_conf: dict
+        """
+        for key in pipeline_conf:
+            if key not in ["applications", "advanced"]:
+                raise KeyError(
+                    "Keys of a pipeline must be 'applications' or 'advanced'"
+                )
+        if pipeline_name in (
+            pipeline_cst.SURFACE_MODELING,
+            pipeline_cst.TIE_POINTS,
+        ):
+            int_keys = [int(epi_res) for epi_res in self.epipolar_resolutions]
+            string_keys = [str(key) for key in int_keys]
+            possible_keys = ["all"] + int_keys + string_keys
+
+            for section in ["applications", "advanced"]:
+                for key in pipeline_conf[section]:
+                    if key not in possible_keys:
+                        raise KeyError(
+                            "When meta pipeline is used, keys of {} pipeline"
+                            "must be in {}".format(
+                                pipeline_name,
+                                string_keys + ["all"],
+                            )
+                        )
 
     def cleanup_low_res_dir(self):
         """
