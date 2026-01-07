@@ -538,7 +538,7 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
         corrected_grid_right = self.correct_grid(
             grid_right,
             grid_correction,
-            pair_key,
+            pair_folder,
             save_corrected_grid,
         )
 

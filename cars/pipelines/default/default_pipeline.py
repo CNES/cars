@@ -615,14 +615,6 @@ class DefaultPipeline(PipelineTemplate):
                     dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
                     current_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
 
-                # Define tie points output dir
-                tie_points_out_dir = os.path.join(
-                    self.intermediate_data_dir,
-                    "tie_points",
-                    "res" + str(epipolar_res),
-                )
-                safe_makedirs(tie_points_out_dir)
-
                 updated_pipeline = SurfaceModelingPipeline(
                     current_conf,
                     config_dir=self.config_dir,
@@ -630,7 +622,6 @@ class DefaultPipeline(PipelineTemplate):
                 updated_pipeline.run(
                     which_resolution=which_resolution,
                     log_dir=current_log_dir,
-                    tie_points_out_dir=tie_points_out_dir,
                 )
 
                 # update previous out dir

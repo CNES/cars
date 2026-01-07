@@ -88,10 +88,15 @@ class TiePointsPipeline(PipelineTemplate):
         inputs = self.check_inputs(conf[INPUT], config_dir=config_dir)
         self.used_conf[INPUT] = inputs
 
+        # Check conf output
+        output = self.check_output(conf[OUTPUT])
+
+        self.used_conf[OUTPUT] = output
+        self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+        self.dump_dir = os.path.join(self.out_dir, "dump_dir")
+
         # Check advanced parameters
-        output_dem_dir = os.path.join(
-            conf[OUTPUT][out_cst.OUT_DIRECTORY], "dump_dir", "initial_elevation"
-        )
+        output_dem_dir = os.path.join(self.dump_dir, "initial_elevation")
         safe_makedirs(output_dem_dir)
         pipeline_conf = conf.get(PIPELINE, {})
         self.used_conf[PIPELINE] = {}
@@ -107,13 +112,6 @@ class TiePointsPipeline(PipelineTemplate):
             output_dem_dir=output_dem_dir,
         )
         self.used_conf[PIPELINE][ADVANCED] = advanced
-
-        # Check conf output
-        output = self.check_output(conf[OUTPUT])
-
-        self.used_conf[OUTPUT] = output
-        self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
-        self.dump_dir = os.path.join(self.out_dir, "dump_dir")
 
         self.save_all_intermediate_data = self.used_conf[PIPELINE][ADVANCED][
             adv_cst.SAVE_INTERMEDIATE_DATA
@@ -489,9 +487,6 @@ class TiePointsPipeline(PipelineTemplate):
 
             cars_orchestrator.breakpoint()
 
-            if inherent_orchestrator:
-                cars_orchestrator.cleanup()
-
             # Filter and save matches
             _ = self.sparse_matching_app.filter_matches(
                 epipolar_matches_left,
@@ -506,3 +501,6 @@ class TiePointsPipeline(PipelineTemplate):
                 pair_key=pair_key,
                 save_matches=True,
             )
+
+            if inherent_orchestrator:
+                cars_orchestrator.cleanup()
