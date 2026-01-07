@@ -58,18 +58,11 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
-from cars.pipelines.parameters import (
-    advanced_parameters,
-)
+from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import (
-    application_parameters,
-)
+from cars.pipelines.parameters import application_parameters
 from cars.pipelines.parameters import output_constants as out_cst
-from cars.pipelines.parameters import (
-    output_parameters,
-    sensor_inputs,
-)
+from cars.pipelines.parameters import output_parameters, sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.advanced_parameters_constants import (
     USE_ENDOGENOUS_DEM,
@@ -1049,7 +1042,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
                 # Launch tie points pipeline
                 tie_points_pipeline.run(
-                    disp_range_grid=disp_range_grid, log_dir=self.log_dir
+                    disp_range_grid=disp_range_grid,
+                    log_dir=self.log_dir,
+                    cars_orchestrator=self.cars_orchestrator,
                 )
                 self.pairs[pair_key]["matches_array"] = np.load(
                     os.path.join(
@@ -2083,7 +2078,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 self.cars_orchestrator.add_to_clean(self.dump_dir)
 
     @cars_profile(name="run_surface_modeling_pipeline", interval=0.5)
-    def run(  # pylint: disable=too-many-positional-arguments
+    def run(
         self,
         which_resolution="single",
         log_dir=None,
