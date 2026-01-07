@@ -1102,8 +1102,11 @@ class SurfaceModelingPipeline(PipelineTemplate):
             ]
             if self.tie_points_pipelines is not None:
                 disp_bounds_params = sparse_mtch_app.disparity_bounds_estimation
-                if disp_bounds_params["activated"]:
-                    matches = self.pairs[pair_key]["matches_array"]
+                matches = self.pairs[pair_key]["matches_array"]
+                if (
+                    disp_bounds_params["activated"]
+                    and matches.shape[0] > minimum_nb_matches
+                ):
                     sift_disp = matches[:, 2] - matches[:, 0]
                     disp_min = np.percentile(
                         sift_disp, disp_bounds_params["percentile"]

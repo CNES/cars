@@ -427,18 +427,23 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         )
 
         # Compute epipolar error
-        epipolar_error = matches[:, 1] - matches[:, 3]
-        epi_error_mean = np.mean(epipolar_error)
-        epi_error_std = np.std(epipolar_error)
-        epi_error_max = np.max(np.fabs(epipolar_error))
-        logging.info(
-            "Epipolar error before correction: mean = {:.3f} pix., "
-            "standard deviation = {:.3f} pix., max = {:.3f} pix.".format(
-                epi_error_mean,
-                epi_error_std,
-                epi_error_max,
+        if matches.shape[0] > 0:
+            epipolar_error = matches[:, 1] - matches[:, 3]
+            epi_error_mean = np.mean(epipolar_error)
+            epi_error_std = np.std(epipolar_error)
+            epi_error_max = np.max(np.fabs(epipolar_error))
+        else:
+            epi_error_mean = 0
+            epi_error_std = 0
+            epi_error_max = 0
+            logging.info(
+                "Epipolar error before correction: mean = {:.3f} pix., "
+                "standard deviation = {:.3f} pix., max = {:.3f} pix.".format(
+                    epi_error_mean,
+                    epi_error_std,
+                    epi_error_max,
+                )
             )
-        )
 
         # Update orchestrator out_json
         raw_matches_infos = {

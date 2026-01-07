@@ -871,16 +871,17 @@ def extract_conf_with_resolution(
     )
 
     # Extract tie points conf
-    new_conf[pipeline_cst.TIE_POINTS] = {}
-    new_conf[pipeline_cst.TIE_POINTS][APPLICATIONS] = extract_conf_section(
-        current_conf[pipeline_cst.TIE_POINTS].get(APPLICATIONS, {}),
-        res,
-        overiding_conf.get(APPLICATIONS, {}),
-    )
-    new_conf[pipeline_cst.TIE_POINTS][ADVANCED] = extract_conf_section(
-        current_conf[pipeline_cst.TIE_POINTS].get(ADVANCED, {}),
-        res,
-    )
+    if current_conf[pipeline_cst.TIE_POINTS] is not None:
+        new_conf[pipeline_cst.TIE_POINTS] = {}
+        new_conf[pipeline_cst.TIE_POINTS][APPLICATIONS] = extract_conf_section(
+            current_conf[pipeline_cst.TIE_POINTS].get(APPLICATIONS, {}),
+            res,
+            overiding_conf.get(APPLICATIONS, {}),
+        )
+        new_conf[pipeline_cst.TIE_POINTS][ADVANCED] = extract_conf_section(
+            current_conf[pipeline_cst.TIE_POINTS].get(ADVANCED, {}),
+            res,
+        )
 
     overiding_conf = {
         OUTPUT: {out_cst.OUT_DIRECTORY: surface_modeling_out_dir},
@@ -1014,12 +1015,13 @@ def merge_used_conf(used_configurations, epipolar_resolutions, out_dir):
 
     for resolution in epipolar_resolutions:
         used_conf = used_configurations[resolution]
-        merged_conf[pipeline_cst.TIE_POINTS][APPLICATIONS][str(resolution)] = (
-            used_conf[pipeline_cst.TIE_POINTS][APPLICATIONS]
-        )
-        merged_conf[pipeline_cst.TIE_POINTS][ADVANCED][str(resolution)] = (
-            used_conf[pipeline_cst.TIE_POINTS][ADVANCED]
-        )
+        if pipeline_cst.TIE_POINTS in used_conf:
+            merged_conf[pipeline_cst.TIE_POINTS][APPLICATIONS][
+                str(resolution)
+            ] = used_conf[pipeline_cst.TIE_POINTS][APPLICATIONS]
+            merged_conf[pipeline_cst.TIE_POINTS][ADVANCED][str(resolution)] = (
+                used_conf[pipeline_cst.TIE_POINTS][ADVANCED]
+            )
         merged_conf[pipeline_cst.SURFACE_MODELING][APPLICATIONS][
             str(resolution)
         ] = used_conf[pipeline_cst.SURFACE_MODELING][APPLICATIONS]
