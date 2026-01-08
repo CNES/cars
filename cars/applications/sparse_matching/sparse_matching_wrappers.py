@@ -32,6 +32,7 @@ import logging
 # Third party imports
 import numpy as np
 import pandas
+import xarray as xr
 
 # CARS imports
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
@@ -235,3 +236,51 @@ def transform_triangulated_matches_to_dataframe(triangulated_matches):
         raise RuntimeError("No match have been found in sparse matching")
 
     return triangulated_matches_df
+
+
+def get_margins(margin, disp_min, disp_max):
+    """
+    Get margins for the dense matching steps
+
+    :param margin: margins object
+    :type margin: Margins
+    :param disp_min: Minimum disparity
+    :type disp_min: int
+    :param disp_max: Maximum disparity
+    :type disp_max: int
+    :return: margins of the matching algorithm used
+    """
+    col = np.arange(4)
+
+    left_margins = [
+        margin + disp_max,
+        margin,
+        margin - disp_min,
+        margin,
+    ]
+    right_margins = [
+        margin - disp_min,
+        margin,
+        margin + disp_max,
+        margin,
+    ]
+    same_margins = [
+        max(left, right)
+        for left, right in zip(left_margins, right_margins)  # noqa: B905
+    ]
+
+    margins = xr.Dataset(
+        {
+            "left_margin": (
+                ["col"],
+                same_margins,
+            )
+        },
+        coords={"col": col},
+    )
+    margins["right_margin"] = xr.DataArray(same_margins, dims=["col"])
+
+    margins.attrs["disp_min"] = disp_min
+    margins.attrs["disp_max"] = disp_max
+
+    return margins

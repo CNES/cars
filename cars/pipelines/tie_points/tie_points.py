@@ -432,27 +432,13 @@ class TiePointsPipeline(PipelineTemplate):
             # Get required bands of resampling
             required_bands = self.sparse_matching_app.get_required_bands()
 
-            (
-                epipolar_image_left,
-                epipolar_image_right,
-            ) = self.resampling_application.run(
-                sensor_image_left,
-                sensor_image_right,
-                grid_left,
-                grid_right,
-                geom_plugin,
-                orchestrator=cars_orchestrator,
-                pair_folder=os.path.join(
-                    self.dump_dir, "resampling", "initial", pair_key
-                ),
-                pair_key=pair_key,
-                margins_fun=self.sparse_matching_app.get_margins_fun(),
-                tile_width=None,
-                tile_height=None,
-                required_bands=required_bands,
-            )
-
             if disp_range_grid is not None:
+                tile_width = 400
+                tile_height = 400
+                margins_fun = self.sparse_matching_app.get_margins_tile_fun(
+                    grid_left, disp_range_grid
+                )
+
                 disp_min = disp_range_grid["global_min"]
                 disp_max = disp_range_grid["global_max"]
                 logging.info(
@@ -467,6 +453,34 @@ class TiePointsPipeline(PipelineTemplate):
                 self.sparse_matching_app.elevation_delta_upper_bound = (
                     -disp_min * disp_to_alt_ratio
                 )
+
+            else:
+
+                tile_width = None
+                tile_height = None
+                margins_fun = (
+                    self.sparse_matching_app.get_margins_strip_fun()
+                )
+
+            (
+                epipolar_image_left,
+                epipolar_image_right,
+            ) = self.resampling_application.run(
+                sensor_image_left,
+                sensor_image_right,
+                grid_left,
+                grid_right,
+                geom_plugin,
+                orchestrator=cars_orchestrator,
+                pair_folder=os.path.join(
+                    self.dump_dir, "resampling", "initial", pair_key
+                ),
+                pair_key=pair_key,
+                margins_fun=margins_fun,
+                tile_width=tile_width,
+                tile_height=tile_height,
+                required_bands=required_bands,
+            )
 
             # Compute sparse matching
             (

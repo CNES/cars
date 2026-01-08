@@ -74,7 +74,7 @@ class Sift(SparseMatching, short_name=["sift"]):
         self.elevation_delta_upper_bound = self.used_config[
             "elevation_delta_upper_bound"
         ]
-        self.strip_margin = self.used_config["strip_margin"]
+        self.tile_margin = self.used_config["tile_margin"]
         self.epipolar_error_upper_bound = self.used_config[
             "epipolar_error_upper_bound"
         ]
@@ -147,7 +147,7 @@ class Sift(SparseMatching, short_name=["sift"]):
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
             "elevation_delta_upper_bound", None
         )
-        overloaded_conf["strip_margin"] = conf.get("strip_margin", 10)
+        overloaded_conf["tile_margin"] = conf.get("tile_margin", 10)
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
             "epipolar_error_upper_bound", 10.0
         )
@@ -215,7 +215,7 @@ class Sift(SparseMatching, short_name=["sift"]):
             "minimum_nb_matches": And(int, lambda x: x > 0),
             "elevation_delta_lower_bound": Or(int, float, None),
             "elevation_delta_upper_bound": Or(int, float, None),
-            "strip_margin": And(int, lambda x: x > 0),
+            "tile_margin": And(int, lambda x: x > 0),
             "epipolar_error_upper_bound": And(float, lambda x: x > 0),
             "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
             "sift_matching_threshold": And(float, lambda x: x > 0),
@@ -320,14 +320,14 @@ class Sift(SparseMatching, short_name=["sift"]):
 
         return self.save_intermediate_data
 
-    def get_strip_margin(self):
+    def get_tile_margin(self):
         """
         Get strip margin corresponding to sparse matches
 
         :return: margin in percent
 
         """
-        return self.strip_margin
+        return self.tile_margin
 
     def get_epipolar_error_upper_bound(self):
         """
