@@ -38,7 +38,7 @@ def test_check_full_conf():
         "method": "sift",
         "elevation_delta_lower_bound": -100,
         "elevation_delta_upper_bound": 1000,
-        "strip_margin": 10,
+        "tile_margin": 10,
         "epipolar_error_upper_bound": 10.0,
         "epipolar_error_maximum_bias": 0.0,
         "minimum_nb_matches": 100,
