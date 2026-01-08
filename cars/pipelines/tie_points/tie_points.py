@@ -112,6 +112,15 @@ class TiePointsPipeline(PipelineTemplate):
             output_dem_dir=output_dem_dir,
         )
         self.used_conf[PIPELINE][ADVANCED] = advanced
+        self.resampling_tile_width = advanced["resampling_tile_width"]
+        self.resampling_tile_height = advanced["resampling_tile_height"]
+
+        # Check conf output
+        output = self.check_output(conf[OUTPUT])
+
+        self.used_conf[OUTPUT] = output
+        self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+        self.dump_dir = os.path.join(self.out_dir, "dump_dir")
 
         self.save_all_intermediate_data = self.used_conf[PIPELINE][ADVANCED][
             adv_cst.SAVE_INTERMEDIATE_DATA
@@ -249,6 +258,13 @@ class TiePointsPipeline(PipelineTemplate):
 
         overloaded_conf = conf.copy()
 
+        overloaded_conf["resampling_tile_width"] = conf.get(
+            "resampling_tile_width", 5000
+        )
+        overloaded_conf["resampling_tile_height"] = conf.get(
+            "resampling_tile_height", 60
+        )
+
         overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
             adv_cst.SAVE_INTERMEDIATE_DATA, False
         )
@@ -270,6 +286,8 @@ class TiePointsPipeline(PipelineTemplate):
         schema = {
             adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
             adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
+            "resampling_tile_width": int,
+            "resampling_tile_height": int,
         }
 
         checker_advanced_parameters = Checker(schema)
@@ -433,8 +451,8 @@ class TiePointsPipeline(PipelineTemplate):
             required_bands = self.sparse_matching_app.get_required_bands()
 
             if disp_range_grid is not None:
-                tile_width = 5000
-                tile_height = 60
+                tile_width = self.resampling_tile_width
+                tile_height = self.resampling_tile_height
                 margins_fun = self.sparse_matching_app.get_margins_tile_fun(
                     grid_left, disp_range_grid
                 )
