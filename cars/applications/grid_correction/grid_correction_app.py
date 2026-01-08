@@ -115,7 +115,7 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
 
     def get_minimum_nb_matches(self):
         """
-        Get the minimul number of matches required for grid correction
+        Get the minimum number of matches required for grid correction
         """
 
         return self.nb_matches
