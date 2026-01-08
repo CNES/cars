@@ -66,6 +66,7 @@ from cars.core import constants_disparity as cst_disp
 from cars.core import inputs, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
+from cars.data_structures.cars_dict import CarsDict
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
@@ -1206,8 +1207,10 @@ class CensusMccnnSgm(
             nb_total_tiles_roi = 0
 
             # broadcast grids
+            # Transform grids to CarsDict for broadcasting
+            # due to Dask issue https://github.com/dask/dask/issues/9969
             broadcasted_disp_range_grid = self.orchestrator.cluster.scatter(
-                disp_range_grid
+                CarsDict(disp_range_grid)
             )
 
             # Generate disparity maps
@@ -1359,6 +1362,8 @@ def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
         - cst.EPI_TEXTURE
 
     """
+    # transform disp_range_grid back to dict
+    disp_range_grid = disp_range_grid.data
     # Generate disparity grids
     (
         disp_min_grid,
