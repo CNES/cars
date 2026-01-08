@@ -734,6 +734,29 @@ filling:
       activated: false
       use_mask: true
       save_intermediate_data: false
+    dsm_filling.2:
+      method: bulldozer
+      classification:
+      - '2'
+      - '3'
+      save_intermediate_data: false
+    dsm_filling.3:
+      method: border_interpolation
+      classification:
+      - '2'
+      save_intermediate_data: false
+      component_min_size: 5
+      border_size: 10
+      percentile: 10
+    dsm_filling.1:
+      method: exogenous_filling
+      classification:
+      - '3'
+      - '4'
+      fill_with_geoid:
+      - '4'
+      save_intermediate_data: false
+      interpolation_method: bilinear
     dem_generation:
       method: bulldozer_on_raster
       resolution: 0.6
@@ -755,9 +778,6 @@ filling:
       coregistration: true
       coregistration_max_shift: 180
       save_intermediate_data: false
-  advanced:
-    save_intermediate_data: true
-formatting:
   advanced:
     save_intermediate_data: true
 pipeline:

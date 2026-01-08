@@ -99,18 +99,4 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
 
 .. raw:: html
 
-   <div class="scrollable-config">
-
-   <details open>
-   <summary>Formatting</summary>
-
-.. admonition:: Formatting
-   :class: formatting
-
-   .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: formatting
-
-
-.. raw:: html
-
    </details>
