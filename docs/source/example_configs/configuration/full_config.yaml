@@ -117,11 +117,11 @@ orchestrator:
 subsampling:
   applications:
     sensors_subsampling:
-    	method: rasterio
-    	tile_size: 10000
-    	interpolator_image: bilinear
-    	interpolator_classif: nearest
-    	interpolator_mask: nearest
+      method: rasterio
+      tile_size: 10000
+      interpolator_image: bilinear
+      interpolator_classif: nearest
+      interpolator_mask: nearest
   advanced:
     save_intermediate_data: true
     resolutions: [16, 4, 1]
