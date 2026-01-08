@@ -15,8 +15,6 @@ The ``orchestrator`` key is optional and allows to define orchestrator configura
 +------------------+----------------------------------------------------------------------------------------------------------+-----------------------------------------+-------------------+----------+
 | *task_timeout*   | Time (seconds) betweend two tasks before closing cluster and restarting tasks                            | int                                     | 600               | No       |
 +------------------+----------------------------------------------------------------------------------------------------------+-----------------------------------------+-------------------+----------+
-| *profiling*      | Configuration for CARS profiling mode                                                                    | dict                                    |                   | No       |
-+------------------+----------------------------------------------------------------------------------------------------------+-----------------------------------------+-------------------+----------+
 
 .. note::
     `sequential` orchestrator purposes are mostly for studies, debug and notebooks. If you want to use it with large data, consider using a ROI and Epipolar A Priori. Only tiles needed for the specified ROI will be computed. If Epipolar A priori is not specified, Epipolar Resampling and Sparse Matching will be performed on the whole image, no matter what ROI field is filled with.
@@ -108,28 +106,3 @@ Depending on the used orchestrator mode, the following parameters can be added i
 | *qos*               | Quality of Service parameter (qos list separated by comma)       | str                                     | Null          | No       |
 +---------------------+------------------------------------------------------------------+-----------------------------------------+---------------+----------+
 
-
-**Profiling configuration:**
-
-The profiling mode is used to analyze time or memory of the executed CARS functions at worker level. By default, the profiling mode is disabled.
-It could be configured for the different orchestrator modes and for different purposes (time, elapsed time, memory allocation, loop testing).
-
-.. include-cars-config:: ../example_configs/configuration/orchestrator
-
-+---------------------+-----------------------------------------------------------+-----------------------------------------+----------------+----------+
-| Name                | Description                                               | Type                                    | Default value  | Required |
-+=====================+===========================================================+=========================================+================+==========+
-| *mode*              | type of profiling mode "cars_profiling, cprofile, memray" | string                                  | cars_profiling | No       |
-+---------------------+-----------------------------------------------------------+-----------------------------------------+----------------+----------+
-| *loop_testing*      | enable loop mode to execute each step multiple times      | bool                                    | False          | No       |
-+---------------------+-----------------------------------------------------------+-----------------------------------------+----------------+----------+
-
-- Please use make command 'profile-memory-report' to generate a memory profiling report from the memray outputs files (after the memray profiling execution).
-- Please disabled profiling to eval memory profiling at master orchestrator level and execute make command instead: 'profile-memory-all'.
-
-.. note::
-
-    The logging system provides messages for all orchestration modes, both for the main process and the worker processes.
-    The logging output file of the main process is located in the output directory.
-    In the case of distributed orchestration, the worker's logging output file is located in the workers_log directory (the message format indicates thread ID and process ID).
-    A summary of basic profiling is generated in output directory.
