@@ -56,21 +56,6 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
    .. include-cars-config-section:: ../example_configs/configuration/full_config
       :key: subsampling
 
-
-.. raw:: html
-
-   <div class="scrollable-config">
-
-   <details open>
-   <summary>Edge detection</summary>
-
-.. admonition:: Edge detection
-   :class: edge_detection
-
-   .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: edge_detection
-
-
 .. raw:: html
 
    <div class="scrollable-config">

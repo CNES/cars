@@ -101,7 +101,6 @@ output:
   geoid: true
   epsg: 
   resolution: 0.5
-  save_by_pair: true
 orchestrator:
   mode: multiprocessing
   nb_workers: 5
@@ -115,14 +114,14 @@ orchestrator:
   profiling:
      mode: cars_profiling
      loop_testing: false
-edge_detection:
-  applications:
-    TODO: true
-  advanced:
-    save_intermediate_data: true
 subsampling:
   applications:
-    TODO: true
+    sensors_subsampling:
+    	method: rasterio
+    	tile_size: 10000
+    	interpolator_image: bilinear
+    	interpolator_classif: nearest
+    	interpolator_mask: nearest
   advanced:
     save_intermediate_data: true
     resolutions: [16, 4, 1]
@@ -247,7 +246,6 @@ surface_modeling:
       point_cloud_outlier_removal.1:
         save_intermediate_data: true
         method: small_components
-        save_by_pair: false
         on_ground_margin: 11
         connection_distance: 3
         nb_points_threshold: 50
@@ -256,7 +254,6 @@ surface_modeling:
       point_cloud_outlier_removal.2:
         save_intermediate_data: true
         method: statistical
-        save_by_pair: false
         use_median: true
         k: 50
         filtering_constant: 0
@@ -394,7 +391,6 @@ surface_modeling:
       point_cloud_outlier_removal.1:
         save_intermediate_data: true
         method: small_components
-        save_by_pair: false
         on_ground_margin: 11
         connection_distance: 3
         nb_points_threshold: 50
@@ -403,7 +399,6 @@ surface_modeling:
       point_cloud_outlier_removal.2:
         save_intermediate_data: true
         method: statistical
-        save_by_pair: false
         use_median: true
         k: 50
         filtering_constant: 0
@@ -541,7 +536,6 @@ surface_modeling:
       point_cloud_outlier_removal.1:
         save_intermediate_data: true
         method: small_components
-        save_by_pair: false
         on_ground_margin: 11
         connection_distance: 3
         nb_points_threshold: 50
@@ -550,7 +544,6 @@ surface_modeling:
       point_cloud_outlier_removal.2:
         save_intermediate_data: true
         method: statistical
-        save_by_pair: false
         use_median: true
         k: 50
         filtering_constant: 0
@@ -741,18 +734,36 @@ filling:
       activated: false
       use_mask: true
       save_intermediate_data: false
+    dem_generation:
+      method: bulldozer_on_raster
+      resolution: 0.6
+      margin:
+      - 0.1
+      - 547.722557505166
+      morphological_filters_size: 30
+      preprocessing_median_filter_size: 5
+      postprocessing_median_filter_size: 7
+      dem_median_downscale: 10
+      dem_min_max_downscale: 2
+      fillnodata_max_search_distance: 50
+      min_dem: -500
+      max_dem: 1000
+      height_margin: 21.90890230020664
+      bulldozer_max_object_size: 8
+      disable_bulldozer: false
+      compute_stats: true
+      coregistration: true
+      coregistration_max_shift: 180
+      save_intermediate_data: false
   advanced:
     save_intermediate_data: true
 formatting:
-  applications:
-    TODO: true
   advanced:
     save_intermediate_data: true
-merging:
-  applications:
-    TODO: true
-  advanced:
-    save_intermediate_data: true
-    dsm_merging_tile_size: 4000
-    phasing: null
-    geometry_plugin: SharelocGeometry
+pipeline:
+  subsampling: true
+  surface_modeling: true
+  formatting: true
+  filling: true
+  merging: false
+
