@@ -97,21 +97,6 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
    .. include-cars-config-section:: ../example_configs/configuration/full_config
       :key: filling
 
-
-.. raw:: html
-
-   <div class="scrollable-config">
-
-   <details open>
-   <summary>Merging</summary>
-
-.. admonition:: Merging
-   :class: merging
-
-   .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: merging
-
-
 .. raw:: html
 
    <div class="scrollable-config">

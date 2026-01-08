@@ -24,7 +24,6 @@ Each of them can be called by themselves, provided the right inputs.
     :hidden:
 
     pipelines/subsampling
-    pipelines/edge_detection
     pipelines/surface_modeling
     pipelines/tiepoints
     pipelines/filling
@@ -35,8 +34,6 @@ Each of them can be called by themselves, provided the right inputs.
 | Pipeline                                    | Per-resolution | Description                                                                                                                              |
 +=============================================+================+==========================================================================================================================================+
 | :ref:`subsampling <subsampling>`            | No             | Takes sensor images as input and generates subsampled versions at the resolutions specified in the configuration.                        |
-+---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
-| :ref:`edge_detection <edge_detection>`      | No             | Produces a regularization mask from an input image. This mask is typically used in the surface_modeling step to guide stereo matching.   |
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
 | :ref:`surface_modeling <surface_modeling>`  | Yes            | Computes a DSM by performing pixel-level stereo matching between a left and right image.                                                 |
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
