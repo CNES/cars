@@ -83,7 +83,6 @@ class AbstractDaskCluster(
         self.walltime = self.checked_conf_cluster["walltime"]
         self.use_memory_logger = self.checked_conf_cluster["use_memory_logger"]
         self.config_name = self.checked_conf_cluster["config_name"]
-        self.profiling = self.checked_conf_cluster["profiling"]
         self.launch_worker = launch_worker
 
         self.activate_dashboard = self.checked_conf_cluster[

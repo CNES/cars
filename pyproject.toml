@@ -99,8 +99,6 @@ dev = [
     "sphinx",                         # for cars doc
     "sphinx-rtd-theme",               # for cars doc
     "graphviz",                       # for cars doc
-    "memory_profiler",
-    "memray",
     "dash",
     "plotly",
     "build",                          # for cars build
