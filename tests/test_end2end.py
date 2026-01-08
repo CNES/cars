@@ -157,7 +157,7 @@ def test_end2end_ventoux_meta_pipeline():
                     "input/phr_ventoux/srtm/N44E005.hgt"
                 ),
             },
-            "subsampling": {"advanced": {"epipolar_resolutions": [4, 1]}},
+            "subsampling": {"advanced": {"resolutions": [4, 1]}},
             "surface_modeling": {
                 "applications": {
                     "all": {
@@ -184,7 +184,7 @@ def test_end2end_ventoux_meta_pipeline():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "dsm_test_gizeh_meta_pipeline.tif",
+                    "dsm_test_ventoux_meta_pipeline.tif",
                 )
             ),
         )
@@ -193,7 +193,7 @@ def test_end2end_ventoux_meta_pipeline():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "image_test_gizeh_meta_pipeline.tif",
+                    "image_test_ventoux_meta_pipeline.tif",
                 )
             ),
         )
@@ -202,7 +202,7 @@ def test_end2end_ventoux_meta_pipeline():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "dsm_test_gizeh_meta_pipeline.tif",
+                    "dsm_test_ventoux_meta_pipeline.tif",
                 )
             ),
             atol=0.0001,
@@ -213,7 +213,7 @@ def test_end2end_ventoux_meta_pipeline():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "image_test_gizeh_meta_pipeline.tif",
+                    "image_test_ventoux_meta_pipeline.tif",
                 )
             ),
             atol=0.0001,

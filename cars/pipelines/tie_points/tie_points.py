@@ -502,5 +502,5 @@ class TiePointsPipeline(PipelineTemplate):
                 save_matches=True,
             )
 
-            if inherent_orchestrator:
-                cars_orchestrator.cleanup()
+        if inherent_orchestrator:
+            cars_orchestrator.cleanup()

@@ -36,7 +36,7 @@ from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
 
 
-def get_epipolar_resolutions(conf):
+def get_resolutions(conf):
     """
     Get the epipolar resolutions from the configuration
 
@@ -46,8 +46,8 @@ def get_epipolar_resolutions(conf):
     :return: list of epipolar resolutions
     :rtype: list
     """
-    if adv_cst.EPIPOLAR_RESOLUTIONS in conf:
-        return conf[adv_cst.EPIPOLAR_RESOLUTIONS]
+    if adv_cst.RESOLUTIONS in conf:
+        return conf[adv_cst.RESOLUTIONS]
 
     return [16, 4, 1]
 

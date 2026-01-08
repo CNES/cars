@@ -149,6 +149,17 @@ class DefaultPipeline(PipelineTemplate):
             conf.get(ORCHESTRATOR, None)
         )
 
+        if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
+            self.subsampling_conf = self.construct_subsampling_conf(conf)
+            conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
+                self.subsampling_conf,
+            )
+
+        # Get epipolar resolutions to use
+        self.resolutions = conf[pipeline_cst.SUBSAMPLING][ADVANCED][
+            adv_cst.RESOLUTIONS
+        ]
+
         for pipeline, activated in self.pipeline_to_use.items():
             if pipeline in conf and not activated:
                 logging.warning(
@@ -171,36 +182,24 @@ class DefaultPipeline(PipelineTemplate):
 
         self.keep_low_res_dir = True
 
-        if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
-            self.subsampling_conf = self.construct_subsampling_conf(conf)
-            conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
-                self.subsampling_conf,
-                conf[INPUT],
-            )
-
-        # Get epipolar resolutions to use
-        self.epipolar_resolutions = conf[pipeline_cst.SUBSAMPLING][ADVANCED][
-            adv_cst.EPIPOLAR_RESOLUTIONS
-        ]
-
-        if dsm_cst.DSMS in conf[INPUT] and len(self.epipolar_resolutions) != 1:
+        if dsm_cst.DSMS in conf[INPUT] and len(self.resolutions) != 1:
             logging.info(
                 "For the use of those pipelines, "
                 "you have to give only one resolution"
             )
             # overide epipolar resolutions
             # TODO: delete with external dsm pipeline (refactoring)
-            self.epipolar_resolutions = [1]
+            self.resolutions = [1]
         elif (
             not self.pipeline_to_use[pipeline_cst.SUBSAMPLING]
-            and len(self.epipolar_resolutions) != 1
+            and len(self.resolutions) != 1
         ):
             logging.warning(
                 "As you're not using the subsampling pipeline, "
                 "the working resolution will be 1"
             )
 
-            self.epipolar_resolutions = [1]
+            self.resolutions = [1]
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             self.filling_conf = self.construct_filling_conf(conf)
@@ -211,12 +210,11 @@ class DefaultPipeline(PipelineTemplate):
 
         if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
             for epipolar_resolution_index, epipolar_res in enumerate(
-                self.epipolar_resolutions
+                self.resolutions
             ):
                 first_res = epipolar_resolution_index == 0
                 last_res = (
-                    epipolar_resolution_index
-                    == len(self.epipolar_resolutions) - 1
+                    epipolar_resolution_index == len(self.resolutions) - 1
                 )
                 intermediate_res = not first_res and not last_res
 
@@ -260,7 +258,7 @@ class DefaultPipeline(PipelineTemplate):
             # Generate full used_conf
             full_used_conf = merge_used_conf(
                 used_configurations,
-                self.epipolar_resolutions,
+                self.resolutions,
                 os.path.abspath(self.out_dir),
             )
         else:
@@ -410,17 +408,21 @@ class DefaultPipeline(PipelineTemplate):
 
         return dict_pipeline
 
-    def check_subsampling(self, conf, inputs):
+    def check_subsampling(self, conf):
         """
         Check the subsampling section
 
         :param conf: configuration of subsampling
         :type conf: dict
         """
-
         pipeline = SubsamplingPipeline(conf)
-        advanced = pipeline.check_advanced(conf.get(ADVANCED, {}), inputs)
-        applications = pipeline.check_applications(conf.get(APPLICATIONS, {}))
+        advanced = pipeline.check_advanced(
+            conf[pipeline_cst.SUBSAMPLING].get(ADVANCED, {}),
+            conf[INPUT],
+        )
+        applications = pipeline.check_applications(
+            conf[pipeline_cst.SUBSAMPLING].get(APPLICATIONS, {})
+        )
 
         return {ADVANCED: advanced, APPLICATIONS: applications}
 
@@ -434,9 +436,12 @@ class DefaultPipeline(PipelineTemplate):
 
         pipeline = FillingPipeline(conf, pre_check=True)
         advanced = pipeline.check_advanced(
-            conf[pipeline_cst.FILLING], conf[INPUT]
+            conf[pipeline_cst.FILLING].get(ADVANCED, {}),
+            conf[INPUT],
         )
-        applications = pipeline.check_applications(conf.get(APPLICATIONS, {}))
+        applications = pipeline.check_applications(
+            conf[pipeline_cst.FILLING].get(APPLICATIONS, {})
+        )
 
         return {ADVANCED: advanced, APPLICATIONS: applications}
 
@@ -458,11 +463,11 @@ class DefaultPipeline(PipelineTemplate):
             pipeline_cst.SURFACE_MODELING,
             pipeline_cst.TIE_POINTS,
         ):
-            int_keys = [int(epi_res) for epi_res in self.epipolar_resolutions]
+            int_keys = [int(epi_res) for epi_res in self.resolutions]
             string_keys = [str(key) for key in int_keys]
             possible_keys = ["all"] + int_keys + string_keys
 
-            for section in [APPLICATIONS, ADVANCED]:
+            for section in pipeline_conf:
                 for key in pipeline_conf[section]:
                     if key not in possible_keys:
                         raise KeyError(
@@ -581,9 +586,7 @@ class DefaultPipeline(PipelineTemplate):
             subsampling_pipeline.run()
 
         if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
-            for resolution_index, epipolar_res in enumerate(
-                self.epipolar_resolutions
-            ):
+            for resolution_index, epipolar_res in enumerate(self.resolutions):
 
                 # Get tested unit pipeline
                 current_conf = self.used_conf[resolution_index]
@@ -674,7 +677,7 @@ class DefaultPipeline(PipelineTemplate):
             # Generate full used_conf
             full_used_conf = merge_used_conf(
                 updated_conf,
-                self.epipolar_resolutions,
+                self.resolutions,
                 os.path.abspath(self.out_dir),
             )
         else:
@@ -1017,18 +1020,16 @@ def overide_pipeline_conf(conf, overiding_conf, append_classification=False):
     return result
 
 
-def merge_used_conf(used_configurations, epipolar_resolutions, out_dir):
+def merge_used_conf(used_configurations, resolutions, out_dir):
     """
     Merge all used configuration
     """
     used_configurations = copy.deepcopy(used_configurations)
 
     merged_conf = {
-        INPUT: used_configurations[epipolar_resolutions[-1]][INPUT],
-        OUTPUT: used_configurations[epipolar_resolutions[0]][OUTPUT],
-        ORCHESTRATOR: used_configurations[epipolar_resolutions[0]][
-            ORCHESTRATOR
-        ],
+        INPUT: used_configurations[resolutions[-1]][INPUT],
+        OUTPUT: used_configurations[resolutions[0]][OUTPUT],
+        ORCHESTRATOR: used_configurations[resolutions[0]][ORCHESTRATOR],
     }
 
     merged_conf[OUTPUT]["directory"] = out_dir
@@ -1039,7 +1040,7 @@ def merge_used_conf(used_configurations, epipolar_resolutions, out_dir):
         ADVANCED: {},
     }
 
-    for resolution in epipolar_resolutions:
+    for resolution in resolutions:
         used_conf = used_configurations[resolution]
         if pipeline_cst.TIE_POINTS in used_conf:
             merged_conf[pipeline_cst.TIE_POINTS][APPLICATIONS][

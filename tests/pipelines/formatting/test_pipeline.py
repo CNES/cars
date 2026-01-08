@@ -67,7 +67,7 @@ def test_pipeline():
 
         input_conf["subsampling"] = {}
         input_conf["subsampling"]["advanced"] = {}
-        input_conf["subsampling"]["advanced"]["epipolar_resolutions"] = 1
+        input_conf["subsampling"]["advanced"]["resolutions"] = 1
 
         # without formatting
         input_conf["pipeline"] = ["subsampling", "surface_modeling"]
@@ -157,7 +157,7 @@ def test_pipeline():
 
         input_conf["subsampling"] = {}
         input_conf["subsampling"]["advanced"] = {}
-        input_conf["subsampling"]["advanced"]["epipolar_resolutions"] = 1
+        input_conf["subsampling"]["advanced"]["resolutions"] = 1
 
         input_conf["pipeline"] = [
             "subsampling",

@@ -594,9 +594,7 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
 
     sparse_matching_config["subsampling"] = {}
     sparse_matching_config["subsampling"]["advanced"] = {}
-    sparse_matching_config["subsampling"]["advanced"][
-        "epipolar_resolutions"
-    ] = [1]
+    sparse_matching_config["subsampling"]["advanced"]["resolutions"] = [1]
     if "tie_points" not in sparse_matching_config:
         sparse_matching_config["tie_points"] = {
             "applications": {"sparse_matching": {"decimation_factor": 100}}

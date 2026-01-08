@@ -109,10 +109,10 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
             "interpolator_image", "bilinear"
         )
         overloaded_conf["interpolator_classif"] = conf.get(
-            "interpolator_image", "nearest"
+            "interpolator_classif", "nearest"
         )
         overloaded_conf["interpolator_mask"] = conf.get(
-            "interpolator_image", "nearest"
+            "interpolator_mask", "nearest"
         )
 
         overloaded_conf["overlap"] = conf.get("overlap", 2)

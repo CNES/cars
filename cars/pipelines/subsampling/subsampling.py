@@ -110,9 +110,7 @@ class SubsamplingPipeline(PipelineTemplate):
         )
 
         # Get epipolar resolutions to use
-        self.epipolar_resolutions = conf[PIPELINE][ADVANCED][
-            adv_cst.EPIPOLAR_RESOLUTIONS
-        ]
+        self.resolutions = conf[PIPELINE][ADVANCED][adv_cst.RESOLUTIONS]
 
         # check output
         conf[OUTPUT] = self.check_output(conf)
@@ -191,13 +189,17 @@ class SubsamplingPipeline(PipelineTemplate):
             adv_cst.SAVE_INTERMEDIATE_DATA, False
         )
 
-        overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS] = conf.get(
-            adv_cst.EPIPOLAR_RESOLUTIONS, [16, 4, 1]
+        overloaded_conf[adv_cst.RESOLUTIONS] = conf.get(
+            adv_cst.RESOLUTIONS, [16, 4, 1]
         )
 
-        if isinstance(overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS], int):
-            overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS] = [
-                overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS]
+        overloaded_conf[adv_cst.MIN_IMAGE_SIZE] = conf.get(
+            adv_cst.MIN_IMAGE_SIZE, 80
+        )
+
+        if isinstance(overloaded_conf[adv_cst.RESOLUTIONS], int):
+            overloaded_conf[adv_cst.RESOLUTIONS] = [
+                overloaded_conf[adv_cst.RESOLUTIONS]
             ]
 
         # Check minimal image size
@@ -215,13 +217,14 @@ class SubsamplingPipeline(PipelineTemplate):
                 logging.warning("Sensor {} not found".format(sensor))
         if sizes:
             min_size = min(sizes)
-            for res in overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS]:
-                if min_size / res < 100:
-                    overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS].remove(res)
+            for res in overloaded_conf[adv_cst.RESOLUTIONS]:
+                if min_size / res < overloaded_conf[adv_cst.MIN_IMAGE_SIZE]:
+                    overloaded_conf[adv_cst.RESOLUTIONS].remove(res)
 
         schema = {
             adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
-            adv_cst.EPIPOLAR_RESOLUTIONS: [int],
+            adv_cst.RESOLUTIONS: [int],
+            adv_cst.MIN_IMAGE_SIZE: int,
         }
 
         checker_advanced_parameters = Checker(schema)
@@ -316,7 +319,7 @@ class SubsamplingPipeline(PipelineTemplate):
                 out_cst.INFO_FILENAME,
             ),
         ) as self.cars_orchestrator:
-            for res in self.epipolar_resolutions:
+            for res in self.resolutions:
                 if res != 1:
                     conf_to_save = copy.deepcopy(self.used_conf)
                     for key, val in inputs[sens_cst.SENSORS].items():

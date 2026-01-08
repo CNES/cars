@@ -35,7 +35,8 @@ CLASSIFICATION_TO_CONFIGURATION_MAPPING = (
 RESOLUTION_A_PRIORI = "resolution_a_priori"
 GROUND_TRUTH_DSM = "ground_truth_dsm"
 
-EPIPOLAR_RESOLUTIONS = "epipolar_resolutions"
+RESOLUTIONS = "resolutions"
+MIN_IMAGE_SIZE = "min_image_size"
 
 DSM_MERGING_TILE_SIZE = "dsm_merging_tile_size"
 

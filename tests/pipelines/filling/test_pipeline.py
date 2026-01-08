@@ -75,7 +75,7 @@ def test_pipeline_filling_end2end_global():
 
         input_conf["subsampling"] = {}
         input_conf["subsampling"]["advanced"] = {}
-        input_conf["subsampling"]["advanced"]["epipolar_resolutions"] = [1]
+        input_conf["subsampling"]["advanced"]["resolutions"] = [1]
 
         input_conf["pipeline"] = ["subsampling", "surface_modeling", "filling"]
 
@@ -334,7 +334,7 @@ def test_pipeline():
 
         input_conf["subsampling"] = {}
         input_conf["subsampling"]["advanced"] = {}
-        input_conf["subsampling"]["advanced"]["epipolar_resolutions"] = 1
+        input_conf["subsampling"]["advanced"]["resolutions"] = 1
 
         input_conf["filling"] = {}
 

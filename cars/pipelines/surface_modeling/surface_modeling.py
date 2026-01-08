@@ -224,7 +224,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         self.refined_conf[ADVANCED] = copy.deepcopy(advanced)
         # Refined conf: resolutions 1
-        self.refined_conf[ADVANCED][adv_cst.EPIPOLAR_RESOLUTIONS] = [1]
+        self.refined_conf[ADVANCED][adv_cst.RESOLUTIONS] = [1]
 
         # Get ROI
         (
@@ -1099,10 +1099,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             if self.tie_points_pipelines is not None:
                 disp_bounds_params = sparse_mtch_app.disparity_bounds_estimation
                 matches = self.pairs[pair_key]["matches_array"]
-                if (
-                    disp_bounds_params["activated"]
-                    and matches.shape[0] > minimum_nb_matches
-                ):
+                if disp_bounds_params["activated"] and matches.shape[0] > 0:
                     sift_disp = matches[:, 2] - matches[:, 0]
                     disp_min = np.percentile(
                         sift_disp, disp_bounds_params["percentile"]
