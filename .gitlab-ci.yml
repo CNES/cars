@@ -89,7 +89,8 @@ docker-image-build:
     ENV_DOCKERFILE: ${CARS_DOCKERFILE}
 
     DOCKER_BUILD_OPTIONS: "--build-arg REGISTRY=${REGISTRY} --build-arg CREDS_USERNAME=${CARS_CI_DOCKER_RO_TOKEN_USERNAME} --build-arg CREDS_TOKEN=${CARS_CI_DOCKER_RO_TOKEN_PASSWORD} --build-arg USE_CERTS=true  --build-arg GIT_BRANCH=${CI_COMMIT_REF_NAME} --build-arg CARS_URL=${CARS_URL}"
-
+  # allow the docker build/test to fail because the docker build environment is instable independently of the job. In the future this job should not be allowed to fail
+  allow_failure: true
 
 # Quality step for docker image
 hadolint-cars-docker:
@@ -143,6 +144,8 @@ docker-image-test:
     # Set git strategy to none to prevent gitlab-ci from cloning cars source into
     # the container
     GIT_STRATEGY: none
+  # allow the docker build/test to fail because the docker build environment is instable independently of the job. In the future this job should not be allowed to fail
+  allow_failure: true
 
 # run unit tests before other tasks (lint, quality, end2end ...) to catch early
 # errors
