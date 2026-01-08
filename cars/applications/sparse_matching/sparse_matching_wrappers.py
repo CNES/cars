@@ -238,7 +238,7 @@ def transform_triangulated_matches_to_dataframe(triangulated_matches):
     return triangulated_matches_df
 
 
-def get_margins(margin, disp_min, disp_max):
+def get_margins(margin_left, margin_right, disp_min, disp_max):
     """
     Get margins for the dense matching steps
 
@@ -253,32 +253,28 @@ def get_margins(margin, disp_min, disp_max):
     col = np.arange(4)
 
     left_margins = [
-        margin + disp_max,
-        margin,
-        margin - disp_min,
-        margin,
+        0,  # no left/right margins for the left img
+        margin_left,
+        0,  # no left/right margins for the left img
+        margin_left,
     ]
     right_margins = [
-        margin - disp_min,
-        margin,
-        margin + disp_max,
-        margin,
-    ]
-    same_margins = [
-        max(left, right)
-        for left, right in zip(left_margins, right_margins)  # noqa: B905
+        margin_left - disp_min,
+        margin_right,
+        margin_left + disp_max,
+        margin_right,
     ]
 
     margins = xr.Dataset(
         {
             "left_margin": (
                 ["col"],
-                same_margins,
+                left_margins,
             )
         },
         coords={"col": col},
     )
-    margins["right_margin"] = xr.DataArray(same_margins, dims=["col"])
+    margins["right_margin"] = xr.DataArray(right_margins, dims=["col"])
 
     margins.attrs["disp_min"] = disp_min
     margins.attrs["disp_max"] = disp_max

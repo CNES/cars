@@ -264,7 +264,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
         return margins_wrapper
 
-    def get_margins_tile_fun(self, grid_left, disp_range_grid):
+    def get_margins_tile_fun(self, grid_left, disp_range_grid, method="sift"):
         """
         Get Margins function that generates margins needed by
         matching method, to use during resampling
@@ -275,6 +275,16 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :return: function that generates margin for given roi
 
         """
+
+        if method == "sift":
+            right_margin = self.get_tile_margin() + int(
+                math.floor(
+                    self.get_epipolar_error_upper_bound()
+                    + self.get_epipolar_error_maximum_bias()
+                )
+            )
+        else:
+            right_margin = self.get_tile_margin()
 
         disp_min_grid_arr, _ = inputs.rasterio_read_as_array(
             disp_range_grid["grid_min_path"]
@@ -349,7 +359,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
             # Compute margins for the correlator
             margins = sm_wrapper.get_margins(
-                self.get_tile_margin(), disp_min, disp_max
+                self.get_tile_margin(), right_margin, disp_min, disp_max
             )
 
             return margins

@@ -433,8 +433,8 @@ class TiePointsPipeline(PipelineTemplate):
             required_bands = self.sparse_matching_app.get_required_bands()
 
             if disp_range_grid is not None:
-                tile_width = 400
-                tile_height = 400
+                tile_width = 5000
+                tile_height = 60
                 margins_fun = self.sparse_matching_app.get_margins_tile_fun(
                     grid_left, disp_range_grid
                 )

@@ -579,36 +579,37 @@ class Sift(SparseMatching, short_name=["sift"]):
                 step = 2
 
             for row in range(0, total_nb_band_sift, step):
-                # initialize list of matches
-                full_saving_info_left = ocht.update_saving_infos(
-                    saving_info_left, row=row, col=0
-                )
-                # Compute matches
-                if type(None) not in (
-                    type(epipolar_image_left[row, 0]),
-                    type(epipolar_image_right[row, 0]),
-                ):
-                    (
-                        epipolar_disparity_map_left[row, 0]
-                    ) = self.orchestrator.cluster.create_task(
-                        compute_matches_wrapper, nout=1
-                    )(
-                        epipolar_image_left[row, 0],
-                        epipolar_image_right[row, 0],
-                        used_band=self.used_band,
-                        matching_threshold=self.sift_matching_threshold,
-                        n_octave=self.sift_n_octave,
-                        n_scale_per_octave=self.sift_n_scale_per_octave,
-                        peak_threshold=self.sift_peak_threshold,
-                        edge_threshold=self.sift_edge_threshold,
-                        magnification=self.sift_magnification,
-                        window_size=self.sift_window_size,
-                        backmatching=self.sift_back_matching,
-                        disp_lower_bound=disp_lower_bound,
-                        disp_upper_bound=disp_upper_bound,
-                        saving_info_left=full_saving_info_left,
-                        classif_bands_to_mask=classif_bands_to_mask,
+                for col in range(len(epipolar_image_left[row])):
+                    # initialize list of matches
+                    full_saving_info_left = ocht.update_saving_infos(
+                        saving_info_left, row=row, col=col
                     )
+                    # Compute matches
+                    if type(None) not in (
+                        type(epipolar_image_left[row, col]),
+                        type(epipolar_image_right[row, col]),
+                    ):
+                        (
+                            epipolar_disparity_map_left[row, col]
+                        ) = self.orchestrator.cluster.create_task(
+                            compute_matches_wrapper, nout=1
+                        )(
+                            epipolar_image_left[row, col],
+                            epipolar_image_right[row, col],
+                            used_band=self.used_band,
+                            matching_threshold=self.sift_matching_threshold,
+                            n_octave=self.sift_n_octave,
+                            n_scale_per_octave=self.sift_n_scale_per_octave,
+                            peak_threshold=self.sift_peak_threshold,
+                            edge_threshold=self.sift_edge_threshold,
+                            magnification=self.sift_magnification,
+                            window_size=self.sift_window_size,
+                            backmatching=self.sift_back_matching,
+                            disp_lower_bound=disp_lower_bound,
+                            disp_upper_bound=disp_upper_bound,
+                            saving_info_left=full_saving_info_left,
+                            classif_bands_to_mask=classif_bands_to_mask,
+                        )
 
         else:
             logging.error(
