@@ -40,7 +40,6 @@ import time
 import traceback
 
 import pandas
-import psutil
 import xarray
 from tqdm import tqdm
 
@@ -53,6 +52,7 @@ from cars.data_structures import cars_dataset
 from cars.orchestrator import achievement_tracker
 from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.orchestrator.memory_tools import get_available_ram
 from cars.orchestrator.orchestrator_constants import (
     CARS_DATASET_KEY,
     CARS_DS_COL,
@@ -734,28 +734,6 @@ def get_disparity_range_cropped(obj):
             value = obj_attributes.get(cst.CROPPED_DISPARITY_RANGE, False)
 
     return value
-
-
-def get_available_ram():
-    """
-    Get available ram
-
-    :return : available ram in Mb
-    """
-    ram = psutil.virtual_memory()
-    available_ram_mb = ram.available / (1024 * 1024)
-    return available_ram_mb
-
-
-def get_total_ram():
-    """
-    Get total ram
-
-    :return : available ram in Mb
-    """
-    ram = psutil.virtual_memory()
-    total_ram_mb = ram.available / (1024 * 1024)
-    return total_ram_mb
 
 
 def check_ram_usage():
