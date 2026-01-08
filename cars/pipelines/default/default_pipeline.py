@@ -50,7 +50,8 @@ from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.filling.filling import FillingPipeline
 from cars.pipelines.formatting.formatting import FormattingPipeline
 from cars.pipelines.merging.merging import MergingPipeline
-from cars.pipelines.parameters import advanced_parameters, dsm_inputs
+from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
+from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters, sensor_inputs
@@ -130,15 +131,6 @@ class DefaultPipeline(PipelineTemplate):
 
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
-        # Get epipolar resolutions to use
-        self.epipolar_resolutions = (
-            advanced_parameters.get_epipolar_resolutions(
-                conf.get(pipeline_cst.SUBSAMPLING, {}).get(ADVANCED, {})
-            )
-        )
-        if isinstance(self.epipolar_resolutions, int):
-            self.epipolar_resolutions = [self.epipolar_resolutions]
-
         conf[PIPELINE] = self.check_pipeline(conf)
 
         self.pipeline_to_use = conf[PIPELINE]
@@ -173,6 +165,24 @@ class DefaultPipeline(PipelineTemplate):
         if pipeline_cst.TIE_POINTS not in conf:
             conf[pipeline_cst.TIE_POINTS] = {}
 
+        used_configurations = {}
+        self.positions = {}
+        self.used_conf = {}
+
+        self.keep_low_res_dir = True
+
+        if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
+            self.subsampling_conf = self.construct_subsampling_conf(conf)
+            conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
+                self.subsampling_conf,
+                conf[INPUT],
+            )
+
+        # Get epipolar resolutions to use
+        self.epipolar_resolutions = conf[pipeline_cst.SUBSAMPLING][ADVANCED][
+            adv_cst.EPIPOLAR_RESOLUTIONS
+        ]
+
         if dsm_cst.DSMS in conf[INPUT] and len(self.epipolar_resolutions) != 1:
             logging.info(
                 "For the use of those pipelines, "
@@ -191,18 +201,6 @@ class DefaultPipeline(PipelineTemplate):
             )
 
             self.epipolar_resolutions = [1]
-
-        used_configurations = {}
-        self.positions = {}
-        self.used_conf = {}
-
-        self.keep_low_res_dir = True
-
-        if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
-            self.subsampling_conf = self.construct_subsampling_conf(conf)
-            conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
-                self.subsampling_conf
-            )
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             self.filling_conf = self.construct_filling_conf(conf)
@@ -412,7 +410,7 @@ class DefaultPipeline(PipelineTemplate):
 
         return dict_pipeline
 
-    def check_subsampling(self, conf):
+    def check_subsampling(self, conf, inputs):
         """
         Check the subsampling section
 
@@ -421,10 +419,10 @@ class DefaultPipeline(PipelineTemplate):
         """
 
         pipeline = SubsamplingPipeline(conf)
-        advanced = pipeline.check_advanced(conf.get(ADVANCED, {}))
+        advanced = pipeline.check_advanced(conf.get(ADVANCED, {}), inputs)
         applications = pipeline.check_applications(conf.get(APPLICATIONS, {}))
 
-        return {"advanced": advanced, "applications": applications}
+        return {ADVANCED: advanced, APPLICATIONS: applications}
 
     def check_filling(self, conf):
         """
@@ -440,7 +438,7 @@ class DefaultPipeline(PipelineTemplate):
         )
         applications = pipeline.check_applications(conf.get(APPLICATIONS, {}))
 
-        return {"advanced": advanced, "applications": applications}
+        return {ADVANCED: advanced, APPLICATIONS: applications}
 
     def check_pipeline_section(self, pipeline_name, pipeline_conf):
         """
@@ -452,7 +450,7 @@ class DefaultPipeline(PipelineTemplate):
         :type pipeline_conf: dict
         """
         for key in pipeline_conf:
-            if key not in ["applications", "advanced"]:
+            if key not in [APPLICATIONS, ADVANCED]:
                 raise KeyError(
                     "Keys of a pipeline must be 'applications' or 'advanced'"
                 )
@@ -464,7 +462,7 @@ class DefaultPipeline(PipelineTemplate):
             string_keys = [str(key) for key in int_keys]
             possible_keys = ["all"] + int_keys + string_keys
 
-            for section in ["applications", "advanced"]:
+            for section in [APPLICATIONS, ADVANCED]:
                 for key in pipeline_conf[section]:
                     if key not in possible_keys:
                         raise KeyError(
@@ -506,6 +504,7 @@ class DefaultPipeline(PipelineTemplate):
         """
         merging_conf = {}
         merging_conf[INPUT] = copy.deepcopy(conf[INPUT])
+        merging_conf[ORCHESTRATOR] = copy.deepcopy(conf[ORCHESTRATOR])
         merging_conf[OUTPUT] = {}
         merging_conf[OUTPUT]["directory"] = os.path.join(
             self.intermediate_data_dir, pipeline_cst.MERGING
@@ -522,6 +521,7 @@ class DefaultPipeline(PipelineTemplate):
         """
         subsampling_conf = {}
         subsampling_conf[INPUT] = copy.deepcopy(conf[INPUT])
+        subsampling_conf[ORCHESTRATOR] = copy.deepcopy(conf[ORCHESTRATOR])
         subsampling_conf[OUTPUT] = {}
         subsampling_conf[OUTPUT]["directory"] = self.intermediate_data_dir
 

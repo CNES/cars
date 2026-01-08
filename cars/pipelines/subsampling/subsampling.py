@@ -35,6 +35,7 @@ import logging
 import os
 from pathlib import Path
 
+import rasterio as rio
 import yaml
 from json_checker import Checker, OptionalKey, Or
 
@@ -43,7 +44,6 @@ from cars.core import cars_logging
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
-from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters, sensor_inputs
@@ -100,22 +100,20 @@ class SubsamplingPipeline(PipelineTemplate):
 
         pipeline_conf = conf.get(PIPELINE, {})
 
-        # Get epipolar resolutions to use
-        self.epipolar_resolutions = (
-            advanced_parameters.get_epipolar_resolutions(
-                pipeline_conf.get(ADVANCED, {})
-            )
-        )
-        if isinstance(self.epipolar_resolutions, int):
-            self.epipolar_resolutions = [self.epipolar_resolutions]
-
         # Check input
         conf[INPUT] = self.check_inputs(conf[INPUT], config_json_dir=config_dir)
 
         # check advanced
         conf[PIPELINE][ADVANCED] = self.check_advanced(
-            pipeline_conf.get(ADVANCED, {})
+            pipeline_conf.get(ADVANCED, {}),
+            conf[INPUT],
         )
+
+        # Get epipolar resolutions to use
+        self.epipolar_resolutions = conf[PIPELINE][ADVANCED][
+            adv_cst.EPIPOLAR_RESOLUTIONS
+        ]
+
         # check output
         conf[OUTPUT] = self.check_output(conf)
 
@@ -179,16 +177,15 @@ class SubsamplingPipeline(PipelineTemplate):
         )
         return conf_output
 
-    def check_advanced(self, conf):
+    def check_advanced(self, conf, inputs):
         """
         Check all conf for advanced configuration
 
         :return: overridden advanced conf
         :rtype: dict
         """
-        conf_advanced = conf.get(ADVANCED, {})
 
-        overloaded_conf = conf_advanced.copy()
+        overloaded_conf = conf.copy()
 
         overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
             adv_cst.SAVE_INTERMEDIATE_DATA, False
@@ -198,9 +195,33 @@ class SubsamplingPipeline(PipelineTemplate):
             adv_cst.EPIPOLAR_RESOLUTIONS, [16, 4, 1]
         )
 
+        if isinstance(overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS], int):
+            overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS] = [
+                overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS]
+            ]
+
+        # Check minimal image size
+        sizes = []
+        for sensor in inputs[sens_cst.SENSORS]:
+            try:
+                image = rio.open(
+                    inputs[sens_cst.SENSORS][sensor][sens_cst.INPUT_IMG][
+                        "bands"
+                    ]["b0"]["path"]
+                )
+                image_width = min(image.height, image.width)
+                sizes.append(image_width)
+            except (KeyError, rio.errors.RasterioIOError):
+                logging.warning("Sensor {} not found".format(sensor))
+        if sizes:
+            min_size = min(sizes)
+            for res in overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS]:
+                if min_size / res < 100:
+                    overloaded_conf[adv_cst.EPIPOLAR_RESOLUTIONS].remove(res)
+
         schema = {
             adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
-            adv_cst.EPIPOLAR_RESOLUTIONS: Or(int, list),
+            adv_cst.EPIPOLAR_RESOLUTIONS: [int],
         }
 
         checker_advanced_parameters = Checker(schema)
