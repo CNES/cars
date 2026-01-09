@@ -131,7 +131,41 @@ class FormattingPipeline(PipelineTemplate):
         Check applications
         """
 
-    def run(self):
+    def move_replace_files_only(self, source_dir: Path, destination_dir: Path):
+        """
+        Replace files in dsm directory
+        """
+        destination_dir.mkdir(parents=True, exist_ok=True)
+
+        for element in source_dir.iterdir():
+            dest = destination_dir / element.name
+
+            if element.is_dir():
+                self.move_replace_files_only(element, dest)
+            else:
+                if dest.exists():
+                    dest.unlink()
+                shutil.move(str(element), str(dest))
+
+    def move_replace_dir(self, source_dir: Path, destination_dir: Path):
+        """
+        replace directory
+        """
+        for element in source_dir.iterdir():
+            dest = destination_dir / element.name
+
+            for element in source_dir.iterdir():
+                dest = destination_dir / element.name
+
+                if dest.exists():
+                    if dest.is_dir():
+                        shutil.rmtree(dest)
+                    else:
+                        dest.unlink()
+
+                shutil.move(str(element), str(dest))
+
+    def run(self, surface_modeling_dir):
         """
         Run the formatting pipeline
         """
@@ -140,13 +174,10 @@ class FormattingPipeline(PipelineTemplate):
         source_dir = Path(self.used_conf[INPUT]["input_path"])
         destination_dir = Path(self.used_conf[OUTPUT]["directory"])
 
-        for element in source_dir.iterdir():
-            dest = destination_dir / element.name
+        if (
+            source_dir != Path(surface_modeling_dir)
+            and surface_modeling_dir is not None
+        ):
+            self.move_replace_dir(Path(surface_modeling_dir), destination_dir)
 
-            if dest.exists():
-                if dest.is_dir():
-                    shutil.rmtree(dest)
-                else:
-                    dest.unlink()
-
-            shutil.move(element, dest)
+        self.move_replace_files_only(source_dir, destination_dir)

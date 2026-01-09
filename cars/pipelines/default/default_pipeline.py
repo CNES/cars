@@ -592,6 +592,7 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         previous_out_dir = None
+        current_surface_modeling_out_dir = None
         updated_conf = {}
 
         if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
@@ -605,7 +606,9 @@ class DefaultPipeline(PipelineTemplate):
 
                 # Get tested unit pipeline
                 current_conf = self.used_conf[resolution_index]
-                current_out_dir = current_conf[OUTPUT]["directory"]
+                current_surface_modeling_out_dir = current_conf[OUTPUT][
+                    "directory"
+                ]
 
                 # Put right directory for subsampling
                 if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
@@ -625,7 +628,9 @@ class DefaultPipeline(PipelineTemplate):
                         current_conf[INPUT] = data
 
                 # update directory for unit pipeline
-                current_conf[OUTPUT]["directory"] = current_out_dir
+                current_conf[OUTPUT][
+                    "directory"
+                ] = current_surface_modeling_out_dir
 
                 # get position
                 first_res, _, last_res = (
@@ -678,7 +683,7 @@ class DefaultPipeline(PipelineTemplate):
                 )
 
                 # update previous out dir
-                previous_out_dir = current_out_dir
+                previous_out_dir = current_surface_modeling_out_dir
 
                 # generate summary
                 log_wrapper.generate_summary(
@@ -767,7 +772,7 @@ class DefaultPipeline(PipelineTemplate):
             formatting_pipeline = FormattingPipeline(
                 formatting_conf, self.config_dir
             )
-            formatting_pipeline.run()
+            formatting_pipeline.run(current_surface_modeling_out_dir)
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             full_used_conf[pipeline_cst.FILLING] = {
