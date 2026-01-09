@@ -117,7 +117,6 @@ class FillingPipeline(PipelineTemplate):
         conf[OUTPUT] = self.check_output(conf)
 
         self.used_conf = {}
-        self.save_output_classif_for_filling = False
 
         # Check conf orchestrator
         self.used_conf[ORCHESTRATOR] = self.check_orchestrator(
@@ -339,12 +338,6 @@ class FillingPipeline(PipelineTemplate):
         used_conf["auxiliary_filling"] = (
             self.auxiliary_filling_application.get_conf()
         )
-
-        if any(
-            app_obj.classification != ["nodata"]
-            for app_key, app_obj in self.dsm_filling_apps.items()
-        ):
-            self.save_output_classif_for_filling = True
 
         # MNT generation
         self.dem_generation_application = Application(
@@ -664,7 +657,7 @@ class FillingPipeline(PipelineTemplate):
 
     def monoband_to_multiband(self, input_raster, output_raster, bands_classif):
         """
-        convert classification from monoband to multiband
+        Convert classification from monoband to multiband
 
         :param input_raster: the intput classification path
         :type input_raster: str

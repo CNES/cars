@@ -255,7 +255,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.save_output_dsm = "dsm" in prod_level
         self.save_output_depth_map = "depth_map" in prod_level
         self.save_output_point_cloud = "point_cloud" in prod_level
-        self.save_output_classif_for_filling = False
 
         self.output_level_none = not (
             self.save_output_dsm
@@ -1752,12 +1751,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
             else None
         )
 
-        if classif_file_name is None and self.save_output_classif_for_filling:
-            classif_file_name = os.path.join(
-                self.rasterization_dump_dir,
-                "classification_for_filling.tif",
-            )
-
         contributing_pair_file_name = (
             os.path.join(
                 self.out_dir,
@@ -1822,25 +1815,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         # saved used configuration
         self.save_configurations()
-
-        classif_file_name = (
-            os.path.join(
-                self.out_dir,
-                out_cst.DSM_DIRECTORY,
-                "classification.tif",
-            )
-            if self.save_output_dsm
-            and self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                out_cst.AUX_CLASSIFICATION
-            ]
-            else None
-        )
-
-        if classif_file_name is None and self.save_output_classif_for_filling:
-            classif_file_name = os.path.join(
-                self.rasterization_dump_dir,
-                "classification_for_filling.tif",
-            )
 
         if (
             classif_file_name is not None

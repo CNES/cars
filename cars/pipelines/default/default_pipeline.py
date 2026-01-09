@@ -250,6 +250,20 @@ class DefaultPipeline(PipelineTemplate):
                     current_conf,
                     config_dir=self.config_dir,
                 )
+                if last_res and self.pipeline_to_use[pipeline_cst.FILLING]:
+                    # Force classification saving for filling
+                    if not current_unit_pipeline.used_conf[OUTPUT][AUXILIARY][
+                        sens_cst.INPUT_CLASSIFICATION
+                    ]:
+                        current_unit_pipeline.used_conf[OUTPUT][AUXILIARY][
+                            sens_cst.INPUT_CLASSIFICATION
+                        ] = True
+                    if not self.filling_conf[OUTPUT][AUXILIARY][
+                        sens_cst.INPUT_CLASSIFICATION
+                    ]:
+                        self.filling_conf[OUTPUT][AUXILIARY][
+                            sens_cst.INPUT_CLASSIFICATION
+                        ] = True
                 # Get used_conf
                 used_configurations[epipolar_res] = (
                     current_unit_pipeline.used_conf
@@ -267,7 +281,6 @@ class DefaultPipeline(PipelineTemplate):
 
         full_used_conf[pipeline_cst.SUBSAMPLING] = subsampling_used_conf
         full_used_conf[pipeline_cst.PIPELINE] = conf[PIPELINE]
-
         full_used_conf[pipeline_cst.FILLING] = filling_used_conf
 
         # Save used_conf
