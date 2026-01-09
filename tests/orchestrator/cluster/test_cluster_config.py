@@ -31,10 +31,9 @@ from cars.orchestrator.orchestrator import Orchestrator
 conf_sequential = {
     "mode": "sequential",
     "max_ram_per_worker": 2000,
-    "profiling": {"mode": "cars_profiling", "loop_testing": False},
 }
 
-conf_auto = {"mode": "auto"}
+conf_auto = {"mode": "multiprocessing", "nb_workers": "auto"}
 
 conf_mp = {
     "mode": "multiprocessing",
@@ -44,7 +43,6 @@ conf_mp = {
     "dump_to_disk": True,
     "per_job_timeout": 600,
     "factorize_tasks": True,
-    "profiling": {"mode": "cars_profiling", "loop_testing": True},
 }
 
 conf_local_dask = {
@@ -56,7 +54,6 @@ conf_local_dask = {
     "config_name": "unknown",
     "activate_dashboard": False,
     "python": None,
-    "profiling": {"mode": "cars_profiling", "loop_testing": False},
 }
 
 conf_pbs_dask = {
@@ -68,7 +65,6 @@ conf_pbs_dask = {
     "config_name": "unknown",
     "activate_dashboard": False,
     "python": None,
-    "profiling": {"mode": "cars_profiling", "loop_testing": False},
 }
 
 conf_slurm_dask = {
@@ -81,7 +77,6 @@ conf_slurm_dask = {
     "config_name": "unknown",
     "activate_dashboard": False,
     "python": None,
-    "profiling": {"mode": "cars_profiling", "loop_testing": False},
     "qos": None,
 }
 
