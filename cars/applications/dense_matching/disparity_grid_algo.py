@@ -316,6 +316,17 @@ def generate_disp_range_from_dem_wrapper(
     col_indexes = range(min_col, max_col)
     transformer = rasterio.transform.AffineTransformer(transform_dem_median)
 
+    if len(row_indexes) == 0 or len(col_indexes) == 0:
+        disp_range, global_infos = empty_disparity_grids(
+            row_range_no_margin,
+            col_range_no_margin,
+            epipolar_grid_array_window,
+            raster_profile,
+            saving_info,
+            saving_info_global_infos,
+        )
+        return disp_range, global_infos
+
     indexes = np.array(list(itertools.product(row_indexes, col_indexes)))
 
     row = indexes[:, 0]
@@ -383,7 +394,7 @@ def generate_disp_range_from_dem_wrapper(
 
     # Generate epipolar disp grids
     # Get epipolar positions
-    (epipolar_positions_row, epipolar_positions_col) = np.meshgrid(
+    epipolar_positions_row, epipolar_positions_col = np.meshgrid(
         col_range_with_margin,
         row_range_with_margin,
     )
