@@ -155,10 +155,12 @@ class DefaultPipeline(PipelineTemplate):
                 self.subsampling_conf,
             )
 
-        # Get epipolar resolutions to use
-        self.resolutions = conf[pipeline_cst.SUBSAMPLING][ADVANCED][
-            adv_cst.RESOLUTIONS
-        ]
+            # Get epipolar resolutions to use
+            self.resolutions = conf[pipeline_cst.SUBSAMPLING][ADVANCED][
+                adv_cst.RESOLUTIONS
+            ]
+        else:
+            self.resolutions = [1]
 
         for pipeline, activated in self.pipeline_to_use.items():
             if pipeline in conf and not activated:
