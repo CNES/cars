@@ -10,6 +10,5 @@ pipeline:
   formatting: true
   subsampling: false
   surface_modeling: false
-  edge_detection: false
   surface_modeling: false
   tiepoints: false
