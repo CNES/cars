@@ -240,7 +240,7 @@ class FillingPipeline(PipelineTemplate):
             self.scaling_coeff,
         ) = sensor_inputs.check_geometry_plugin(
             inputs_conf,
-            conf.get(adv_cst.GEOMETRY_PLUGIN, None),
+            conf_advanced.get(adv_cst.GEOMETRY_PLUGIN, None),
             output_dem_dir,
         )
 
