@@ -476,9 +476,7 @@ class TiePointsPipeline(PipelineTemplate):
 
                 tile_width = None
                 tile_height = None
-                margins_fun = (
-                    self.sparse_matching_app.get_margins_strip_fun()
-                )
+                margins_fun = self.sparse_matching_app.get_margins_strip_fun()
 
             (
                 epipolar_image_left,
