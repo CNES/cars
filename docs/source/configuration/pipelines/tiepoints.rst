@@ -45,6 +45,14 @@ Advanced Parameters
       - Name of the geometry plugin to use and optional parameters (see :ref:`geometry plugin <geometry_plugin>`)
       - str or dict
       - "SharelocGeometry"
+    * - resampling_tile_width
+      - Width of the tiles used for resampling and SIFT computation, in pixels
+      - int
+      - 5000
+    * - resampling_tile_height
+      - Height of the tiles used for resampling and SIFT computation, in pixels
+      - int
+      - 60
 
 Below is an example configuration for this pipeline :
 
