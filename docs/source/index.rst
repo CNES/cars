@@ -62,6 +62,8 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
    developer_guide/algorithm_conception
    developer_guide/contributing_to_cars
    developer_guide/creating_a_plugin
+   developer_guide/faq
+   developer_guide/troubleshooting
 
 
 .. toctree::

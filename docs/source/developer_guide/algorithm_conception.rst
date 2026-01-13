@@ -4,124 +4,30 @@
 
 .. _algorithm_conception:
 
-====================
-Algorithm Conception
-====================
+=========================
+CARS Algorithm Conception
+=========================
 
 .. note::
 	Work in progress !
 
-.. tabs::
 
-    .. tab:: Grid Generation
 
-        :raw-html:`<h1>Method</h1>`
+.. toctree::
+   :caption: Applications algorithm conception
+   :maxdepth: 1
+
+   applications_algorithm/resampling
+   applications_algorithm/grid_generation
+   applications_algorithm/sparse_matching
+   applications_algorithm/grid_correction
+   applications_algorithm/disparity_a_priori_computation
+   applications_algorithm/dense_matching
+   applications_algorithm/triangulation
+   applications_algorithm/point_cloud_filtering
+   applications_algorithm/rasterization
+   applications_algorithm/dem_generation
 
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
-
-
-
-
-    .. tab:: Resampling
-
-        :raw-html:`<h1>Method</h1>`
-
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
-
-
-    .. tab:: Sparse matching
-
-        :raw-html:`<h1>Method</h1>`
-
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
-
-
-    .. tab:: Grid correction
-
-        :raw-html:`<h1>Method</h1>`
-
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
-
-
-    .. tab:: Disparity a priory computation
-
-        :raw-html:`<h1>Method</h1>`
-
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
-
-    .. tab:: DEM generation
-
-        :raw-html:`<h1>Method</h1>`
-
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
-
-
-    .. tab:: Dense matching
-
-        :raw-html:`<h1>Method</h1>`
-
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
-
-
-    .. tab:: Triangulation
-
-        :raw-html:`<h1>Method</h1>`
-
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
-
-
-    .. tab:: Point cloud filtering
-
-        :raw-html:`<h1>Method</h1>`
-
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
-
-
-    .. tab:: Rasterization
-
-        :raw-html:`<h1>Method</h1>`
-
-
-        :raw-html:`<h1>Limits of the method</h1>`
-
-
-        :raw-html:`<h1>Implementation</h1>`
 
 
 

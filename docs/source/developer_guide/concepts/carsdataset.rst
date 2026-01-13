@@ -1,3 +1,7 @@
+===========
+CarsDataset
+===========
+
 .. _cars_dataset:
 
 
