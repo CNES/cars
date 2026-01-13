@@ -392,3 +392,215 @@ def test_end2end_gizeh_merging():
             atol=0.0001,
             rtol=1e-6,
         )
+
+
+@pytest.mark.end2end_tests
+def test_end2end_gizeh_use_endogenous_dem():
+    """
+    End to end processing with color
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+                "initial_elevation": absolute_data_path(
+                    "input/phr_gizeh/srtm_dir/N29E031_KHEOPS.tif"
+                ),
+            },
+            "subsampling": {"advanced": {"resolutions": [4, 2, 1]}},
+            "surface_modeling": {
+                "advanced": {
+                    "2": {"use_endogenous_dem": True},
+                    "1": {"use_endogenous_dem": True},
+                },
+                "applications": {
+                    "2": {"dem_generation": {"save_intermediate_data": True}},
+                    "1": {"dem_generation": {"save_intermediate_data": True}},
+                },
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {
+                "directory": directory,
+                "auxiliary": {
+                    "performance_map": True,
+                },
+            },
+        }
+        out_dir = conf["output"]["directory"]
+        meta_pipeline = default.DefaultPipeline(conf)
+        meta_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dem_median_res1_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dem_max_res1_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "surface_modeling",
+                "res2",
+                "dump_dir",
+                "dem_generation",
+                "dem_median.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dem_median_res2_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "surface_modeling",
+                "res2",
+                "dump_dir",
+                "dem_generation",
+                "dem_max.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dem_max_res2_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "performance_map_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dem_median_res1_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dem_max_res1_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "surface_modeling",
+                "res2",
+                "dump_dir",
+                "dem_generation",
+                "dem_median.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dem_median_res2_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "surface_modeling",
+                "res2",
+                "dump_dir",
+                "dem_generation",
+                "dem_max.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dem_max_res2_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "performance_map_test_gizeh_use_endogenous_dem.tif",
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
