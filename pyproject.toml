@@ -58,8 +58,6 @@ dependencies = [
     "pandas",
     "urllib3<2.0,>=1.21.1",
     "laspy[laszip]",
-    "tbb==2020.3.254", # Intel optim for numba: KO for 2021 versions
-    "numba",
     "pandora[sgm]==1.7.2",
     "cars-rasterize==0.2.*",
     "cars-resample==0.1.*",
