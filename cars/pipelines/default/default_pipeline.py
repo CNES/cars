@@ -451,7 +451,7 @@ class DefaultPipeline(PipelineTemplate):
 
         pipeline = FillingPipeline(conf, pre_check=True)
         advanced = pipeline.check_advanced(
-            conf[pipeline_cst.FILLING].get(ADVANCED, {}),
+            conf[pipeline_cst.FILLING],
             conf[INPUT],
         )
         applications = pipeline.check_applications(
