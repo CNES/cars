@@ -174,10 +174,13 @@ class FormattingPipeline(PipelineTemplate):
         source_dir = Path(self.used_conf[INPUT]["input_path"])
         destination_dir = Path(self.used_conf[OUTPUT]["directory"])
 
-        if (
-            source_dir != Path(surface_modeling_dir)
-            and surface_modeling_dir is not None
-        ):
-            self.move_replace_dir(Path(surface_modeling_dir), destination_dir)
+        if surface_modeling_dir is not None:
+            if (
+                source_dir != Path(surface_modeling_dir)
+                and surface_modeling_dir is not None
+            ):
+                self.move_replace_dir(
+                    Path(surface_modeling_dir), destination_dir
+                )
 
         self.move_replace_files_only(source_dir, destination_dir)
