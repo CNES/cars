@@ -33,4 +33,4 @@ RUN uv pip compile pyproject.toml --extra dev \
 ENV VIRTUAL_ENV=/app/cars/venv
 
 # Install cars requirements
-RUN uv venv ${VIRTUAL_ENV} && uv pip install --no-cache meson-python meson ninja setuptools_scm setuptools wheel pybind11 -r requirements.txt
+RUN uv venv ${VIRTUAL_ENV} && uv pip install --no-cache pip meson-python meson ninja setuptools_scm setuptools wheel pybind11 -r requirements.txt
