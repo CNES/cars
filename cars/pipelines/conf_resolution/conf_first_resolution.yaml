@@ -1,2 +1,3 @@
----
-{}
+applications:
+  sparse_matching:
+    decimation_factor: 100
