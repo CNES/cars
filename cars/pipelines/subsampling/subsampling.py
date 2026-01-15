@@ -273,6 +273,11 @@ class SubsamplingPipeline(PipelineTemplate):
         sensor = inputs[sens_cst.SENSORS][key]
 
         def replace_path(path):
+            """
+            Replace format by TIF
+
+            :param path: image path
+            """
             return os.path.join(out_dir, key, Path(path).stem + ".tif")
 
         sensor[sens_cst.INPUT_IMG]["bands"]["b0"]["path"] = replace_path(
