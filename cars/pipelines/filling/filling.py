@@ -689,7 +689,7 @@ class FillingPipeline(PipelineTemplate):
 
         return output_raster
 
-    def filling(self):
+    def filling(self):  # noqa: C901
         """
         Filling method
         """
@@ -905,6 +905,12 @@ class FillingPipeline(PipelineTemplate):
 
             if not app.save_intermediate_data:
                 self.cars_orchestrator.add_to_clean(app_dump_dir)
+
+            if dsm_file_name == self.dsm_to_fill["dsm"]:
+                dsm_file_name = os.path.join(dsm_filled_dir, "dsm.tif")
+
+            if filling_file_name == self.dsm_to_fill["filling"]:
+                filling_file_name = os.path.join(dsm_filled_dir, "filling.tif")
 
         _ = self.auxiliary_filling_application.run(
             dsm_file=os.path.join(dsm_filled_dir, "dsm.tif"),
