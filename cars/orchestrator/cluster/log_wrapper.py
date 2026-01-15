@@ -24,19 +24,13 @@ Contains functions for wrapper logs
 # pylint: disable=C0302
 
 import copy
-import cProfile
 import datetime
 import functools
 import gc
-import io
 import logging
 import os
-import pstats
 import shutil
 import time
-import uuid
-from abc import ABCMeta, abstractmethod
-from importlib import import_module
 from multiprocessing import Pipe
 from threading import Thread
 
@@ -44,252 +38,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import psutil
-from json_checker import Checker
 from matplotlib.backends.backend_pdf import PdfPages
 from PIL import Image
 
 from cars.core import cars_logging
-from cars.core.utils import safe_makedirs
 
 THREAD_TIMEOUT = 2
-
-
-# pylint: disable=too-few-public-methods
-class AbstractLogWrapper(metaclass=ABCMeta):
-    """
-    AbstractLogWrapper
-    """
-
-    available_modes = {}
-
-    def __new__(cls, conf_profiling, out_dir):  # pylint: disable=W0613
-        """
-        Return Log wrapper
-        """
-        profiling_mode = "cars_profiling"
-
-        if "mode" not in conf_profiling:
-            logging.debug("Profiling mode not defined, default is used")
-        else:
-            profiling_mode = conf_profiling["mode"]
-
-        return super(AbstractLogWrapper, cls).__new__(
-            cls.available_modes[profiling_mode]
-        )
-
-    def __init__(self, conf_profiling, out_dir):
-        # Check conf
-        self.checked_conf_profiling = self.check_conf(conf_profiling)
-        self.out_dir = out_dir
-
-    @classmethod
-    def register_subclass(cls, short_name: str):
-        """
-        Allows to register the subclass with its short name
-        :param short_name: the subclass to be registered
-        :type short_name: string
-        """
-
-        def decorator(subclass):
-            """
-            Registers the subclass in the available methods
-            :param subclass: the subclass to be registered
-            :type subclass: object
-            """
-            cls.available_modes[short_name] = subclass
-            return subclass
-
-        return decorator
-
-    @abstractmethod
-    def check_conf(self, conf):
-        """
-        Check configuration
-
-        :param conf: configuration to check
-        :type conf: dict
-
-        :return: overloaded configuration
-        :rtype: dict
-
-        """
-
-    @abstractmethod
-    def get_func_args_plus(self, func):
-        """
-        getter for the args of the future function
-
-        :param: function to apply
-
-        :return: function to apply, overloaded key arguments
-        """
-
-
-@AbstractLogWrapper.register_subclass("cars_profiling")
-class LogWrapper(AbstractLogWrapper):
-    """
-    LogWrapper
-
-    simple log wrapper doing nothing
-    """
-
-    def __init__(self, conf_profiling, out_dir):
-        self.out_dir = out_dir
-        # call parent init
-        super().__init__(conf_profiling, out_dir)
-        self.loop_testing = self.checked_conf_profiling["loop_testing"]
-
-    def check_conf(self, conf):
-        """
-        Check configuration
-
-        :param conf: configuration to check
-        :type conf: dict
-
-        :return: overloaded configuration
-        :rtype: dict
-
-        """
-
-        # init conf
-        if conf is not None:
-            overloaded_conf = conf.copy()
-        else:
-            conf = {}
-            overloaded_conf = {}
-
-        # Overload conf
-        overloaded_conf["mode"] = conf.get("mode", "cars_profiling")
-        overloaded_conf["loop_testing"] = conf.get("loop_testing", False)
-
-        cluster_schema = {"mode": str, "loop_testing": bool}
-
-        # Check conf
-        checker = Checker(cluster_schema)
-        checker.validate(overloaded_conf)
-
-        return overloaded_conf
-
-    def get_func_args_plus(self, func):
-        fun = log_function
-        new_kwarg = {
-            "fun_log_wrapper": func,
-            "loop_testing": self.loop_testing,
-        }
-
-        return fun, new_kwarg
-
-
-@AbstractLogWrapper.register_subclass("cprofile")
-class CProfileWrapper(AbstractLogWrapper):
-    """
-    CProfileWrapper
-
-    log wrapper to analyze the internal time consuming of the function.
-    The wrapper use cprofile API.
-    """
-
-    def __init__(self, conf_profiling, out_dir):
-        self.out_dir = out_dir
-        # call parent init
-        super().__init__(conf_profiling, out_dir)
-
-    def check_conf(self, conf):
-        """
-        Check configuration
-
-        :param conf: configuration to check
-        :type conf: dict
-
-        :return: overloaded configuration
-        :rtype: dict
-
-        """
-
-        # init conf
-        if conf is not None:
-            overloaded_conf = conf.copy()
-        else:
-            conf = {}
-            overloaded_conf = {}
-
-        # Overload conf
-        overloaded_conf["mode"] = conf.get("mode", "cars_profiling")
-        cluster_schema = {"mode": str}
-
-        # Check conf
-        checker = Checker(cluster_schema)
-        checker.validate(overloaded_conf)
-
-        return overloaded_conf
-
-    def get_func_args_plus(self, func):
-        fun = time_profiling_function
-        new_kwarg = {"fun_log_wrapper": func}
-
-        return fun, new_kwarg
-
-
-@AbstractLogWrapper.register_subclass("memray")
-class MemrayWrapper(AbstractLogWrapper):
-    """
-    MemrayWrapper
-
-    log wrapper to analyze the internal allocation
-    memory consuming of the function.
-    The wrapper use cprofile API.
-    """
-
-    def __init__(self, conf_profiling, out_dir):
-        self.out_dir = out_dir
-        profiling_memory_dir = os.path.join(
-            out_dir, "logs", "profiling", "memray"
-        )
-        safe_makedirs(profiling_memory_dir, cleanup=True)
-        # call parent init
-        super().__init__(conf_profiling, out_dir)
-        self.loop_testing = self.checked_conf_profiling["loop_testing"]
-
-    def check_conf(self, conf):
-        """
-        Check configuration
-
-        :param conf: configuration to check
-        :type conf: dict
-
-        :return: overloaded configuration
-        :rtype: dict
-
-        """
-
-        # init conf
-        if conf is not None:
-            overloaded_conf = conf.copy()
-        else:
-            conf = {}
-            overloaded_conf = {}
-
-        # Overload conf
-        overloaded_conf["mode"] = conf.get("mode", "cars_profiling")
-        overloaded_conf["loop_testing"] = conf.get("loop_testing", False)
-
-        cluster_schema = {"mode": str, "loop_testing": bool}
-
-        # Check conf
-        checker = Checker(cluster_schema)
-        checker.validate(overloaded_conf)
-
-        return overloaded_conf
-
-    def get_func_args_plus(self, func):
-        fun = memory_profiling_function
-        new_kwarg = {
-            "fun_log_wrapper": func,
-            "loop_testing": self.loop_testing,
-            "out_dir": self.out_dir,
-        }
-
-        return fun, new_kwarg
 
 
 def log_function(*argv, **kwargs):
@@ -315,111 +69,6 @@ def log_function(*argv, **kwargs):
         res = cars_profile(interval=0.2)(func)(*argv, **kwargs)
 
     return res
-
-
-def time_profiling_function(*argv, **kwargs):
-    """
-    Create a wrapper to profile the function elapse time
-
-    :param argv: args of func
-    :param kwargs: kwargs of func
-
-    :return: path to results
-    """
-    func = kwargs["fun_log_wrapper"]
-    kwargs.pop("fun_log_wrapper")
-    # Monitor time
-    start_time = time.time()
-    # Profile time
-    profiler = cProfile.Profile()
-    profiler.enable()
-    res = func(*argv, **kwargs)
-    profiler.disable()
-    total_time = time.time() - start_time
-
-    switch_messages(func, total_time)
-    print("## PROF STATs")
-
-    stream_cumtime = io.StringIO()
-    stream_calls = io.StringIO()
-    pstats.Stats(profiler, stream=stream_cumtime).sort_stats(
-        "tottime"
-    ).print_stats(5)
-    pstats.Stats(profiler, stream=stream_calls).sort_stats("calls").print_stats(
-        5
-    )
-    logging.info(stream_cumtime.getvalue())
-    print(stream_cumtime.getvalue())
-    logging.info(stream_calls.getvalue())
-    print(stream_calls.getvalue())
-    print("----------")
-    return res
-
-
-def memory_profiling_function(*argv, **kwargs):
-    """
-    Create a wrapper to profile the function occupation memory
-
-    :param argv: args of func
-    :param kwargs: kwargs of func
-
-    :return: path to results
-    """
-    func = kwargs["fun_log_wrapper"]
-    loop_testing = kwargs["loop_testing"]
-    outputdir = kwargs["out_dir"]
-
-    kwargs.pop("fun_log_wrapper")
-    kwargs.pop("loop_testing")
-    kwargs.pop("out_dir")
-
-    # Monitor time
-    memray = import_module("memray")
-    start_time = time.time()
-    unique_filename = str(uuid.uuid4())
-    # Profile memory
-    with memray.Tracker(
-        os.path.join(
-            outputdir,
-            "profiling",
-            "memray",
-            func.__name__ + "-" + unique_filename + ".bin",
-        )
-    ):
-        if loop_testing:
-            res = loop_function(argv, kwargs, func)
-        else:
-            res = func(*argv, **kwargs)
-    total_time = time.time() - start_time
-
-    switch_messages(func, total_time)
-    print("----------")
-    return res
-
-
-def switch_messages(func, total_time, max_memory=None):
-    """
-    create profile message with specific message
-    depends on elapsed time (LONG, FAST...).
-
-
-    :param func : profiled function
-    :param total_time : elapsed time of the function
-    """
-    message = "Clock# %{}%: %{:.4f}% s Max ram : {} MiB".format(
-        func.__name__.capitalize(), total_time, max_memory
-    )
-
-    if total_time >= 1:
-        message += " LONG"
-    elif 1 > total_time >= 0.001:
-        message += " FAST"
-    elif 0.001 > total_time >= 0.000001:
-        message += " VERY FAST"
-    else:
-        message += " TOO FAST"
-
-    log_message(func, message)
 
 
 def log_message(func, message):
@@ -526,7 +175,9 @@ def exception_safe(func):
 
 
 @exception_safe
-def generate_summary(out_dir, used_conf, clean_worker_logs=False):
+def generate_summary(
+    out_dir, used_conf, pipeline_name, clean_worker_logs=False
+):
     """
     Generate Profiling summary
     """
@@ -740,7 +391,9 @@ def generate_summary(out_dir, used_conf, clean_worker_logs=False):
     )
 
     (_, [pipeline_time]) = filter_lists(
-        summary_names, summary_total_time, lambda name: "unit_pipeline" in name
+        summary_names,
+        summary_total_time,
+        lambda name: pipeline_name in name,
     )
 
     (_, [multiprocessing_time]) = filter_lists(

@@ -34,6 +34,7 @@ def get_needed_apps(
     if sensors_in_inputs:
         needed_applications += [
             "grid_generation",
+            "grid_correction",
             "resampling",
             "ground_truth_reprojection",
             "dense_match_filling",

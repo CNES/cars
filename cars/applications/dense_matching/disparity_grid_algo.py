@@ -161,7 +161,6 @@ def generate_disp_range_from_dem_wrapper(
     sensor_image_right,
     grid_right,
     geom_plugin_with_dem_and_geoid,
-    dem_median,
     dem_min,
     dem_max,
     raster_profile,
@@ -187,8 +186,6 @@ def generate_disp_range_from_dem_wrapper(
     :type grid_right: dict
     :param geom_plugin_with_dem_and_geoid: The geometry plugin with DEM.
     :type geom_plugin_with_dem_and_geoid: object
-    :param dem_median: Path of dem median.
-    :type dem_median: str
     :param dem_min: Path of dem min.
     :type dem_min: str
     :param dem_max: Path of dem max.
@@ -221,6 +218,7 @@ def generate_disp_range_from_dem_wrapper(
 
     # Geometry plugin
     geo_plugin = geom_plugin_with_dem_and_geoid
+    dem_median = geo_plugin.dem
 
     # get epsg
     terrain_epsg = inputs.rasterio_get_epsg(dem_median)
@@ -318,6 +316,17 @@ def generate_disp_range_from_dem_wrapper(
     col_indexes = range(min_col, max_col)
     transformer = rasterio.transform.AffineTransformer(transform_dem_median)
 
+    if len(row_indexes) == 0 or len(col_indexes) == 0:
+        disp_range, global_infos = empty_disparity_grids(
+            row_range_no_margin,
+            col_range_no_margin,
+            epipolar_grid_array_window,
+            raster_profile,
+            saving_info,
+            saving_info_global_infos,
+        )
+        return disp_range, global_infos
+
     indexes = np.array(list(itertools.product(row_indexes, col_indexes)))
 
     row = indexes[:, 0]
@@ -385,7 +394,7 @@ def generate_disp_range_from_dem_wrapper(
 
     # Generate epipolar disp grids
     # Get epipolar positions
-    (epipolar_positions_row, epipolar_positions_col) = np.meshgrid(
+    epipolar_positions_row, epipolar_positions_col = np.meshgrid(
         col_range_with_margin,
         row_range_with_margin,
     )

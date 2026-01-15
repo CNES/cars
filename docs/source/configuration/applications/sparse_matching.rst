@@ -1,3 +1,5 @@
+.. _sparse_matching_app:
+
 Sparse matching
 ===============
 
@@ -10,6 +12,12 @@ Compute keypoints matches on pair images
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | Name                                 | Description                                                                                    | Type        | Available value           | Default value | Required |
 +======================================+================================================================================================+=============+===========================+===============+==========+
+| method                               | Method to use for sparse matching                                                              | string      |  "sift"                   | "sift"        | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+| elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                           | None          | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+| elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                           | None          | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                       | float       |                           | 0.02          | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0             | 10.0          | No       |
@@ -28,13 +36,13 @@ Compute keypoints matches on pair images
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                           | false         | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
-| strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0             | 10            | No       |
+| tile_margin                          | Margin to use on tiles                                                                         | int         | should be > 0             | 10            | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                           | None          | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                           | None          | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
-| minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                           | int         | should be > 0             | 100           | No       |
+| minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                           | int         | should be > 0             | 90            | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | used_band                            | Name of band used for correlation                                                              | int         | should be in input sensor | "b0"          | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
@@ -54,7 +62,7 @@ Compute keypoints matches on pair images
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | decimation_factor                    | Reduce the number of sifts                                                                     | int         | should be > 0             | 30            | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
-| disparity_bounds_estimation          | Parameters for the estimation of disparity interval                                            | dict        |                           | True          | No       |
+| disparity_bounds_estimation          | Parameters for the estimation of disparity interval                                            | dict        |                           | {}            | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 
 For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.

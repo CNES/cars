@@ -142,6 +142,7 @@ class AuxiliaryFillingFromSensors(
         texture_bands,
         output_geoid,
         orchestrator=None,
+        dsm_dir=None,
     ):
         """
         run AuxiliaryFillingFromSensors
@@ -171,6 +172,11 @@ class AuxiliaryFillingFromSensors(
         :type orchestrator: Orchestrator
         """
 
+        if dsm_dir is not None:
+            image_path_out = os.path.join(dsm_dir, "image.tif")
+        else:
+            image_path_out = color_file
+
         if not self.used_config["activated"]:
             return None
         if sensor_inputs is None:
@@ -179,7 +185,6 @@ class AuxiliaryFillingFromSensors(
                 "auxiliary_filling will not run."
             )
             return None
-
         # Default orchestrator
         if orchestrator is None:
             # Create default sequential orchestrator for current application
@@ -196,9 +201,7 @@ class AuxiliaryFillingFromSensors(
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
 
-        color_not_filled_file = os.path.join(dump_dir, "texture_not_filled.tif")
-        if color_file is not None and os.path.exists(color_file):
-            shutil.move(color_file, color_not_filled_file)
+        color_not_filled_file = color_file
 
         classification_not_filled_file = None
         # classif_file could be defined without data attached
@@ -249,7 +252,7 @@ class AuxiliaryFillingFromSensors(
                     color_dtype = descriptor.profile.get("dtype", np.float32)
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(dump_dir, color_file),
+                os.path.join(dump_dir, image_path_out),
                 cst.RASTER_COLOR_IMG,
                 aux_filled_image,
                 nodata=texture_no_data_value,
@@ -388,7 +391,6 @@ def filling_from_sensor_wrapper(
     :param use_mask: use mask information from sensors in color computation
     :type use_mask: bool
     """
-
     col_min = window["col_min"]
     col_max = window["col_max"]
     row_min = window["row_min"]

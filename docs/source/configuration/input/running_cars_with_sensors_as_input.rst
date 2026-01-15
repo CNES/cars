@@ -35,17 +35,19 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
         For each sensor, auxiliary files can be used : mask, classification, and geomodel if needed
 
-        +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
-        | Name              | Description                                                                                                                     | Type           | Default value | Required |
-        +===================+=================================================================================================================================+================+===============+==========+
-        | *image*           | Path to the image or dictionary readable by a sensor loader                                                                     | string, dict   |               | Yes      |
-        +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
-        | *geomodel*        | Path to the geomodel and plugin-specific attributes                                                                             | string, dict   |               | No       |
-        +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
-        | *mask*            | Path to the binary mask                                                                                                         | string, dict   | None          | No       |
-        +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
-        | *classification*  | Path to the classification image or dictionary readable by a sensor loader                                                      | string, dict   | None          | No       |
-        +-------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
+        +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
+        | Name                   | Description                                                                                                                     | Type           | Default value | Required |
+        +========================+=================================================================================================================================+================+===============+==========+
+        | *image*                | Path to the image or dictionary readable by a sensor loader                                                                     | string, dict   |               | Yes      |
+        +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
+        | *geomodel*             | Path to the geomodel and plugin-specific attributes                                                                             | string, dict   |               | No       |
+        +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
+        | *mask*                 | Path to the binary mask                                                                                                         | string, dict   | None          | No       |
+        +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
+        | *classification*       | Path to the classification image or dictionary readable by a sensor loader                                                      | string, dict   | None          | No       |
+        +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
+        | *regularization_mask*  | Path to the regularization mask, used in surface modeling                                                                       | string, dict   | None          | No       |
+        +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
         In most cases, only the file path is required for each of these parameters and CARS will know how to read each file : 
 
@@ -122,6 +124,15 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
                 The file path must be given directly as a string parameter.
 
+            .. tab:: Regularization mask
+
+                The regularization mask is optional. It can be used if you want to provide your own for surface modeling.
+                
+                The file path must be given directly as a string parameter.
+
+                A configuration example is given below : 
+
+                .. include-cars-config:: ../../example_configs/configuration/regularization_mask_config
 
     .. tab:: Pairing
 

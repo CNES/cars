@@ -1,3 +1,5 @@
+.. _ground_truth_reprojection_app:
+
 Ground truth reprojection
 =========================
 

@@ -1,0 +1,5 @@
+---
+applications:
+  auxiliary_filling:
+    activated: true
+    mode: "full"

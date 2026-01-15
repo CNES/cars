@@ -1,3 +1,5 @@
+.. _dense_matching_app:
+
 Dense matching
 ==============
 
@@ -123,7 +125,7 @@ Compute the disparity map from stereo-rectified pair images
       - Step of disparity min/ max grid used to resample dense disparity range
       - int
       -
-      - 30
+      - 10
       - No
     * - disp_range_propagation_filter_size
       - Filter size of local min/max disparity, to propagate local min/max
@@ -185,6 +187,12 @@ Compute the disparity map from stereo-rectified pair images
       -
       - True
       - No
+    * - generate_ambiguity
+      - Generate the ambiguity
+      - bool
+      -
+      - False
+      - No
 
         
 See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
@@ -198,15 +206,15 @@ Confidence filtering:
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
 | bounds_ratio_threshold               | First filter : threshold for (bound_sup - bound_inf) / (disp_max - disp_min)                   | float       |                        | 0.2                   | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
-| risk_ratio_threshold                 | First filter : threshold for (risk_max - risk_min) / (disp_max - disp_min)                     | int         |                        | 0.8                   | No       |
+| risk_ratio_threshold                 | First filter : threshold for (risk_max - risk_min) / (disp_max - disp_min)                     | int         |                        | 0.75                  | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
 | win_nan_ratio                        | Second filter : window size for nan filtering                                                  | int         |                        | 20                    | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
 | nan_threshold                        | Second filter : threshold for the nan ratio (percentage of nan in the window)                  | float       |                        | 0.2                   | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
-| bounds_range_threshold               | Both filters : threshold for (bound_sup - bound_inf)                                           | int         |                        | 4                     | No       |
+| bounds_range_threshold               | Both filters : threshold for (bound_sup - bound_inf)                                           | int         |                        | 3                     | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
-| risk_range_threshold                 | Both filters : threshold for (risk_max - risk_min)                                             | int         |                        | 12                    | No       |
+| risk_range_threshold                 | Both filters : threshold for (risk_max - risk_min)                                             | int         |                        | 9                     | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
 
 **Example**

@@ -2,4 +2,4 @@
 applications:
   resampling:
     method: bicubic
-    epi_tile_size: 600
+    strip_height: 50

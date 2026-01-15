@@ -58,16 +58,14 @@ dependencies = [
     "pandas",
     "urllib3<2.0,>=1.21.1",
     "laspy[laszip]",
-    "tbb==2020.3.254", # Intel optim for numba: KO for 2021 versions
-    "numba",
     "pandora[sgm]==1.7.2",
     "cars-rasterize==0.2.*",
     "cars-resample==0.1.*",
     "cars-filter==0.2.*",
     "vlsift==0.1.*",
-    "shareloc==0.2.11",
+    "shareloc==0.2.12",
     "bulldozer-dtm==1.1.*",
-    "xdem==0.1.*",
+    "xdem==0.2.*",
     "geopandas<=1.0.1" # Temporary fix while geoutils is not compatible with v1.1.0
 ]
 
@@ -95,12 +93,10 @@ dev = [
     "configupdater",
     "twine",                          # for pypi upload
     "notebook<7.0.0",                 # for pytest test_notebooks.py
-    "bokeh==2.4.3",                   # for pytest test_notebooks.py
+    "bokeh>3.0.0",                    # for pytest test_notebooks.py
     "sphinx",                         # for cars doc
     "sphinx-rtd-theme",               # for cars doc
     "graphviz",                       # for cars doc
-    "memory_profiler",
-    "memray",
     "dash",
     "plotly",
     "build",                          # for cars build

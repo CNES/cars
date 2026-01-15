@@ -98,6 +98,7 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
         texture_bands,
         output_geoid,
         orchestrator=None,
+        dsm_dir=None,
     ):
         """
         Run Auxiliary filling

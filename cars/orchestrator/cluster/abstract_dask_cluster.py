@@ -56,15 +56,22 @@ class AbstractDaskCluster(
     AbstractDaskCluster
     """
 
-    def __init__(self, conf_cluster, out_dir, log_dir, launch_worker=True):
+    def __init__(  # pylint: disable=R0917
+        self,
+        conf_cluster,
+        out_dir,
+        log_dir,
+        launch_worker=True,
+        data_to_propagate=None,
+    ):
         """
         Init function of AbstractDaskCluster
 
         :param conf_cluster: configuration for cluster
+        :param data_to_propagate: data to propagate to new cluster if reset
+        :type data_to_propagate: dict
 
         """
-
-        print("cluster log_dir", log_dir)
 
         # call parent init
         super().__init__(
@@ -76,7 +83,6 @@ class AbstractDaskCluster(
         self.walltime = self.checked_conf_cluster["walltime"]
         self.use_memory_logger = self.checked_conf_cluster["use_memory_logger"]
         self.config_name = self.checked_conf_cluster["config_name"]
-        self.profiling = self.checked_conf_cluster["profiling"]
         self.launch_worker = launch_worker
 
         self.activate_dashboard = self.checked_conf_cluster[

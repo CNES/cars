@@ -1,3 +1,5 @@
+.. _grid_generation_app:
+
 Grid Generation
 ===============
 

@@ -46,6 +46,7 @@ from cars.applications.triangulation.line_of_sight_intersection_app import (
     triangulation_wrapper,
 )
 from cars.conf import input_parameters as in_params
+from cars.data_structures.cars_dict import CarsDict
 
 # CARS Tests imports
 from ..helpers import (
@@ -161,8 +162,8 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
         epipolar_size_y,
         left_imgs,
         right_imgs,
-        grid1,
-        grid2,
+        CarsDict(grid1),
+        CarsDict(grid2),
         interpolator_image="bicubic",
         interpolator_classif="nearest",
         interpolator_mask="nearest",
@@ -181,7 +182,6 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
     }
     dense_matching_app = CensusMccnnSgm()
     # Overide margin
-    dense_matching_app.disparity_margin = 0
     disp_range_grid = dense_matching_app.generate_disparity_grids(
         None,
         right_grid,
@@ -196,7 +196,7 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
         right_image,
         corr_cfg,
         "b0",
-        disp_range_grid,
+        CarsDict(disp_range_grid),
         texture_bands=[0],
     )
 

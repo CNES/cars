@@ -3,7 +3,8 @@
 .. role:: raw-html(raw)
    :format: html
 
-:raw-html:`<h1>Software</h1>`
+CARS software conception
+========================
 
 
 
@@ -25,38 +26,26 @@ This section presents one by one the CARS key concepts and their interaction.
 
     * cars_dataset Input and output object of an application. Contains a calculated and potentially tiled data.
     * application: Algorithmic methods that takes
+    * pipeline: sequence of applications to be processed.
     * Orchestrator: It instantiates and interfaces with the cluster to which it provides the tasks to be processed. It is responsible for writing the data calculated by the cluster on the fly.
     * plugin: library or external tools providing specific 3d functions. Under heavy reconstruction !
     * **Pipeline**: A chain of applications ( 3d reconstruction steps) from input to output with intermediate data (CarsDataset) controlled by orchestrator;
 
 
-.. tabs::
 
-    .. tab:: CarsDataset
+.. toctree::
+   :caption: Concepts
+   :maxdepth: 1
 
-        .. include:: carsdataset.rst
-
-
-    .. tab:: Application
-
-        .. include:: application.rst
-
-
-    .. tab:: Orchestrator
-
-        .. include:: orchestrator.rst
+   application
+   carsdataset
+   pipeline
+   orchestrator
 
 
-
-    .. tab:: Plugin
-
-        .. include:: plugin.rst
+:raw-html:`<h1>Interaction between concepts</h1>`
 
 
-
-
-Detailed interaction between concepts
-=====================================
 
 Now that all the concepts have been presented in details, we can draw a more technical diagram:
 

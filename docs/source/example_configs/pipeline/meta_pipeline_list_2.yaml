@@ -1,0 +1,14 @@
+input:
+  dsms:
+    dsm1: {} # a dsm
+    dsm2: {} # a dsm
+    dsm3: {} # a dsm
+
+pipeline:
+  merging: true
+  filling: true
+  formatting: true
+  subsampling: false
+  surface_modeling: false
+  surface_modeling: false
+  tiepoints: false

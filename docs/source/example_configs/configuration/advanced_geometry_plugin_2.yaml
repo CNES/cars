@@ -1,6 +1,0 @@
----
-advanced:
-  geometry_plugin:
-    plugin_name: SharelocGeometry
-    interpolator: cubic
-    dem_roi_margin: 0.1

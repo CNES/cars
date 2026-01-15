@@ -13,8 +13,18 @@ Read also `CARS Contribution guide`_ with `LICENCE <https://raw.githubuserconten
 
 **Contact:** cars AT cnes.fr
 
-Developer Install
-=================
+
+
+Proposing new features
+======================
+
+To propose a new feature, start by opening an issue on GitHub to describe your idea.
+Discuss the feature with the core developers either through the issue or on the dedicated Slack channel.
+Once aligned, clone the repository, set it up with pre-commit hooks, and ensure your implementation adheres to the project’s documentation, testing, and coding guidelines.
+Finally, submit a pull request (PR) for review by the core team.
+
+Build CARS for developers
+=========================
 
 We recommend to use a `virtualenv`_ environment, so that :term:`CARS` do not interfere with other packages installed on your system.
 
@@ -50,6 +60,17 @@ Particularly, it uses the following pip editable install:
 With this pip install mode, source code modifications directly impacts ``cars`` command line.
 
 
+If your machine already has local installations of **GDAL**, **Fiona**, or **PROJ**, you must install them in **``--no-binary``** mode before installing this tool. This ensures that locally compiled versions are used, preventing conflicts with precompiled binaries.
+
+One straightforward solution is to use the provided script in the repository:
+
+.. code-block:: bash
+
+   make install/dev-gdal
+
+This command installs the required dependencies by compiling the packages from their source, ensuring optimal compatibility with your environment.
+
+
 Setting up a development environment with docker
 ================================================
 
@@ -63,9 +84,136 @@ To setup a development environment with docker, run the following command:
 You're ready to use CARS, all files in the current directory are mounted in the container.
 
 
+Code Guideline
+==============
 
-Coding guide
-============
+Reusing CARS Concepts
+---------------------
+
+When contributing to this project, ensure that your implementation aligns with the **concepts and patterns** already established in **CARS**. For details, refer to the `Concepts` section of the documentation.
+
+Adding New Libraries
+--------------------
+
+Before introducing new libraries, verify that their **license is compatible** with the project. For a list of allowed licenses, see the `Licensing` section.
+
+Adding C++ Code
+---------------
+
+C++ code should be integrated as **plugins** to maintain modularity and avoid bloating the core codebase. Use **pybind11** to create Python wrappers for C++ functionality. This ensures seamless integration with the Python interface while keeping the C++ logic encapsulated.
+
+For examples and best practices, refer to the existing bindings in the project:
+* resampling application -> cars-resample
+* rasterization application -> cars-rasterize
+
+
+Documentation Guideline
+=======================
+
+
+CARS contains its Sphinx Documentation in the code in docs directory.
+
+To generate documentation, use:
+
+.. code-block:: console
+
+  make docs
+
+The documentation is then build in docs/build directory and can be consulted with a web browser.
+
+Documentation can be edited in docs/source/ RST files.
+
+
+Documentation compilation
+-------------------------
+
+The documentation is automatically compiled pre-push, meaning it is built and validated every time you push changes to the Git repository.
+To ensure a smooth process and avoid compilation errors, it is strongly recommended to have CARS installed with pre-commit hooks.
+This setup allows you to verify locally that the documentation compiles correctly before pushing your changes.
+
+Tests Guideline
+===============
+
+CARS includes a set of tests executed with `pytest <https://docs.pytest.org/>`_ tool.
+
+To launch tests:
+
+.. code-block:: console
+
+    make test
+
+It launches only the ``unit_tests`` and ``pbs_cluster_tests`` test targets
+
+Before the tests execution, the ``CARS_TEST_TEMPORARY_DIR`` can be defined to indicate where to write the temporary data bound to the test procedure (if the variable is not set, cars will use default temporary directory).
+
+Several kinds of tests are identified by specific pytest markers:
+
+- the unit tests defined by the ``unit_tests`` marker: ``make test-unit``
+- the PBS cluster tests defined by the ``pbs_cluster_tests`` marker: ``make test-pbs-cluster``
+- the SLURM cluster tests defined by the ``slurm_cluster_tests`` marker: ``make test-slurm-cluster``
+- the Jupyter notebooks test defined by the ``notebook_tests`` marker: ``make test-notebook``
+
+Advanced testing
+----------------
+
+To execute the tests manually, use ``pytest`` at the CARS projects's root (after initializing the environment):
+
+.. code-block:: console
+
+    python -m pytest
+
+To run only the unit tests:
+
+.. code-block:: console
+
+    cd cars/
+    pytest -m unit_tests
+
+To run only the PBS cluster tests:
+
+.. code-block:: console
+
+    cd cars/
+    pytest -m pbs_cluster_tests
+
+To run only the Jupyter notebooks tests:
+
+.. code-block:: console
+
+    cd cars/
+    pytest -m notebook_tests
+
+It is possible to obtain the code coverage level of the tests by installing the ``pytest-cov`` module and use the ``--cov`` option.
+
+.. code-block:: console
+
+    cd cars/
+    python -m pytest --cov=cars
+
+It is also possible to execute only a specific part of the test, either by indicating the test file to run:
+
+.. code-block:: console
+
+    cd cars/
+    python -m pytest tests/test_tiling.py
+
+Or by using the ``-k`` option which will execute the tests which names contain the option's value:
+
+.. code-block:: console
+
+    cd cars/
+    python -m pytest -k end2end
+
+By default, ``pytest`` does not display the traces generated by the tests but only the tests' status (passed or failed). To get all traces, the following options have to be added to the command line (which can be combined with the previous options):
+
+.. code-block:: console
+
+    cd cars/
+    python -m pytest -s -o log_cli=true -o log_cli_level=INFO
+
+
+Stylistic Guideline, Code Quality
+=================================
 
 Here are some rules to apply when developing a new functionality:
 
@@ -82,7 +230,7 @@ Here are some rules to apply when developing a new functionality:
 * **Limit new dependencies**: Do not add new dependencies unless it is absolutely necessary, and only if it has a **permissive license**.
 
 Pre-commit validation
-=====================
+---------------------
 
 A pre-commit validation is installed with code quality tools (see below).
 It is installed automatically by `make install-dev` command.
@@ -105,49 +253,7 @@ It is possible to test pre-commit before committing:
   pre-commit run pylint                     # Run only pylint hook
 
 
-Documentation
-=============
 
-CARS contains its Sphinx Documentation in the code in docs directory.
-
-To generate documentation, use:
-
-.. code-block:: console
-
-  make docs
-
-The documentation is then build in docs/build directory and can be consulted with a web browser.
-
-Documentation can be edited in docs/source/ RST files.
-
-Jupyter notebooks
-=================
-
-CARS contains notebooks in tutorials directory.
-
-To generate a `Jupyter kernel <https://jupyter.org/install>`_ with CARS installation, use:
-
-.. code-block:: console
-
-  make notebook
-
-Follow indications to run a jupyter notebook.
-
-Kernel is created with following command (with cars-version updated):
-
-.. code-block:: console
-
-  python -m ipykernel install --sys-prefix --name=cars-version --display-name=cars-version
-
-To run the jupyter notebook, use:
-
-.. code-block:: console
-
-  jupyter notebook
-
-
-Code quality
-=============
 CARS uses `Isort`_, `Black`_, `Flake8`_ and `Pylint`_ quality code checking.
 
 Use the following command in CARS `virtualenv`_ to check the code with these tools:
@@ -232,85 +338,50 @@ Pylint manual usage examples:
   pylint --list-msgs          # Get pylint detailed errors information
 
 
-Tests
-======
 
-CARS includes a set of tests executed with `pytest <https://docs.pytest.org/>`_ tool.
+Jupyter notebooks
+=================
 
-To launch tests:
+CARS contains notebooks in tutorials directory.
 
-.. code-block:: console
-
-    make test
-
-It launches only the ``unit_tests`` and ``pbs_cluster_tests`` test targets
-
-Before the tests execution, the ``CARS_TEST_TEMPORARY_DIR`` can be defined to indicate where to write the temporary data bound to the test procedure (if the variable is not set, cars will use default temporary directory).
-
-Several kinds of tests are identified by specific pytest markers:
-
-- the unit tests defined by the ``unit_tests`` marker: ``make test-unit``
-- the PBS cluster tests defined by the ``pbs_cluster_tests`` marker: ``make test-pbs-cluster``
-- the SLURM cluster tests defined by the ``slurm_cluster_tests`` marker: ``make test-slurm-cluster``
-- the Jupyter notebooks test defined by the ``notebook_tests`` marker: ``make test-notebook``
-
-Advanced testing
-----------------
-
-To execute the tests manually, use ``pytest`` at the CARS projects's root (after initializing the environment):
+To generate a `Jupyter kernel <https://jupyter.org/install>`_ with CARS installation, use:
 
 .. code-block:: console
 
-    python -m pytest
+  make notebook
 
-To run only the unit tests:
+Follow indications to run a jupyter notebook.
 
-.. code-block:: console
-
-    cd cars/
-    pytest -m unit_tests
-
-To run only the PBS cluster tests:
+Kernel is created with following command (with cars-version updated):
 
 .. code-block:: console
 
-    cd cars/
-    pytest -m pbs_cluster_tests
+  python -m ipykernel install --sys-prefix --name=cars-version --display-name=cars-version
 
-To run only the Jupyter notebooks tests:
-
-.. code-block:: console
-
-    cd cars/
-    pytest -m notebook_tests
-
-It is possible to obtain the code coverage level of the tests by installing the ``pytest-cov`` module and use the ``--cov`` option.
+To run the jupyter notebook, use:
 
 .. code-block:: console
 
-    cd cars/
-    python -m pytest --cov=cars
+  jupyter notebook
 
-It is also possible to execute only a specific part of the test, either by indicating the test file to run:
 
-.. code-block:: console
+Licensing
+=========
 
-    cd cars/
-    python -m pytest tests/test_tiling.py
+When contributing to this project, ensure that any third-party tools or libraries integrated into your contribution are licensed under terms compatible with the Apache License, Version 2.0.
+Specifically, the license of integrated tools must not impose restrictions that could "contaminate" or conflict with the Apache 2.0 license.
+If you are unable to find a compatible license for a required tool, you may propose the contribution as an external plugin. External plugins allow the project to maintain its license integrity while still benefiting from your work. Always document the license of any external dependencies in your contribution.
 
-Or by using the ``-k`` option which will execute the tests which names contain the option's value:
+Release and Version numbering
+=============================
 
-.. code-block:: console
+This project adheres to Semantic Versioning (`semver.org`_) to clearly communicate the impact of each release.
+The version number follows the format MAJOR.MINOR.PATCH.
+The first digit (MAJOR) is incremented when backward-incompatible changes are introduced, such as breaking changes to the high-level API.
+The second digit (MINOR) is incremented when new features or modifications are added in a backward-compatible manner.
+The third digit (PATCH) is reserved for backward-compatible bug fixes.
+This approach ensures transparency and helps users understand the scope and impact of each update.
 
-    cd cars/
-    python -m pytest -k end2end
-
-By default, ``pytest`` does not display the traces generated by the tests but only the tests' status (passed or failed). To get all traces, the following options have to be added to the command line (which can be combined with the previous options):
-
-.. code-block:: console
-
-    cd cars/
-    python -m pytest -s -o log_cli=true -o log_cli_level=INFO
 
 
 .. _`the GitHub repository`: https://github.com/CNES/cars
@@ -321,3 +392,4 @@ By default, ``pytest`` does not display the traces generated by the tests but on
 .. _`Flake8`: https://flake8.pycqa.org/
 .. _`Pylint`: http://pylint.pycqa.org/
 .. _`pyproject.toml`: https://raw.githubusercontent.com/CNES/cars/master/pyproject.toml
+.. _`semver.org`: https://semver.org/

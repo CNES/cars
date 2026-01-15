@@ -20,18 +20,20 @@
         "two"
       ],
       [
-	"one",
-	"three"
+        "one",
+        "three"
       ]
     ],
     "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif"
   },
-  "applications": {
-    "bundle_adjustment": {
-      "pairing": [["one", "two"], ["one", "three"]],
-      "separate": false,
-      "nb_decimals": 0,
-      "min_matches": 5
+  "tie_points": {
+    "applications": {
+        "bundle_adjustment": {
+        "pairing": [["one", "two"], ["one", "three"]],
+        "separate": false,
+        "nb_decimals": 0,
+        "min_matches": 5
+        }
     }
   }
 }

@@ -1,0 +1,8 @@
+subsampling:
+  applications:
+    sensors_subsampling:
+      method: "rasterio"
+
+  advanced:
+    save_intermediate_data: true
+    resolutions: [32, 8, 1]

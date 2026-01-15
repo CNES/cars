@@ -31,6 +31,7 @@ CARS default pipeline class file
 from __future__ import print_function
 
 import copy
+import json
 import logging
 import os
 import shutil
@@ -45,12 +46,17 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster import log_wrapper
 from cars.orchestrator.cluster.log_wrapper import cars_profile
-from cars.pipelines.parameters import advanced_parameters
+from cars.pipelines import pipeline_constants as pipeline_cst
+from cars.pipelines.filling.filling import FillingPipeline
+from cars.pipelines.formatting.formatting import FormattingPipeline
+from cars.pipelines.merging.merging import MergingPipeline
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
+from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
-from cars.pipelines.parameters import output_parameters
+from cars.pipelines.parameters import output_parameters, sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
+from cars.pipelines.parameters.output_constants import AUXILIARY
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
@@ -58,9 +64,13 @@ from cars.pipelines.pipeline_constants import (
     INPUT,
     ORCHESTRATOR,
     OUTPUT,
+    PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.unit.unit_pipeline import UnitPipeline
+from cars.pipelines.subsampling.subsampling import SubsamplingPipeline
+from cars.pipelines.surface_modeling.surface_modeling import (
+    SurfaceModelingPipeline,
+)
 
 package_path = os.path.dirname(__file__)
 FIRST_RES = "first_resolution"
@@ -121,95 +131,160 @@ class DefaultPipeline(PipelineTemplate):
 
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
-        # Get epipolar resolutions to use
-        self.epipolar_resolutions = (
-            advanced_parameters.get_epipolar_resolutions(conf.get(ADVANCED, {}))
-        )
-        if isinstance(self.epipolar_resolutions, int):
-            self.epipolar_resolutions = [self.epipolar_resolutions]
+        conf[PIPELINE] = self.check_pipeline(conf)
 
-        # Check application
-        self.check_applications(conf)
+        self.pipeline_to_use = conf[PIPELINE]
+
         # Check input
-        conf[INPUT] = self.check_inputs(conf)
-        # check advanced
-        conf[ADVANCED] = self.check_advanced(conf)
+        conf[INPUT] = self.check_inputs(conf, config_json_dir=config_dir)
+
         # check output
         conf[OUTPUT] = self.check_output(conf)
 
-        if dsm_cst.DSMS in conf[INPUT] and len(self.epipolar_resolutions) != 1:
+        self.intermediate_data_dir = os.path.join(
+            self.out_dir, "intermediate_data"
+        )
+
+        conf[ORCHESTRATOR] = self.check_orchestrator(
+            conf.get(ORCHESTRATOR, None)
+        )
+
+        if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
+            self.subsampling_conf = self.construct_subsampling_conf(conf)
+            conf[pipeline_cst.SUBSAMPLING] = self.check_subsampling(
+                self.subsampling_conf,
+            )
+
+            # Get epipolar resolutions to use
+            self.resolutions = conf[pipeline_cst.SUBSAMPLING][ADVANCED][
+                adv_cst.RESOLUTIONS
+            ]
+        else:
+            self.resolutions = [1]
+
+        for pipeline, activated in self.pipeline_to_use.items():
+            if pipeline in conf and not activated:
+                logging.warning(
+                    f"You tried to override the {pipeline} pipeline but "
+                    f"didn't specify it in the pipeline section. "
+                    "Therefore, this pipeline will not be used"
+                )
+            if pipeline in conf and activated:
+                # Check pipeline conf format
+                self.check_pipeline_section(pipeline, conf[pipeline])
+
+        if pipeline_cst.SURFACE_MODELING not in conf:
+            conf[pipeline_cst.SURFACE_MODELING] = {}
+        if pipeline_cst.TIE_POINTS not in conf:
+            conf[pipeline_cst.TIE_POINTS] = {}
+
+        used_configurations = {}
+        self.positions = {}
+        self.used_conf = {}
+
+        self.keep_low_res_dir = True
+
+        if dsm_cst.DSMS in conf[INPUT] and len(self.resolutions) != 1:
             logging.info(
                 "For the use of those pipelines, "
                 "you have to give only one resolution"
             )
             # overide epipolar resolutions
             # TODO: delete with external dsm pipeline (refactoring)
-            self.epipolar_resolutions = [1]
-
-        used_configurations = {}
-        self.unit_pipelines = {}
-        self.positions = {}
-
-        self.intermediate_data_dir = os.path.join(
-            self.out_dir, "intermediate_data"
-        )
-
-        self.keep_low_res_dir = conf[ADVANCED][adv_cst.KEEP_LOW_RES_DIR]
-
-        # Get first res outdir for sift matches
-        self.first_res_out_dir_with_sensors = None
-
-        for epipolar_resolution_index, epipolar_res in enumerate(
-            self.epipolar_resolutions
+            self.resolutions = [1]
+        elif (
+            not self.pipeline_to_use[pipeline_cst.SUBSAMPLING]
+            and len(self.resolutions) != 1
         ):
-            first_res = epipolar_resolution_index == 0
-            last_res = (
-                epipolar_resolution_index == len(self.epipolar_resolutions) - 1
-            )
-            intermediate_res = not first_res and not last_res
-
-            # set computed bool
-            self.positions[epipolar_resolution_index] = {
-                "first_res": first_res,
-                "intermediate_res": intermediate_res,
-                "last_res": last_res,
-            }
-
-            current_conf = copy.deepcopy(conf)
-            current_conf = extract_conf_with_resolution(
-                current_conf,
-                epipolar_res,
-                first_res,
-                intermediate_res,
-                last_res,
-                self.intermediate_data_dir,
+            logging.warning(
+                "As you're not using the subsampling pipeline, "
+                "the working resolution will be 1"
             )
 
-            if first_res:
-                self.first_res_out_dir_with_sensors = current_conf[OUTPUT][
-                    "directory"
-                ]
+            self.resolutions = [1]
 
-            if not isinstance(epipolar_res, int) or epipolar_res < 0:
-                raise RuntimeError("The resolution has to be an int > 0")
+        if self.pipeline_to_use[pipeline_cst.FILLING]:
+            self.filling_conf = self.construct_filling_conf(conf)
+            conf[pipeline_cst.FILLING] = self.check_filling(self.filling_conf)
 
-            # Initialize unit pipeline in order to retrieve the
-            # used configuration
-            # This pipeline will not be run
+        subsampling_used_conf = conf.get(pipeline_cst.SUBSAMPLING, {})
+        filling_used_conf = conf.get(pipeline_cst.FILLING, {})
 
-            current_unit_pipeline = UnitPipeline(
-                current_conf, config_dir=self.config_dir
+        if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
+            for epipolar_resolution_index, epipolar_res in enumerate(
+                self.resolutions
+            ):
+                first_res = epipolar_resolution_index == 0
+                last_res = (
+                    epipolar_resolution_index == len(self.resolutions) - 1
+                )
+                intermediate_res = not first_res and not last_res
+
+                # set computed bool
+                self.positions[epipolar_resolution_index] = {
+                    "first_res": first_res,
+                    "intermediate_res": intermediate_res,
+                    "last_res": last_res,
+                }
+
+                current_conf = copy.deepcopy(conf)
+                current_conf = extract_conf_with_resolution(
+                    current_conf,
+                    epipolar_res,
+                    first_res,
+                    intermediate_res,
+                    last_res,
+                    self.intermediate_data_dir,
+                )
+
+                if not isinstance(epipolar_res, int) or epipolar_res < 0:
+                    raise RuntimeError("The resolution has to be an int > 0")
+
+                self.used_conf[epipolar_resolution_index] = current_conf
+
+                # Initialize unit pipeline in order to retrieve the
+                # used configuration
+                # This pipeline will not be run
+                _ = current_conf.pop(pipeline_cst.SUBSAMPLING, None)
+                _ = current_conf.pop(pipeline_cst.FILLING, None)
+
+                current_unit_pipeline = SurfaceModelingPipeline(
+                    current_conf,
+                    config_dir=self.config_dir,
+                )
+                if last_res and self.pipeline_to_use[pipeline_cst.FILLING]:
+                    # Force classification saving for filling
+                    if not current_unit_pipeline.used_conf[OUTPUT][AUXILIARY][
+                        sens_cst.INPUT_CLASSIFICATION
+                    ]:
+                        current_unit_pipeline.used_conf[OUTPUT][AUXILIARY][
+                            sens_cst.INPUT_CLASSIFICATION
+                        ] = True
+                    if not self.filling_conf[OUTPUT][AUXILIARY][
+                        sens_cst.INPUT_CLASSIFICATION
+                    ]:
+                        self.filling_conf[OUTPUT][AUXILIARY][
+                            sens_cst.INPUT_CLASSIFICATION
+                        ] = True
+                # Get used_conf
+                used_configurations[epipolar_res] = (
+                    current_unit_pipeline.used_conf
+                )
+
+            # Generate full used_conf
+            full_used_conf = merge_used_conf(
+                used_configurations,
+                self.resolutions,
+                os.path.abspath(self.out_dir),
             )
-            self.unit_pipelines[epipolar_resolution_index] = (
-                current_unit_pipeline
-            )
-            # Get used_conf
-            used_configurations[epipolar_res] = current_unit_pipeline.used_conf
+        else:
+            self.used_conf = copy.deepcopy(conf)
+            full_used_conf = self.used_conf
 
-        # Generate full used_conf
-        full_used_conf = merge_used_conf(
-            used_configurations, self.epipolar_resolutions
-        )
+        full_used_conf[pipeline_cst.SUBSAMPLING] = subsampling_used_conf
+        full_used_conf[pipeline_cst.PIPELINE] = conf[PIPELINE]
+        full_used_conf[pipeline_cst.FILLING] = filling_used_conf
+
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,
@@ -229,9 +304,22 @@ class DefaultPipeline(PipelineTemplate):
         :return: overloader inputs
         :rtype: dict
         """
-        return UnitPipeline.check_inputs(
-            conf[INPUT], config_dir=self.config_dir
-        )
+        output_config = {}
+        if sens_cst.SENSORS in conf[INPUT] and dsm_cst.DSMS not in conf[INPUT]:
+            output_config = sensor_inputs.sensors_check_inputs(
+                conf[INPUT], config_dir=config_json_dir
+            )
+        elif dsm_cst.DSMS in conf[INPUT]:
+            output_config = {
+                **output_config,
+                **dsm_inputs.check_dsm_inputs(
+                    conf[INPUT], config_dir=config_json_dir
+                ),
+            }
+        else:
+            raise RuntimeError("No sensors or dsms in inputs")
+
+        return output_config
 
     def check_output(self, conf):
         """
@@ -243,63 +331,167 @@ class DefaultPipeline(PipelineTemplate):
         :return overloader output
         :rtype : dict
         """
-        conf_output, self.scaling_coeff = (
-            output_parameters.check_output_parameters(
-                conf[INPUT], conf[OUTPUT], self.scaling_coeff
-            )
+        conf_output, _ = output_parameters.check_output_parameters(
+            conf[INPUT], conf[OUTPUT]
         )
         return conf_output
 
-    def check_advanced(self, conf):
+    def check_pipeline(self, conf):  # noqa: C901
         """
-        Check all conf for advanced configuration
+        Check the pipeline section
+        """
+        possible_pipeline = [
+            pipeline_cst.SUBSAMPLING,
+            pipeline_cst.SURFACE_MODELING,
+            pipeline_cst.FILLING,
+            pipeline_cst.MERGING,
+            pipeline_cst.FORMATTING,
+        ]
+        dict_pipeline = {}
 
-        :return: overridden advanced conf
-        :rtype: dict
-        """
-        (_, advanced, _, _, _, self.scaling_coeff, _, _) = (
-            advanced_parameters.check_advanced_parameters(
-                conf[INPUT],
-                conf.get(ADVANCED, {}),
-                check_epipolar_a_priori=True,
+        if PIPELINE not in conf:
+            if dsm_cst.DSMS in conf[INPUT]:
+                conf[PIPELINE] = [pipeline_cst.MERGING, pipeline_cst.FORMATTING]
+            elif sens_cst.SENSORS in conf[INPUT]:
+                conf[PIPELINE] = [
+                    pipeline_cst.SUBSAMPLING,
+                    pipeline_cst.SURFACE_MODELING,
+                    pipeline_cst.FORMATTING,
+                ]
+
+        if isinstance(conf[PIPELINE], str):
+            if conf[PIPELINE] not in possible_pipeline:
+                raise RuntimeError("This pipeline does not exist")
+            dict_pipeline = {conf[PIPELINE]: True}
+        elif isinstance(conf[PIPELINE], list):
+            for elem in conf[PIPELINE]:
+                if elem not in possible_pipeline:
+                    raise RuntimeError(f"The pipeline {elem} does not exist")
+                dict_pipeline.update({elem: True})
+        elif isinstance(conf[PIPELINE], dict):
+            for key, _ in conf[PIPELINE].items():
+                if key not in possible_pipeline:
+                    raise RuntimeError(f"The pipeline {key} does not exist")
+
+        for key in possible_pipeline:
+            if key not in dict_pipeline:
+                dict_pipeline.update({key: False})
+
+        if (
+            dsm_cst.DSMS in conf[INPUT]
+            and not dict_pipeline[pipeline_cst.MERGING]
+        ):
+            dict_pipeline[pipeline_cst.MERGING] = True
+        elif (
+            dsm_cst.DSMS in conf[INPUT]
+            and dict_pipeline[pipeline_cst.SURFACE_MODELING]
+        ):
+            raise RuntimeError(
+                "You can not use the surface modeling pipeline with dsm inputs"
             )
-        )
-        return advanced
+        elif (
+            sens_cst.SENSORS in conf[INPUT]
+            and dict_pipeline[pipeline_cst.MERGING]
+            and dsm_cst.DSMS not in conf[INPUT]
+        ):
+            raise RuntimeError(
+                "You can not use the merging pipeline with sensors inputs only"
+            )
 
-    def check_applications(self, conf):
+        if (
+            pipeline_cst.FILLING in conf[INPUT] or pipeline_cst.FILLING in conf
+        ) and not dict_pipeline[pipeline_cst.FILLING]:
+            dict_pipeline[pipeline_cst.FILLING] = True
+
+        if (
+            pipeline_cst.SURFACE_MODELING in conf[INPUT]
+            and not dict_pipeline[pipeline_cst.SURFACE_MODELING]
+        ):
+            dict_pipeline[pipeline_cst.SURFACE_MODELING] = True
+
+        if (
+            pipeline_cst.MERGING in conf[INPUT]
+            and not dict_pipeline[pipeline_cst.MERGING]
+        ):
+            dict_pipeline[pipeline_cst.MERGING] = True
+
+        if (
+            pipeline_cst.SUBSAMPLING in conf[INPUT]
+            and not dict_pipeline[pipeline_cst.SUBSAMPLING]
+        ):
+            dict_pipeline[pipeline_cst.SUBSAMPLING] = True
+
+        return dict_pipeline
+
+    def check_subsampling(self, conf):
         """
-        Check the given configuration for applications
+        Check the subsampling section
 
-        :param conf: configuration of applications
+        :param conf: configuration of subsampling
         :type conf: dict
         """
-        applications_conf = conf.get(APPLICATIONS, {})
-        # check format: contains "all" of "resolutions
+        pipeline = SubsamplingPipeline(conf)
+        advanced = pipeline.check_advanced(
+            conf[pipeline_cst.SUBSAMPLING].get(ADVANCED, {}),
+            conf[INPUT],
+        )
+        applications = pipeline.check_applications(
+            conf[pipeline_cst.SUBSAMPLING].get(APPLICATIONS, {})
+        )
 
-        int_keys = [int(epi_res) for epi_res in self.epipolar_resolutions]
-        string_keys = [str(key) for key in int_keys]
+        return {ADVANCED: advanced, APPLICATIONS: applications}
 
-        possible_keys = ["all"] + int_keys + string_keys
+    def check_filling(self, conf):
+        """
+        Check the filling section
 
-        # Check conf keys in possible keys
-        for app_base_key in applications_conf.keys():
-            if app_base_key not in possible_keys:
-                raise RuntimeError(
-                    "Application key {} not in possibles keys in : 'all', {} , "
-                    "as int or str".format(app_base_key, string_keys)
+        :param conf: configuration of subsampling
+        :type conf: dict
+        """
+
+        pipeline = FillingPipeline(conf, pre_check=True)
+        advanced = pipeline.check_advanced(
+            conf[pipeline_cst.FILLING],
+            conf[INPUT],
+        )
+        applications = pipeline.check_applications(
+            conf[pipeline_cst.FILLING].get(APPLICATIONS, {})
+        )
+
+        return {ADVANCED: advanced, APPLICATIONS: applications}
+
+    def check_pipeline_section(self, pipeline_name, pipeline_conf):
+        """
+        Check any pipeline section
+
+        :param pipeline_name: key name in conf
+        :type pipeline_name: str
+        :param pipeline_conf: pipeline configuration
+        :type pipeline_conf: dict
+        """
+        for key in pipeline_conf:
+            if key not in [APPLICATIONS, ADVANCED]:
+                raise KeyError(
+                    "Keys of a pipeline must be 'applications' or 'advanced'"
                 )
+        if pipeline_name in (
+            pipeline_cst.SURFACE_MODELING,
+            pipeline_cst.TIE_POINTS,
+        ):
+            int_keys = [int(epi_res) for epi_res in self.resolutions]
+            string_keys = [str(key) for key in int_keys]
+            possible_keys = ["all"] + int_keys + string_keys
 
-        # Key str and int key are not defined for the same resolution
-        for resolution in int_keys:
-            if (
-                resolution in applications_conf
-                and str(resolution) in applications_conf
-            ):
-                raise RuntimeError(
-                    "Application configuration for {} resolution "
-                    "is defined both "
-                    "with int and str key".format(resolution)
-                )
+            for section in pipeline_conf:
+                for key in pipeline_conf[section]:
+                    if key not in possible_keys:
+                        raise KeyError(
+                            "When meta pipeline is used, keys of {} pipeline"
+                            "must be in {}".format(
+                                pipeline_name,
+                                string_keys + ["all"],
+                            )
+                        )
 
     def cleanup_low_res_dir(self):
         """
@@ -326,41 +518,63 @@ class DefaultPipeline(PipelineTemplate):
                 f"been deleted"
             )
 
-    def override_with_apriori(self, conf, previous_out_dir, first_res):
+    def construct_merging_conf(self, conf):
         """
-        Override configuration with terrain a priori
+        Construct the right conf for merging
+        """
+        merging_conf = {}
+        merging_conf[INPUT] = copy.deepcopy(conf[INPUT])
+        merging_conf[ORCHESTRATOR] = copy.deepcopy(conf[ORCHESTRATOR])
+        merging_conf[OUTPUT] = {}
+        merging_conf[OUTPUT]["directory"] = os.path.join(
+            self.intermediate_data_dir, pipeline_cst.MERGING
+        )
+        merging_conf[OUTPUT][AUXILIARY] = conf[OUTPUT].get(AUXILIARY, {})
 
-        :param new_conf: configuration
-        :type new_conf: dict
+        merging_conf[pipeline_cst.MERGING] = conf.get(pipeline_cst.MERGING, {})
+
+        return merging_conf
+
+    def construct_subsampling_conf(self, conf):
+        """
+        Construct the right conf for subsampling
+        """
+        subsampling_conf = {}
+        subsampling_conf[INPUT] = copy.deepcopy(conf[INPUT])
+        subsampling_conf[ORCHESTRATOR] = copy.deepcopy(conf[ORCHESTRATOR])
+        subsampling_conf[OUTPUT] = {}
+        subsampling_conf[OUTPUT]["directory"] = self.intermediate_data_dir
+
+        subsampling_conf[pipeline_cst.SUBSAMPLING] = conf.get(
+            pipeline_cst.SUBSAMPLING, {}
+        )
+
+        return subsampling_conf
+
+    def construct_formatting_conf(self, input_dir):
+        """
+        Construct the right conf for formatting
         """
 
-        new_conf = copy.deepcopy(conf)
+        formatting_conf = {}
+        formatting_conf[INPUT] = {}
+        formatting_conf[INPUT]["input_path"] = input_dir
+        formatting_conf[OUTPUT] = {}
+        formatting_conf[OUTPUT]["directory"] = self.out_dir
 
-        # Extract avanced parameters configuration
-        # epipolar and terrain a priori can only be used on first resolution
-        if not first_res:
-            dem_min = os.path.join(previous_out_dir, "dsm/dem_min.tif")
-            dem_max = os.path.join(previous_out_dir, "dsm/dem_max.tif")
-            dem_median = os.path.join(previous_out_dir, "dsm/dem_median.tif")
+        return formatting_conf
 
-            new_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {
-                "dem_min": dem_min,
-                "dem_max": dem_max,
-                "dem_median": dem_median,
-            }
-            # Use initial elevation or dem median according to use wish
-            if new_conf[INPUT][sens_cst.INITIAL_ELEVATION]["dem"] is None:
-                new_conf[INPUT][sens_cst.INITIAL_ELEVATION] = dem_median
-            else:
-                new_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI]["dem_median"] = (
-                    new_conf[INPUT][sens_cst.INITIAL_ELEVATION]["dem"]
-                )
-            if new_conf[ADVANCED][adv_cst.USE_ENDOGENOUS_DEM] and not first_res:
-                new_conf[INPUT][sens_cst.INITIAL_ELEVATION] = dem_median
-
-            new_conf[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = None
-
-        return new_conf
+    def construct_filling_conf(self, conf):
+        """
+        Construct the right conf for filling
+        """
+        filling_conf = {}
+        filling_conf[INPUT] = copy.deepcopy(conf[INPUT])
+        _ = filling_conf[INPUT].pop(dsm_cst.DSMS, None)
+        filling_conf[OUTPUT] = copy.deepcopy(conf[OUTPUT])
+        filling_conf[OUTPUT]["directory"] = self.intermediate_data_dir
+        filling_conf[pipeline_cst.FILLING] = conf.get(pipeline_cst.FILLING, {})
+        return filling_conf
 
     @cars_profile(name="Run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
@@ -378,89 +592,194 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         previous_out_dir = None
+        current_surface_modeling_out_dir = None
         updated_conf = {}
-        for resolution_index, epipolar_res in enumerate(
-            self.epipolar_resolutions
-        ):
 
-            # Get tested unit pipeline
-            used_pipeline = self.unit_pipelines[resolution_index]
-            current_out_dir = used_pipeline.used_conf[OUTPUT]["directory"]
+        if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
+            subsampling_pipeline = SubsamplingPipeline(
+                self.subsampling_conf, self.config_dir
+            )
+            subsampling_pipeline.run()
 
-            # get position
-            first_res, _, last_res = (
-                self.positions[resolution_index]["first_res"],
-                self.positions[resolution_index]["intermediate_res"],
-                self.positions[resolution_index]["last_res"],
+        if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
+            for resolution_index, epipolar_res in enumerate(self.resolutions):
+
+                # Get tested unit pipeline
+                current_conf = self.used_conf[resolution_index]
+                current_surface_modeling_out_dir = current_conf[OUTPUT][
+                    "directory"
+                ]
+
+                # Put right directory for subsampling
+                if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
+                    if epipolar_res != 1:
+                        yaml_file = os.path.join(
+                            self.intermediate_data_dir,
+                            "subsampling/res_"
+                            + str(epipolar_res)
+                            + "/input.yaml",
+                        )
+                        with open(yaml_file, encoding="utf-8") as f:
+                            data = yaml.safe_load(f)
+
+                        json_str = json.dumps(data, indent=4)
+                        data = json.loads(json_str)
+
+                        current_conf[INPUT] = data
+
+                # update directory for unit pipeline
+                current_conf[OUTPUT][
+                    "directory"
+                ] = current_surface_modeling_out_dir
+
+                # get position
+                first_res, _, last_res = (
+                    self.positions[resolution_index]["first_res"],
+                    self.positions[resolution_index]["intermediate_res"],
+                    self.positions[resolution_index]["last_res"],
+                )
+
+                # setup logging
+                loglevel = getattr(args, "loglevel", "PROGRESS").upper()
+
+                current_log_dir = os.path.join(
+                    self.out_dir, "logs", "res_" + str(epipolar_res)
+                )
+
+                cars_logging.setup_logging(
+                    loglevel,
+                    out_dir=current_log_dir,
+                    pipeline="surface_modeling",
+                    global_log_file=global_log_file,
+                )
+
+                cars_logging.add_progress_message(
+                    "Starting surface modeling pipeline for resolution 1/"
+                    + str(epipolar_res)
+                )
+
+                # define wich resolution
+                if first_res and last_res:
+                    which_resolution = "single"
+                elif first_res:
+                    which_resolution = "first"
+                elif last_res:
+                    which_resolution = "final"
+                else:
+                    which_resolution = "intermediate"
+
+                # Overide with a priori
+                if not first_res:
+                    dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
+                    current_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
+
+                updated_pipeline = SurfaceModelingPipeline(
+                    current_conf,
+                    config_dir=self.config_dir,
+                )
+                updated_pipeline.run(
+                    which_resolution=which_resolution,
+                    log_dir=current_log_dir,
+                )
+
+                # update previous out dir
+                previous_out_dir = current_surface_modeling_out_dir
+
+                # generate summary
+                log_wrapper.generate_summary(
+                    current_log_dir,
+                    updated_pipeline.used_conf,
+                    pipeline_cst.SURFACE_MODELING,
+                )
+
+                updated_conf[epipolar_res] = updated_pipeline.used_conf
+
+            # Generate full used_conf
+            full_used_conf = merge_used_conf(
+                updated_conf,
+                self.resolutions,
+                os.path.abspath(self.out_dir),
+            )
+        else:
+            full_used_conf = self.used_conf
+
+        final_conf = None
+        if self.pipeline_to_use[pipeline_cst.MERGING]:
+            merging_conf = self.construct_merging_conf(self.used_conf)
+            merging_pipeline = MergingPipeline(merging_conf, self.config_dir)
+            merging_pipeline.run()
+
+            final_conf = merging_pipeline.used_conf
+
+        if updated_conf and final_conf is None:
+            last_key = list(updated_conf.keys())[-1]
+            final_conf = updated_conf[last_key]
+        elif not updated_conf and final_conf is None:
+            final_conf = self.used_conf
+
+        formatting_input_dir = final_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+
+        if self.pipeline_to_use[pipeline_cst.FILLING]:
+            if self.filling_conf[INPUT]["dsm_to_fill"] is None:
+                if (
+                    not self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]
+                    and not self.pipeline_to_use[pipeline_cst.MERGING]
+                ):
+                    raise RuntimeError(
+                        "You have to fill the dsm_to_fill part of the input if "
+                        "you want to use the filling pipeline separately"
+                    )
+
+                self.filling_conf[INPUT]["dsm_to_fill"] = {}
+                aux_path = os.path.join(
+                    final_conf[OUTPUT][out_cst.OUT_DIRECTORY], "dsm/"
+                )
+                self.filling_conf[INPUT]["dsm_to_fill"]["dsm"] = os.path.join(
+                    aux_path, "dsm.tif"
+                )
+
+                for aux_output, val in final_conf[OUTPUT][
+                    out_cst.AUXILIARY
+                ].items():
+                    if val:
+                        self.filling_conf[INPUT]["dsm_to_fill"][aux_output] = (
+                            os.path.join(aux_path, aux_output + ".tif")
+                        )
+            initial_elevation = final_conf[INPUT][
+                sens_cst.INITIAL_ELEVATION
+            ].get("dem", None)
+
+            if (
+                initial_elevation is not None
+                and "dem_median" in initial_elevation
+            ):
+                self.filling_conf[INPUT][sens_cst.INITIAL_ELEVATION] = None
+
+            filling_pipeline = FillingPipeline(
+                self.filling_conf, self.config_dir
+            )
+            filling_pipeline.run()
+
+            formatting_input_dir = os.path.join(
+                filling_pipeline.used_conf[OUTPUT][out_cst.OUT_DIRECTORY],
+                pipeline_cst.FILLING,
             )
 
-            # setup logging
-            loglevel = getattr(args, "loglevel", "PROGRESS").upper()
-
-            current_log_dir = os.path.join(
-                self.out_dir, "logs", "res_" + str(epipolar_res)
+        if self.pipeline_to_use[pipeline_cst.FORMATTING]:
+            formatting_conf = self.construct_formatting_conf(
+                formatting_input_dir
             )
-
-            cars_logging.setup_logging(
-                loglevel,
-                out_dir=current_log_dir,
-                pipeline="unit_pipeline",
-                global_log_file=global_log_file,
+            formatting_pipeline = FormattingPipeline(
+                formatting_conf, self.config_dir
             )
+            formatting_pipeline.run(current_surface_modeling_out_dir)
 
-            cars_logging.add_progress_message(
-                "Starting pipeline for resolution 1/" + str(epipolar_res)
-            )
+        if self.pipeline_to_use[pipeline_cst.FILLING]:
+            full_used_conf[pipeline_cst.FILLING] = {
+                ADVANCED: filling_pipeline.used_conf[ADVANCED],
+                APPLICATIONS: filling_pipeline.used_conf[APPLICATIONS],
+            }
 
-            # use sift a priori if not first
-            use_sift_a_priori = False
-            if not first_res:
-                use_sift_a_priori = True
-
-            # define wich resolution
-            if first_res and last_res:
-                which_resolution = "single"
-            elif first_res:
-                which_resolution = "first"
-            elif last_res:
-                which_resolution = "final"
-            else:
-                which_resolution = "intermediate"
-
-            # Generate dem
-            generate_dems = True
-            if last_res:
-                generate_dems = False
-
-            # Overide with a priori
-            overridden_conf = self.override_with_apriori(
-                used_pipeline.used_conf, previous_out_dir, first_res
-            )
-            updated_pipeline = UnitPipeline(
-                overridden_conf, config_dir=self.config_dir
-            )
-            updated_pipeline.run(
-                generate_dems=generate_dems,
-                which_resolution=which_resolution,
-                use_sift_a_priori=use_sift_a_priori,
-                first_res_out_dir=self.first_res_out_dir_with_sensors,
-                log_dir=current_log_dir,
-            )
-
-            # update previous out dir
-            previous_out_dir = current_out_dir
-
-            # generate summary
-            log_wrapper.generate_summary(
-                current_log_dir, updated_pipeline.used_conf
-            )
-
-            updated_conf[epipolar_res] = updated_pipeline.used_conf
-
-        # Generate full used_conf
-        full_used_conf = merge_used_conf(
-            updated_conf, self.epipolar_resolutions
-        )
         # Save used_conf
         cars_dataset.save_dict(
             full_used_conf,
@@ -475,8 +794,11 @@ class DefaultPipeline(PipelineTemplate):
             self.cleanup_low_res_dir()
 
 
-def extract_applications(
-    current_applications_conf, res, default_conf_for_res, filling_applications
+def extract_conf_section(
+    current_conf_section,
+    res,
+    default_conf_for_res=None,
+    filling_applications=None,
 ):
     """
     Extract applications for current resolution
@@ -497,25 +819,29 @@ def extract_applications(
     # "all" : applied to all conf
     # int  (1, 2, 4, 8, 16, ...) applied for specified resolution
 
-    all_conf = current_applications_conf.get("all", {})
+    all_conf = current_conf_section.get("all", {})
     # Overide with default_conf_for_res
-    all_conf = overide_pipeline_conf(all_conf, default_conf_for_res)
+    if default_conf_for_res is not None:
+        all_conf = overide_pipeline_conf(all_conf, default_conf_for_res)
     # Get configuration for current res
-    if res in current_applications_conf:
+    if res in current_conf_section:
         # key is int
         key = res
     else:
         key = str(res)
 
-    res_conf = current_applications_conf.get(key, {})
+    res_conf = current_conf_section.get(key, {})
 
     # Overide all conf with current res conf
     new_application_conf = overide_pipeline_conf(all_conf, res_conf)
 
     # Overide with filling applications
-    new_application_conf = overide_pipeline_conf(
-        new_application_conf, filling_applications, append_classification=True
-    )
+    if filling_applications is not None:
+        new_application_conf = overide_pipeline_conf(
+            new_application_conf,
+            filling_applications,
+            append_classification=True,
+        )
     return new_application_conf
 
 
@@ -547,24 +873,12 @@ def extract_conf_with_resolution(
     :type: previous_out_dir: str
     """
 
-    new_dir_out_dir = current_conf[OUTPUT][out_cst.OUT_DIRECTORY]
-    if not last_res:
-        new_dir_out_dir = os.path.join(
-            intermediate_data_dir, "out_res" + str(res)
-        )
-        safe_makedirs(new_dir_out_dir)
+    surface_modeling_out_dir = os.path.join(
+        intermediate_data_dir, "surface_modeling", "res" + str(res)
+    )
+    safe_makedirs(surface_modeling_out_dir)
 
     new_conf = copy.deepcopy(current_conf)
-
-    # Get save intermediate data
-    if isinstance(new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA], dict):
-        # If save_intermediate_data is not a dict, we set it to False
-        new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA] = new_conf[ADVANCED][
-            adv_cst.SAVE_INTERMEDIATE_DATA
-        ].get("resolution_" + str(res), False)
-
-    # Overide epipolar resolution
-    new_conf[ADVANCED][adv_cst.EPIPOLAR_RESOLUTIONS] = res
 
     # Overide  configuration with pipeline conf
     if first_res:
@@ -582,37 +896,55 @@ def extract_conf_with_resolution(
 
     if last_res and dsm_cst.DSMS not in current_conf[INPUT]:
         # Use filling applications only for last resolution
-        filling_applications = generate_filling_applications(
-            current_conf[INPUT]
+        filling_applications_for_surface_modeling = (
+            generate_filling_applications_for_surface_modeling(
+                current_conf[INPUT]
+            )
         )
     else:
-        filling_applications = {}
+        filling_applications_for_surface_modeling = {}
 
-    # extract application
-    new_conf[APPLICATIONS] = extract_applications(
-        current_conf.get(APPLICATIONS, {}),
+    # Extract surface modeling conf
+    new_conf[pipeline_cst.SURFACE_MODELING] = {}
+    new_conf[pipeline_cst.SURFACE_MODELING][APPLICATIONS] = (
+        extract_conf_section(
+            current_conf[pipeline_cst.SURFACE_MODELING].get(APPLICATIONS, {}),
+            res,
+            overiding_conf.get(APPLICATIONS, {}),
+            filling_applications_for_surface_modeling,
+        )
+    )
+    new_conf[pipeline_cst.SURFACE_MODELING][ADVANCED] = extract_conf_section(
+        current_conf[pipeline_cst.SURFACE_MODELING].get(ADVANCED, {}),
         res,
-        overiding_conf.get(APPLICATIONS, {}),
-        filling_applications,
     )
 
+    # Extract tie points conf
+    if current_conf[pipeline_cst.TIE_POINTS] is not None:
+        new_conf[pipeline_cst.TIE_POINTS] = {}
+        new_conf[pipeline_cst.TIE_POINTS][APPLICATIONS] = extract_conf_section(
+            current_conf[pipeline_cst.TIE_POINTS].get(APPLICATIONS, {}),
+            res,
+            overiding_conf.get(APPLICATIONS, {}),
+        )
+        new_conf[pipeline_cst.TIE_POINTS][ADVANCED] = extract_conf_section(
+            current_conf[pipeline_cst.TIE_POINTS].get(ADVANCED, {}),
+            res,
+        )
+
+    overiding_conf = {
+        OUTPUT: {out_cst.OUT_DIRECTORY: surface_modeling_out_dir},
+    }
+    new_conf = overide_pipeline_conf(new_conf, overiding_conf)
+
     # Overide output to not compute data
-    # Overide resolution to let unit pipeline manage it
     if not last_res:
         overiding_conf = {
-            OUTPUT: {
-                out_cst.OUT_DIRECTORY: new_dir_out_dir,
-                out_cst.RESOLUTION: None,
-                out_cst.SAVE_BY_PAIR: True,
-                out_cst.AUXILIARY: {
-                    out_cst.AUX_DEM_MAX: True,
-                    out_cst.AUX_DEM_MIN: True,
-                    out_cst.AUX_DEM_MEDIAN: True,
-                },
-            },
-            APPLICATIONS: {
-                "dense_matching": {
-                    "performance_map_method": ["risk", "intervals"]
+            pipeline_cst.SURFACE_MODELING: {
+                APPLICATIONS: {
+                    "dense_matching": {
+                        "performance_map_method": ["risk", "intervals"]
+                    }
                 }
             },
         }
@@ -624,17 +956,15 @@ def extract_conf_with_resolution(
         # epipolar resolution
         new_conf[OUTPUT]["resolution"] = None
 
-        if not new_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA]:
-            # Save the less possible things
-            aux_items = new_conf[OUTPUT][out_cst.AUXILIARY].items()
-            for aux_key, _ in aux_items:
-                if aux_key not in ("dem_min", "dem_max", "dem_median", "image"):
-                    new_conf[OUTPUT][out_cst.AUXILIARY][aux_key] = False
+        # Save the less possible things
+        for aux_key in new_conf[OUTPUT][out_cst.AUXILIARY]:
+            if aux_key != "image":
+                new_conf[OUTPUT][out_cst.AUXILIARY][aux_key] = False
 
     return new_conf
 
 
-def generate_filling_applications(inputs_conf):
+def generate_filling_applications_for_surface_modeling(inputs_conf):
     """
     Generate filling applications configuration according to inputs
 
@@ -645,7 +975,7 @@ def generate_filling_applications(inputs_conf):
     filling_applications = {}
 
     # Generate applications configuration
-    for filling_name, classif_values in inputs_conf[sens_cst.FILLING].items():
+    for _, classif_values in inputs_conf[sens_cst.FILLING].items():
         # No filling
         if classif_values is None:
             continue
@@ -653,61 +983,12 @@ def generate_filling_applications(inputs_conf):
         classif_values = list(map(str, classif_values))
 
         # Update application configuration
-        if filling_name == "fill_with_geoid":
-            new_filling_conf = {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": classif_values,
-                },
-                "dsm_filling.1": {
-                    "method": "exogenous_filling",
-                    "classification": classif_values,
-                    "fill_with_geoid": classif_values,
-                },
+        new_filling_conf = {
+            "dense_match_filling": {
+                "method": "zero_padding",
+                "classification": classif_values,
             }
-        elif filling_name == "interpolate_from_borders":
-            new_filling_conf = {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": classif_values,
-                },
-                "dsm_filling.2": {
-                    "method": "bulldozer",
-                    "classification": classif_values,
-                },
-                "dsm_filling.3": {
-                    "method": "border_interpolation",
-                    "classification": classif_values,
-                },
-            }
-        elif filling_name == "fill_with_endogenous_dem":
-            new_filling_conf = {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": classif_values,
-                },
-                "dsm_filling.1": {
-                    "method": "exogenous_filling",
-                    "classification": classif_values,
-                },
-                "dsm_filling.2": {
-                    "method": "bulldozer",
-                    "classification": classif_values,
-                },
-            }
-        elif filling_name == "fill_with_exogenous_dem":
-            new_filling_conf = {
-                "dense_match_filling": {
-                    "method": "zero_padding",
-                    "classification": classif_values,
-                },
-                "dsm_filling.2": {
-                    "method": "bulldozer",
-                    "classification": classif_values,
-                },
-            }
-        else:
-            new_filling_conf = {}
+        }
 
         # Update application configuration
         filling_applications = overide_pipeline_conf(
@@ -759,28 +1040,40 @@ def overide_pipeline_conf(conf, overiding_conf, append_classification=False):
     return result
 
 
-def merge_used_conf(used_configurations, epipolar_resolutions):
+def merge_used_conf(used_configurations, resolutions, out_dir):
     """
     Merge all used configuration
     """
     used_configurations = copy.deepcopy(used_configurations)
 
     merged_conf = {
-        INPUT: used_configurations[epipolar_resolutions[0]][INPUT],
-        ADVANCED: used_configurations[epipolar_resolutions[0]][ADVANCED],
-        OUTPUT: used_configurations[epipolar_resolutions[0]][OUTPUT],
-        ORCHESTRATOR: used_configurations[epipolar_resolutions[0]][
-            ORCHESTRATOR
-        ],
+        INPUT: used_configurations[resolutions[-1]][INPUT],
+        OUTPUT: used_configurations[resolutions[0]][OUTPUT],
+        ORCHESTRATOR: used_configurations[resolutions[0]][ORCHESTRATOR],
     }
 
-    merged_conf[APPLICATIONS] = {}
-    merged_conf[APPLICATIONS]["all"] = {}
+    merged_conf[OUTPUT]["directory"] = out_dir
 
-    # Merge applications
-    for res in epipolar_resolutions:
-        merged_conf[APPLICATIONS][res] = used_configurations[res][APPLICATIONS]
+    merged_conf[pipeline_cst.TIE_POINTS] = {APPLICATIONS: {}, ADVANCED: {}}
+    merged_conf[pipeline_cst.SURFACE_MODELING] = {
+        APPLICATIONS: {},
+        ADVANCED: {},
+    }
 
-    # apply epipolar resolutions
-    merged_conf[ADVANCED]["epipolar_resolutions"] = epipolar_resolutions
+    for resolution in resolutions:
+        used_conf = used_configurations[resolution]
+        if pipeline_cst.TIE_POINTS in used_conf:
+            merged_conf[pipeline_cst.TIE_POINTS][APPLICATIONS][
+                str(resolution)
+            ] = used_conf[pipeline_cst.TIE_POINTS][APPLICATIONS]
+            merged_conf[pipeline_cst.TIE_POINTS][ADVANCED][str(resolution)] = (
+                used_conf[pipeline_cst.TIE_POINTS][ADVANCED]
+            )
+        merged_conf[pipeline_cst.SURFACE_MODELING][APPLICATIONS][
+            str(resolution)
+        ] = used_conf[pipeline_cst.SURFACE_MODELING][APPLICATIONS]
+        merged_conf[pipeline_cst.SURFACE_MODELING][ADVANCED][
+            str(resolution)
+        ] = used_conf[pipeline_cst.SURFACE_MODELING][ADVANCED]
+
     return merged_conf

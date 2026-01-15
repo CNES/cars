@@ -56,11 +56,15 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
 
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
 
+    overloaded_conf["dsm_to_fill"] = conf.get("dsm_to_fill", None)
+
     overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
 
     overloaded_conf[sens_cst.INITIAL_ELEVATION] = get_initial_elevation(
         conf.get(sens_cst.INITIAL_ELEVATION, None)
     )
+
+    overloaded_conf[sens_cst.LOW_RES_DSM] = conf.get(sens_cst.LOW_RES_DSM, None)
 
     overloaded_conf[sens_cst.LOADERS] = check_loaders(
         conf.get(sens_cst.LOADERS, {})
@@ -79,9 +83,11 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         sens_cst.SENSORS: dict,
         sens_cst.PAIRING: Or([[str]], None),
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
+        sens_cst.LOW_RES_DSM: Or(str, None),
         sens_cst.ROI: Or(str, dict, None),
         sens_cst.LOADERS: dict,
         sens_cst.FILLING: dict,
+        "dsm_to_fill": Or(str, dict, None),
     }
 
     checker_inputs = Checker(inputs_schema)
@@ -127,6 +133,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             + "_"
             + sens_cst.INPUT_IMG
         )
+
         image_loader = SensorLoader(loader_name, image, config_dir)
         image_as_pivot_format = (
             image_loader.get_pivot_format()  # pylint: disable=E1101
@@ -381,9 +388,7 @@ def get_sensor_resolution(
     return (res_x + res_y) / 2
 
 
-def check_geometry_plugin(
-    conf_inputs, conf_geom_plugin, epipolar_resolution, output_dem_dir
-):
+def check_geometry_plugin(conf_inputs, conf_geom_plugin, output_dem_dir):
     """
     Check the geometry plugin with inputs
 
@@ -393,8 +398,6 @@ def check_geometry_plugin(
     :type conf_advanced: type
     :param conf_geom_plugin: name of geometry plugin
     :type conf_geom_plugin: str
-    :param epipolar_resolution: epipolar resolution
-    :type epipolar_resolution: int
     :return: overload inputs conf
              overloaded geometry plugin conf
              geometry plugin without dem
@@ -418,9 +421,8 @@ def check_geometry_plugin(
             sensor,
             geomodel,
         ) = temp_geom_plugin.check_product_consistency(sensor, geomodel)
-        average_sensor_resolution += (
-            get_sensor_resolution(temp_geom_plugin, sensor, geomodel)
-            * epipolar_resolution
+        average_sensor_resolution += get_sensor_resolution(
+            temp_geom_plugin, sensor, geomodel
         )
     average_sensor_resolution /= len(conf_inputs[sens_cst.SENSORS])
     # approximate resolution to the highest digit:
@@ -715,9 +717,9 @@ def check_nbits(mask):
     if mask is not None:
         nbits = inputs.rasterio_get_nbits(mask)
         if not check_all_nbits_equal_one(nbits):
-            raise RuntimeError(
-                "The mask {} have {} nbits per band. ".format(mask, nbits)
-                + "Only the mask with nbits=1 is supported! "
+            logging.warning(
+                "The mask {} have {} nbits per band."
+                "Only the mask with nbits=1 is supported!".format(mask, nbits)
             )
 
 
@@ -807,8 +809,23 @@ def check_all_nbits_equal_one(nbits):
     return False
 
 
-@cars_profile(name="Generate inputs")
-def generate_inputs(conf, geometry_plugin):
+@cars_profile(name="Load geomodels")
+def load_geomodels(conf, geometry_plugin):
+    """
+    Load geomodels directly on conf object
+    :param conf: input conf
+    :type conf: dict
+    """
+    # Load geomodels directly on conf object
+    sensors = conf[sens_cst.SENSORS]
+    for key in sensors:
+        geomodel = sensors[key][sens_cst.INPUT_GEO_MODEL]
+        loaded_geomodel = geometry_plugin.load_geomodel(geomodel)
+        sensors[key][sens_cst.INPUT_GEO_MODEL] = loaded_geomodel
+
+
+@cars_profile(name="Generate pairs")
+def generate_pairs(conf):
     """
     Generate sensors inputs form inputs conf :
 
@@ -819,15 +836,7 @@ def generate_inputs(conf, geometry_plugin):
 
     :return: list of sensors pairs
     :rtype: list(tuple(dict, dict))
-
     """
-    # Load geomodels directly on conf object
-    sensors = conf[sens_cst.SENSORS]
-    for key in sensors:
-        geomodel = sensors[key][sens_cst.INPUT_GEO_MODEL]
-        loaded_geomodel = geometry_plugin.load_geomodel(geomodel)
-        sensors[key][sens_cst.INPUT_GEO_MODEL] = loaded_geomodel
-
     # Get needed pairs
     pairs = conf[sens_cst.PAIRING]
 

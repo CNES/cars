@@ -32,11 +32,13 @@ import xarray as xr
 from shareloc.geofunctions.rectification_grid import RectificationGrid
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
+import cars.applications.sparse_matching.sparse_matching_wrappers as sm_wrapper
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 from cars.core import constants as cst
+from cars.core import inputs
 from cars.core.utils import safe_makedirs
 
 
@@ -106,18 +108,9 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
-    def get_disparity_margin(self):
+    def get_tile_margin(self):
         """
-        Get disparity margin corresponding to sparse matches
-
-        :return: margin in percent
-
-        """
-
-    @abstractmethod
-    def get_strip_margin(self):
-        """
-        Get strip margin corresponding to sparse matches
+        Get tile margin corresponding to sparse matches
 
         :return: margin
 
@@ -193,7 +186,9 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
         """
 
-    def get_margins_fun(self, disp_min=None, disp_max=None, method="sift"):
+    def get_margins_strip_fun(
+        self, disp_min=None, disp_max=None, method="sift"
+    ):
         """
         Get margins function to use in resampling
 
@@ -215,10 +210,10 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         )
         margins["right_margin"] = xr.DataArray(data, dims=["col"])
 
-        left_margin = self.get_strip_margin()
+        left_margin = self.get_tile_margin()
 
         if method == "sift":
-            right_margin = self.get_strip_margin() + int(
+            right_margin = self.get_tile_margin() + int(
                 math.floor(
                     self.get_epipolar_error_upper_bound()
                     + self.get_epipolar_error_maximum_bias()
@@ -265,6 +260,108 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
             """
 
             # Constant margins for all tiles
+            return margins
+
+        return margins_wrapper
+
+    def get_margins_tile_fun(self, grid_left, disp_range_grid, method="sift"):
+        """
+        Get Margins function that generates margins needed by
+        matching method, to use during resampling
+
+        :param grid_left: left epipolar grid
+        :type grid_left: dict
+        :param disp_range_grid: minimum and maximum disparity grid
+        :return: function that generates margin for given roi
+
+        """
+
+        if method == "sift":
+            right_margin = self.get_tile_margin() + int(
+                math.floor(
+                    self.get_epipolar_error_upper_bound()
+                    + self.get_epipolar_error_maximum_bias()
+                )
+            )
+        else:
+            right_margin = self.get_tile_margin()
+
+        disp_min_grid_arr, _ = inputs.rasterio_read_as_array(
+            disp_range_grid["grid_min_path"]
+        )
+        disp_max_grid_arr, _ = inputs.rasterio_read_as_array(
+            disp_range_grid["grid_max_path"]
+        )
+        step_row = disp_range_grid["step_row"]
+        step_col = disp_range_grid["step_col"]
+        row_range = disp_range_grid["row_range"]
+        col_range = disp_range_grid["col_range"]
+
+        # get disp_to_alt_ratio
+        disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
+
+        # Compute global range of logging
+        disp_min_global = np.min(disp_min_grid_arr)
+        disp_max_global = np.max(disp_max_grid_arr)
+
+        logging.info(
+            "Global Disparity range for current pair:  "
+            "[{:.3f} pix., {:.3f} pix.] "
+            "(or [{:.3f} m., {:.3f} m.])".format(
+                disp_min_global,
+                disp_max_global,
+                disp_min_global * disp_to_alt_ratio,
+                disp_max_global * disp_to_alt_ratio,
+            )
+        )
+
+        def margins_wrapper(row_min, row_max, col_min, col_max):
+            """
+            Generates margins Dataset used in resampling
+
+            :param row_min: row min
+            :param row_max: row max
+            :param col_min: col min
+            :param col_max: col max
+
+            :return: margins
+            :rtype: xr.Dataset
+            """
+
+            assert row_min < row_max
+            assert col_min < col_max
+
+            # Get region in grid
+
+            grid_row_min = max(0, int(np.floor((row_min - 1) / step_row)) - 1)
+            grid_row_max = min(
+                len(row_range), int(np.ceil((row_max + 1) / step_row) + 1)
+            )
+            grid_col_min = max(0, int(np.floor((col_min - 1) / step_col)) - 1)
+            grid_col_max = min(
+                len(col_range), int(np.ceil((col_max + 1) / step_col)) + 1
+            )
+
+            # Compute disp min and max in row
+            disp_min = np.min(
+                disp_min_grid_arr[
+                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
+                ]
+            )
+            disp_max = np.max(
+                disp_max_grid_arr[
+                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
+                ]
+            )
+            # round disp min and max
+            disp_min = int(math.floor(disp_min))
+            disp_max = int(math.ceil(disp_max))
+
+            # Compute margins for the correlator
+            margins = sm_wrapper.get_margins(
+                self.get_tile_margin(), right_margin, disp_min, disp_max
+            )
+
             return margins
 
         return margins_wrapper
@@ -428,8 +525,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
                     nb_matches, self.get_minimum_nb_matches()
                 )
             )
-            logging.error(error_message_matches)
-            raise ValueError(error_message_matches)
+            logging.warning(error_message_matches)
 
         logging.info(
             "Number of matches kept for epipolar "
@@ -437,18 +533,23 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         )
 
         # Compute epipolar error
-        epipolar_error = matches[:, 1] - matches[:, 3]
-        epi_error_mean = np.mean(epipolar_error)
-        epi_error_std = np.std(epipolar_error)
-        epi_error_max = np.max(np.fabs(epipolar_error))
-        logging.info(
-            "Epipolar error before correction: mean = {:.3f} pix., "
-            "standard deviation = {:.3f} pix., max = {:.3f} pix.".format(
-                epi_error_mean,
-                epi_error_std,
-                epi_error_max,
+        if matches.shape[0] > 0:
+            epipolar_error = matches[:, 1] - matches[:, 3]
+            epi_error_mean = np.mean(epipolar_error)
+            epi_error_std = np.std(epipolar_error)
+            epi_error_max = np.max(np.fabs(epipolar_error))
+        else:
+            epi_error_mean = 0
+            epi_error_std = 0
+            epi_error_max = 0
+            logging.info(
+                "Epipolar error before correction: mean = {:.3f} pix., "
+                "standard deviation = {:.3f} pix., max = {:.3f} pix.".format(
+                    epi_error_mean,
+                    epi_error_std,
+                    epi_error_max,
+                )
             )
-        )
 
         # Update orchestrator out_json
         raw_matches_infos = {

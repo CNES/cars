@@ -27,8 +27,10 @@ pipeline.
 
 SENSORS = "sensors"
 PAIRING = "pairing"
+RECTIFICATION_GRIDS = "rectification_grids"
 
 INITIAL_ELEVATION = "initial_elevation"
+LOW_RES_DSM = "low_res_dsm"
 
 ROI = "roi"
 GEOID = "geoid"

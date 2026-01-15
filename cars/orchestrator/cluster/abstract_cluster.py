@@ -28,10 +28,6 @@ import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
-# CARS imports
-from cars.conf.input_parameters import ConfigType
-from cars.orchestrator.cluster import log_wrapper
-
 
 class AbstractCluster(metaclass=ABCMeta):
     """
@@ -43,8 +39,6 @@ class AbstractCluster(metaclass=ABCMeta):
 
     # Define abstract attributes
 
-    # profiling config parameter: mode, loop_testing, memray
-    profiling: ConfigType
     # cluster mode output directory
     out_dir: str
 
@@ -68,10 +62,11 @@ class AbstractCluster(metaclass=ABCMeta):
         """
 
         cluster_mode = "multiprocessing"
-        if "mode" not in conf_cluster:
-            logging.warning("Cluster mode not defined, default is used")
-        else:
-            cluster_mode = conf_cluster["mode"]
+        if conf_cluster is not None:
+            if "mode" not in conf_cluster:
+                logging.warning("Cluster mode not defined, default is used")
+            else:
+                cluster_mode = conf_cluster["mode"]
 
         if cluster_mode not in cls.available_modes:
             logging.error("No mode named {} registered".format(cluster_mode))
@@ -137,15 +132,6 @@ class AbstractCluster(metaclass=ABCMeta):
         # Check conf
         self.checked_conf_cluster = self.check_conf(conf_cluster)
 
-        self.profiling_logger = (
-            log_wrapper.AbstractLogWrapper(  # pylint: disable=E0110
-                self.checked_conf_cluster["profiling"], out_dir
-            )
-        )
-        self.checked_conf_cluster["profiling"] = (
-            self.profiling_logger.checked_conf_profiling
-        )
-
     @abstractmethod
     def get_delayed_type(self):
         """
@@ -191,21 +177,12 @@ class AbstractCluster(metaclass=ABCMeta):
 
         def create_task_builder(*argv, **kwargs):
             """
-            Create task builder to select the type of log
-            according to the configured profiling mode
+            Create task builder
 
             :param argv: list of input arguments
             :param kwargs: list of named input arguments
             """
-
-            (
-                wrapper_func,
-                additionnal_kwargs,
-            ) = self.profiling_logger.get_func_args_plus(func)
-
-            return self.create_task_wrapped(wrapper_func, nout=nout)(
-                *argv, **kwargs, **additionnal_kwargs
-            )
+            return self.create_task_wrapped(func, nout=nout)(*argv, **kwargs)
 
         return create_task_builder
 

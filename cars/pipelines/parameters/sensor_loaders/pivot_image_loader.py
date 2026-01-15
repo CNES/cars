@@ -74,15 +74,15 @@ class PivotImageSensorLoader(SensorLoaderTemplate):
                 band_transform = inputs.rasterio_get_transform(band_path)
                 if b0_size != band_size:
                     raise RuntimeError(
-                        "The files {} and {} do not have the same size"
+                        "The files {} and {} do not have the same size "
                         "but are in the same image".format(b0_path, band_path)
                     )
                 if b0_transform != band_transform:
                     raise RuntimeError(
-                        "The files {} and {} do not have the same size"
+                        "The files {} and {} do not have the same transform "
                         "but are in the same image".format(
-                            b0_transform,
-                            band_transform,
+                            b0_path,
+                            band_path,
                         )
                     )
 

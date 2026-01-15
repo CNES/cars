@@ -1,0 +1,11 @@
+---
+# pipeline launched a single time
+pipeline_name:
+  advanced:
+    save_intermediate_data: true
+
+# pipeline launched at multiple resolutions
+surface_modeling:
+  advanced:
+    all:
+      save_intermediate_data: true

@@ -120,19 +120,20 @@ def main_cli(args, dry_run=False):  # noqa: C901
             del config["output"]["out_dir"]
 
         config_dir = os.path.abspath(os.path.dirname(config_path))
-        pipeline_name = config.get("advanced", {}).get("pipeline", "default")
+        pipeline_name = config.get("pipeline", "default")
+
+        if not isinstance(pipeline_name, str):
+            pipeline_name = "default"
 
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         out_dir = config["output"]["directory"]
 
-        # do not set logging if pipeline is default (already defined
-        if config.get("advanced", {}).get("pipeline", "default") != "default":
-            cars_logging.setup_logging(
-                loglevel,
-                out_dir=os.path.join(out_dir, "logs"),
-                pipeline=pipeline_name,
-            )
+        cars_logging.setup_logging(
+            loglevel,
+            out_dir=os.path.join(out_dir, "logs"),
+            pipeline=pipeline_name,
+        )
 
         logging.debug("Show argparse arguments: {}".format(args))
 
@@ -145,10 +146,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
             used_pipeline.run(args)
 
         # Generate summary of tasks
-        if config.get("advanced", {}).get("pipeline", "default") != "default":
+        if config.get("pipeline", "default") != "default":
             log_wrapper.generate_summary(
                 os.path.join(out_dir, "logs"),
                 used_pipeline.used_conf,
+                config["pipeline"],
                 clean_worker_logs=True,
             )
 

@@ -22,18 +22,6 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
 
    </details>
    <details open>
-   <summary>Advanced</summary>
-
-.. admonition:: Advanced
-   :class: advanced
-
-   .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: advanced
-
-.. raw:: html
-
-   </details>
-   <details open>
    <summary>Output</summary>
 
 .. admonition:: Output
@@ -54,62 +42,61 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
    .. include-cars-config-section:: ../example_configs/configuration/full_config
       :key: orchestrator
 
+
 .. raw:: html
 
-   </details>
-   <div class="applications-block">
-   <details open>
-   <summary>Applications</summary>
+   <div class="scrollable-config">
 
    <details open>
-   <summary>Résolution 1</summary>
+   <summary>Subsampling</summary>
 
-.. admonition:: Applications - Resolution 1
-   :class: applications
+.. admonition:: Subsampling
+   :class: subsampling
 
    .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: applications:1
+      :key: subsampling
 
 .. raw:: html
 
-   </details>
-   <details open>
-   <summary>Resolution 4</summary>
+   <div class="scrollable-config">
 
-.. admonition:: Applications - Resolution 4
-   :class: applications
+   <details open>
+   <summary>Surface modeling</summary>
+
+.. admonition:: Surface modeling
+   :class: surface_modeling
 
    .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: applications:4
+      :key: surface_modeling
+
 
 .. raw:: html
 
-   </details>
-   <details open>
-   <summary>Resolution 16</summary>
+   <div class="scrollable-config">
 
-.. admonition:: Applications - Resolution 16
-   :class: applications
+   <details open>
+   <summary>Tiepoints</summary>
+
+.. admonition:: Tiepoints
+   :class: tiepoints
 
    .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: applications:16
+      :key: tiepoints
+
 
 .. raw:: html
 
-   </details>
-   <details open>
-   <summary>Resolution - All</summary>
+   <div class="scrollable-config">
 
-.. admonition:: Applications - All
-   :class: applications
+   <details open>
+   <summary>Filling</summary>
+
+.. admonition:: Filling
+   :class: filling
 
    .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: applications:all
+      :key: filling
 
 .. raw:: html
 
    </details>
-   </details>
-   </div>
-   </div>
-   

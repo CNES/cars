@@ -1,6 +1,13 @@
----
-input: {} # the parameters that define what CARS will take as input
-orchestrator: {} # the parallelization/system parameters
-applications: {} # the application-specific parameters, to fine-tune algorithms
-output: {} # the output directory and files
-advanced: {} # optional parameters for debugging / in-depth looks in the pipeline results
+input: {}           # the parameters that define what CARS will take as input
+
+orchestrator: {}    # the parallelization/system parameters
+
+output: {}          # the output directory and files
+
+pipeline: auto      # the parameter that selects which pipeline or meta-pipeline CARS should run
+
+pipeline_name_1:    # the parameters for one of the pipelines ran by CARS
+  applications: {}  # the parameters for the applications in this pipeline
+  advanced: {}      # the parameters of this pipeline
+
+pipeline_name_2: {} # the parameters for another one of the pipelines ran by CARS

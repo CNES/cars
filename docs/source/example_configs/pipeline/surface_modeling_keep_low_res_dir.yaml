@@ -1,0 +1,5 @@
+---
+surface_modeling:
+  advanced:
+    all:
+      keep_low_res_dir: false

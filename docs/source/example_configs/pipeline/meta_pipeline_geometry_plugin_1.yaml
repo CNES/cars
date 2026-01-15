@@ -1,0 +1,22 @@
+---
+input:
+  sensors:
+    one:
+      image: img1.tif
+      geomodel:
+        path: img1.geom
+        model_type: RPC
+    two:
+      image: img2.tif
+      geomodel:
+        path: img2.geom
+        model_type: RPC
+  pairing:
+  - - one
+    - two
+  initial_elevation:
+    dem: path/to/srtm_file.tif
+
+pipeline_name:
+  advanced:
+    geometry_plugin: SharelocGeometry

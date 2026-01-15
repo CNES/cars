@@ -1,5 +1,5 @@
 ---
 applications:
   dem_generation:
-    method: dichotomic
-    min_number_matches: 20
+    method: "bulldozer_on_raster"
+    fillnodata_max_search_distance: 60

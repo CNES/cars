@@ -1,7 +1,7 @@
----
-applications:
-  all:
-    application_name:
-      method: application_dependent
-      parameter1: 3
-      parameter2: 0.3
+pipeline_1:
+  applications:
+    all:
+      application_1:
+        method: application_dependent
+        parameter1: 3
+        parameter2: 0.3
