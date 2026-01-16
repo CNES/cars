@@ -93,7 +93,11 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
     checker_inputs = Checker(inputs_schema)
     checker_inputs.validate(overloaded_conf)
 
-    check_sensors(conf, overloaded_conf, config_dir)
+    overloaded_conf = check_sensors(conf, overloaded_conf, config_dir)
+
+    overloaded_conf[sens_cst.FILLING] = check_filling(
+        overloaded_conf.get(sens_cst.FILLING, {}), classif_loader
+    )
 
     # Check srtm dir
     check_srtm(overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH])
@@ -249,7 +253,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         compare_image_type(
             overloaded_conf[sens_cst.SENSORS], sens_cst.INPUT_IMG, key1, key2
         )
-        compare_classification_values(
+        overloaded_conf[sens_cst.FILLING] = check_classification_values(
             overloaded_conf[sens_cst.SENSORS],
             sens_cst.INPUT_CLASSIFICATION,
             key1,
@@ -314,6 +318,8 @@ def check_filling(conf, classif_loader):
         )
         if isinstance(overloaded_conf[filling_method], int):
             overloaded_conf[filling_method] = [overloaded_conf[filling_method]]
+        if overloaded_conf[filling_method] == []:
+            overloaded_conf[filling_method] = None
 
     # Validate loaders
     loaders_schema = {
@@ -751,7 +757,7 @@ def compare_image_type(sensors, sensor_type, key1, key2):
         )
 
 
-def compare_classification_values(sensors, sensor_type, key1, key2, filling):
+def check_classification_values(sensors, sensor_type, key1, key2, filling):
     """
     Compare the classification values between a pair of images
 
@@ -784,18 +790,20 @@ def compare_classification_values(sensors, sensor_type, key1, key2, filling):
                         filling_values,
                     )
                 )
-            if filling_values is not None and not set(filling_values) <= set(
-                all_values
-            ):
-                logging.warning(
-                    "One of the values {} on which filling {} must be applied "
-                    "does not exist on classifications {} and {}".format(
-                        filling_values,
-                        filling_method,
-                        classif1[sens_cst.INPUT_PATH],
-                        classif2[sens_cst.INPUT_PATH],
-                    )
-                )
+            if filling_values is not None:
+                for filling_value in filling_values:
+                    if filling_value not in all_values:
+                        logging.warning(
+                            "Value {} on which filling {} must be applied does"
+                            " not exist on classifications {} and {}".format(
+                                filling_value,
+                                filling_method,
+                                classif1[sens_cst.INPUT_PATH],
+                                classif2[sens_cst.INPUT_PATH],
+                            )
+                        )
+                        filling[filling_method].remove(filling_value)
+    return filling
 
 
 def check_all_nbits_equal_one(nbits):
