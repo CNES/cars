@@ -669,14 +669,19 @@ class FillingPipeline(PipelineTemplate):
 
         with rasterio.open(input_raster) as src:
             mono = src.read(1)
+            mono_msk = src.read_masks(1)
             profile = src.profile
+            nodata_value = src.nodata
 
         multiband = np.zeros(
             (len(bands_classif), mono.shape[0], mono.shape[1]), dtype=np.uint8
         )
+        multiband_msk = np.broadcast_to(mono_msk, multiband.shape)
 
         for i, cls in enumerate(bands_classif):
             multiband[i] = mono == cls
+
+        multiband[multiband_msk == 0] = nodata_value
 
         profile.update(count=len(bands_classif))
 
