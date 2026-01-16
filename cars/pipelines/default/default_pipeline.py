@@ -208,7 +208,6 @@ class DefaultPipeline(PipelineTemplate):
             conf[pipeline_cst.FILLING] = self.check_filling(self.filling_conf)
             consistent_filling = False
             for app in conf[pipeline_cst.FILLING][APPLICATIONS]:
-                print(app)
                 if "dsm_filling" in app:
                     consistent_filling = True
             for filling_method in conf[INPUT][sens_cst.FILLING]:
