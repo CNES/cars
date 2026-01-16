@@ -146,7 +146,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
             used_pipeline.run(args)
 
         # Generate summary of tasks
-        if config.get("pipeline", "default") != "default":
+        if pipeline_name != "default":
             log_wrapper.generate_summary(
                 os.path.join(out_dir, "logs"),
                 used_pipeline.used_conf,
