@@ -301,6 +301,10 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                     dtype=dtype,
                     nodata=nodata,
                     optional_data=optional_data,
+                    cars_ds_name="subsampling_"
+                    + key
+                    + "_res_"
+                    + str(resolution),
                 )
 
         # Generate Image pair
