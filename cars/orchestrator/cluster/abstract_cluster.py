@@ -28,6 +28,8 @@ import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
+from cars.orchestrator.cluster.log_wrapper import cars_profile
+
 
 class AbstractCluster(metaclass=ABCMeta):
     """
@@ -182,7 +184,15 @@ class AbstractCluster(metaclass=ABCMeta):
             :param argv: list of input arguments
             :param kwargs: list of named input arguments
             """
-            return self.create_task_wrapped(func, nout=nout)(*argv, **kwargs)
+            wrapped_cars_profile = cars_profile_wrapper
+            additionnal_kwargs = {
+                "func": func,
+                "func_name": func.__name__,
+            }
+
+            return self.create_task_wrapped(wrapped_cars_profile, nout=nout)(
+                *argv, **kwargs, **additionnal_kwargs
+            )
 
         return create_task_builder
 
@@ -219,3 +229,22 @@ class AbstractCluster(metaclass=ABCMeta):
         :param future_list: future_list list
         :param timeout: time to wait for next job
         """
+
+
+def cars_profile_wrapper(*argv, **kwargs):
+    """
+    Create a wrapper for cars_profile to be used in cluster tasks
+
+    :param argv: args of func
+    :param kwargs: kwargs of func
+
+    """
+
+    func = kwargs["func"]
+    func_name = kwargs["func_name"]
+    kwargs.pop("func")
+    kwargs.pop("func_name")
+
+    res = cars_profile(name=func_name)(func)(*argv, **kwargs)
+
+    return res
