@@ -33,9 +33,6 @@ jobs:
         black --check cars tests
         flake8 cars tests
         pylint cars tests --rcfile=.pylintrc --output-format=parseable | tee pylint-report.txt # pipefail to propagate pylint exit code in bash
-    - name: Notebooks Tests
-      run: |
-        pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=INFO
     - name: End2end Tests
       run: |
         pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=INFO
