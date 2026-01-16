@@ -206,6 +206,16 @@ class DefaultPipeline(PipelineTemplate):
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             self.filling_conf = self.construct_filling_conf(conf)
             conf[pipeline_cst.FILLING] = self.check_filling(self.filling_conf)
+            consistent_filling = False
+            for app in conf[pipeline_cst.FILLING][APPLICATIONS]:
+                print(app)
+                if "dsm_filling" in app:
+                    consistent_filling = True
+            for filling_method in conf[INPUT][sens_cst.FILLING]:
+                if conf[INPUT][sens_cst.FILLING][filling_method]:
+                    consistent_filling = True
+            if not consistent_filling:
+                self.pipeline_to_use[pipeline_cst.FILLING] = False
 
         subsampling_used_conf = conf.get(pipeline_cst.SUBSAMPLING, {})
         filling_used_conf = conf.get(pipeline_cst.FILLING, {})

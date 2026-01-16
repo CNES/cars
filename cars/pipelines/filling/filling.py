@@ -27,7 +27,7 @@
 """
 CARS filling pipeline class file
 """
-# Standard imports
+# pylint: disable=C0302
 from __future__ import print_function
 
 import copy
