@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.0.0.rc2 CARS 1.0: Pipelines refactoring (January 2026)
+
+### Added
+
+- Docker file tests. [#1236]
+- Update Developer documentation. [#834]
+
+### Changed
+
+- Refactoring of pipelines. [#1189]
+- Sparse matching changed from strips to tiles. [#1256]
+- Xdem 0.2.0 version used.
+
+### Fixed
+
+- Local Dask cluster bug fix. [#1264]
+- Fix bug using roi in disparity grid generation. [#1268]
+
+
+
 ## 1.0.0.rc1 CARS 1.0 : Multi resolutions /  Release Candidate (November 2025)
 
 ### Added
