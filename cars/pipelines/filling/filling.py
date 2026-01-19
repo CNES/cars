@@ -914,8 +914,11 @@ class FillingPipeline(PipelineTemplate):
             if dsm_file_name == self.dsm_to_fill["dsm"]:
                 dsm_file_name = os.path.join(dsm_filled_dir, "dsm.tif")
 
-            if filling_file_name == self.dsm_to_fill["filling"]:
-                filling_file_name = os.path.join(dsm_filled_dir, "filling.tif")
+            if "filling" in self.used_conf[INPUT]["dsm_to_fill"]:
+                if filling_file_name == self.dsm_to_fill["filling"]:
+                    filling_file_name = os.path.join(
+                        dsm_filled_dir, "filling.tif"
+                    )
 
         _ = self.auxiliary_filling_application.run(
             dsm_file=os.path.join(dsm_filled_dir, "dsm.tif"),
