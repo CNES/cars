@@ -21,6 +21,8 @@ activate_ground_anchors : False
 nb_max_workers : null
 # [Optional] - If True, keep the intermediate results
 developer_mode : False
+# [Optional] - If True, keep temporary results in memory instead of writing files
+memory_mode : False
 
 #-------------------------#
 #     Expert options      #
@@ -39,4 +41,6 @@ prevent_unhook_iter : 10
 num_outer_iter : 25
 # [Optional] - Number of tension iterations
 num_inner_iter : 5
+# [Optional] - Multiprocessing context (spawn, fork or forkserver)
+mp_context : "forkserver"
 
