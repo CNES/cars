@@ -33,6 +33,7 @@ import tempfile
 
 # import pytest
 import pytest
+import rasterio as rio
 
 # CARS imports
 from cars.pipelines.default import default_pipeline as default
@@ -443,6 +444,7 @@ def test_end2end_gizeh_use_endogenous_dem():
             },
             "output": {
                 "directory": directory,
+                "resolution": 1.0,
                 "auxiliary": {
                     "performance_map": True,
                 },
@@ -609,3 +611,5 @@ def test_end2end_gizeh_use_endogenous_dem():
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
+        with rio.open(os.path.join(out_dir, "dsm", "dsm.tif")) as dsm:
+            assert dsm.res == (1.0, 1.0)
