@@ -30,7 +30,7 @@ import numpy as np
 import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
 import xarray as xr
-from json_checker import And, Checker
+from json_checker import And, Checker, Or
 from shareloc.dtm_reader import dtm_reader
 from shareloc.geofunctions import localization
 from shareloc.geofunctions.rectification_grid import RectificationGrid
@@ -146,14 +146,20 @@ class SharelocGeometry(AbstractGeometry):
             "plugin_name", "SharelocGeometry"
         )
         overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
-        overloaded_conf["dem_roi_margin"] = conf.get(
-            "dem_roi_margin", [0.25, 0.02]
+        overloaded_conf["dem_roi_margin_initial_elevation"] = conf.get(
+            "dem_roi_margin_initial_elevation", [0.25, 0.02]
+        )
+        overloaded_conf["dem_roi_margin_rectification"] = conf.get(
+            "dem_roi_margin_rectification", 0.5
         )
 
         geometry_schema = {
             "plugin_name": str,
             "interpolator": And(str, lambda x: x in ["cubic", "linear"]),
-            "dem_roi_margin": [float],
+            "dem_roi_margin_initial_elevation": [float],
+            "dem_roi_margin_rectification": And(
+                Or(float, int), lambda x: x > 0
+            ),
         }
 
         # Check conf

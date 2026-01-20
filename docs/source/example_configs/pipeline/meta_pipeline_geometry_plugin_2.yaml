@@ -3,4 +3,4 @@ pipeline_name:
     geometry_plugin:
       plugin_name: SharelocGeometry
       interpolator: cubic
-      dem_roi_margin: 0.1
+      dem_roi_margin_initial_elevation: 0.1
