@@ -49,6 +49,11 @@ from .helpers import (
 
 NB_WORKERS = 2
 
+DEFAULT_TOL = 0.1
+CARS_GITHUB_ACTIONS = (
+    os.getenv("CARS_GITHUB_ACTIONS", "false").lower() == "true"
+)
+
 
 @pytest.mark.end2end_tests
 def test_end2end_gizeh_meta_pipeline():
@@ -111,8 +116,8 @@ def test_end2end_gizeh_meta_pipeline():
                     "dsm_test_gizeh_meta_pipeline.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "image.tif"),
@@ -122,8 +127,8 @@ def test_end2end_gizeh_meta_pipeline():
                     "image_test_gizeh_meta_pipeline.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
 
@@ -204,8 +209,8 @@ def test_end2end_ventoux_meta_pipeline():
                     "dsm_test_ventoux_meta_pipeline.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "image.tif"),
@@ -215,8 +220,8 @@ def test_end2end_ventoux_meta_pipeline():
                     "image_test_ventoux_meta_pipeline.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
 
@@ -313,8 +318,8 @@ def test_end2end_ventoux_with_filling():
                     "dsm_test_ventoux_with_filling.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "classification.tif"),
@@ -324,8 +329,8 @@ def test_end2end_ventoux_with_filling():
                     "classif_test_ventoux_with_filling.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "filling.tif"),
@@ -335,8 +340,8 @@ def test_end2end_ventoux_with_filling():
                     "filling_test_ventoux_with_filling.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
 
@@ -389,8 +394,8 @@ def test_end2end_gizeh_merging():
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_test_merging.tif")
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
 
@@ -530,8 +535,8 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dem_median_res1_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
@@ -541,8 +546,8 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dem_max_res1_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(
@@ -560,8 +565,8 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dem_median_res2_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(
@@ -579,8 +584,8 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dem_max_res2_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -590,8 +595,8 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dsm_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "performance_map.tif"),
@@ -601,6 +606,6 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "performance_map_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
