@@ -34,7 +34,7 @@ import numpy as np
 import rasterio as rio
 import xarray as xr
 from affine import Affine
-from json_checker import And, Checker
+from json_checker import And, Checker, Or
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
 from scipy import interpolate
@@ -126,7 +126,12 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
 
         self.plugin_name = self.used_config["plugin_name"]
         self.interpolator = self.used_config["interpolator"]
-        self.dem_roi_margin = self.used_config["dem_roi_margin"]
+        self.dem_roi_margin_initial_elevation = self.used_config[
+            "dem_roi_margin_initial_elevation"
+        ]
+        self.dem_roi_margin_rectification = self.used_config[
+            "dem_roi_margin_rectification"
+        ]
         self.dem = None
         self.dem_roi = None
         self.dem_roi_epsg = None
@@ -156,8 +161,8 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                     self.dem_roi_epsg,
                     z_min=-1000,
                     z_max=9000,
-                    linear_margin=self.dem_roi_margin[0],
-                    constant_margin=self.dem_roi_margin[1],
+                    linear_margin=self.dem_roi_margin_initial_elevation[0],
+                    constant_margin=self.dem_roi_margin_initial_elevation[1],
                 )
                 if output_dem_dir is not None:
                     self.dem = self.extend_dem_to_roi(dem, output_dem_dir)
@@ -365,14 +370,20 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
             "plugin_name", "SharelocGeometry"
         )
         overloaded_conf["interpolator"] = conf.get("interpolator", "cubic")
-        overloaded_conf["dem_roi_margin"] = conf.get(
-            "dem_roi_margin", [0.75, 0.02]
+        overloaded_conf["dem_roi_margin_initial_elevation"] = conf.get(
+            "dem_roi_margin_initial_elevation", [0.75, 0.02]
+        )
+        overloaded_conf["dem_roi_margin_rectification"] = conf.get(
+            "dem_roi_margin_rectification", 0.5
         )
 
         geometry_schema = {
             "plugin_name": str,
             "interpolator": And(str, lambda x: x in ["cubic", "linear"]),
-            "dem_roi_margin": [float],
+            "dem_roi_margin_initial_elevation": [float],
+            "dem_roi_margin_rectification": And(
+                Or(float, int), lambda x: x > 0
+            ),
         }
 
         # Check conf
