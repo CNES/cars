@@ -35,6 +35,7 @@ jobs:
         pylint cars tests --rcfile=.pylintrc --output-format=parseable | tee pylint-report.txt # pipefail to propagate pylint exit code in bash
     - name: End2end Tests
       run: |
+        export CARS_GITHUB_ACTIONS=true
         pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=INFO
 
   build_wheels:

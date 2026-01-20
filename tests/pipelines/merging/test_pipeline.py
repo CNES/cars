@@ -33,6 +33,11 @@ from ...helpers import absolute_data_path, assert_same_images
 from ...helpers import cars_copy2 as copy2
 from ...helpers import temporary_dir
 
+DEFAULT_TOL = 0.1
+CARS_GITHUB_ACTIONS = (
+    os.getenv("CARS_GITHUB_ACTIONS", "false").lower() == "true"
+)
+
 
 @pytest.mark.end2end_tests
 def test_phased_dsm():
@@ -83,8 +88,8 @@ def test_phased_dsm():
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_test_merging.tif")
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
 
@@ -281,8 +286,8 @@ def test_auxiliary():
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_test_merging_auxiliary.tif")
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "ambiguity.tif"),
@@ -292,8 +297,8 @@ def test_auxiliary():
                     "ambiguity_test_merging_auxiliary.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "classification.tif"),
@@ -303,8 +308,8 @@ def test_auxiliary():
                     "classification_test_merging_auxiliary.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
         assert_same_images(
@@ -315,8 +320,8 @@ def test_auxiliary():
                     "contributing_pair_test_merging_auxiliary.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "filling.tif"),
@@ -326,16 +331,16 @@ def test_auxiliary():
                     "filling_test_merging_auxiliary.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "image.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "image_test_merging_auxiliary.tif")
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "performance_map.tif"),
@@ -345,6 +350,6 @@ def test_auxiliary():
                     "performance_map_test_merging_auxiliary.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )

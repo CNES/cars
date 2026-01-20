@@ -22,7 +22,14 @@
 Test  pipeline
 """
 
+import os
+
 import pytest
+
+DEFAULT_TOL = 0.1
+CARS_GITHUB_ACTIONS = (
+    os.getenv("CARS_GITHUB_ACTIONS", "false").lower() == "true"
+)
 
 
 @pytest.mark.end2end_tests

