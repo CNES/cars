@@ -91,13 +91,11 @@ def check_output_parameters(  # noqa: C901 : too complex
     )
 
     resolution = None
+    if overloaded_conf.get(output_constants.RESOLUTION, None) is not None:
+        resolution = overloaded_conf[output_constants.RESOLUTION]
     overloaded_scaling_coeff = scaling_coeff
     if scaling_coeff is not None:
-        if overloaded_conf.get(output_constants.RESOLUTION, None) is not None:
-            resolution = overloaded_conf[output_constants.RESOLUTION]
-            # update scaling coeff so the parameters are right for the dsm
-            # overloaded_scaling_coeff = 2*resolution
-
+        if resolution is not None:
             if resolution < 0.5 * scaling_coeff:
                 logging.warning(
                     "The requested DSM resolution of "
@@ -105,7 +103,6 @@ def check_output_parameters(  # noqa: C901 : too complex
                     "too low for the sensor images' resolution. "
                     "The pipeline will still continue with it."
                 )
-
         else:
             resolution = float(0.5 * scaling_coeff)
             logging.info(
