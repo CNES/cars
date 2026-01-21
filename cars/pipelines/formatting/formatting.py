@@ -131,30 +131,31 @@ class FormattingPipeline(PipelineTemplate):
         Check applications
         """
 
-    def move_replace_files_only(self, source_dir: Path, destination_dir: Path):
+    def move_replace_files_only(
+        self, source_dir: Path, destination_dir: Path, check=True
+    ):
         """
         Replace files in dsm directory
         """
         destination_dir.mkdir(parents=True, exist_ok=True)
 
         for element in source_dir.iterdir():
-            dest = destination_dir / element.name
+            if element.name in ["dsm", "depth_map", "point_cloud"] or not check:
+                dest = destination_dir / element.name
 
-            if element.is_dir():
-                self.move_replace_files_only(element, dest)
-            else:
-                if dest.exists():
-                    dest.unlink()
-                shutil.move(str(element), str(dest))
+                if element.is_dir():
+                    self.move_replace_files_only(element, dest, check=False)
+                else:
+                    if dest.exists():
+                        dest.unlink()
+                    shutil.move(str(element), str(dest))
 
     def move_replace_dir(self, source_dir: Path, destination_dir: Path):
         """
         replace directory
         """
         for element in source_dir.iterdir():
-            dest = destination_dir / element.name
-
-            for element in source_dir.iterdir():
+            if element.name in ["dsm", "depth_map", "point_cloud"]:
                 dest = destination_dir / element.name
 
                 if dest.exists():
@@ -163,7 +164,7 @@ class FormattingPipeline(PipelineTemplate):
                     else:
                         dest.unlink()
 
-                shutil.move(str(element), str(dest))
+                    shutil.move(str(element), str(dest))
 
     def run(self, surface_modeling_dir):
         """
