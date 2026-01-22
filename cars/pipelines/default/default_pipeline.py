@@ -381,6 +381,7 @@ class DefaultPipeline(PipelineTemplate):
             for key, _ in conf[PIPELINE].items():
                 if key not in possible_pipeline:
                     raise RuntimeError(f"The pipeline {key} does not exist")
+            dict_pipeline = copy.deepcopy(conf[PIPELINE])
 
         for key in possible_pipeline:
             if key not in dict_pipeline:
@@ -407,9 +408,15 @@ class DefaultPipeline(PipelineTemplate):
                 "You can not use the merging pipeline with sensors inputs only"
             )
 
-        if (
-            pipeline_cst.FILLING in conf[INPUT] or pipeline_cst.FILLING in conf
-        ) and not dict_pipeline[pipeline_cst.FILLING]:
+        activate_filling = False
+        if pipeline_cst.FILLING in conf[INPUT]:
+            for filling_method in conf[INPUT][pipeline_cst.FILLING]:
+                if conf[INPUT][pipeline_cst.FILLING][filling_method]:
+                    activate_filling = True
+        if pipeline_cst.FILLING in conf and conf[pipeline_cst.FILLING]:
+            activate_filling = True
+
+        if activate_filling:
             dict_pipeline[pipeline_cst.FILLING] = True
 
         if (
