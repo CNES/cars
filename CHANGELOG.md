@@ -1,5 +1,17 @@
 # Changelog
 
+
+## 1.0.0.rc3 CARS 1.0: Eoscale removal (January 2026)
+
+### Changed
+
+- Eoscale dependency removed : Bulldozer version upgraded. [#1279]
+- Remove support for Python 3.9.
+
+### Fixed
+
+- Fix resolution overload from configuration file. 
+
 ## 1.0.0.rc2 CARS 1.0: Pipelines refactoring (January 2026)
 
 ### Added
