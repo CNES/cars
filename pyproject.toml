@@ -32,10 +32,10 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
 ]
 
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 # cars packages dependencies
 dependencies = [
     "numpy>=1.17.0",
