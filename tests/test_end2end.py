@@ -457,7 +457,13 @@ def test_end2end_gizeh_use_endogenous_dem():
         ref_output_dir = "ref_output"
         copy2(
             os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+                out_dir,
+                "intermediate_data",
+                "surface_modeling",
+                "res1",
+                "dump_dir",
+                "dem_generation",
+                "dem_median.tif",
             ),
             absolute_data_path(
                 os.path.join(
@@ -467,7 +473,15 @@ def test_end2end_gizeh_use_endogenous_dem():
             ),
         )
         copy2(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "surface_modeling",
+                "res1",
+                "dump_dir",
+                "dem_generation",
+                "dem_max.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -529,7 +543,13 @@ def test_end2end_gizeh_use_endogenous_dem():
         )
         assert_same_images(
             os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+                out_dir,
+                "intermediate_data",
+                "surface_modeling",
+                "res1",
+                "dump_dir",
+                "dem_generation",
+                "dem_median.tif",
             ),
             absolute_data_path(
                 os.path.join(
@@ -541,7 +561,15 @@ def test_end2end_gizeh_use_endogenous_dem():
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+            os.path.join(
+                out_dir,
+                "intermediate_data",
+                "surface_modeling",
+                "res1",
+                "dump_dir",
+                "dem_generation",
+                "dem_max.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,

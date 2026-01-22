@@ -140,7 +140,10 @@ class FormattingPipeline(PipelineTemplate):
         destination_dir.mkdir(parents=True, exist_ok=True)
 
         for element in source_dir.iterdir():
-            if element.name in ["dsm", "depth_map", "point_cloud"] or not check:
+            if (
+                element.name in ["dsm", "depth_map", "point_cloud", "logs"]
+                or not check
+            ):
                 dest = destination_dir / element.name
 
                 if element.is_dir():
@@ -164,7 +167,7 @@ class FormattingPipeline(PipelineTemplate):
                     else:
                         dest.unlink()
 
-                    shutil.move(str(element), str(dest))
+                shutil.move(str(element), str(dest))
 
     def run(self, surface_modeling_dir):
         """
