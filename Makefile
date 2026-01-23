@@ -39,6 +39,8 @@ CHECK_DOCKER = $(shell docker -v)
 CARS_VERSION = $(shell python3 -c 'from cars import __version__; print(__version__)')
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 
+CONSTRAINTS_FILE = "tmp_constraint.txt"
+
 ################ MAKE targets by sections ######################
 
 .PHONY: help
@@ -58,14 +60,11 @@ venv: ## create virtualenv in CARS_VENV directory if it doesn't exist already
 install/deps: venv ## install python libs
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numpy
 
-.PHONY: install/deps-gdal
-install/deps-gdal: install/deps ## create an healthy python environment for GDAL/ proj
-	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
-	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
-
 .PHONY: install/dev-gdal
-install/dev-gdal: install/deps-gdal ## install cars on healthy python env for gdal/proj
-	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs,notebook]
+install/dev-gdal: install/deps ## install cars on healthy python env for gdal/proj
+	@test -f ${CARS_VENV}/bin/cars || echo "rasterio --no-binary rasterio" > $CONSTRAINTS_FILE  ; echo "fiona --no-binary fiona" >> $CONSTRAINTS_FILE
+	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install -c $CONSTRAINTS_FILE --no-build-isolation --editable .[dev,docs,notebook]
+	@test -f ${CARS_VENV}/bin/cars || rm  $CONSTRAINTS_FILE
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
