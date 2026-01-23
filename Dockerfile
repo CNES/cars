@@ -44,17 +44,19 @@ ENV  PIP_CERT=/etc/ssl/certs/ca-certificates.crt
 
 # hadolint ignore=DL3013
 RUN pip uninstall numpy -y  \
-    && pip install numpy \
-    && pip install --no-cache-dir --no-binary fiona fiona \
-    && pip install --no-cache-dir --no-binary rasterio rasterio
+    && pip install numpy
+
+ENV CONSTRAINTS_FILE=/opt/constraints.txt
+RUN echo "rasterio --no-binary rasterio" > $CONSTRAINTS_FILE && \
+    echo "fiona --no-binary fiona" >> $CONSTRAINTS_FILE
 
 # Install cars: from source or from pypi if version
 ARG version
 ARG GIT_BRANCH=master
 ARG CARS_URL=https://github.com/CNES/cars.git
 # hadolint ignore=DL3003,DL3013
-RUN if [ -z "$version" ] ; then git clone --single-branch --branch $GIT_BRANCH --depth 1 ${CARS_URL} --single && cd cars && python3 -m pip install --no-cache-dir build && python3 -m build &&  pip install --no-cache-dir dist/*.whl && cd - && rm -rf cars; \
-    else pip install --no-cache-dir cars==$version; fi
+RUN if [ -z "$version" ] ; then git clone --single-branch --branch $GIT_BRANCH --depth 1 ${CARS_URL} --single && cd cars && python3 -m pip install --no-cache-dir -c $CONSTRAINTS_FILE build && python3 -m build &&  pip install --no-cache-dir -c $CONSTRAINTS_FILE dist/*.whl && cd - && rm -rf cars; \
+    else pip install --no-cache-dir -c $CONSTRAINTS_FILE cars==$version; fi
 
 # Launch cars
 ENTRYPOINT ["cars"]
