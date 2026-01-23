@@ -34,6 +34,7 @@ import tempfile
 # import pytest
 import pytest
 import rasterio as rio
+import yaml
 
 # CARS imports
 from cars.pipelines.default import default_pipeline as default
@@ -641,3 +642,47 @@ def test_end2end_gizeh_use_endogenous_dem():
         )
         with rio.open(os.path.join(out_dir, "dsm", "dsm.tif")) as dsm:
             assert dsm.res == (1.0, 1.0)
+
+
+@pytest.mark.end2end_tests
+def test_init_with_used_conf():
+    """
+    Default pipeline initialized with generated used conf
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+        }
+        out_dir = conf["output"]["directory"]
+        _ = default.DefaultPipeline(conf)
+        with open(
+            os.path.join(out_dir, "global_used_conf.yaml"), encoding="utf-8"
+        ) as used_conf_file:
+            used_conf_1 = yaml.safe_load(used_conf_file)
+        _ = default.DefaultPipeline(used_conf_1)
+        with open(
+            os.path.join(out_dir, "global_used_conf.yaml"), encoding="utf-8"
+        ) as used_conf_file:
+            used_conf_2 = yaml.safe_load(used_conf_file)
+        assert used_conf_1 == used_conf_2

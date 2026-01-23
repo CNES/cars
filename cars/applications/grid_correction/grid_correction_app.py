@@ -95,7 +95,7 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
             overloaded_conf = {}
 
         # Overload conf
-        overloaded_conf["method"] = conf.get("method", "epipolar")
+        overloaded_conf["method"] = conf.get("method", "default")
         overloaded_conf["nb_matches"] = conf.get("nb_matches", 90)
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
