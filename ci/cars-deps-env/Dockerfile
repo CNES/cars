@@ -24,7 +24,6 @@ RUN pip install uv
 # Generate a requirements.txt file from pyproject.toml containing cars dependencies
 # without having to compile and install cars
 RUN uv pip compile pyproject.toml --extra dev \
-                                  --extra notebook \
                                   --extra docs \
                                   --output-file requirements.txt \
                                   --prerelease if-necessary-or-explicit
