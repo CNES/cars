@@ -63,7 +63,7 @@ install/deps: venv ## install python libs
 .PHONY: install/dev-gdal
 install/dev-gdal: install/deps ## install cars on healthy python env for gdal/proj
 	@test -f ${CARS_VENV}/bin/cars || echo "rasterio --no-binary rasterio" > $CONSTRAINTS_FILE  ; echo "fiona --no-binary fiona" >> $CONSTRAINTS_FILE
-	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install -c $CONSTRAINTS_FILE --no-build-isolation --editable .[dev,docs,notebook]
+	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install -c $CONSTRAINTS_FILE --no-build-isolation --editable .[dev,docs]
 	@test -f ${CARS_VENV}/bin/cars || rm  $CONSTRAINTS_FILE
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
@@ -73,7 +73,7 @@ install/dev-gdal: install/deps ## install cars on healthy python env for gdal/pr
 
 .PHONY: install/deps
 install: install/deps ## install cars in dev editable mode (pip install --no-build-isolation -e .) without recompiling rasterio and fiona
-	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs,notebook]
+	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
@@ -97,10 +97,6 @@ test/end2end: ## run end2end tests only
 .PHONY: test/unit
 test/unit: ## run unit tests only
 	@${CARS_VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
-
-.PHONY: test/notebook
-test/notebook: ## run notebook tests only
-	@${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 ## Code quality, linting section
 
@@ -151,21 +147,11 @@ docs: ## build sphinx documentation
 	@${CARS_VENV}/bin/sphinx-build -M clean docs/source/ docs/build
 	@${CARS_VENV}/bin/sphinx-build -M html docs/source/ docs/build -W --keep-going
 
-## Notebook section
-
-.PHONY: notebook
-notebook: ## install Jupyter notebook kernel with venv and cars install
-	@echo "Install Jupyter Kernel in virtualenv dir"
-	@${CARS_VENV}/bin/python -m ipykernel install --sys-prefix --name=cars-${CARS_VERSION_MIN} --display-name=cars-${CARS_VERSION_MIN}
-	@echo "Use jupyter kernelspec list to know where is the kernel"
-	@echo " --> After CARS virtualenv activation, please use following command to launch local jupyter notebook to open CARS Notebooks:"
-	@echo "jupyter notebook"
-
 
 # Dev section
 
 .PHONY: dev
-dev: install docs notebook ## install CARS, compile docs, prepare notebooks
+dev: install docs ## install CARS, compile docs
 
 ## Docker section
 
@@ -190,7 +176,7 @@ endif
 ## Clean section
 
 .PHONY: clean
-clean: clean/venv clean/build clean/precommit clean/pyc clean/test clean/docs clean/notebook clean/dask ## remove all build, test, coverage and Python artifacts
+clean: clean/venv clean/build clean/precommit clean/pyc clean/test clean/docs clean/dask ## remove all build, test, coverage and Python artifacts
 
 .PHONY: clean/venv
 clean/venv:
@@ -237,11 +223,6 @@ clean/docs:
 	@echo "+ $@"
 	@rm -rf docs/build/
 	@rm -rf docs/source/api_reference/
-
-.PHONY: clean/notebook
-clean/notebook:
-	@echo "+ $@"
-	@find . -type d -name ".ipynb_checkpoints" -exec rm -fr {} +
 
 .PHONY: clean/dask
 clean/dask:

@@ -75,7 +75,7 @@ include:
   before_script:
     - source /app/cars/venv/bin/activate
     # All dependencies should already be installed in the docker env
-    - pip install --no-build-isolation --editable .[dev,docs,notebook]
+    - pip install --no-build-isolation --editable .[dev,docs]
 
 # job to test the build of cars Dockerfile
 docker-image-build:

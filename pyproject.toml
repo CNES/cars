@@ -75,7 +75,7 @@ Documentation = "https://cars.readthedocs.io/en/latest/"
 Repository = "https://github.com/CNES/cars"
 
 [project.optional-dependencies]
-# [dev] mode dependencies: include notebook and doc
+# [dev] mode dependencies: include doc
 dev = [
     "pytest",
     "pytest-cov",
@@ -87,14 +87,11 @@ dev = [
     "flake8-pyproject",               # Support configuration in pyproject.toml
     "flake8-comprehensions>=3.4.0",   # Check list/dict/set
     "flake8-bugbear>=21.4.3,<24.0.0", # Add some rules to flake8
-    "jupyter_contrib_nbextensions",   # Clean notebooks
     "pylint>=2.8.12,<4.0.0",          # General linter with more rules
     "setuptools_scm",                 # version from git tag
     "virtualenv",
     "configupdater",
     "twine",                          # for pypi upload
-    "notebook<7.0.0",                 # for pytest test_notebooks.py
-    "bokeh>3.0.0",                    # for pytest test_notebooks.py
     "sphinx",                         # for cars doc
     "sphinx-rtd-theme",               # for cars doc
     "graphviz",                       # for cars doc
@@ -112,13 +109,6 @@ docs = [
     "graphviz",
     "sphinx_tabs",
     "sphinx-copybutton",
-]
-
-# [notebook] mode dependencies
-notebook = [
-    "notebook",
-    "bokeh",
-    "rise",
 ]
 
 # [pandora_mccnn] add heavy mccnn capability for dense matching pandora already install in main requires
