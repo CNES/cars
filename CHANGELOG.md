@@ -1,38 +1,13 @@
 # Changelog
 
 
-## 1.0.0.rc3 CARS 1.0: Eoscale removal (January 2026)
-
-### Changed
-
-- Eoscale dependency removed : Bulldozer version upgraded. [#1279]
-- Remove support for Python 3.9.
-
-
-## 1.0.0.rc2 CARS 1.0: Pipelines refactoring (January 2026)
+## 1.0.0 CARS 1.0 (January 2026)
 
 ### Added
-
-- Docker file tests. [#1236]
-- Update Developer documentation. [#834]
-
-### Changed
 
 - Refactoring of pipelines. [#1189]
 - Sparse matching changed from strips to tiles. [#1256]
 - Xdem 0.2.0 version used.
-
-### Fixed
-
-- Local Dask cluster bug fix. [#1264]
-- Fix bug using roi in disparity grid generation. [#1268]
-
-
-
-## 1.0.0.rc1 CARS 1.0 : Multi resolutions /  Release Candidate (November 2025)
-
-### Added
-
 - Shared memory availability check for Docker usage. [#1216]
 - Cars-extractroi: use local elevation. [#1129]
 - Use elevation in roi computation. [#1142]
@@ -47,7 +22,10 @@
 
 ### Changed
 
+- Eoscale dependency removed : Bulldozer version upgraded. [#1279]
+- Remove support for Python 3.9.
 - Refactoring of Documentation.
+- Notebooks are removed. [#1247]
 - CARS pipeline changed to multi-resolution processing. [#1105]
 - Refactoring of input and output configuration. [#1097]
 - Input classification changed from multi bands to single band. [#1217]
@@ -70,6 +48,10 @@
 
 ### Fixed
 
+- Docker file tests. [#1236]
+- Update Developer documentation. [#834]
+- Local Dask cluster bug fix. [#1264]
+- Fix bug using roi in disparity grid generation. [#1268]
 - Cleanup sequential orchestrator temporary files. [#1123]
 - Fix bug extractroi. [#1129]
 - Fix confidence filtering. [#1158]
