@@ -81,7 +81,7 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
    :class: tiepoints
 
    .. include-cars-config-section:: ../example_configs/configuration/full_config
-      :key: tiepoints
+      :key: tie_points
 
 
 .. raw:: html
