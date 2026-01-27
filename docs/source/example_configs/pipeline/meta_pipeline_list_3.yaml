@@ -6,8 +6,7 @@ input:
 pipeline:
   subsampling: true
   surface_modeling: true
-  surface_modeling: true
-  tiepoints: false
+  tie_points: false
   formatting: true
   merging: false
   filling: false

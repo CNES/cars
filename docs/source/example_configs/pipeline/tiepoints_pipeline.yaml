@@ -7,7 +7,7 @@ input:
     img1: path/to/grid1.tif
     img2: path/to/grid2.tif
 
-tiepoints:
+tie_points:
   applications:
     resampling:
       strip_height: 80
