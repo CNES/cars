@@ -579,7 +579,7 @@ surface_modeling:
       geometry_plugin: SharelocGeometry
       ground_truth_dsm: null
       classification_to_configuration_mapping: config_mapping.json
-tiepoints:
+tie_points:
   applications:
     '1':
       grid_generation:

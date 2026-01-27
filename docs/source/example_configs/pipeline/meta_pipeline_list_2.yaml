@@ -10,5 +10,4 @@ pipeline:
   formatting: true
   subsampling: false
   surface_modeling: false
-  surface_modeling: false
-  tiepoints: false
+  tie_points: false
