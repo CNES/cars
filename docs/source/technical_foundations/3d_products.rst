@@ -7,6 +7,18 @@
 
 These two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`_ for example.
 
+
+.. table::
+   :widths: 25 25 25 25
+   :align: center
+
+   +--------------+--------------+--------------+--------------+
+   |   dsm.tif    |   image.tif  | `QGIS`_ Mix  | cloudcompare |
+   +--------------+--------------+--------------+--------------+
+   | |dsm|        | |color|      | |dsmclr|     | |pc|         |
+   +--------------+--------------+--------------+--------------+
+
+
 .. |dsm| image:: ../images/dsm.png
   :width: 100%
 .. |color| image:: ../images/clr.png
@@ -15,9 +27,3 @@ These two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`
   :width: 100%
 .. |pc| image:: ../images/pc.png
   :width: 100%
-
-+--------------+-------------+-------------+-------------------+
-|   dsm.tif    |   image.tif | `QGIS`_ Mix |    cloudcompare   |
-+--------------+-------------+-------------+-------------------+
-| |dsm|        | |color|     |  |dsmclr|   |        |pc|       |
-+--------------+-------------+-------------+-------------------+

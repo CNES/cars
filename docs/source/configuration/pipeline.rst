@@ -25,7 +25,7 @@ Each of them can be called by themselves, provided the right inputs.
 
     pipelines/subsampling
     pipelines/surface_modeling
-    pipelines/tiepoints
+    pipelines/tie_points
     pipelines/filling
     pipelines/merging
     pipelines/formatting
@@ -37,7 +37,7 @@ Each of them can be called by themselves, provided the right inputs.
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
 | :ref:`surface_modeling <surface_modeling>`  | Yes            | Computes a DSM by performing pixel-level stereo matching between a left and right image.                                                 |
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
-| :ref:`tiepoints <tiepoints>`                | Yes            | Extracts sparse tie points between two sensor images. These matches are used to improve geometric alignment in surface_modeling.         |
+| :ref:`tie_points <tie_points>`              | Yes            | Extracts sparse tie points between two sensor images. These matches are used to improve geometric alignment in surface_modeling.         |
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
 | :ref:`filling <filling>`                    | No             | Fills holes or masked regions in the DSM using configurable interpolation or reconstruction methods.                                     |
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
@@ -63,7 +63,7 @@ Meta pipeline
 
     .. include-cars-config:: ../example_configs/pipeline/meta_pipeline_list_1
 
-    The pipeline will run directly ``surface_modeling``, skipping ``tiepoints`` (meaning there won't be any grid correction using the SIFT) because it's not part of the list, and directly going to formatting, skipping filling :
+    The pipeline will run directly ``surface_modeling``, skipping ``tie_points`` (meaning there won't be any grid correction using the SIFT) because it's not part of the list, and directly going to formatting, skipping filling :
 
     .. image:: ../images/meta_pipeline_list_1.png
 
@@ -71,7 +71,7 @@ Meta pipeline
 
     .. include-cars-config:: ../example_configs/pipeline/meta_pipeline_list_2
 
-    Using the configuration below, CARS will perform surface modeling over the default resolutions output by subsampling. Edge detection will be used, but no grid correction will be performed using the SIFT. The output will be formatted.
+    Using the configuration below, CARS will perform surface modeling over the default resolutions output by subsampling. No grid correction will be performed using sparse matches. The output will be formatted.
 
     .. include-cars-config:: ../example_configs/pipeline/meta_pipeline_list_3
 
@@ -106,6 +106,8 @@ Meta pipeline
     To use Shareloc geometry library, CARS input configuration should be defined as :
 
     .. include-cars-config:: ../example_configs/pipeline/meta_pipeline_geometry_plugin_1
+
+    The geometry_plugin must be specified for each pipeline using geometric models, such as `surface_modeling`, `tie_points` or `filling`.
 
     **geometry_plugin** specify the plugin to use, but other configuration parameters can be specified :
 

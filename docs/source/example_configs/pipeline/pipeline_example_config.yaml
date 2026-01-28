@@ -21,8 +21,3 @@ surface_modeling:
         snap_to_img1: false
       dense_matching:
         method: census_sgm_default
-  advanced:
-    all:
-      correct_grid_with_tiepoints: true
-    16:
-      correct_grid_with_tiepoints: false

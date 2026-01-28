@@ -36,7 +36,7 @@ Alternatively, you can download the Docker image from Docker Hub
 From sources
 ------------
 
-The sources for CARS can be downloaded from the `Github repo <https://github.com/CNES/cars>`.
+The sources for CARS can be downloaded from the `Github repo <https://github.com/CNES/cars>`_.
 
 Clone the repository:
 

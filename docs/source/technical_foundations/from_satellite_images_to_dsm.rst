@@ -73,15 +73,19 @@ Generate a DSM step by step
 
 .. _resampling:
 
-+---------------------------+---------------------------------------------+
-| Pipeline                  | Resampling                                  |
-+---------------------------+---------------------------------------------+
-| |images_models|      |br| | |resampling_image|                          |
-| |resampling_circled| |br| |                                             |
-| |matching|           |br| |                                             |
-| |triangulation|      |br| |                                             |
-| |rasterization|      |br| |                                             |
-+---------------------------+---------------------------------------------+
+.. table::
+   :widths: 50 50
+   :align: center
+
+   +---------------------------+---------------------------------------------+
+   | Pipeline                  | Resampling                                  |
+   +---------------------------+---------------------------------------------+
+   | |images_models|      |br| | |resampling_image|                          |
+   | |resampling_circled| |br| |                                             |
+   | |matching|           |br| |                                             |
+   | |triangulation|      |br| |                                             |
+   | |rasterization|      |br| |                                             |
+   +---------------------------+---------------------------------------------+
 
 | For each point in one image, the software searches the corresponding point in the other image.
 | The color of the pixels (grayscale) in the image :ref:`below<matching>` corresponds to the shift value. Pixels with no match are displayed as transparent pixels in the image below. 
@@ -89,15 +93,19 @@ Generate a DSM step by step
 
 .. _matching:
 
-+--------------------------+---------------------------------------------+
-| Pipeline                 | Matching                                    |
-+--------------------------+---------------------------------------------+
-| |images_models|     |br| | |matching_image|                            |
-| |resampling|        |br| |                                             |
-| |matching_circled|  |br| |                                             |
-| |triangulation|     |br| |                                             |
-| |rasterization|     |br| |                                             |
-+--------------------------+---------------------------------------------+
+.. table::
+   :widths: 50 50
+   :align: center
+
+   +--------------------------+---------------------------------------------+
+   | Pipeline                 | Matching                                    |
+   +--------------------------+---------------------------------------------+
+   | |images_models|     |br| | |matching_image|                            |
+   | |resampling|        |br| |                                             |
+   | |matching_circled|  |br| |                                             |
+   | |triangulation|     |br| |                                             |
+   | |rasterization|     |br| |                                             |
+   +--------------------------+---------------------------------------------+
 
 | The displacements obtained are transformed into positions in both images.
 | This allows to deduce lines of sight. The intersection of these lines gives a point in space: longitude, latitude, altitude (see :ref:`below<triangulation>`).
@@ -105,29 +113,37 @@ Generate a DSM step by step
 
 .. _triangulation:
 
-+------------------------------+---------------------------------------------+
-| Pipeline                     | Triangulation                               |
-+------------------------------+---------------------------------------------+
-| |images_models|         |br| | |triangulation_image|                       |
-| |resampling|            |br| |                                             |
-| |matching|              |br| |                                             |
-| |triangulation_circled| |br| |                                             |
-| |rasterization|         |br| |                                             |
-+------------------------------+---------------------------------------------+
+.. table::
+   :widths: 50 50
+   :align: center
+
+   +------------------------------+---------------------------------------------+
+   | Pipeline                     | Triangulation                               |
+   +------------------------------+---------------------------------------------+
+   | |images_models|         |br| | |triangulation_image|                       |
+   | |resampling|            |br| |                                             |
+   | |matching|              |br| |                                             |
+   | |triangulation_circled| |br| |                                             |
+   | |rasterization|         |br| |                                             |
+   +------------------------------+---------------------------------------------+
 
 To obtain a raster image, the final process projects each point into a 2D grid: altitudes and colors (see :ref:`below<rasterization>`).
 
 .. _rasterization:
 
-+------------------------------+---------------------------------------------+
-| Pipeline                     | Rasterization                               |
-+------------------------------+---------------------------------------------+
-| |images_models|         |br| | |rasterization_image|                       |
-| |resampling|            |br| |                                             |
-| |matching|              |br| |                                             |
-| |triangulation|         |br| |                                             |
-| |rasterization_circled| |br| |                                             |
-+------------------------------+---------------------------------------------+
+.. table::
+   :widths: 50 50
+   :align: center
+
+   +------------------------------+---------------------------------------------+
+   | Pipeline                     | Rasterization                               |
+   +------------------------------+---------------------------------------------+
+   | |images_models|         |br| | |rasterization_image|                       |
+   | |resampling|            |br| |                                             |
+   | |matching|              |br| |                                             |
+   | |triangulation|         |br| |                                             |
+   | |rasterization_circled| |br| |                                             |
+   +------------------------------+---------------------------------------------+
 
 Altimetric exploration at multiple resolutions
 -------------------------------------------------
@@ -136,11 +152,15 @@ To reduce the search interval (i.e. altimetric exploration) in the dense matchin
 
 This reduces computation time greatly while providing better results than a bruteforce approach. 
 
-+---------------------+---------------------+---------------------+
-| DSM at resolution 4 | DSM at resolution 2 | DSM at resolution 1 |
-+---------------------+---------------------+---------------------+
-| |multires_res4|     | |multires_res2|     | |multires_res1|     |
-+---------------------+---------------------+---------------------+
+.. table::
+   :widths: 33 33 33
+   :align: center
+
+   +---------------------+---------------------+---------------------+
+   | DSM at resolution 4 | DSM at resolution 2 | DSM at resolution 1 |
+   +---------------------+---------------------+---------------------+
+   | |multires_res4|     | |multires_res2|     | |multires_res1|     |
+   +---------------------+---------------------+---------------------+
 
 With :
 
@@ -159,12 +179,16 @@ This sparse matching step is performed with keypoints, like :term:`SIFT` to ensu
 
 .. _matchingsparse:
 
-+-----------------------------+---------------------------------------------+
-| Pipeline                    | Matching (sparse)                           |
-+-----------------------------+---------------------------------------------+
-| |images_models|     |br|    | |matching_spa_image|                        |
-| |resampling|        |br|    |                                             |
-| |matching_spa_circled| |br| |                                             |
-| |triangulation_spa| |br|    |                                             |
-| |rasterization_spa| |br|    |                                             |
-+-----------------------------+---------------------------------------------+
+.. table::
+   :widths: 50 50
+   :align: center
+
+   +-----------------------------+---------------------------------------------+
+   | Pipeline                    | Matching (sparse)                           |
+   +-----------------------------+---------------------------------------------+
+   | |images_models|     |br|    | |matching_spa_image|                        |
+   | |resampling|        |br|    |                                             |
+   | |matching_spa_circled| |br| |                                             |
+   | |triangulation_spa| |br|    |                                             |
+   | |rasterization_spa| |br|    |                                             |
+   +-----------------------------+---------------------------------------------+

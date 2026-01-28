@@ -62,10 +62,14 @@ Open the ``dsm.tif`` DSM and ``image.tif`` image in `QGIS`_ software.
 .. |dsmcolor| image:: images/dsm_clr.png
   :width: 100%
 
-+--------------+---------------+-------------+
-|   dsm.tif    |   image.tif   | `QGIS`_ Mix |
-+--------------+---------------+-------------+
-| |dsm|        | |color|       | |dsmcolor|  |
-+--------------+---------------+-------------+
+.. table::
+   :widths: 33 33 33
+   :align: center
+
+   +--------------+---------------+-------------+
+   |   dsm.tif    |   image.tif   | `QGIS`_ Mix |
+   +--------------+---------------+-------------+
+   | |dsm|        | |color|       | |dsmcolor|  |
+   +--------------+---------------+-------------+
 
 .. _`QGIS`: https://www.qgis.org/
