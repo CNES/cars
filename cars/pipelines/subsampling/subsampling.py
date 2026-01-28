@@ -93,6 +93,8 @@ class SubsamplingPipeline(PipelineTemplate):
 
         if PIPELINE in conf:
             self.check_pipeline_conf(conf)
+        else:
+            conf[PIPELINE] = {}
 
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
@@ -306,7 +308,7 @@ class SubsamplingPipeline(PipelineTemplate):
             band_info["path"] = replace_path(band_info["path"])
 
     @cars_profile(name="Run_subsampling_pipeline", interval=0.5)
-    def run(self):  # noqa C901
+    def run(self, args=None):  # noqa C901 # pylint: disable=W0613
         """
         Run pipeline
         """
