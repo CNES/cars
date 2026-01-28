@@ -201,29 +201,56 @@ def compute_matches(  # pylint: disable=too-many-positional-arguments
             # compute euclidean matrix distance
             emd = euclidean_matrix_distance(left_descr_block, right_descr_block)
 
+            # Check is columns/rows are all nan
+            valid_rows = np.sum(~np.isnan(emd), axis=1) >= 2
+            valid_cols = np.sum(~np.isnan(emd), axis=0) >= 2
+            if not np.any(valid_rows) or not np.any(valid_cols):
+                continue
+
+            # filter invalid rows/cols
+            emd_filtered = emd[np.ix_(valid_rows, valid_cols)]
+            row_indices = np.where(valid_rows)[0]
+            col_indices = np.where(valid_cols)[0]
+            # Robustify for second element
+            if len(row_indices) < 2 or len(col_indices) < 2:
+                continue
+
+            nearest_cols = col_indices[np.nanargmin(emd_filtered, axis=1)]
+            nearest_rows = row_indices[np.nanargmin(emd_filtered, axis=0)]
+
             # get nearest sift (regarding descriptors)
-            id_nearest_dlr = (
-                np.arange(np.shape(emd)[0]),
-                np.nanargmin(emd, axis=1),
-            )
-            id_nearest_drl = (
-                np.nanargmin(emd, axis=0),
-                np.arange(np.shape(emd)[1]),
-            )
+            id_nearest_dlr = (row_indices, nearest_cols)
+            id_nearest_drl = (nearest_rows, col_indices)
 
             # get absolute distances
             dist_dlr = emd[id_nearest_dlr]
             dist_drl = emd[id_nearest_drl]
 
             # get relative distance (ratio to second nearest distance)
-            second_dist_dlr = np.partition(emd, 1, axis=1)[:, 1]
-            dist_dlr /= second_dist_dlr
-            second_dist_drl = np.partition(emd, 1, axis=0)[1, :]
-            dist_drl /= second_dist_drl
+            second_dist_dlr = np.partition(emd_filtered, 1, axis=1)[:, 1]
+            second_dist_drl = np.partition(emd_filtered, 1, axis=0)[1, :]
+
+            # Get valid second distances
+            valid_second_dlr = ~np.isnan(second_dist_dlr)
+            valid_second_drl = ~np.isnan(second_dist_drl)
+
+            # Compute ratios only for valid ones
+            dist_dlr_ratio = np.full_like(dist_dlr, np.nan)
+            dist_drl_ratio = np.full_like(dist_drl, np.nan)
+            dist_dlr_ratio[valid_second_dlr] = (
+                dist_dlr[valid_second_dlr] / second_dist_dlr[valid_second_dlr]
+            )
+            dist_drl_ratio[valid_second_drl] = (
+                dist_drl[valid_second_drl] / second_dist_drl[valid_second_drl]
+            )
 
             # stack matches which its distance
-            id_matches_dlr = np.column_stack((*id_nearest_dlr, dist_dlr))
-            id_matches_drl = np.column_stack((*id_nearest_drl, dist_drl))
+            id_matches_dlr = np.column_stack((*id_nearest_dlr, dist_dlr_ratio))
+            id_matches_drl = np.column_stack((*id_nearest_drl, dist_drl_ratio))
+
+            # filter matches with nan ratio
+            id_matches_dlr = id_matches_dlr[~np.isnan(id_matches_dlr[:, 2])]
+            id_matches_drl = id_matches_drl[~np.isnan(id_matches_drl[:, 2])]
 
             # check backmatching
             if backmatching is True:
