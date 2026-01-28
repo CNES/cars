@@ -40,9 +40,6 @@ from cars.applications import application_constants
 from cars.applications.dem_generation.abstract_dem_generation_app import (
     DemGeneration,
 )
-from cars.applications.dem_generation.bulldozer_memory import (
-    can_allocate_shared_memory,
-)
 from cars.applications.dem_generation.dem_generation_algo import (
     launch_bulldozer,
 )
@@ -175,14 +172,6 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
         overloaded_conf["disable_bulldozer"] = conf.get(
             "disable_bulldozer", False
         )
-        if not overloaded_conf["disable_bulldozer"]:
-            can_allocate_sm, log_message = can_allocate_shared_memory()
-            if not can_allocate_sm:
-                logging.info(log_message)
-                logging.info(
-                    "Dem generation disable_bulldozer parameter is set to True"
-                )
-                overloaded_conf["disable_bulldozer"] = True
         overloaded_conf["compute_stats"] = conf.get("compute_stats", True)
         overloaded_conf["coregistration"] = conf.get("coregistration", True)
         overloaded_conf["coregistration_max_shift"] = conf.get(
