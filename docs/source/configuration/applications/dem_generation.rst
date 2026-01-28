@@ -7,8 +7,8 @@ DEM Generation
 
 **Description**
 
-Generates dem from sparse matches, and fits the initial elevation onto the median dem.
-Rasterizes all matches on a regular grid and performs morphological operations and Bulldozer processing to compute DEM min and max
+Generates dem from a DSM. The details in the DSM allow to create upper and lower dems.
+The DEMs generated are less resolved than the input DSM.
 
 Up to 4 dems are generated, with different methods:
 
