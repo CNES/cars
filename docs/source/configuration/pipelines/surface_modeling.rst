@@ -4,7 +4,7 @@ Surface Modeling
 ================
 
 This pipeline computes a DSM by performing pixel-level stereo matching between a left and a right
-image. To correct the epipolar projection if needed, this pipeline can call :ref:`tiepoints <tiepoints>`.
+image. To correct the epipolar projection if needed, this pipeline can call :ref:`tie_points <tie_points>`.
 
 Allowed inputs
 --------------
@@ -67,10 +67,6 @@ Advanced Parameters
       - Save intermediate data for all applications inside this pipeline.
       - bool
       - False
-    * - correct_grid
-      - Whether to correct the rectification grids using Tiepoints or not
-      - bool
-      - true
     * - ground_truth_dsm
       - Data to be reprojected from the application ground_truth_reprojection
       - dict
