@@ -375,6 +375,7 @@ def generate_summary(
         "profiling_plots_histograms.png",
     )
     plt.savefig(profiling_plot)
+    plt.close()
 
     # Pie chart
 
@@ -433,6 +434,7 @@ def generate_summary(
         "profiling_plots_pie_chart.png",
     )
     plt.savefig(profiling_plot2)
+    plt.close()
 
     if clean_worker_logs and os.path.exists(workers_log_dir):
         shutil.rmtree(workers_log_dir)
