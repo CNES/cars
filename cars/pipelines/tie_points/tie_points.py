@@ -378,7 +378,13 @@ class TiePointsPipeline(PipelineTemplate):
 
         return used_conf
 
-    def run(self, log_dir=None, disp_range_grid=None, cars_orchestrator=None):
+    def run(
+        self,
+        args=None,  # pylint: disable=W0613
+        log_dir=None,
+        disp_range_grid=None,
+        cars_orchestrator=None,
+    ):
         """
         Run pipeline
 
