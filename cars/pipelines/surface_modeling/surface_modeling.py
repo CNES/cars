@@ -222,9 +222,12 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         self.used_conf[PIPELINE][ADVANCED] = advanced
 
-        self.refined_conf[ADVANCED] = copy.deepcopy(advanced)
+        self.refined_conf[PIPELINE] = copy.deepcopy(self.used_conf[PIPELINE])
+        self.refined_conf[PIPELINE][ADVANCED] = copy.deepcopy(advanced)
         # Refined conf: resolutions 1
-        self.refined_conf[ADVANCED][adv_cst.RESOLUTIONS] = [1]
+        self.refined_conf[PIPELINE][ADVANCED][adv_cst.RESOLUTIONS] = [1]
+
+        self.refined_conf["pipeline"] = "surface_modeling"
 
         # Get ROI
         (
@@ -2051,6 +2054,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
     @cars_profile(name="run_surface_modeling_pipeline", interval=0.5)
     def run(
         self,
+        args=None,  # pylint: disable=W0613
         which_resolution="single",
         log_dir=None,
     ):  # noqa C901
