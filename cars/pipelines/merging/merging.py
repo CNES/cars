@@ -305,7 +305,7 @@ class MergingPipeline(PipelineTemplate):
 
         return used_conf
 
-    def run(self, log_dir=None):
+    def run(self, args=None, log_dir=None):  # pylint: disable=W0613
         """
         Run pipeline
 

@@ -961,7 +961,7 @@ class FillingPipeline(PipelineTemplate):
         return True
 
     @cars_profile(name="Run_subsampling_pipeline", interval=0.5)
-    def run(self):  # noqa C901
+    def run(self, args=None):  # noqa C901 # pylint: disable=W0613
         """
         Run pipeline
         """

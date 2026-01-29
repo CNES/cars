@@ -169,7 +169,9 @@ class FormattingPipeline(PipelineTemplate):
 
                 shutil.move(str(element), str(dest))
 
-    def run(self, surface_modeling_dir):
+    def run(
+        self, args=None, surface_modeling_dir=None
+    ):  # pylint: disable=W0613
         """
         Run the formatting pipeline
         """
