@@ -23,11 +23,15 @@ Test module for cars/stereo.py
 Important : Uses conftest.py for shared pytest fixtures
 """
 
+import argparse
+import copy
+import json
 import os
 import tempfile
 
 import pytest
 
+from cars.cars import main_cli
 from cars.pipelines.subsampling import subsampling
 
 # CARS Tests imports
@@ -60,15 +64,40 @@ CARS_GITHUB_ACTIONS = (
 )
 @pytest.mark.unit_tests
 def test_subsampling(resolution):
-    """
-    Test subsampling pipeline
-    """
+    """Test subsampling pipeline"""
+
+    atol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001
+    rtol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6
+
+    intermediate_dir = absolute_data_path("intermediate_data")
+    ref_output_dir = absolute_data_path("ref_output")
+
+    file_map = {
+        "left_image": ("left/left_image.tif", "img1_phr_ventoux_res_{res}.tif"),
+        "right_image": (
+            "right/right_image.tif",
+            "img2_phr_ventoux_res_{res}.tif",
+        ),
+        "color": ("left/color_image.tif", "color1_phr_ventoux_res_{res}.tif"),
+        "left_classif": (
+            "left/left_classif.tif",
+            "classif1_phr_ventoux_res_{res}.tif",
+        ),
+        "right_classif": (
+            "right/right_classif.tif",
+            "classif2_phr_ventoux_res_{res}.tif",
+        ),
+        "left_mask": (
+            "left/left_mask.tif",
+            "left_mask_phr_ventoux_res_{res}.tif",
+        ),
+    }
+
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf = absolute_data_path(
             "input/phr_ventoux/input_with_color_and_classif.json"
         )
 
-        # Run dense dsm pipeline
         _, input_conf = generate_input_json(
             conf,
             directory,
@@ -78,196 +107,55 @@ def test_subsampling(resolution):
                 "max_ram_per_worker": 500,
             },
         )
-        input_conf["subsampling"] = {}
-        input_conf["subsampling"]["advanced"] = {"resolutions": resolution}
 
-        dense_dsm_pipeline = subsampling.SubsamplingPipeline(
+        input_conf["subsampling"] = {"advanced": {"resolutions": resolution}}
+
+        out_dirs = {
+            "api": input_conf["output"]["directory"],
+            "cli": os.path.join(
+                input_conf["output"]["directory"], "..", "output_cli"
+            ),
+        }
+
+        # Prepare CLI configuration
+        cli_conf = copy.deepcopy(input_conf)
+        cli_conf["pipeline"] = "subsampling"
+        cli_conf["output"]["directory"] = out_dirs["cli"]
+
+        conf_path = os.path.join(directory, "subsampling_conf_dump.json")
+        with open(conf_path, "w", encoding="utf8") as f:
+            json.dump(cli_conf, f)
+
+        # Run API
+        subsampling.SubsamplingPipeline(
             input_conf, absolute_data_path(directory)
-        )
-        dense_dsm_pipeline.run()
+        ).run()
 
-        out_dir = os.path.join(input_conf["output"]["directory"])
+        # Run CLI
+        main_cli(argparse.Namespace(conf=conf_path))
 
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
-        for res in resolution:
-            if res != 1:
-                copy2(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "left/left_image.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            intermediate_output_dir,
-                            "img1_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                )
+        # Validation
+        for out_dir in out_dirs.values():
+            for res in resolution:
+                if res == 1:
+                    continue
 
-                copy2(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "right/right_image.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            intermediate_output_dir,
-                            "img2_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                )
+                res_dir = os.path.join(out_dir, f"subsampling/res_{res}")
 
-                copy2(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "left/color_image.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            intermediate_output_dir,
-                            "color1_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                )
+                for _, (rel_path, ref_name) in file_map.items():
+                    src = os.path.join(res_dir, rel_path)
+                    ref = os.path.join(ref_output_dir, ref_name.format(res=res))
+                    inter = os.path.join(
+                        intermediate_dir, ref_name.format(res=res)
+                    )
 
-                copy2(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "left/left_classif.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            intermediate_output_dir,
-                            "classif1_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                )
+                    # Copy intermediate/reference files
+                    copy2(src, inter)
 
-                copy2(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "right/right_classif.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            intermediate_output_dir,
-                            "classif2_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                )
-
-                copy2(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "left/left_mask.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            ref_output_dir,
-                            "left_mask_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                )
-
-                assert_same_images(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "left/left_image.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            ref_output_dir,
-                            "img1_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                    atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-                    rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-                )
-
-                assert_same_images(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "right/right_image.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            ref_output_dir,
-                            "img2_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                    atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-                    rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-                )
-
-                assert_same_images(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "left/color_image.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            ref_output_dir,
-                            "color1_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                    atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-                    rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-                )
-
-                assert_same_images(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "left/left_classif.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            ref_output_dir,
-                            "classif1_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                    atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-                    rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-                )
-
-                assert_same_images(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "right/right_classif.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            ref_output_dir,
-                            "classif2_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                    atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-                    rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-                )
-
-                assert_same_images(
-                    os.path.join(
-                        out_dir,
-                        "subsampling/res_" + str(res),
-                        "left/left_mask.tif",
-                    ),
-                    absolute_data_path(
-                        os.path.join(
-                            ref_output_dir,
-                            "left_mask_phr_ventoux_res_" + str(res) + ".tif",
-                        )
-                    ),
-                    atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-                    rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-                )
+                    # Compare output with reference
+                    assert_same_images(
+                        src,
+                        ref,
+                        atol=atol,
+                        rtol=rtol,
+                    )

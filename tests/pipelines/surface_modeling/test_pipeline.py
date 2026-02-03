@@ -21,11 +21,15 @@
 """
 Test pipeline surface modeling
 """
+import argparse
+import copy
+import json
 import os
 import tempfile
 
 import pytest
 
+from cars.cars import main_cli
 from cars.pipelines.surface_modeling.surface_modeling import (
     SurfaceModelingPipeline,
 )
@@ -45,6 +49,10 @@ def test_gizeh_with_low_res_dsm():
     """
     End to end pipeline processing
     """
+
+    atol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001
+    rtol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6
+
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf = {
             "input": {
@@ -73,51 +81,54 @@ def test_gizeh_with_low_res_dsm():
             },
             "output": {"directory": directory},
         }
-        out_dir = conf["output"]["directory"]
-        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
-        surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_low_res_dsm.tif",
+
+        out_dir_cli = os.path.join(directory, "out_cli")
+        out_dir_api = conf["output"]["directory"]
+
+        cli_conf = copy.deepcopy(conf)
+        cli_conf["pipeline"] = "surface_modeling"
+        cli_conf["output"]["directory"] = out_dir_cli
+
+        cli_conf_path = os.path.join(directory, "surface_modeling_conf.json")
+        with open(cli_conf_path, "w", encoding="utf8") as f:
+            json.dump(cli_conf, f)
+
+        intermediate_dir = absolute_data_path("intermediate_data")
+        ref_output_dir = absolute_data_path("ref_output")
+
+        # api run
+        api_pipeline = SurfaceModelingPipeline(conf)
+        api_pipeline.run()
+
+        # cli run
+        main_cli(argparse.Namespace(conf=cli_conf_path))
+
+        # output products
+        products = {
+            "dsm.tif": "dsm_test_surface_modeling_low_res_dsm.tif",
+            "image.tif": "image_test_surface_modeling_low_res_dsm.tif",
+        }
+
+        # check results are as expected
+        for out_dir in [out_dir_api, out_dir_cli]:
+            dsm_dir = os.path.join(out_dir, "dsm")
+
+            for filename, ref_name in products.items():
+                output_path = os.path.join(dsm_dir, filename)
+
+                # Save intermediate result
+                copy2(
+                    output_path,
+                    os.path.join(intermediate_dir, ref_name),
                 )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_low_res_dsm.tif",
+
+                # Compare with reference
+                assert_same_images(
+                    output_path,
+                    os.path.join(ref_output_dir, ref_name),
+                    atol=atol,
+                    rtol=rtol,
                 )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_low_res_dsm.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_low_res_dsm.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
 
 
 @pytest.mark.end2end_tests
