@@ -22,15 +22,74 @@
 Test pipeline tie points
 """
 
+import argparse
+import copy
+import json
 import os
 import tempfile
 
 import numpy as np
 import pytest
 
+from cars.cars import main_cli
 from cars.pipelines.tie_points.tie_points import TiePointsPipeline
 
 from ...helpers import absolute_data_path, temporary_dir
+
+
+def _check_tie_points_output(outdir, expected):
+    raw_matches = np.load(os.path.join(outdir, "raw_matches.npy"))
+    filtered_matches = np.load(os.path.join(outdir, "filtered_matches.npy"))
+
+    disparity_raw = raw_matches[:, 2] - raw_matches[:, 0]
+    epipolar_raw = np.abs(raw_matches[:, 3] - raw_matches[:, 1])
+
+    disparity_filtered = filtered_matches[:, 2] - filtered_matches[:, 0]
+    epipolar_filtered = np.abs(filtered_matches[:, 3] - filtered_matches[:, 1])
+
+    assert len(raw_matches) == expected["raw_count"]
+    assert np.mean(disparity_raw) == pytest.approx(
+        expected["raw_disp"], abs=expected["disp_tol"]
+    )
+    assert np.mean(epipolar_raw) == pytest.approx(
+        expected["raw_epi"], abs=expected["epi_tol"]
+    )
+
+    assert len(filtered_matches) == expected["filtered_count"]
+    assert np.mean(disparity_filtered) == pytest.approx(
+        expected["filtered_disp"], abs=expected["disp_tol"]
+    )
+    assert np.mean(epipolar_filtered) == pytest.approx(
+        expected["filtered_epi"], abs=expected["epi_tol"]
+    )
+
+
+def _run_and_check(conf_api, expected):
+
+    # init cli conf
+    conf_cli = copy.deepcopy(conf_api)
+    conf_cli["pipeline"] = "tie_points"
+    conf_cli["output"]["directory"] = os.path.join(
+        conf_api["output"]["directory"], "..", "out_cli"
+    )
+
+    # out dirs
+    api_outdir = os.path.join(conf_api["output"]["directory"], "image1_image2")
+    cli_outdir = os.path.join(conf_cli["output"]["directory"], "image1_image2")
+
+    # write cli conf to file
+    conf_path = os.path.join(
+        conf_api["output"]["directory"], "tie_points_conf.json"
+    )
+    with open(conf_path, "w", encoding="utf8") as f:
+        json.dump(conf_cli, f)
+
+    # run pipelines
+    TiePointsPipeline(conf_api).run()
+    main_cli(argparse.Namespace(conf=conf_path))
+
+    _check_tie_points_output(api_outdir, expected)
+    _check_tie_points_output(cli_outdir, expected)
 
 
 @pytest.mark.end2end_tests
@@ -63,29 +122,19 @@ def test_pipeline_ventoux():
             "tie_points": {"advanced": {"save_intermediate_data": False}},
             "output": {"directory": directory},
         }
-        outdir = os.path.join(conf["output"]["directory"], "image1_image2")
-        tie_points_pipeline = TiePointsPipeline(conf)
-        tie_points_pipeline.run()
-        raw_matches = np.load(os.path.join(outdir, "raw_matches.npy"))
-        filtered_matches = np.load(os.path.join(outdir, "filtered_matches.npy"))
-        disparity_raw_matches = raw_matches[:, 2] - raw_matches[:, 0]
-        epipolar_error_raw_matches = np.abs(
-            raw_matches[:, 3] - raw_matches[:, 1]
-        )
-        disparity_filtered_matches = (
-            filtered_matches[:, 2] - filtered_matches[:, 0]
-        )
-        epipolar_error_filtered_matches = np.abs(
-            filtered_matches[:, 3] - filtered_matches[:, 1]
-        )
-        assert len(raw_matches) == 92
-        assert np.mean(disparity_raw_matches) == pytest.approx(-358, abs=2)
-        assert np.mean(epipolar_error_raw_matches) == pytest.approx(6, abs=0.5)
-        assert len(filtered_matches) == 88
-        assert np.mean(disparity_filtered_matches) == pytest.approx(-378, abs=2)
-        assert np.mean(epipolar_error_filtered_matches) == pytest.approx(
-            4.75, abs=0.5
-        )
+
+        expected = {
+            "raw_count": 92,
+            "filtered_count": 88,
+            "raw_disp": -358,
+            "filtered_disp": -378,
+            "raw_epi": 6,
+            "filtered_epi": 4.75,
+            "disp_tol": 2,
+            "epi_tol": 0.5,
+        }
+
+        _run_and_check(conf, expected)
 
 
 @pytest.mark.end2end_tests
@@ -121,29 +170,19 @@ def test_pipeline_ventoux_with_dem():
             "tie_points": {"advanced": {"save_intermediate_data": False}},
             "output": {"directory": directory},
         }
-        outdir = os.path.join(conf["output"]["directory"], "image1_image2")
-        tie_points_pipeline = TiePointsPipeline(conf)
-        tie_points_pipeline.run()
-        raw_matches = np.load(os.path.join(outdir, "raw_matches.npy"))
-        filtered_matches = np.load(os.path.join(outdir, "filtered_matches.npy"))
-        disparity_raw_matches = raw_matches[:, 2] - raw_matches[:, 0]
-        epipolar_error_raw_matches = np.abs(
-            raw_matches[:, 3] - raw_matches[:, 1]
-        )
-        disparity_filtered_matches = (
-            filtered_matches[:, 2] - filtered_matches[:, 0]
-        )
-        epipolar_error_filtered_matches = np.abs(
-            filtered_matches[:, 3] - filtered_matches[:, 1]
-        )
-        assert len(raw_matches) == 117
-        assert np.mean(disparity_raw_matches) == pytest.approx(6, abs=0.5)
-        assert np.mean(epipolar_error_raw_matches) == pytest.approx(6, abs=0.5)
-        assert len(filtered_matches) == 114
-        assert np.mean(disparity_filtered_matches) == pytest.approx(4, abs=0.5)
-        assert np.mean(epipolar_error_filtered_matches) == pytest.approx(
-            4.75, abs=0.5
-        )
+
+        expected = {
+            "raw_count": 117,
+            "filtered_count": 114,
+            "raw_disp": 6,
+            "filtered_disp": 4,
+            "raw_epi": 6,
+            "filtered_epi": 4.75,
+            "disp_tol": 0.5,
+            "epi_tol": 0.5,
+        }
+
+        _run_and_check(conf, expected)
 
 
 @pytest.mark.end2end_tests
@@ -182,26 +221,16 @@ def test_pipeline_ventoux_with_mask():
             "tie_points": {"advanced": {"save_intermediate_data": False}},
             "output": {"directory": directory},
         }
-        outdir = os.path.join(conf["output"]["directory"], "image1_image2")
-        tie_points_pipeline = TiePointsPipeline(conf)
-        tie_points_pipeline.run()
-        raw_matches = np.load(os.path.join(outdir, "raw_matches.npy"))
-        filtered_matches = np.load(os.path.join(outdir, "filtered_matches.npy"))
-        disparity_raw_matches = raw_matches[:, 2] - raw_matches[:, 0]
-        epipolar_error_raw_matches = np.abs(
-            raw_matches[:, 3] - raw_matches[:, 1]
-        )
-        disparity_filtered_matches = (
-            filtered_matches[:, 2] - filtered_matches[:, 0]
-        )
-        epipolar_error_filtered_matches = np.abs(
-            filtered_matches[:, 3] - filtered_matches[:, 1]
-        )
-        assert len(raw_matches) == 92
-        assert np.mean(disparity_raw_matches) == pytest.approx(-358, abs=2)
-        assert np.mean(epipolar_error_raw_matches) == pytest.approx(6, abs=0.5)
-        assert len(filtered_matches) == 88
-        assert np.mean(disparity_filtered_matches) == pytest.approx(-378, abs=2)
-        assert np.mean(epipolar_error_filtered_matches) == pytest.approx(
-            4.75, abs=0.5
-        )
+
+        expected = {
+            "raw_count": 92,
+            "filtered_count": 88,
+            "raw_disp": -358,
+            "filtered_disp": -378,
+            "raw_epi": 6,
+            "filtered_epi": 4.75,
+            "disp_tol": 2,
+            "epi_tol": 0.5,
+        }
+
+        _run_and_check(conf, expected)

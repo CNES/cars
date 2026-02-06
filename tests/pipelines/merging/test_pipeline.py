@@ -22,11 +22,15 @@
 Test pipeline merging
 """
 
+import argparse
+import copy
+import json
 import os
 import tempfile
 
 import pytest
 
+from cars.cars import main_cli
 from cars.pipelines.merging.merging import MergingPipeline
 
 from ...helpers import absolute_data_path, assert_same_images
@@ -72,25 +76,43 @@ def test_phased_dsm():
             },
             "output": {"directory": directory},
         }
-        out_dir = conf["output"]["directory"]
+        out_dir_api = conf["output"]["directory"]
+        out_dir_cli = os.path.join(out_dir_api, "..", "out_cli")
+
+        cli_conf = copy.deepcopy(conf)
+        cli_conf["pipeline"] = "merging"
+        cli_conf["output"]["directory"] = out_dir_cli
+
+        cli_conf_path = os.path.join(directory, "merging_conf.json")
+        with open(cli_conf_path, "w", encoding="utf8") as f:
+            json.dump(cli_conf, f)
+
         merging_pipeline = MergingPipeline(conf)
         merging_pipeline.run()
+        main_cli(argparse.Namespace(conf=cli_conf_path))
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(intermediate_output_dir, "dsm_test_merging.tif")
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_test_merging.tif")
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
+
+        for out_dir in [out_dir_api, out_dir_cli]:
+            output_dsm = os.path.join(out_dir, "dsm", "dsm.tif")
+
+            copy2(
+                output_dsm,
+                absolute_data_path(
+                    os.path.join(
+                        intermediate_output_dir, "dsm_test_merging.tif"
+                    )
+                ),
+            )
+
+            assert_same_images(
+                output_dsm,
+                absolute_data_path(
+                    os.path.join(ref_output_dir, "dsm_test_merging.tif")
+                ),
+                atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+                rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            )
 
 
 @pytest.mark.end2end_tests

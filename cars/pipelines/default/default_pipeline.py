@@ -788,7 +788,9 @@ class DefaultPipeline(PipelineTemplate):
             formatting_pipeline = FormattingPipeline(
                 formatting_conf, self.config_dir
             )
-            formatting_pipeline.run(current_surface_modeling_out_dir)
+            formatting_pipeline.run(
+                surface_modeling_dir=current_surface_modeling_out_dir
+            )
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             full_used_conf[pipeline_cst.FILLING] = {

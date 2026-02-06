@@ -22,11 +22,15 @@
 Test  pipeline
 """
 
+import argparse
+import copy
+import json
 import os
 import tempfile
 
 import pytest
 
+from cars.cars import main_cli
 from cars.pipelines.default import default_pipeline
 from cars.pipelines.filling import filling
 
@@ -54,15 +58,17 @@ def test_pipeline_filling_end2end_global():
     """
     Test filling pipeline
     """
+    atol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001
+    rtol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        conf = absolute_data_path(
+        conf_path = absolute_data_path(
             "input/phr_ventoux/input_with_color_and_classif.json"
         )
 
-        # Run dense dsm pipeline
+        # Generate base configuration
         _, input_conf = generate_input_json(
-            conf,
+            conf_path,
             directory,
             "multiprocessing",
             orchestrator_parameters={
@@ -71,6 +77,7 @@ def test_pipeline_filling_end2end_global():
             },
         )
 
+        # Filling parameters
         input_conf["input"]["filling"] = {
             "fill_with_exogenous_dem": 4,
             "interpolate_from_borders": 2,
@@ -78,20 +85,22 @@ def test_pipeline_filling_end2end_global():
             "fill_with_geoid": 3,
         }
 
-        input_conf["subsampling"] = {}
-        input_conf["subsampling"]["advanced"] = {}
-        input_conf["subsampling"]["advanced"]["resolutions"] = [1]
+        input_conf["subsampling"] = {"advanced": {"resolutions": [1]}}
 
-        input_conf["pipeline"] = ["subsampling", "surface_modeling", "filling"]
+        input_conf["pipeline"] = [
+            "subsampling",
+            "surface_modeling",
+            "filling",
+        ]
 
-        input_conf["filling"] = {}
-
-        input_conf["filling"]["applications"] = {
-            "auxiliary_filling": {
-                "method": "auxiliary_filling_from_sensors",
-                "activated": True,
-                "mode": "full",
-                "save_intermediate_data": True,
+        input_conf["filling"] = {
+            "applications": {
+                "auxiliary_filling": {
+                    "method": "auxiliary_filling_from_sensors",
+                    "activated": True,
+                    "mode": "full",
+                    "save_intermediate_data": True,
+                }
             }
         }
 
@@ -100,143 +109,66 @@ def test_pipeline_filling_end2end_global():
             "classification": True,
         }
 
+        # cli run setup
+        cli_conf = copy.deepcopy(input_conf)
+        cli_conf["output"]["directory"] = os.path.join(
+            input_conf["output"]["directory"], "..", "out_cli"
+        )
+
+        cli_conf_path = os.path.join(directory, "filling_conf.json")
+        with open(cli_conf_path, "w", encoding="utf8") as f:
+            json.dump(cli_conf, f)
+
+        # Run pipeline
         pipeline = default_pipeline.DefaultPipeline(
             input_conf, absolute_data_path(directory)
         )
         pipeline.run()
 
-        out_dir = os.path.join(input_conf["output"]["directory"])
+        main_cli(argparse.Namespace(conf=cli_conf_path))
 
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
-
-        copy2(
-            os.path.join(
-                out_dir,
-                "intermediate_data",
-                "filling/dsm",
-                "dsm.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_filled_phr_ventoux_pipeline_filling_global.tif",
-                )
-            ),
+        out_dir = input_conf["output"]["directory"]
+        filling_dir = os.path.join(
+            out_dir, "intermediate_data", "filling", "dsm"
         )
 
-        copy2(
-            os.path.join(
-                out_dir,
-                "intermediate_data",
-                "filling/dsm",
-                "image.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_filled_phr_ventoux_pipeline_filling_global.tif",
-                )
-            ),
-        )
+        intermediate_dir = absolute_data_path("intermediate_data")
+        ref_output_dir = absolute_data_path("ref_output")
 
-        copy2(
-            os.path.join(
-                out_dir,
-                "intermediate_data",
-                "filling/dsm",
-                "classification.tif",
+        # Files to validate: output name -> reference basename
+        products = {
+            "dsm.tif": "dsm_filled_phr_ventoux_pipeline_filling_global.tif",
+            "image.tif": "image_filled_phr_ventoux_pipeline_filling_global.tif",
+            "classification.tif": (
+                "classification_phr_ventoux_pipeline_filling_global.tif"
             ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "classification_phr_ventoux_pipeline_filling_global.tif",
-                )
-            ),
-        )
+            "filling.tif": ("filling_phr_ventoux_pipeline_filling_global.tif"),
+        }
 
-        copy2(
-            os.path.join(
-                out_dir,
-                "intermediate_data",
-                "filling/dsm",
-                "filling.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "filling_phr_ventoux_pipeline_filling_global.tif",
-                )
-            ),
-        )
+        for out_dir in [
+            input_conf["output"]["directory"],
+            cli_conf["output"]["directory"],
+        ]:
+            filling_dir = os.path.join(
+                out_dir, "intermediate_data", "filling", "dsm"
+            )
 
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "intermediate_data",
-                "filling/dsm",
-                "dsm.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_filled_phr_ventoux_pipeline_filling_global.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
+            for filename, ref_name in products.items():
+                output_path = os.path.join(filling_dir, filename)
 
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "intermediate_data",
-                "filling/dsm",
-                "image.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_filled_phr_ventoux_pipeline_filling_global.tif",
+                # Save intermediate result
+                copy2(
+                    output_path,
+                    os.path.join(intermediate_dir, ref_name),
                 )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
 
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "intermediate_data",
-                "filling/dsm",
-                "classification.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "classification_phr_ventoux_pipeline_filling_global.tif",
+                # Compare with reference
+                assert_same_images(
+                    output_path,
+                    os.path.join(ref_output_dir, ref_name),
+                    atol=atol,
+                    rtol=rtol,
                 )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "intermediate_data",
-                "filling/dsm",
-                "filling.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "filling_phr_ventoux_pipeline_filling_global.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
 
 
 @pytest.mark.end2end_tests
@@ -244,6 +176,8 @@ def test_pipeline():
     """
     Test filling pipeline
     """
+    atol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001
+    rtol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_conf = {
@@ -315,11 +249,10 @@ def test_pipeline():
                     "input/phr_ventoux/srtm/N44E005.hgt"
                 ),
             },
-            "output": {
-                "directory": directory,
-            },
+            "output": {"directory": directory},
         }
 
+        # Filling configuration
         input_conf["input"]["filling"] = {
             "fill_with_exogenous_dem": 4,
             "interpolate_from_borders": 2,
@@ -327,28 +260,28 @@ def test_pipeline():
             "fill_with_geoid": 3,
         }
 
-        path_input = "tests/data/input/input_filling_pipeline/"
-        classif_path = "classif_test_surface_modeling_ventoux.tif"
-
+        base_path = "tests/data/input/input_filling_pipeline/"
         input_conf["input"]["dsm_to_fill"] = {
-            "dsm": path_input + "dsm_test_surface_modeling_ventoux.tif",
-            "image": path_input + "image_test_surface_modeling_ventoux.tif",
-            "classification": path_input + classif_path,
-            "filling": path_input + "filling_test_surface_modeling_ventoux.tif",
+            "dsm": base_path + "dsm_test_surface_modeling_ventoux.tif",
+            "image": base_path + "image_test_surface_modeling_ventoux.tif",
+            "classification": (
+                base_path + "classif_test_surface_modeling_ventoux.tif"
+            ),
+            "filling": (
+                base_path + "filling_test_surface_modeling_ventoux.tif"
+            ),
         }
 
-        input_conf["subsampling"] = {}
-        input_conf["subsampling"]["advanced"] = {}
-        input_conf["subsampling"]["advanced"]["resolutions"] = 1
+        input_conf["subsampling"] = {"advanced": {"resolutions": 1}}
 
-        input_conf["filling"] = {}
-
-        input_conf["filling"]["applications"] = {
-            "auxiliary_filling": {
-                "method": "auxiliary_filling_from_sensors",
-                "activated": True,
-                "mode": "full",
-                "save_intermediate_data": True,
+        input_conf["filling"] = {
+            "applications": {
+                "auxiliary_filling": {
+                    "method": "auxiliary_filling_from_sensors",
+                    "activated": True,
+                    "mode": "full",
+                    "save_intermediate_data": True,
+                }
             }
         }
 
@@ -358,132 +291,58 @@ def test_pipeline():
             "image": ["b1", "b2", "b3"],
         }
 
+        # cli run setup
+        cli_conf = copy.deepcopy(input_conf)
+        cli_conf["pipeline"] = "filling"
+        cli_conf["output"]["directory"] = os.path.join(
+            input_conf["output"]["directory"], "..", "out_cli"
+        )
+
+        cli_conf_path = os.path.join(directory, "filling_conf.json")
+        with open(cli_conf_path, "w", encoding="utf8") as f:
+            json.dump(cli_conf, f)
+
+        # Run pipeline
         pipeline = filling.FillingPipeline(
             input_conf, absolute_data_path(directory)
         )
         pipeline.run()
 
-        out_dir = os.path.join(input_conf["output"]["directory"])
+        main_cli(argparse.Namespace(conf=cli_conf_path))
 
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
+        # Setup output dirs
+        intermediate_dir = absolute_data_path("intermediate_data")
+        ref_output_dir = absolute_data_path("ref_output")
 
-        copy2(
-            os.path.join(
-                out_dir,
-                "filling/dsm",
-                "dsm.tif",
+        # Outputs to validate
+        products = {
+            "dsm.tif": "dsm_filled_phr_ventoux_pipeline_filling.tif",
+            "image.tif": "image_filled_phr_ventoux_pipeline_filling.tif",
+            "classification.tif": (
+                "classification_phr_ventoux_pipeline_filling.tif"
             ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_filled_phr_ventoux_pipeline_filling.tif",
+            "filling.tif": "filling_phr_ventoux_pipeline_filling.tif",
+        }
+
+        for out_dir in [
+            input_conf["output"]["directory"],
+            cli_conf["output"]["directory"],
+        ]:
+            filling_dir = os.path.join(out_dir, "filling", "dsm")
+
+            for filename, ref_name in products.items():
+                output_path = os.path.join(filling_dir, filename)
+
+                # Save intermediate result
+                copy2(
+                    output_path,
+                    os.path.join(intermediate_dir, ref_name),
                 )
-            ),
-        )
 
-        copy2(
-            os.path.join(
-                out_dir,
-                "filling/dsm",
-                "image.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_filled_phr_ventoux_pipeline_filling.tif",
+                # Compare with reference
+                assert_same_images(
+                    output_path,
+                    os.path.join(ref_output_dir, ref_name),
+                    atol=atol,
+                    rtol=rtol,
                 )
-            ),
-        )
-
-        copy2(
-            os.path.join(
-                out_dir,
-                "filling/dsm",
-                "classification.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "classification_phr_ventoux_pipeline_filling.tif",
-                )
-            ),
-        )
-
-        copy2(
-            os.path.join(
-                out_dir,
-                "filling/dsm",
-                "filling.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "filling_phr_ventoux_pipeline_filling.tif",
-                )
-            ),
-        )
-
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "filling/dsm",
-                "dsm.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_filled_phr_ventoux_pipeline_filling.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "filling/dsm",
-                "image.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_filled_phr_ventoux_pipeline_filling.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "filling/dsm",
-                "classification.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "classification_phr_ventoux_pipeline_filling.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "filling/dsm",
-                "filling.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "filling_phr_ventoux_pipeline_filling.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
