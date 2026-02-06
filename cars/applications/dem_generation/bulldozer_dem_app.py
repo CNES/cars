@@ -365,9 +365,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
         footprint = skimage.morphology.disk(
             self.fillnodata_max_search_distance // 2, decomposition="sequence"
         )
-        eroded_mask = skimage.morphology.binary_erosion(
-            mask, footprint=footprint
-        )
+        eroded_mask = skimage.morphology.erosion(mask, footprint=footprint)
 
         dem_min[eroded_mask] = nodata
         dem_median[eroded_mask] = nodata
