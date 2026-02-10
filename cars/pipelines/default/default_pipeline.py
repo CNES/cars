@@ -722,6 +722,17 @@ class DefaultPipeline(PipelineTemplate):
                     dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
                     current_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
 
+                if not last_res:
+                    for _, data in current_conf[INPUT][
+                        sens_cst.SENSORS
+                    ].items():
+                        data["edges"] = {
+                            "edges_mask": None,
+                            "depth_map": None,
+                            "normals": None,
+                            "tile_id": None,
+                        }
+
                 updated_pipeline = SurfaceModelingPipeline(
                     current_conf,
                     config_dir=self.config_dir,
@@ -1001,6 +1012,15 @@ def extract_conf_with_resolution(
         )
     else:
         filling_applications_for_surface_modeling = {}
+
+    if not last_res and sens_cst.SENSORS in new_conf[INPUT]:
+        for _, data in new_conf[INPUT][sens_cst.SENSORS].items():
+            data["edges"] = {
+                "edges_mask": None,
+                "depth_map": None,
+                "normals": None,
+                "tile_id": None,
+            }
 
     # Extract surface modeling conf
     new_conf[pipeline_cst.SURFACE_MODELING] = {}

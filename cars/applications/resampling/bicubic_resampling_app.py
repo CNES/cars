@@ -223,6 +223,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         tile_width=None,
         tile_height=None,
         add_classif=True,
+        add_edges=True,
         epipolar_roi=None,
         required_bands=None,
         texture_bands=None,
@@ -439,6 +440,50 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 dtype=np.uint8,
                 optional_data=True,
             )
+        if self.save_intermediate_data and add_edges:
+            # left edges data
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_left_edges_mask.tif"),
+                cst.EPI_EDGES_MASK,
+                epipolar_images_left,
+                cars_ds_name="epi_img_left_edges_mask",
+                dtype=np.uint8,
+                optional_data=True,
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_left_edges_depth_map.tif"),
+                cst.EPI_EDGES_DEPTH_MAP,
+                epipolar_images_left,
+                cars_ds_name="epi_img_left_edges_depth_map",
+                dtype=np.float32,
+                optional_data=True,
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_left_edges_normals.tif"),
+                cst.EPI_EDGES_NORMALS,
+                epipolar_images_left,
+                cars_ds_name="epi_img_left_edges_normals",
+                dtype=np.float32,
+                optional_data=True,
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_left_edges_tile_id.tif"),
+                cst.EPI_EDGES_TILE_ID,
+                epipolar_images_left,
+                cars_ds_name="epi_img_left_edges_tile_id",
+                dtype=np.uint8,
+                optional_data=True,
+            )
+
+            # right edges data
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_right_edges_mask.tif"),
+                cst.EPI_EDGES_MASK,
+                epipolar_images_right,
+                cars_ds_name="epi_img_right_edges",
+                dtype=np.uint8,
+                optional_data=True,
+            )
 
         # Get saving infos in order to save tiles when they are computed
         [
@@ -488,6 +533,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         )
         mask1 = sensor_image_left.get(sens_cst.INPUT_MSK, None)
         mask2 = sensor_image_right.get(sens_cst.INPUT_MSK, None)
+        edges1 = sensor_image_left.get(sens_cst.INPUT_EDGES, None)
+        edges2 = sensor_image_right.get(sens_cst.INPUT_EDGES, None)
         left_classifs = sensor_image_left.get(
             sens_cst.INPUT_CLASSIFICATION, None
         )
@@ -609,6 +656,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         add_classif=add_classif,
                         mask1=mask1,
                         mask2=mask2,
+                        edges1=edges1,
+                        edges2=edges2,
                         left_classifs=left_classifs,
                         right_classifs=right_classifs,
                         nodata1=nodata1,
@@ -644,8 +693,11 @@ def generate_epipolar_images_wrapper(
     used_disp_min=None,
     used_disp_max=None,
     add_classif=True,
+    add_edges=True,
     mask1=None,
     mask2=None,
+    edges1=None,
+    edges2=None,
     left_classifs=None,
     right_classifs=None,
     nodata1=0,
@@ -694,6 +746,8 @@ def generate_epipolar_images_wrapper(
         right_dataset,
         left_classif_dataset,
         right_classif_dataset,
+        left_edges_datasets,
+        right_edges_datasets,
     ) = resampling_algo.epipolar_rectify_images(
         left_imgs,
         right_imgs,
@@ -709,11 +763,14 @@ def generate_epipolar_images_wrapper(
         step=step,
         mask1=mask1,
         mask2=mask2,
+        edges1=edges1,
+        edges2=edges2,
         left_classifs=left_classifs,
         right_classifs=right_classifs,
         nodata1=nodata1,
         nodata2=nodata2,
         add_classif=add_classif,
+        add_edges=add_edges,
     )
 
     # Add classification layers to dataset
@@ -734,6 +791,31 @@ def generate_epipolar_images_wrapper(
                 right_classif_dataset[cst.EPI_IMAGE].values,
                 dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
             ).astype(bool)
+
+    # Add edges layer to dataset
+    if add_edges:
+        for key, band_name, epi_name in [
+            ("edges_mask", cst.BAND_EDGES_MASK, cst.EPI_EDGES_MASK),
+            ("normals", cst.BAND_EDGES_NORMALS, cst.EPI_EDGES_NORMALS),
+            ("depth_map", cst.BAND_EDGES_DEPTH_MAP, cst.EPI_EDGES_DEPTH_MAP),
+            ("tile_id", cst.BAND_EDGES_TILE_ID, cst.EPI_EDGES_TILE_ID),
+        ]:
+            if left_edges_datasets[key]:
+                left_dataset.coords[band_name] = left_edges_datasets[key].attrs[
+                    cst.BAND_NAMES
+                ]
+                left_dataset[epi_name] = xr.DataArray(
+                    left_edges_datasets[key][cst.EPI_IMAGE].values,
+                    dims=[band_name, cst.ROW, cst.COL],
+                )
+            if right_edges_datasets[key]:
+                right_dataset.coords[band_name] = right_edges_datasets[
+                    key
+                ].attrs[cst.BAND_NAMES]
+                right_dataset[epi_name] = xr.DataArray(
+                    right_edges_datasets[key][cst.EPI_IMAGE].values,
+                    dims=[band_name, cst.ROW, cst.COL],
+                )
 
     # Add attributes info
     attributes = {}

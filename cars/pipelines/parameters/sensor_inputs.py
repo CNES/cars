@@ -126,6 +126,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         sens_cst.INPUT_GEO_MODEL: Or(str, dict),
         sens_cst.INPUT_MSK: Or(str, None),
         sens_cst.INPUT_CLASSIFICATION: Or(str, dict, None),
+        sens_cst.INPUT_EDGES: Or(str, dict, None),
     }
 
     checker_sensor = Checker(sensor_schema)
@@ -173,6 +174,45 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             sens_cst.INPUT_MSK
         ] = mask
 
+        edges = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
+            sens_cst.INPUT_EDGES, None
+        )
+        if (
+            isinstance(edges, str) or edges is None
+        ):  # edges is a direct path to the edges_mask
+            edges = {
+                sens_cst.INPUT_EDGES_MASK: edges,
+                sens_cst.INPUT_EDGES_NORMALS: None,
+                sens_cst.INPUT_EDGES_DEPTH_MAP: None,
+                sens_cst.INPUT_EDGES_TILE_ID: None,
+            }
+        elif not isinstance(edges, dict):
+            logging.error("Key edges {} is not a path or dict".format(edges))
+            raise RuntimeError(
+                "Key edges {} is not a path or dict".format(edges)
+            )
+        else:
+            edges_overload = {
+                sens_cst.INPUT_EDGES_MASK: None,
+                sens_cst.INPUT_EDGES_NORMALS: None,
+                sens_cst.INPUT_EDGES_DEPTH_MAP: None,
+                sens_cst.INPUT_EDGES_TILE_ID: None,
+            }
+            edges_overload.update(edges)
+            edges = edges_overload
+        edges_checker = Checker(
+            {
+                sens_cst.INPUT_EDGES_MASK: Or(str, None),
+                sens_cst.INPUT_EDGES_NORMALS: Or(str, None),
+                sens_cst.INPUT_EDGES_DEPTH_MAP: Or(str, None),
+                sens_cst.INPUT_EDGES_TILE_ID: Or(str, None),
+            }
+        )
+        edges_checker.validate(edges)
+        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+            sens_cst.INPUT_EDGES
+        ] = edges
+
         classif = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_CLASSIFICATION, None
         )
@@ -214,6 +254,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
             sensor_image[sens_cst.INPUT_IMG],
             sensor_image[sens_cst.INPUT_MSK],
             sensor_image[sens_cst.INPUT_CLASSIFICATION],
+            sensor_image[sens_cst.INPUT_EDGES],
         )
         # check band nbits of msk
         check_nbits(
@@ -695,7 +736,7 @@ def get_initial_elevation(config):
     return updated_config
 
 
-def check_input_size(image, mask, classif):
+def check_input_size(image, mask, classif, edges):
     """
     Check image, mask, classif and color given
 
@@ -709,6 +750,8 @@ def check_input_size(image, mask, classif):
     :type color: str
     :param classif: classif path
     :type classif: str
+    :param edges: edges dict
+    :type edges: dict
     """
     image = image["bands"]["b0"]["path"]
     if classif is not None:
@@ -727,6 +770,14 @@ def check_input_size(image, mask, classif):
                 "The classification bands {} and {} "
                 "do not have the same size".format(image, classif)
             )
+
+    for key, val in edges.items():
+        if val is not None:
+            if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(val):
+                raise RuntimeError(
+                    "The image {} and the edges {} {} "
+                    "do not have the same size".format(image, key, val)
+                )
 
 
 def check_nbits(mask):
