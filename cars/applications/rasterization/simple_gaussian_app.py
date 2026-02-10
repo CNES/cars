@@ -555,7 +555,7 @@ class SimpleGaussian(
                     }
                 }
             )
-            if performance_map_classes is False:
+            if performance_map_classes == [0]:
                 # No classes, we return raw data
                 out_performance_map_raw = out_performance_map
                 out_performance_map = None
