@@ -143,6 +143,7 @@ class CensusMccnnSgm(
         self.filter_incomplete_disparity_range = self.used_config[
             "filter_incomplete_disparity_range"
         ]
+        self.edges_3sgm = self.used_config["edges_3sgm"]
 
         # init orchestrator
         self.orchestrator = None
@@ -268,6 +269,7 @@ class CensusMccnnSgm(
         overloaded_conf["filter_incomplete_disparity_range"] = conf.get(
             "filter_incomplete_disparity_range", True
         )
+        overloaded_conf["edges_3sgm"] = conf.get("edges_3sgm", True)
 
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -403,6 +405,7 @@ class CensusMccnnSgm(
             "confidence_filtering": dict,
             "threshold_disp_range_to_borders": bool,
             "filter_incomplete_disparity_range": bool,
+            "edges_3sgm": bool,
         }
 
         # Check conf
@@ -1278,6 +1281,7 @@ class CensusMccnnSgm(
                                 self.filter_incomplete_disparity_range
                             ),
                             classif_bands_to_mask=classif_bands_to_mask,
+                            edges_3sgm=self.edges_3sgm,
                         )
 
         else:
@@ -1305,6 +1309,7 @@ def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
     threshold_disp_range_to_borders=False,
     filter_incomplete_disparity_range=True,
     classif_bands_to_mask=None,
+    edges_3sgm=True,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1362,6 +1367,15 @@ def compute_disparity_wrapper(  # pylint: disable=too-many-positional-arguments
         - cst.EPI_TEXTURE
 
     """
+
+    if edges_3sgm and "edges_mask" in left_image_object:
+        corr_cfg["pipeline"]["optimization"]["optimization_method"] = "3sgm"
+        corr_cfg["pipeline"]["optimization"]["geometric_prior"] = {
+            "source": "edges"
+        }
+        # convert to 2D array for sgm
+        left_image_object["edges"] = left_image_object["edges_mask"].squeeze()
+
     # transform disp_range_grid back to dict
     disp_range_grid = disp_range_grid.data
     # Generate disparity grids
