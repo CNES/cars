@@ -207,8 +207,17 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
         "tile_id": None,
     }
     if add_edges:
-        band_format_edges1 = to_band_format(edges1)
-        band_format_edges2 = to_band_format(edges2)
+        band_format_edges1 = (
+            to_band_format(edges1) if edges1 is not None else None
+        )
+        band_format_edges2 = (
+            to_band_format(edges2) if edges2 is not None else None
+        )
+
+        edge_sources = [
+            (band_format_edges1, left_edges_datasets),
+            (band_format_edges2, right_edges_datasets),
+        ]
 
         for key, band_name in [
             ("edges_mask", cst.BAND_EDGES_MASK),
@@ -216,30 +225,18 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
             ("normals", cst.BAND_EDGES_NORMALS),
             ("tile_id", cst.BAND_EDGES_TILE_ID),
         ]:
-            # Left edges resampling for each image
-            if band_format_edges1[key]:
-                left_edges_datasets[key] = resample_image(
-                    band_format_edges1[key],
-                    grid1,
-                    [epipolar_size_x, epipolar_size_y],
-                    region=left_region,
-                    band_coords=band_name,
-                    interpolator_img=interpolator_edges,
-                    interpolator_mask=interpolator_mask,
-                    img_transform=left_img_transform,
-                )
-            # Right edges resampling for each image
-            if band_format_edges2[key]:
-                right_edges_datasets[key] = resample_image(
-                    band_format_edges2[key],
-                    grid1,
-                    [epipolar_size_x, epipolar_size_y],
-                    region=left_region,
-                    band_coords=band_name,
-                    interpolator_img=interpolator_edges,
-                    interpolator_mask=interpolator_mask,
-                    img_transform=left_img_transform,
-                )
+            for band_format, target_dataset in edge_sources:
+                if band_format and band_format.get(key):
+                    target_dataset[key] = resample_image(
+                        band_format[key],
+                        grid1,
+                        [epipolar_size_x, epipolar_size_y],
+                        region=left_region,
+                        band_coords=band_name,
+                        interpolator_img=interpolator_edges,
+                        interpolator_mask=interpolator_mask,
+                        img_transform=left_img_transform,
+                    )
 
     return (
         left_dataset,

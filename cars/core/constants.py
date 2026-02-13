@@ -174,6 +174,10 @@ INDEX_DEPTH_MAP_CLASSIFICATION = "classification"
 INDEX_DEPTH_MAP_PERFORMANCE_MAP = "performance_map"
 INDEX_DEPTH_MAP_AMBIGUITY = "ambiguity"
 INDEX_DEPTH_MAP_FILLING = "filling"
+INDEX_DEPTH_MAP_EDGES_MASK = "edges_mask"
+INDEX_DEPTH_MAP_EDGES_NORMALS = "edges_normals"
+INDEX_DEPTH_MAP_EDGES_DEPTH_MAP = "edges_depth_map"
+INDEX_DEPTH_MAP_EDGES_TILE_ID = "edges_tile_id"
 INDEX_DEPTH_MAP_EPSG = "epsg"
 
 # dsms inputs index

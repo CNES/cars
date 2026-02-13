@@ -145,6 +145,7 @@ class LineOfSightIntersection(
         save_output_filling=False,
         save_output_performance_map=False,
         save_output_ambiguity=False,
+        save_output_edges=False,
     ):
         """
         Save the triangulation output. The different TIFs composing the depth
@@ -183,6 +184,8 @@ class LineOfSightIntersection(
         :type save_output_performance_map: bool
         :param save_output_ambiguity: Save ambiguity in output_dir
         :type save_output_ambiguity: bool
+        :param save_output_edges: Save edges in output_dir
+        :type save_output_edges: bool
         """
 
         if dump_dir:
@@ -301,6 +304,41 @@ class LineOfSightIntersection(
                 nodata=255,
             )
 
+        if save_output_edges or dump_dir:
+            edges_output_dir = output_dir if save_output_edges else dump_dir
+            self.orchestrator.add_to_save_lists(
+                os.path.join(edges_output_dir, "edges_mask.tif"),
+                cst.EPI_EDGES_MASK,
+                epipolar_point_cloud,
+                cars_ds_name="depth_map_edges_mask",
+                dtype=np.uint8,
+                optional_data=True,
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(edges_output_dir, "edges_depth_map.tif"),
+                cst.EPI_EDGES_DEPTH_MAP,
+                epipolar_point_cloud,
+                cars_ds_name="depth_map_edges_depth_map",
+                dtype=np.float32,
+                optional_data=True,
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(edges_output_dir, "edges_normals.tif"),
+                cst.EPI_EDGES_NORMALS,
+                epipolar_point_cloud,
+                cars_ds_name="depth_map_edges_normals",
+                dtype=np.float32,
+                optional_data=True,
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(edges_output_dir, "edges_tile_id.tif"),
+                cst.EPI_EDGES_TILE_ID,
+                epipolar_point_cloud,
+                cars_ds_name="depth_map_edges_tile_id",
+                dtype=np.uint8,
+                optional_data=True,
+            )
+
         if dump_dir and performance_maps_to_generate is not None:
             if "intervals" in performance_maps_to_generate:
                 self.orchestrator.add_to_save_lists(
@@ -348,6 +386,7 @@ class LineOfSightIntersection(
         save_output_filling=False,
         save_output_performance_map=False,
         save_output_ambiguity=False,
+        save_output_edges=False,
         pair_key="PAIR_0",
     ):
         """
@@ -402,6 +441,20 @@ class LineOfSightIntersection(
         if save_output_filling:
             index[cst.INDEX_DEPTH_MAP_FILLING] = os.path.join(
                 pair_key, "filling.tif"
+            )
+
+        if save_output_edges:
+            index[cst.INDEX_DEPTH_MAP_EDGES_MASK] = os.path.join(
+                pair_key, "edges_mask.tif"
+            )
+            index[cst.INDEX_DEPTH_MAP_EDGES_NORMALS] = os.path.join(
+                pair_key, "edges_normals.tif"
+            )
+            index[cst.INDEX_DEPTH_MAP_EDGES_DEPTH_MAP] = os.path.join(
+                pair_key, "edges_depth_map.tif"
+            )
+            index[cst.INDEX_DEPTH_MAP_EDGES_TILE_ID] = os.path.join(
+                pair_key, "edges_tile_id.tif"
             )
 
         # update orchestrator index if it has been filled
@@ -472,6 +525,7 @@ class LineOfSightIntersection(
         save_output_filling=False,
         save_output_performance_map=False,
         save_output_ambiguity=False,
+        save_output_edges=False,
     ):
         """
         Run Triangulation application.
@@ -559,6 +613,9 @@ class LineOfSightIntersection(
         :param save_output_ambiguity: Save ambiguity in
                 depth_map_dir
         :type save_output_ambiguity: bool
+        :param save_output_edges: Save edges in
+                depth_map_dir
+        :type save_output_edges: bool
 
         :return: point cloud \
                 The CarsDataset contains:
@@ -760,6 +817,7 @@ class LineOfSightIntersection(
                 save_output_filling,
                 save_output_performance_map,
                 save_output_ambiguity,
+                save_output_edges,
             )
             self.fill_index(
                 save_output_coordinates,
@@ -768,6 +826,7 @@ class LineOfSightIntersection(
                 save_output_filling,
                 save_output_performance_map,
                 save_output_ambiguity,
+                save_output_edges,
                 pair_key,
             )
             # Save as point cloud

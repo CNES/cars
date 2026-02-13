@@ -120,6 +120,8 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         save_output_classification=False,
         save_output_filling=False,
         save_output_performance_map=False,
+        save_output_ambiguity=False,
+        save_output_edges=False,
     ):
         """
         Run Triangulation application.
@@ -210,6 +212,9 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :param save_output_performance_map: Save performance map in
                 depth_map_dir
         :type save_output_performance_map: bool
+        :param save_output_edges: Save edges image(s) map in
+                depth_map_dir
+        :type save_output_edges: bool
 
         :return: point cloud \
                 The CarsDataset contains:

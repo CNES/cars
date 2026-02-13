@@ -210,6 +210,41 @@ def add_texture(
             output_dataset[cst.EPI_TEXTURE].attrs["color_type"] = color_type
 
 
+def add_edges(
+    output_dataset: xr.Dataset,
+    ref_dataset: xr.Dataset,
+):
+    """
+    Add image and image mask to dataset
+
+    :param output_dataset: output dataset
+    :param image: image array
+    :param image_type: data type of pixels
+    :param band_im: list of band names
+
+    """
+
+    if cst.EPI_EDGES_NORMALS in ref_dataset:
+        output_dataset[cst.EPI_EDGES_NORMALS] = ref_dataset[
+            cst.EPI_EDGES_NORMALS
+        ].copy()
+
+    if cst.EPI_EDGES_MASK in ref_dataset:
+        output_dataset[cst.EPI_EDGES_MASK] = ref_dataset[
+            cst.EPI_EDGES_MASK
+        ].copy()
+
+    if cst.EPI_EDGES_DEPTH_MAP in ref_dataset:
+        output_dataset[cst.EPI_EDGES_DEPTH_MAP] = ref_dataset[
+            cst.EPI_EDGES_DEPTH_MAP
+        ].copy()
+
+    if cst.EPI_EDGES_TILE_ID in ref_dataset:
+        output_dataset[cst.EPI_EDGES_TILE_ID] = ref_dataset[
+            cst.EPI_EDGES_TILE_ID
+        ].copy()
+
+
 def add_classification(
     output_dataset: xr.Dataset,
     classif: np.ndarray = None,
@@ -489,6 +524,9 @@ def create_disp_dataset(  # noqa: C901
     add_disparity_grids(
         disp_ds, disp_min_grid=disp_min_grid, disp_max_grid=disp_max_grid
     )
+
+    # add edges
+    add_edges(disp_ds, ref_dataset)
 
     # Add filling infos
     if cropped_range is not None:

@@ -484,6 +484,30 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 dtype=np.uint8,
                 optional_data=True,
             )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_left_edges_depth_map.tif"),
+                cst.EPI_EDGES_DEPTH_MAP,
+                epipolar_images_right,
+                cars_ds_name="epi_img_left_edges_depth_map",
+                dtype=np.float32,
+                optional_data=True,
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_left_edges_normals.tif"),
+                cst.EPI_EDGES_NORMALS,
+                epipolar_images_right,
+                cars_ds_name="epi_img_left_edges_normals",
+                dtype=np.float32,
+                optional_data=True,
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_left_edges_tile_id.tif"),
+                cst.EPI_EDGES_TILE_ID,
+                epipolar_images_right,
+                cars_ds_name="epi_img_left_edges_tile_id",
+                dtype=np.uint8,
+                optional_data=True,
+            )
 
         # Get saving infos in order to save tiles when they are computed
         [

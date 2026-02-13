@@ -1638,6 +1638,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 and self.auxiliary[out_cst.AUX_PERFORMANCE_MAP],
                 save_output_ambiguity=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_AMBIGUITY],
+                save_output_edges=bool(depth_map_dir)
+                and self.auxiliary[out_cst.AUX_EDGES],
             )
 
             if self.quit_on_app("triangulation"):
