@@ -347,6 +347,15 @@ def check_performance_classes(overloaded_conf):
         output_constants.AUX_PERFORMANCE_MAP
     ]
 
+    raw_performance_map = False
+    request_raw_performance_map = [[], [0], None]
+    if performance_map_classes in request_raw_performance_map:
+        logging.info("Raw performance map will be returned")
+        overloaded_conf[output_constants.AUXILIARY][
+            output_constants.AUX_PERFORMANCE_MAP
+        ] = [0]
+        raw_performance_map = True
+
     if isinstance(performance_map_classes, list):
         for elem in performance_map_classes:
             if not isinstance(elem, (int, float)):
@@ -354,7 +363,7 @@ def check_performance_classes(overloaded_conf):
                     "The performance_map parameter of auxiliary should"
                     "be a boolean or a list of float/int"
                 )
-        if len(performance_map_classes) < 2:
+        if not raw_performance_map and len(performance_map_classes) < 2:
             raise RuntimeError("Not enough step for performance_map_classes")
         if performance_map_classes:
             previous_step = -1

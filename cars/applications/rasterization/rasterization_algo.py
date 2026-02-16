@@ -489,7 +489,10 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
     if performance_map_raw is not None:
         performance_map_raw = performance_map_raw.reshape(shape_out + (-1,))
         performance_map_raw = np.moveaxis(performance_map_raw, 2, 0)
-        if not isinstance(performance_map_classes, bool):
+        if (
+            isinstance(performance_map_classes, list)
+            and len(performance_map_classes) > 2
+        ):
             (performance_map_classified, performance_map_classified_indexes) = (
                 rast_wrap.classify_performance_map(
                     performance_map_raw, performance_map_classes, msk_no_data
