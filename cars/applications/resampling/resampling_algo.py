@@ -52,7 +52,7 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
     interpolator_image="bicubic",
     interpolator_classif="nearest",
     interpolator_mask="nearest",
-    interpolator_edges="nearest",
+    interpolators_edges=None,
     step=None,
     mask1=None,
     mask2=None,
@@ -68,6 +68,14 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
     """
     Resample left and right images
     """
+
+    if interpolators_edges is None:
+        interpolators_edges = {
+            "edges_mask": "nearest",
+            "depth_map": "bicubic",
+            "normals": "bicubic",
+            "tile_id": "nearest",
+        }
 
     # Force region to be float
     region = [int(x) for x in region]
@@ -233,7 +241,7 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
                         [epipolar_size_x, epipolar_size_y],
                         region=left_region,
                         band_coords=band_name,
-                        interpolator_img=interpolator_edges,
+                        interpolator_img=interpolators_edges[key],
                         interpolator_mask=interpolator_mask,
                         img_transform=left_img_transform,
                     )

@@ -174,6 +174,7 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
         interpolator_image="bicubic",
         interpolator_classif="nearest",
         interpolator_mask="nearest",
+        interpolators_edges=None,
         used_disp_min=global_disp_min,
         used_disp_max=global_disp_max,
         mask1=mask1,

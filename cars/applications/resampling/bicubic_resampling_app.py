@@ -79,6 +79,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         self.interpolator_image = self.used_config["interpolator_image"]
         self.interpolator_classif = self.used_config["interpolator_classif"]
         self.interpolator_mask = self.used_config["interpolator_mask"]
+        self.interpolators_edges = self.used_config["interpolators_edges"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -116,6 +117,15 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         overloaded_conf["interpolator_mask"] = conf.get(
             "interpolator_mask", "nearest"
         )
+        overloaded_conf["interpolators_edges"] = conf.get(
+            "interpolators_edges",
+            {
+                "edges_mask": "nearest",
+                "depth_map": "bicubic",
+                "normals": "bicubic",
+                "tile_id": "nearest",
+            },
+        )
         overloaded_conf["step"] = conf.get("step", 500)
 
         # Saving bools
@@ -129,6 +139,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             "interpolator_image": str,
             "interpolator_classif": str,
             "interpolator_mask": str,
+            "interpolators_edges": dict,
             "step": Or(None, int),
             "save_intermediate_data": bool,
         }
@@ -136,6 +147,25 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # Check conf
         checker = Checker(rectification_schema)
         checker.validate(overloaded_conf)
+
+        # update edges interp dict and check its format
+        temp_interps_edges = {
+            "edges_mask": "nearest",
+            "depth_map": "bicubic",
+            "normals": "bicubic",
+            "tile_id": "nearest",
+        }
+        temp_interps_edges.update(overloaded_conf["interpolators_edges"])
+        overloaded_conf["interpolators_edges"] = temp_interps_edges
+
+        interpolators_schema = {
+            "edges_mask": str,
+            "depth_map": str,
+            "normals": str,
+            "tile_id": str,
+        }
+        checker = Checker(interpolators_schema)
+        checker.validate(overloaded_conf["interpolators_edges"])
 
         return overloaded_conf
 
@@ -674,6 +704,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         self.interpolator_image,
                         self.interpolator_classif,
                         self.interpolator_mask,
+                        self.interpolators_edges,
                         self.step,
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],
@@ -713,6 +744,7 @@ def generate_epipolar_images_wrapper(
     interpolator_image,
     interpolator_classif,
     interpolator_mask,
+    interpolators_edges,
     step=None,
     used_disp_min=None,
     used_disp_max=None,
@@ -784,6 +816,7 @@ def generate_epipolar_images_wrapper(
         interpolator_image,
         interpolator_classif,
         interpolator_mask,
+        interpolators_edges,
         step=step,
         mask1=mask1,
         mask2=mask2,
