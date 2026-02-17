@@ -40,6 +40,8 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         +========================+=================================================================================================================================+================+===============+==========+
         | *image*                | Path to the image or dictionary readable by a sensor loader                                                                     | string, dict   |               | Yes      |
         +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
+        | *edges*                | Path to the edges mask or dictionary with ``edges_mask``, ``normals``, ``depth_map``, ``tile_id``                               | string, dict   |               | No       |
+        +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
         | *geomodel*             | Path to the geomodel and plugin-specific attributes                                                                             | string, dict   |               | No       |
         +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
         | *mask*                 | Path to the binary mask                                                                                                         | string, dict   | None          | No       |
@@ -81,6 +83,29 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
                 .. include-cars-config:: ../../example_configs/configuration/image_basic_loader_config
 
+            .. tab:: Edges
+
+                This parameter is used to pass to CARS any data coming out of CARS's edge detection plugin.
+
+                The simple method for passing edge maps as inputs is to put only the path of the edges mask image.
+
+                It is possible to use a dictionary to define more auxiliary images, related to edge detection :
+
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | Name           | Description           | Type   | Default value | Available values | Required |
+                +================+=======================+========+===============+==================+==========+
+                | *edges_mask*   | File path             | str    |               |                  | No       |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *depth_map*    | File path             | str    |               |                  | No       |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *normals*      | File path             | str    |               |                  | No       |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+                | *tile_id*      | File path             | str    |               |                  | No       |
+                +----------------+-----------------------+--------+---------------+------------------+----------+
+
+                An example is given below : 
+
+                .. include-cars-config:: ../../example_configs/configuration/input_edges_config
 
             .. tab:: Geomodel
 

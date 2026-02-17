@@ -193,6 +193,12 @@ Compute the disparity map from stereo-rectified pair images
       -
       - False
       - No
+    * - edges_3sgm
+      - Use 3SGM in Pandora, using the edge mask as the mode (when edges_mask is given as input)
+      - bool
+      -
+      - False
+      - No
 
         
 See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
