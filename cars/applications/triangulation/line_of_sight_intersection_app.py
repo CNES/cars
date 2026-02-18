@@ -1078,11 +1078,9 @@ def triangulation_wrapper(  # pylint: disable=too-many-positional-arguments
             disp_ref.to_numpy(),
         )
     else:
-        logging.error(
-            "Disp ref is neither xarray Dataset  nor pandas DataFrame"
-        )
+        logging.error("Disp ref is neither xarray Dataset nor pandas DataFrame")
         raise TypeError(
-            "Disp ref is neither xarray Dataset  nor pandas DataFrame"
+            "Disp ref is neither xarray Dataset nor pandas DataFrame"
         )
 
     if geoid_path is not None:  # if user pass a geoid, use it as alt reference

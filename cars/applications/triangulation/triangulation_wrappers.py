@@ -157,6 +157,9 @@ def geoid_offset(points, geoid_path):
 
     # offset using geoid height
     out_pc[cst.Z] -= geoid_height_array
+    for key in out_pc:
+        if cst.POINT_CLOUD_LAYER_SUP_OR_INF_ROOT in key:
+            out_pc[key] -= geoid_height_array
 
     return out_pc
 
