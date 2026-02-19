@@ -264,6 +264,7 @@ class MergingPipeline(PipelineTemplate):
             out_cst.AUX_CONTRIBUTING_PAIR: bool,
             out_cst.AUX_FILLING: Or(bool, dict),
             out_cst.AUX_AMBIGUITY: bool,
+            out_cst.AUX_EDGES: bool,
             out_cst.AUX_DEM_MIN: bool,
             out_cst.AUX_DEM_MAX: bool,
             out_cst.AUX_DEM_MEDIAN: bool,
