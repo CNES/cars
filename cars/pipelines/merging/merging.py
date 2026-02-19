@@ -246,6 +246,9 @@ class MergingPipeline(PipelineTemplate):
         overloaded_conf[out_cst.AUXILIARY][out_cst.AUX_AMBIGUITY] = (
             overloaded_conf[out_cst.AUXILIARY].get(out_cst.AUX_AMBIGUITY, False)
         )
+        overloaded_conf[out_cst.AUXILIARY][out_cst.AUX_EDGES] = overloaded_conf[
+            out_cst.AUXILIARY
+        ].get(out_cst.AUX_EDGES, False)
 
         # Check schema
         output_schema = {
