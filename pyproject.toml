@@ -56,7 +56,7 @@ dependencies = [
     "pyproj",
     "utm",
     "pandas",
-    "urllib3<2.0,>=1.21.1",
+    "urllib3",
     "laspy[laszip]",
     "pandora[sgm]==1.7.2",
     "cars-rasterize==0.2.*",
@@ -66,7 +66,7 @@ dependencies = [
     "shareloc==0.2.12",
     "bulldozer-dtm==1.2.*",
     "xdem==0.2.*",
-    "geopandas<=1.0.1" # Temporary fix while geoutils is not compatible with v1.1.0
+    "geopandas"
 ]
 
 [project.urls]
