@@ -510,31 +510,31 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 os.path.join(pair_folder, "epi_img_right_edges_mask.tif"),
                 cst.EPI_EDGES_MASK,
                 epipolar_images_right,
-                cars_ds_name="epi_img_right_edges",
+                cars_ds_name="epi_img_right_edges_mask",
                 dtype=np.uint8,
                 optional_data=True,
             )
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_img_left_edges_depth_map.tif"),
+                os.path.join(pair_folder, "epi_img_right_edges_depth_map.tif"),
                 cst.EPI_EDGES_DEPTH_MAP,
                 epipolar_images_right,
-                cars_ds_name="epi_img_left_edges_depth_map",
+                cars_ds_name="epi_img_right_edges_depth_map",
                 dtype=np.float32,
                 optional_data=True,
             )
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_img_left_edges_normals.tif"),
+                os.path.join(pair_folder, "epi_img_right_edges_normals.tif"),
                 cst.EPI_EDGES_NORMALS,
                 epipolar_images_right,
-                cars_ds_name="epi_img_left_edges_normals",
+                cars_ds_name="epi_img_right_edges_normals",
                 dtype=np.float32,
                 optional_data=True,
             )
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_img_left_edges_tile_id.tif"),
+                os.path.join(pair_folder, "epi_img_right_edges_tile_id.tif"),
                 cst.EPI_EDGES_TILE_ID,
                 epipolar_images_right,
-                cars_ds_name="epi_img_left_edges_tile_id",
+                cars_ds_name="epi_img_right_edges_tile_id",
                 dtype=np.uint8,
                 optional_data=True,
             )
@@ -862,6 +862,7 @@ def generate_epipolar_images_wrapper(
                     cst.BAND_NAMES
                 ]
                 left_dataset[epi_name] = xr.DataArray(
+                    # pylint: disable=unsubscriptable-object
                     left_edges_datasets[key][cst.EPI_IMAGE].values,
                     dims=[band_name, cst.ROW, cst.COL],
                 )
@@ -870,6 +871,7 @@ def generate_epipolar_images_wrapper(
                     key
                 ].attrs[cst.BAND_NAMES]
                 right_dataset[epi_name] = xr.DataArray(
+                    # pylint: disable=unsubscriptable-object
                     right_edges_datasets[key][cst.EPI_IMAGE].values,
                     dims=[band_name, cst.ROW, cst.COL],
                 )
