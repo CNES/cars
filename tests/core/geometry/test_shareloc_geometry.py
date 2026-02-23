@@ -189,8 +189,8 @@ def test_exception_roi_outside_dtm():
         )
 
     assert str(excinfo.value) == (
-        "The extent of the roi lies outside "
-        "the extent of the initial elevation : the roi bounds are "
+        "The median value of DEM is NaN. The SRTM "
+        "tile might not intersect the images : the roi bounds are "
         "[5.156013852323939, 44.15169289345662, 5.235306512180193, "
         "44.256780712026995] while the dtm bounds are "
         "[31.099861111111114, 29.950138888888887, "

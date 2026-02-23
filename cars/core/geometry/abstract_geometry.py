@@ -35,8 +35,10 @@ import rasterio as rio
 import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
+from rasterio.coords import BoundingBox
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
+from rasterio.windows import from_bounds
 from scipy import interpolate
 from scipy.interpolate import LinearNDInterpolator
 from shapely.geometry import Polygon
@@ -147,13 +149,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         # compute roi only when generating geometry object with dem
         if dem is not None:
             self.dem = dem
-            self.default_alt = self.get_dem_median_value()
-            self.elevation = self.default_alt
-            logging.info(
-                "Median value of DEM ({}) will be used as default_alt".format(
-                    self.default_alt
-                )
-            )
+
             if pairs_for_roi is not None:
                 self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
                 self.dem_roi = self.get_roi(
@@ -164,6 +160,14 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                     linear_margin=self.dem_roi_margin_initial_elevation[0],
                     constant_margin=self.dem_roi_margin_initial_elevation[1],
                 )
+
+                self.default_alt = self.get_dem_median_value()
+                self.elevation = self.default_alt
+                logging.info(
+                    "Median value of DEM ({}) will be used as "
+                    "default_alt".format(self.default_alt)
+                )
+
                 if output_dem_dir is not None:
                     self.dem = self.extend_dem_to_roi(dem, output_dem_dir)
 
@@ -173,8 +177,23 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         :param dem: path of DEM
         """
         with rio.open(self.dem) as dem_file:
-            dem_data = dem_file.read(1)
+            window_dem = from_bounds(
+                *self.dem_roi, transform=dem_file.transform
+            )
+            bounds = dem_file.bounds
+            dem_data = dem_file.read(1, window=window_dem)
             median_value = np.nanmedian(dem_data)
+            if np.isnan(median_value):
+                raise RuntimeError(
+                    f"The median value of DEM is NaN. "
+                    f"The SRTM tile might not intersect the images : "
+                    f"the roi bounds are {list(map(float, self.dem_roi))} "
+                    f"while the dtm bounds are ["
+                    f"{bounds.left}, "
+                    f"{bounds.bottom}, "
+                    f"{bounds.right}, "
+                    f"{bounds.top}]"
+                )
         median_value = float(median_value)
         return median_value
 
@@ -267,11 +286,19 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         :param output_dem_dir: path to write the output extended DEM
         """
         with rio.open(dem) as in_dem:
-            src_dem = in_dem.read(1)
+            window_dem = from_bounds(*self.dem_roi, transform=in_dem.transform)
+            src_dem = in_dem.read(1, window=window_dem, boundless=True)
             metadata = in_dem.meta
-            src_transform = in_dem.transform
+            src_transform = in_dem.window_transform(window_dem)
             crs = in_dem.crs
-            bounds = in_dem.bounds
+            height, width = src_dem.shape
+
+            bounds = BoundingBox(
+                left=src_transform.c,
+                bottom=src_transform.f + src_transform.e * height,
+                right=src_transform.c + src_transform.a * width,
+                top=src_transform.f,
+            )
 
         logging.info(
             "DEM bounds : {}, {}, {}, {}".format(

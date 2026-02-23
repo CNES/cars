@@ -173,10 +173,10 @@ def test_pipeline_ventoux_with_dem():
 
         expected = {
             "raw_count": 117,
-            "filtered_count": 114,
-            "raw_disp": 6,
+            "filtered_count": 111,
+            "raw_disp": 11,
             "filtered_disp": 4,
-            "raw_epi": 6,
+            "raw_epi": 8,
             "filtered_epi": 4.75,
             "disp_tol": 0.5,
             "epi_tol": 0.5,
