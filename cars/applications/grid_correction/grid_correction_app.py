@@ -213,7 +213,6 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
         matches,
         grid_right,
         save_matches=False,
-        minimum_nb_matches=100,
         pair_folder="",
         pair_key="pair_0",
         orchestrator=None,
@@ -228,8 +227,6 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
         :type grid_right: dict
         :param save_matches: true is matches needs to be saved
         :type save_matches: bool
-        :param minimum_nb_matches: minimum number of matches required
-        :type minimum_nb_matches: int
         :param pair_folder: folder used for current pair
         :type pair_folder: str
 
@@ -251,14 +248,14 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
         else:
             cars_orchestrator = orchestrator
 
-        if matches.shape[0] < minimum_nb_matches:
+        if matches.shape[0] < self.nb_matches:
             logging.error(
                 "Insufficient amount of matches found"
                 ", can not safely estimate epipolar error correction"
             )
 
             raise ValueError(
-                f"Insufficient amount of matches found (< {minimum_nb_matches})"
+                f"Insufficient amount of matches found (< {self.nb_matches})"
                 ", can not safely estimate epipolar error correction"
             )
 
