@@ -291,6 +291,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
             metadata = in_dem.meta
             src_transform = in_dem.window_transform(window_dem)
             crs = in_dem.crs
+            nodata = in_dem.nodata
             height, width = src_dem.shape
 
             bounds = BoundingBox(
@@ -325,7 +326,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
 
         shift = Affine.translation(lon_shift, lat_shift)
         dst_transform = src_transform * shift
-        dst_dem = np.zeros((dst_height, dst_width))
+        dst_dem = np.full((dst_height, dst_width), nodata, dtype=src_dem.dtype)
 
         reproject(
             source=src_dem,
@@ -335,12 +336,16 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
             dst_transform=dst_transform,
             dst_crs=crs,
             resampling=Resampling.bilinear,
+            src_nodata=nodata,
+            dst_nodata=nodata,
         )
         # Fill nodata
         dst_dem = rio.fill.fillnodata(
             dst_dem,
-            mask=~(dst_dem == 0),
+            mask=dst_dem != nodata,
         )
+
+        dst_dem[dst_dem == nodata] = 0
         metadata["transform"] = dst_transform
         metadata["height"] = dst_height
         metadata["width"] = dst_width
