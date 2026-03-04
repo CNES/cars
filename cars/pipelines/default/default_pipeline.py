@@ -695,6 +695,7 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 updated_pipeline.run(
                     which_resolution=which_resolution,
+                    working_res=epipolar_res,
                     log_dir=current_log_dir,
                 )
 

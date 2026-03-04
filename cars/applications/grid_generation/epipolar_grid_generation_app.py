@@ -26,6 +26,8 @@ this module contains the epipolar grid generation application class.
 import logging
 import os
 
+import numpy as np
+
 # Third party imports
 from json_checker import And, Checker
 
@@ -129,6 +131,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
+        resolution=1,
     ):
         """
         Run EpipolarGridGeneration application
@@ -321,7 +324,10 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             )
         )
         logging.info(
-            "Disparity to altitude factor: {} m/pixel".format(disp_to_alt_ratio)
+            "Disparity to altitude factor for pixel at 1/{} "
+            "sampling : {} m/pixel".format(
+                resolution, np.round(disp_to_alt_ratio, 2)
+            )
         )
 
         return grid_left, grid_right

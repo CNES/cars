@@ -993,6 +993,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     pair_key,
                 ),
                 pair_key=pair_key,
+                resolution=self.working_res,
             )
 
             if self.quit_on_app("grid_generation"):
@@ -2056,6 +2057,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self,
         args=None,  # pylint: disable=W0613
         which_resolution="single",
+        working_res=1,
         log_dir=None,
     ):  # noqa C901
         """
@@ -2074,6 +2076,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.auxiliary = self.used_conf[OUTPUT][out_cst.AUXILIARY]
 
         self.which_resolution = which_resolution
+
+        self.working_res = working_res
 
         # saved used configuration
         self.save_configurations()
