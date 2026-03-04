@@ -201,6 +201,7 @@ class Orchestrator:
         cars_ds_name=None,
         optional_data=False,
         save_by_pair=False,
+        nbits=None,
     ):
         """
         Save file to list in order to be saved later
@@ -224,6 +225,7 @@ class Orchestrator:
             nodata=nodata,
             optional_data=optional_data,
             save_by_pair=save_by_pair,
+            nbits=nbits,
         )
 
         # add name if exists
