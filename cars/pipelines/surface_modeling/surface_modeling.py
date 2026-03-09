@@ -40,6 +40,7 @@ from collections import OrderedDict
 import numpy as np
 import rasterio
 from json_checker import Checker, OptionalKey
+from pyproj import CRS
 from rasterio.errors import NodataShadowWarning
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
@@ -155,6 +156,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
         if inputs[sens_cst.LOW_RES_DSM] is not None:
             low_res_dsm = rasterio.open(inputs[sens_cst.LOW_RES_DSM])
             self.dem_scaling_coeff = np.mean(low_res_dsm.res) * 2
+            spatial_ref = CRS.from_epsg(conf[OUTPUT][out_cst.EPSG])
+            if spatial_ref.is_geographic:
+                self.dem_scaling_coeff = self.dem_scaling_coeff * 111320
 
         # Init tie points pipelines
         if TIE_POINTS in conf and conf[TIE_POINTS] is None:
@@ -1375,6 +1379,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         adv_cst.GROUND_TRUTH_DSM
                     ][adv_cst.INPUT_GEOID],
                     scaling_coeff=self.scaling_coeff,
+                    epsg=self.epsg,
                 )
                 self.ground_truth_reprojection.run(
                     self.pairs[pair_key]["sensor_image_left"],
@@ -1455,6 +1460,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         check_inputs=False,
                     )
                 )
+
                 self.list_terrain_roi.append(current_terrain_roi_bbox)
                 self.list_intersection_poly.append(intersection_poly)
 
@@ -1467,12 +1473,12 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     roi_poly=(None if self.debug_with_roi else self.roi_poly),
                     resolution=self.resolution,
                 )
-
                 if self.which_resolution not in ("final", "single"):
                     self.terrain_bounds = dem_wrappers.modify_terrain_bounds(
                         self.terrain_bounds,
                         self.dem_generation_application.margin[0],
                         self.dem_generation_application.margin[1],
+                        self.epsg,
                     )
 
             if self.dense_matching_app.get_method() == "auto":

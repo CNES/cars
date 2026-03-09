@@ -31,10 +31,13 @@ import xdem
 
 # Third-party imports
 from affine import Affine
+from pyproj import CRS
 from rasterio.coords import BoundingBox
 from rasterio.enums import Resampling
 from rasterio.warp import calculate_default_transform, reproject
 from scipy.ndimage import median_filter
+
+from cars.core import preprocessing
 
 
 def fit_initial_elevation_on_dem_median(
@@ -179,6 +182,7 @@ def edit_transform(input_dem, resolution=None, transform=None):
     with rio.open(input_dem, "r+") as in_dem:
         previous_transform = in_dem.transform
         in_dem.transform = transform
+
     return previous_transform
 
 
@@ -264,7 +268,7 @@ def downsample_dem(
         dst.write(dem_data, 1)
 
 
-def modify_terrain_bounds(terrain_bounds, linear_margin, constant_margin):
+def modify_terrain_bounds(terrain_bounds, linear_margin, constant_margin, epsg):
     """
     Modify the terrain bounds
 
@@ -273,6 +277,17 @@ def modify_terrain_bounds(terrain_bounds, linear_margin, constant_margin):
     :param margin: Margin of the output ROI in meters
     :type margin: int
     """
+    crs = CRS.from_epsg(epsg)
+    if crs.is_geographic:
+        utm_epsg = preprocessing.get_utm_zone_as_epsg_code(
+            terrain_bounds[0], terrain_bounds[1]
+        )
+        conversion_factor = preprocessing.get_conversion_factor(
+            terrain_bounds, 4326, utm_epsg
+        )
+        linear_margin = linear_margin * conversion_factor
+        constant_margin = constant_margin * conversion_factor
+
     xsize = terrain_bounds[2] - terrain_bounds[0]
     ysize = terrain_bounds[3] - terrain_bounds[1]
     xmin = terrain_bounds[0] - linear_margin * xsize - constant_margin
