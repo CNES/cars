@@ -193,8 +193,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             )
 
         saved_transform = None
-        spatial_ref = CRS.from_epsg(roi_epsg)
-        if spatial_ref.is_geographic:
+        if dsm_crs.is_geographic:
             resolution = dsm_tr.a * 111320
             saved_transform = edit_transform(dsm_file, resolution=resolution)
 

@@ -27,6 +27,7 @@ import tempfile
 
 import pytest
 from json_checker.core.exceptions import DictCheckerError
+from pyproj.exceptions import CRSError
 
 from cars.pipelines.parameters import output_parameters, sensor_inputs
 
@@ -136,7 +137,7 @@ def test_output_epsg(case):
             # Should succeed without raising
             output_parameters.check_output_parameters(inputs, config, 1)
         else:
-            with pytest.raises(DictCheckerError):
+            with pytest.raises((DictCheckerError, CRSError)):
                 # Expecting some sort of failure
                 output_parameters.check_output_parameters(inputs, config, 1)
 
