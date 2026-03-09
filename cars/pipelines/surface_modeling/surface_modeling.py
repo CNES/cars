@@ -1378,7 +1378,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         adv_cst.GROUND_TRUTH_DSM
                     ][adv_cst.INPUT_GEOID],
                     scaling_coeff=self.scaling_coeff,
-                    epsg=self.epsg,
                 )
                 self.ground_truth_reprojection.run(
                     self.pairs[pair_key]["sensor_image_left"],

@@ -35,7 +35,6 @@ import rasterio as rio
 import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
-from pyproj import Transformer
 from rasterio.coords import BoundingBox
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
@@ -121,7 +120,6 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         pairs_for_roi=None,
         scaling_coeff=1,
         output_dem_dir=None,
-        epsg=4326,
         **kwargs,
     ):
         self.scaling_coeff = scaling_coeff
@@ -163,7 +161,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                     constant_margin=self.dem_roi_margin_initial_elevation[1],
                 )
 
-                self.default_alt = self.get_dem_median_value(epsg)
+                self.default_alt = self.get_dem_median_value()
                 self.elevation = self.default_alt
                 logging.info(
                     "Median value of DEM ({}) will be used as "
@@ -173,20 +171,14 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                 if output_dem_dir is not None:
                     self.dem = self.extend_dem_to_roi(dem, output_dem_dir)
 
-    def get_dem_median_value(self, epsg):
+    def get_dem_median_value(self):
         """
         Compute dem median value
         :param dem: path of DEM
         """
         with rio.open(self.dem) as dem_file:
-            crs_dem = dem_file.crs  # EPSG du raster
-            transformer = Transformer.from_crs(epsg, crs_dem, always_xy=True)
-
-            xmin, ymin = transformer.transform(self.dem_roi[0], self.dem_roi[1])
-            xmax, ymax = transformer.transform(self.dem_roi[2], self.dem_roi[3])
-            new_roi = [xmin, ymin, xmax, ymax]
             window_dem = from_bounds(
-                xmin, ymin, xmax, ymax, transform=dem_file.transform
+                *self.dem_roi, transform=dem_file.transform
             )
             bounds = dem_file.bounds
             dem_data = dem_file.read(1, window=window_dem)
@@ -195,7 +187,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                 raise RuntimeError(
                     f"The median value of DEM is NaN. "
                     f"The SRTM tile might not intersect the images : "
-                    f"the roi bounds are {list(map(float, new_roi))} "
+                    f"the roi bounds are {list(map(float, self.dem_roi))} "
                     f"while the dtm bounds are ["
                     f"{bounds.left}, "
                     f"{bounds.bottom}, "
