@@ -40,7 +40,6 @@ from collections import OrderedDict
 import numpy as np
 import rasterio
 from json_checker import Checker, OptionalKey
-from pyproj import CRS
 from rasterio.errors import NodataShadowWarning
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
@@ -156,8 +155,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
         if inputs[sens_cst.LOW_RES_DSM] is not None:
             low_res_dsm = rasterio.open(inputs[sens_cst.LOW_RES_DSM])
             self.dem_scaling_coeff = np.mean(low_res_dsm.res) * 2
-            spatial_ref = CRS.from_epsg(conf[OUTPUT][out_cst.EPSG])
-            if spatial_ref.is_geographic:
+            crs = low_res_dsm.crs
+            if crs.is_geographic:
                 self.dem_scaling_coeff = self.dem_scaling_coeff * 111320
 
         # Init tie points pipelines
