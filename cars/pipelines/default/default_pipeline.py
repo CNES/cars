@@ -415,6 +415,13 @@ class DefaultPipeline(PipelineTemplate):
                     activate_filling = True
         if pipeline_cst.FILLING in conf and conf[pipeline_cst.FILLING]:
             activate_filling = True
+        if (
+            sens_cst.LOADERS in conf[INPUT]
+            and sens_cst.INPUT_CLASSIFICATION in conf[INPUT][sens_cst.LOADERS]
+            and conf[INPUT][sens_cst.LOADERS][sens_cst.INPUT_CLASSIFICATION]
+            == "slurp"
+        ):
+            activate_filling = True
 
         if activate_filling:
             dict_pipeline[pipeline_cst.FILLING] = True
