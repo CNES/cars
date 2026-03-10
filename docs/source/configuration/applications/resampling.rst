@@ -41,9 +41,9 @@ This dict contains an interpolation method for each of the available edge datase
 +===============+==========================================+=========+=======================+===============+==========+
 | edges_mask    | Interpolation method for the edge map    | string  | "bicubic", "nearest"  | "nearest"     | No       |
 +---------------+------------------------------------------+---------+-----------------------+---------------+----------+
-| depth_map     | Interpolation method for the depth map   | string  | "bicubic", "nearest"  | "bicubic"     | No       |
+| depth_map     | Interpolation method for the depth map   | string  | "bicubic", "nearest"  | "nearest"     | No       |
 +---------------+------------------------------------------+---------+-----------------------+---------------+----------+
-| normals       | Interpolation method for the normals     | string  | "bicubic", "nearest"  | "bicubic"     | No       |
+| normals       | Interpolation method for the normals     | string  | "bicubic", "nearest"  | "nearest"     | No       |
 +---------------+------------------------------------------+---------+-----------------------+---------------+----------+
 | tile_id       | Interpolation method for the tile id     | string  | "bicubic", "nearest"  | "nearest"     | No       |
 +---------------+------------------------------------------+---------+-----------------------+---------------+----------+

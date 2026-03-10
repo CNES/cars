@@ -121,8 +121,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             "interpolators_edges",
             {
                 "edges_mask": "nearest",
-                "depth_map": "bicubic",
-                "normals": "bicubic",
+                "depth_map": "nearest",
+                "normals": "nearest",
                 "tile_id": "nearest",
             },
         )
@@ -151,8 +151,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # update edges interp dict and check its format
         temp_interps_edges = {
             "edges_mask": "nearest",
-            "depth_map": "bicubic",
-            "normals": "bicubic",
+            "depth_map": "nearest",
+            "normals": "nearest",
             "tile_id": "nearest",
         }
         temp_interps_edges.update(overloaded_conf["interpolators_edges"])

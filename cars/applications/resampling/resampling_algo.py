@@ -72,8 +72,8 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
     if interpolators_edges is None:
         interpolators_edges = {
             "edges_mask": "nearest",
-            "depth_map": "bicubic",
-            "normals": "bicubic",
+            "depth_map": "nearest",
+            "normals": "nearest",
             "tile_id": "nearest",
         }
 
