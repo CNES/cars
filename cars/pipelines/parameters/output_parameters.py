@@ -30,6 +30,7 @@ from json_checker import And, Checker, Or
 from pyproj import CRS
 
 import cars.core.constants as cst
+from cars.core import preprocessing
 from cars.core.utils import safe_makedirs
 from cars.pipelines.parameters import output_constants
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -51,7 +52,10 @@ def is_valid_epsg(epsg) -> bool:
 
 
 def check_output_parameters(  # noqa: C901 : too complex
-    inputs, conf, scaling_coeff=None
+    inputs,
+    conf,
+    scaling_coeff=None,
+    bounds=None,
 ):
     """
     Check the output json configuration and fill in default values
@@ -94,9 +98,23 @@ def check_output_parameters(  # noqa: C901 : too complex
     if overloaded_conf.get(output_constants.RESOLUTION, None) is not None:
         resolution = overloaded_conf[output_constants.RESOLUTION]
     overloaded_scaling_coeff = scaling_coeff
+
+    res_val = 0.5
+    if bounds is not None:
+        if overloaded_conf[output_constants.EPSG] is not None:
+            crs = CRS.from_epsg(overloaded_conf[output_constants.EPSG])
+            if crs.is_geographic:
+                xmin = bounds[0]
+                ymin = bounds[1]
+                utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+                conversion_factor = preprocessing.get_conversion_factor(
+                    bounds, utm_epsg, crs.to_epsg()
+                )
+                res_val = 0.5 / conversion_factor  # convert to degree
+
     if scaling_coeff is not None:
         if resolution is not None:
-            if resolution < 0.5 * scaling_coeff:
+            if resolution < res_val * scaling_coeff:
                 logging.warning(
                     "The requested DSM resolution of "
                     f"{overloaded_conf[output_constants.RESOLUTION]} seems "
@@ -104,7 +122,7 @@ def check_output_parameters(  # noqa: C901 : too complex
                     "The pipeline will still continue with it."
                 )
         else:
-            resolution = float(0.5 * scaling_coeff)
+            resolution = float(res_val * scaling_coeff)
             logging.info(
                 "The resolution of the output DSM will be "
                 f"{resolution} meters. "
@@ -200,12 +218,13 @@ def check_output_parameters(  # noqa: C901 : too complex
     if "epsg" in overloaded_conf and overloaded_conf["epsg"]:
         spatial_ref = CRS.from_epsg(overloaded_conf["epsg"])
         if spatial_ref.is_geographic:
-            if overloaded_conf[output_constants.RESOLUTION] > 10e-3:
-                logging.warning(
-                    "The resolution of the "
-                    + "point_cloud_rasterization should be "
-                    + "fixed according to the epsg"
-                )
+            if overloaded_conf[output_constants.RESOLUTION] is not None:
+                if overloaded_conf[output_constants.RESOLUTION] > 10e-3:
+                    logging.warning(
+                        "The resolution of the "
+                        + "point_cloud_rasterization should be "
+                        + "fixed according to the epsg"
+                    )
 
     return overloaded_conf, overloaded_scaling_coeff
 

@@ -155,6 +155,17 @@ class SurfaceModelingPipeline(PipelineTemplate):
         if inputs[sens_cst.LOW_RES_DSM] is not None:
             low_res_dsm = rasterio.open(inputs[sens_cst.LOW_RES_DSM])
             self.dem_scaling_coeff = np.mean(low_res_dsm.res) * 2
+            crs = low_res_dsm.crs
+            if crs.is_geographic:
+                xmin = low_res_dsm.bounds.left
+                ymin = low_res_dsm.bounds.bottom
+                utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+                conversion_factor = preprocessing.get_conversion_factor(
+                    low_res_dsm.bounds, utm_epsg, crs.to_epsg()
+                )
+                self.dem_scaling_coeff = (
+                    self.dem_scaling_coeff * conversion_factor
+                )
 
         # Init tie points pipelines
         if TIE_POINTS in conf and conf[TIE_POINTS] is None:
@@ -214,6 +225,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.scaling_coeff,
             self.land_cover_map,
             self.classification_to_config_mapping,
+            bounds,
         ) = advanced_parameters.check_advanced_parameters(
             inputs,
             pipeline_conf.get(ADVANCED, {}),
@@ -245,7 +257,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         (
             output,
             self.scaling_coeff,
-        ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff)
+        ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff, bounds)
 
         self.used_conf[OUTPUT] = output
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
@@ -440,7 +452,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             os.path.join(self.out_dir, "refined_conf.yaml"),
         )
 
-    def check_output(self, inputs, conf, scaling_coeff):
+    def check_output(self, inputs, conf, scaling_coeff, bounds):
         """
         Check the output given
 
@@ -452,7 +464,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         :rtype: dict
         """
         return output_parameters.check_output_parameters(
-            inputs, conf, scaling_coeff
+            inputs, conf, scaling_coeff, bounds
         )
 
     def check_applications(  # noqa: C901 : too complex
@@ -945,6 +957,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 self.geometry_plugin,
                 self.geom_plugin_without_dem_and_geoid,
                 self.geom_plugin_with_dem_and_geoid,
+                _,
                 _,
                 _,
                 _,
@@ -1455,6 +1468,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         check_inputs=False,
                     )
                 )
+
                 self.list_terrain_roi.append(current_terrain_roi_bbox)
                 self.list_intersection_poly.append(intersection_poly)
 
@@ -1467,12 +1481,12 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     roi_poly=(None if self.debug_with_roi else self.roi_poly),
                     resolution=self.resolution,
                 )
-
                 if self.which_resolution not in ("final", "single"):
                     self.terrain_bounds = dem_wrappers.modify_terrain_bounds(
                         self.terrain_bounds,
                         self.dem_generation_application.margin[0],
                         self.dem_generation_application.margin[1],
+                        self.epsg,
                     )
 
             if self.dense_matching_app.get_method() == "auto":

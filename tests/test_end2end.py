@@ -348,6 +348,130 @@ def test_end2end_ventoux_with_filling():
 
 
 @pytest.mark.end2end_tests
+def test_end2end_ventoux_with_filling_in_4326():
+    """
+    End to end processing with color in 4326
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/left_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/left_image.geom"
+                        ),
+                        "classification": absolute_data_path(
+                            "input/phr_ventoux/left_classif.tif"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/right_image.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/right_image.geom"
+                        ),
+                        "classification": absolute_data_path(
+                            "input/phr_ventoux/right_classif.tif"
+                        ),
+                    },
+                },
+                "initial_elevation": absolute_data_path(
+                    "input/phr_ventoux/srtm/N44E005.hgt"
+                ),
+                "filling": {"fill_with_geoid": 3},
+            },
+            "surface_modeling": {
+                "applications": {
+                    "all": {
+                        "dense_matching": {
+                            "filter_incomplete_disparity_range": False,
+                        }
+                    }
+                }
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {
+                "directory": directory,
+                "auxiliary": {"filling": True},
+                "epsg": 4326,
+            },
+        }
+        out_dir = conf["output"]["directory"]
+        meta_pipeline = default.DefaultPipeline(conf)
+        meta_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_ventoux_with_filling_4326.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "classif_test_ventoux_with_filling_4326.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "filling_test_ventoux_with_filling_4326.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_ventoux_with_filling_4326.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "classif_test_ventoux_with_filling_4326.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "filling_test_ventoux_with_filling_4326.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
 def test_end2end_gizeh_merging():
     """
     End to end pipeline processing

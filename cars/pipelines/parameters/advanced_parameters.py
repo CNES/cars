@@ -120,6 +120,7 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
 
     scaling_coeff = None
 
+    bounds = None
     if inputs[sens_cst.SENSORS] is not None:
         # Check geometry plugin and overwrite geomodel in conf inputs
         (
@@ -128,6 +129,7 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
             geom_plugin_without_dem_and_geoid,
             geom_plugin_with_dem_and_geoid,
             scaling_coeff,
+            bounds,
         ) = sensor_inputs.check_geometry_plugin(
             inputs,
             conf.get(adv_cst.GEOMETRY_PLUGIN, None),
@@ -175,6 +177,7 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         scaling_coeff,
         overloaded_conf[adv_cst.LAND_COVER_MAP],
         overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],
+        bounds,
     )
 
 

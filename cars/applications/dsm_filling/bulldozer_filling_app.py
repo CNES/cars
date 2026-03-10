@@ -37,7 +37,10 @@ from pyproj import CRS
 from rasterio.errors import NodataShadowWarning
 from shapely import Polygon
 
-from cars.core import inputs, projection
+from cars.applications.dem_generation.dem_generation_wrappers import (
+    edit_transform,
+)
+from cars.core import inputs, preprocessing, projection
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 from .abstract_dsm_filling_app import DsmFilling
@@ -166,6 +169,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             dsm_tr = in_dsm.transform
             dsm_crs = in_dsm.crs
             dsm_meta = in_dsm.meta
+            dsm_bounds = in_dsm.bounds
 
         roi_raster = np.ones(dsm.shape)
 
@@ -188,6 +192,18 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             roi_raster = rio.features.rasterize(
                 [roi_poly_outepsg], out_shape=roi_raster.shape, transform=dsm_tr
             )
+
+        saved_transform = None
+        if dsm_crs.is_geographic:
+            xmin = dsm_bounds.left
+            ymin = dsm_bounds.bottom
+            utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+            conversion_factor = preprocessing.get_conversion_factor(
+                dsm_bounds, utm_epsg, dsm_crs.to_epsg()
+            )
+            resolution = dsm_tr.a * conversion_factor
+            saved_transform = edit_transform(dsm_file, resolution=resolution)
+
         try:
             try:
                 # suppress prints in bulldozer by redirecting stdout&stderr
@@ -214,6 +230,10 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 + " The DSM could not be filled."
             )
             return None
+
+        if saved_transform is not None:
+            edit_transform(dtm_path, transform=saved_transform)
+
         with rio.open(dtm_path) as in_dtm:
             dtm = in_dtm.read(1)
 
