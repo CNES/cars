@@ -238,6 +238,7 @@ class FillingPipeline(PipelineTemplate):
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
             self.scaling_coeff,
+            _,
         ) = sensor_inputs.check_geometry_plugin(
             inputs_conf,
             conf_advanced.get(adv_cst.GEOMETRY_PLUGIN, None),
@@ -791,6 +792,7 @@ class FillingPipeline(PipelineTemplate):
                 self.geometry_plugin,
                 self.geom_plugin_without_dem_and_geoid,
                 self.geom_plugin_with_dem_and_geoid,
+                _,
                 _,
                 _,
                 _,

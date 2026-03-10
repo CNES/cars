@@ -276,6 +276,7 @@ class TiePointsPipeline(PipelineTemplate):
             geom_plugin_without_dem_and_geoid,
             geom_plugin_with_dem_and_geoid,
             _,
+            _,
         ) = sensor_inputs.check_geometry_plugin(
             inputs,
             conf.get(adv_cst.GEOMETRY_PLUGIN, None),

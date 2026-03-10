@@ -384,6 +384,13 @@ def get_sensor_resolution(
     # Convert to target CRS
     coords_xy = projection.point_cloud_conversion(coords_ll, 4326, target_epsg)
 
+    xmin = coords_ll[:, 0].min()
+    xmax = coords_ll[:, 0].max()
+    ymin = coords_ll[:, 1].min()
+    ymax = coords_ll[:, 1].max()
+
+    bounds = (xmin, ymin, xmax, ymax)
+
     diff_x = np.linalg.norm(coords_xy[1] - coords_xy[0])  # UL to UR (width)
     diff_y = np.linalg.norm(coords_xy[2] - coords_xy[0])  # UL to BL (height)
 
@@ -391,7 +398,7 @@ def get_sensor_resolution(
     res_x = diff_x / (width - 1)
     res_y = diff_y / (height - 1)
 
-    return (res_x + res_y) / 2
+    return (res_x + res_y) / 2, bounds
 
 
 def check_geometry_plugin(conf_inputs, conf_geom_plugin, output_dem_dir):
@@ -420,6 +427,7 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, output_dem_dir):
         )
     )
     average_sensor_resolution = 0
+    bounds = None
     for _, sensor_image in conf_inputs[sens_cst.SENSORS].items():
         sensor = sensor_image[sens_cst.INPUT_IMG]
         geomodel = sensor_image[sens_cst.INPUT_GEO_MODEL]
@@ -427,9 +435,8 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, output_dem_dir):
             sensor,
             geomodel,
         ) = temp_geom_plugin.check_product_consistency(sensor, geomodel)
-        average_sensor_resolution += get_sensor_resolution(
-            temp_geom_plugin, sensor, geomodel
-        )
+        res, bounds = get_sensor_resolution(temp_geom_plugin, sensor, geomodel)
+        average_sensor_resolution += res
     average_sensor_resolution /= len(conf_inputs[sens_cst.SENSORS])
     # approximate resolution to the highest digit:
     #  0.47 -> 0.5
@@ -480,6 +487,7 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, output_dem_dir):
         geom_plugin_without_dem_and_geoid,
         geom_plugin_with_dem_and_geoid,
         scaling_coeff,
+        bounds,
     )
 
 

@@ -157,7 +157,15 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.dem_scaling_coeff = np.mean(low_res_dsm.res) * 2
             crs = low_res_dsm.crs
             if crs.is_geographic:
-                self.dem_scaling_coeff = self.dem_scaling_coeff * 111320
+                xmin = low_res_dsm.bounds.left
+                ymin = low_res_dsm.bounds.bottom
+                utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+                conversion_factor = preprocessing.get_conversion_factor(
+                    low_res_dsm.bounds, utm_epsg, crs.to_epsg()
+                )
+                self.dem_scaling_coeff = (
+                    self.dem_scaling_coeff * conversion_factor
+                )
 
         # Init tie points pipelines
         if TIE_POINTS in conf and conf[TIE_POINTS] is None:
@@ -217,6 +225,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.scaling_coeff,
             self.land_cover_map,
             self.classification_to_config_mapping,
+            bounds,
         ) = advanced_parameters.check_advanced_parameters(
             inputs,
             pipeline_conf.get(ADVANCED, {}),
@@ -248,7 +257,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         (
             output,
             self.scaling_coeff,
-        ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff)
+        ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff, bounds)
 
         self.used_conf[OUTPUT] = output
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
@@ -443,7 +452,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             os.path.join(self.out_dir, "refined_conf.yaml"),
         )
 
-    def check_output(self, inputs, conf, scaling_coeff):
+    def check_output(self, inputs, conf, scaling_coeff, bounds):
         """
         Check the output given
 
@@ -455,7 +464,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         :rtype: dict
         """
         return output_parameters.check_output_parameters(
-            inputs, conf, scaling_coeff
+            inputs, conf, scaling_coeff, bounds
         )
 
     def check_applications(  # noqa: C901 : too complex
@@ -948,6 +957,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 self.geometry_plugin,
                 self.geom_plugin_without_dem_and_geoid,
                 self.geom_plugin_with_dem_and_geoid,
+                _,
                 _,
                 _,
                 _,

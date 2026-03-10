@@ -30,6 +30,7 @@ from json_checker import And, Checker, Or
 from pyproj import CRS
 
 import cars.core.constants as cst
+from cars.core import preprocessing
 from cars.core.utils import safe_makedirs
 from cars.pipelines.parameters import output_constants
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -51,7 +52,10 @@ def is_valid_epsg(epsg) -> bool:
 
 
 def check_output_parameters(  # noqa: C901 : too complex
-    inputs, conf, scaling_coeff=None
+    inputs,
+    conf,
+    scaling_coeff=None,
+    bounds=None,
 ):
     """
     Check the output json configuration and fill in default values
@@ -96,10 +100,17 @@ def check_output_parameters(  # noqa: C901 : too complex
     overloaded_scaling_coeff = scaling_coeff
 
     res_val = 0.5
-    if overloaded_conf[output_constants.EPSG] is not None:
-        crs = CRS.from_epsg(overloaded_conf[output_constants.EPSG])
-        if crs.is_geographic:
-            res_val = 0.5 / 111320  # convert to degree
+    if bounds is not None:
+        if overloaded_conf[output_constants.EPSG] is not None:
+            crs = CRS.from_epsg(overloaded_conf[output_constants.EPSG])
+            if crs.is_geographic:
+                xmin = bounds[0]
+                ymin = bounds[1]
+                utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+                conversion_factor = preprocessing.get_conversion_factor(
+                    bounds, utm_epsg, crs.to_epsg()
+                )
+                res_val = 0.5 / conversion_factor  # convert to degree
 
     if scaling_coeff is not None:
         if resolution is not None:
