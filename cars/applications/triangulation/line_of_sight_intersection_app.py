@@ -998,8 +998,8 @@ def triangulation_wrapper(  # pylint: disable=too-many-positional-arguments
                         "confidence_from_disp_inf_from_risk.cars_2",
                         "confidence_from_disp_sup_from_risk.cars_2",
                     ]
-                    cars_inf_key = cst.POINT_CLOUD_LAYER_INF_FROM_RISK
-                    cars_sup_key = cst.POINT_CLOUD_LAYER_SUP_FROM_RISK
+                    cars_inf_key = cst.POINT_CLOUD_LAYER_SUP_FROM_RISK
+                    cars_sup_key = cst.POINT_CLOUD_LAYER_INF_FROM_RISK
                     cars_perf_key = cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_RISK
                     use_ambiguity = True
                 else:
@@ -1008,8 +1008,8 @@ def triangulation_wrapper(  # pylint: disable=too-many-positional-arguments
                         "confidence_from_interval_bounds_inf.cars_3",
                         "confidence_from_interval_bounds_sup.cars_3",
                     ]
-                    cars_inf_key = cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS
-                    cars_sup_key = cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS
+                    cars_inf_key = cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS
+                    cars_sup_key = cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS
                     cars_perf_key = (
                         cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_INTERVALS
                     )
