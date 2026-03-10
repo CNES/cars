@@ -118,6 +118,7 @@ def rasterio_write_georaster(  # pylint: disable=too-many-positional-arguments
     descriptor=None,
     bands_description=None,
     classes_info_tag=None,
+    nbits=None,
 ):
     """
     Write a raster file from array
@@ -162,15 +163,17 @@ def rasterio_write_georaster(  # pylint: disable=too-many-positional-arguments
     else:
         count = 1
         width, height = data.shape[0], data.shape[1]
+        if nbits is None:
+            nbits = np.dtype(data.dtype).itemsize * 8
         if len(data.shape) > 2:
             count = data.shape[0]
             width, height = data.shape[1], data.shape[2]
-
         if profile is None:
             profile = DefaultGTiffProfile(count=count)
             profile["height"] = height
             profile["width"] = width
             profile["dtype"] = "float32"
-
-        with rio.open(raster_file, "w", **profile) as new_descriptor:
+        with rio.open(
+            raster_file, "w", nbits=nbits, **profile
+        ) as new_descriptor:
             write_data(data, window=window, descriptor=new_descriptor)

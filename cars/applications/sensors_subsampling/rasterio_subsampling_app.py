@@ -28,6 +28,7 @@ from pathlib import Path
 # Standard imports
 from typing import Dict, Tuple
 
+import numpy as np
 import rasterio
 import xarray as xr
 from affine import Affine
@@ -282,6 +283,7 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
             path = val["path"]
             dtype_val = val["dtype"]
             nodata_val = val["nodata"]
+            nbits = np.dtype(dtype_val).itemsize * 8
 
             if key == "classif":
                 dtype = dtype_val
@@ -291,6 +293,9 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                 dtype = dtype_val
                 nodata = nodata_val
                 optional_data = False
+            if key == "mask":
+                nbits = 1
+                dtype = "uint8"
 
             if path is not None:
                 name_file = Path(path).stem
@@ -305,6 +310,7 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                     + key
                     + "_res_"
                     + str(resolution),
+                    nbits=nbits,
                 )
 
         # Generate Image pair

@@ -167,6 +167,7 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
         nodata=None,
         optional_data=False,
         save_by_pair=False,
+        nbits=None,
     ):
         """
         Add file corresponding to cars_dataset to registered_cars_datasets
@@ -207,6 +208,7 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
             nodata=nodata,
             optional_data=optional_data,
             save_by_pair=save_by_pair,
+            nbits=nbits,
         )
 
     def cleanup(self):
@@ -220,6 +222,7 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
             obj.cleanup()
 
 
+# pylint: disable=too-many-instance-attributes
 class SingleCarsDatasetSaver:
     """
     SingleCarsDatasetSaver
@@ -232,7 +235,6 @@ class SingleCarsDatasetSaver:
         Init function of SingleCarsDatasetSaver
 
         """
-
         self.obj_id = obj_id
         self.cars_ds = cars_ds
 
@@ -243,6 +245,7 @@ class SingleCarsDatasetSaver:
         self.nodatas = []
         self.descriptors = []
         self.save_pc_by_pair_list = []
+        self.nbits = []
         self.already_seen = False
         self.count = 0
         self.folder_name = None
@@ -255,6 +258,7 @@ class SingleCarsDatasetSaver:
         nodata=None,
         optional_data=False,
         save_by_pair=False,
+        nbits=None,
     ):
         """
         Add file to current CarsDatasetSaver
@@ -277,6 +281,7 @@ class SingleCarsDatasetSaver:
         self.nodatas.append(nodata)
         self.optional_data_list.append(optional_data)
         self.save_pc_by_pair_list.append(save_by_pair)
+        self.nbits.append(nbits)
 
     def save(self, future_result):  # noqa: C901 : too complex
         """
@@ -285,7 +290,6 @@ class SingleCarsDatasetSaver:
         :param future_result: xr.Dataset or pandas.DataFrame
 
         """
-
         try:
             if self.cars_ds.dataset_type == "arrays":
                 if not self.already_seen:
@@ -298,6 +302,7 @@ class SingleCarsDatasetSaver:
                                 tag=self.tags[count],
                                 dtype=self.dtypes[count],
                                 nodata=self.nodatas[count],
+                                nbits=self.nbits[count],
                             )
                             self.descriptors.append(desc)
                         else:
@@ -311,6 +316,7 @@ class SingleCarsDatasetSaver:
                             file_name,
                             tag=self.tags[count],
                             descriptor=self.descriptors[count],
+                            nbits=self.nbits[count],
                         )
                     else:
                         log_message = "{} is not consistent.".format(
@@ -333,6 +339,7 @@ class SingleCarsDatasetSaver:
                     os.path.join(self.folder_name, repr(self.count)),
                     overwrite=not self.already_seen,
                     save_by_pair=self.save_pc_by_pair_list[0],
+                    nbits=self.nbits[0],
                 )
                 self.count += 1
 

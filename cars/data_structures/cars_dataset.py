@@ -268,7 +268,6 @@ class CarsDataset:
         :param future_result: xarray.Dataset received
         :param file_name: filename to save data to
         """
-
         functions = {
             CARS_DS_TYPE_ARRAY: run_save_arrays,
             CARS_DS_TYPE_POINTS: run_save_points,
@@ -436,7 +435,13 @@ class CarsDataset:
             self.tiles.append(tiles_row)
 
     def generate_descriptor(  # pylint: disable=too-many-positional-arguments
-        self, future_result, file_name, tag=None, dtype=None, nodata=None
+        self,
+        future_result,
+        file_name,
+        tag=None,
+        dtype=None,
+        nodata=None,
+        nbits=None,
     ):
         """
         Generate de rasterio descriptor for the given future result
@@ -471,8 +476,11 @@ class CarsDataset:
         if nodata is not None:
             new_profile["nodata"] = nodata
 
+        if nbits is None:
+            nbits = np.dtype(dtype).itemsize * 8
+
         descriptor = rio.open(
-            file_name, "w+", **new_profile, BIGTIFF="IF_SAFER"
+            file_name, "w+", nbits=nbits, **new_profile, BIGTIFF="IF_SAFER"
         )
 
         return descriptor
@@ -556,7 +564,9 @@ class CarsDataset:
             self.tiles.append(tiles_row)
 
 
-def run_save_arrays(future_result, file_name, tag=None, descriptor=None):
+def run_save_arrays(
+    future_result, file_name, tag=None, descriptor=None, nbits=None
+):
     """
     Save future when arrived
 
@@ -576,6 +586,7 @@ def run_save_arrays(future_result, file_name, tag=None, descriptor=None):
         tag,
         use_windows_and_overlaps=True,
         descriptor=descriptor,
+        nbits=nbits,
     )
 
 
@@ -1051,8 +1062,13 @@ def save_dataframe(
         )
 
 
-def save_dataset(
-    dataset, file_name, tag, use_windows_and_overlaps=False, descriptor=None
+def save_dataset(  # pylint: disable=too-many-positional-arguments
+    dataset,
+    file_name,
+    tag,
+    use_windows_and_overlaps=False,
+    descriptor=None,
+    nbits=None,
 ):
     """
     Reconstruct and save data.
@@ -1158,7 +1174,6 @@ def save_dataset(
         classes_info_tag = dataset.attrs.get(
             cst.RIO_TAG_PERFORMANCE_MAP_CLASSES, None
         )
-
     outputs.rasterio_write_georaster(
         file_name,
         data,
@@ -1167,6 +1182,7 @@ def save_dataset(
         descriptor=descriptor,
         bands_description=bands_description,
         classes_info_tag=classes_info_tag,
+        nbits=nbits,
     )
 
 
