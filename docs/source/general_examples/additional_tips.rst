@@ -91,11 +91,11 @@ It can be recommended to apply a P+XS pansharpening with `OTB`_.
 
 .. code-block:: console
 
-    otbcli_BundleToPerfectSensor -inp image.tif -inxs color.tif -out color_pxs.tif
+    otbcli_BundleToPerfectSensor -method bayes -inp image.tif -inxs color.tif -out color_pxs.tif
 
 .. code-block:: console
 
-    docker run -w /data -v "$(pwd)"/data:/data --entrypoint=/bin/bash  cnes/cars otbcli_BundleToPerfectSensor -inp /data/image.tif -inxs /data/color.tif -out /data/color_pxs.tif
+    docker run -w /data -v "$(pwd)"/data:/data --entrypoint=/bin/bash  cnes/cars otbcli_BundleToPerfectSensor -method bayes -inp /data/image.tif -inxs /data/color.tif -out /data/color_pxs.tif
 
 .. _`OTB`: https://www.orfeo-toolbox.org/CookBook-8.0/C++/UserGuide.html#image-data-representation
 
