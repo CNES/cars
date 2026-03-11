@@ -301,10 +301,10 @@ def check_filling(conf, classif_loader):
         "fill_with_exogenous_dem": None,
     }
     slurp_filling = {
-        "fill_with_geoid": [8],
-        "interpolate_from_borders": [9],
-        "fill_with_endogenous_dem": [10],
-        "fill_with_exogenous_dem": [6],
+        "fill_with_geoid": [7],
+        "interpolate_from_borders": [8],
+        "fill_with_endogenous_dem": [9],
+        "fill_with_exogenous_dem": [5],
     }
     filling_from_loader = {}
     filling_from_loader["basic"] = basic_filling

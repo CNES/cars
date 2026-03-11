@@ -272,13 +272,13 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         +-----------------+----------------------------+---------------------------+
         | Value           | Class                      | Filling method            |
         +=================+============================+===========================+
-        | 8               | Sea                        | fill_with_geoid           |
+        | 7               | Sea                        | fill_with_geoid           |
         +-----------------+----------------------------+---------------------------+
-        | 9               | Lake                       | interpolate_from_borders  |
+        | 8               | Lake                       | interpolate_from_borders  |
         +-----------------+----------------------------+---------------------------+
-        | 10              | River                      | fill_with_endogenous_dem  |
+        | 9               | River                      | fill_with_endogenous_dem  |
         +-----------------+----------------------------+---------------------------+
-        | 6               | Cloud                      | fill_with_exogenous_dem   |
+        | 5               | Cloud                      | fill_with_exogenous_dem   |
         +-----------------+----------------------------+---------------------------+
 
         The SLURP loader does not change the configuration schema of the classification parameter.
