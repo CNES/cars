@@ -862,7 +862,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             )
         )
 
-        output_parameters.intialize_product_index(
+        _ = output_parameters.intialize_product_index(
             self.cars_orchestrator,
             output["product_level"],
             [sensor_pair[0] for sensor_pair in self.list_sensor_pairs],

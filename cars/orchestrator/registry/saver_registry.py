@@ -167,6 +167,8 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
         nodata=None,
         optional_data=False,
         save_by_pair=False,
+        rio_tags=None,
+        rio_band_description=None,
         nbits=None,
     ):
         """
@@ -186,6 +188,8 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
         :type optional_data: bool
         :param save_by_pair:
         :type save_by_pair: bool
+        :param rio_tags:  rasterio tags list((band, tag))
+        :param rio_band_description:  rasterio description list((band, tag))
         """
 
         if not self.cars_dataset_in_registry(cars_ds)[0]:
@@ -208,6 +212,8 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
             nodata=nodata,
             optional_data=optional_data,
             save_by_pair=save_by_pair,
+            rio_tags=rio_tags,
+            rio_band_description=rio_band_description,
             nbits=nbits,
         )
 
@@ -222,8 +228,7 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
             obj.cleanup()
 
 
-# pylint: disable=too-many-instance-attributes
-class SingleCarsDatasetSaver:
+class SingleCarsDatasetSaver:  # pylint: disable=R0902
     """
     SingleCarsDatasetSaver
 
@@ -249,6 +254,8 @@ class SingleCarsDatasetSaver:
         self.already_seen = False
         self.count = 0
         self.folder_name = None
+        self.rio_tags = []
+        self.rio_band_description = []
 
     def add_file(  # pylint: disable=too-many-positional-arguments
         self,
@@ -258,6 +265,8 @@ class SingleCarsDatasetSaver:
         nodata=None,
         optional_data=False,
         save_by_pair=False,
+        rio_tags=None,
+        rio_band_description=None,
         nbits=None,
     ):
         """
@@ -273,6 +282,8 @@ class SingleCarsDatasetSaver:
         :type nodata: float
         :param optional_data: True if the data is optionnal
         :type optional_data: bool
+        :param rio_tags:  rasterio tags list((band, tag))
+        :param rio_band_description:  rasterio description list((band, tag))
         """
 
         self.file_names.append(file_name)
@@ -281,6 +292,8 @@ class SingleCarsDatasetSaver:
         self.nodatas.append(nodata)
         self.optional_data_list.append(optional_data)
         self.save_pc_by_pair_list.append(save_by_pair)
+        self.rio_tags.append(rio_tags)
+        self.rio_band_description.append(rio_band_description)
         self.nbits.append(nbits)
 
     def save(self, future_result):  # noqa: C901 : too complex
@@ -302,6 +315,10 @@ class SingleCarsDatasetSaver:
                                 tag=self.tags[count],
                                 dtype=self.dtypes[count],
                                 nodata=self.nodatas[count],
+                                rio_tags=self.rio_tags[count],
+                                rio_band_description=self.rio_band_description[
+                                    count
+                                ],
                                 nbits=self.nbits[count],
                             )
                             self.descriptors.append(desc)

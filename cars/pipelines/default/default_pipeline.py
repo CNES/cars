@@ -606,6 +606,7 @@ class DefaultPipeline(PipelineTemplate):
 
         """
 
+        loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         global_log_file = os.path.join(
             self.out_dir,
             "logs",
@@ -619,10 +620,27 @@ class DefaultPipeline(PipelineTemplate):
         updated_conf = {}
 
         if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
+            current_log_dir = os.path.join(self.out_dir, "logs", "subsampling")
+            cars_logging.setup_logging(
+                loglevel,
+                out_dir=current_log_dir,
+                pipeline="subsampling",
+                global_log_file=global_log_file,
+            )
+
             subsampling_pipeline = SubsamplingPipeline(
                 self.subsampling_conf, self.config_dir
             )
-            subsampling_pipeline.run()
+            subsampling_pipeline.run(
+                log_dir=current_log_dir,
+            )
+
+            # generate summary
+            log_wrapper.generate_summary(
+                current_log_dir,
+                subsampling_pipeline.used_conf,
+                pipeline_cst.SUBSAMPLING,
+            )
 
         if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
             for resolution_index, epipolar_res in enumerate(self.resolutions):
@@ -663,10 +681,11 @@ class DefaultPipeline(PipelineTemplate):
                 )
 
                 # setup logging
-                loglevel = getattr(args, "loglevel", "PROGRESS").upper()
 
                 current_log_dir = os.path.join(
-                    self.out_dir, "logs", "res_" + str(epipolar_res)
+                    self.out_dir,
+                    "logs",
+                    "surface_modeling_res_" + str(epipolar_res),
                 )
 
                 cars_logging.setup_logging(
@@ -729,9 +748,23 @@ class DefaultPipeline(PipelineTemplate):
 
         final_conf = None
         if self.pipeline_to_use[pipeline_cst.MERGING]:
+            current_log_dir = os.path.join(self.out_dir, "logs", "merging")
+            cars_logging.setup_logging(
+                loglevel,
+                out_dir=current_log_dir,
+                pipeline="merging",
+                global_log_file=global_log_file,
+            )
             merging_conf = self.construct_merging_conf(self.used_conf)
             merging_pipeline = MergingPipeline(merging_conf, self.config_dir)
             merging_pipeline.run()
+
+            # generate summary
+            log_wrapper.generate_summary(
+                current_log_dir,
+                merging_pipeline.used_conf,
+                pipeline_cst.MERGING,
+            )
 
             final_conf = merging_pipeline.used_conf
 
@@ -744,7 +777,14 @@ class DefaultPipeline(PipelineTemplate):
         formatting_input_dir = final_conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
-            if self.filling_conf[INPUT]["dsm_to_fill"] is None:
+            current_log_dir = os.path.join(self.out_dir, "logs", "filling")
+            cars_logging.setup_logging(
+                loglevel,
+                out_dir=current_log_dir,
+                pipeline="filling",
+                global_log_file=global_log_file,
+            )
+            if self.filling_conf[INPUT][pipeline_cst.DSM_TO_FILL] is None:
                 if (
                     not self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]
                     and not self.pipeline_to_use[pipeline_cst.MERGING]
@@ -754,21 +794,21 @@ class DefaultPipeline(PipelineTemplate):
                         "you want to use the filling pipeline separately"
                     )
 
-                self.filling_conf[INPUT]["dsm_to_fill"] = {}
+                self.filling_conf[INPUT][pipeline_cst.DSM_TO_FILL] = {}
                 aux_path = os.path.join(
                     final_conf[OUTPUT][out_cst.OUT_DIRECTORY], "dsm/"
                 )
-                self.filling_conf[INPUT]["dsm_to_fill"]["dsm"] = os.path.join(
-                    aux_path, "dsm.tif"
+                self.filling_conf[INPUT][pipeline_cst.DSM_TO_FILL]["dsm"] = (
+                    os.path.join(aux_path, "dsm.tif")
                 )
 
                 for aux_output, val in final_conf[OUTPUT][
                     out_cst.AUXILIARY
                 ].items():
                     if val:
-                        self.filling_conf[INPUT]["dsm_to_fill"][aux_output] = (
-                            os.path.join(aux_path, aux_output + ".tif")
-                        )
+                        self.filling_conf[INPUT][pipeline_cst.DSM_TO_FILL][
+                            aux_output
+                        ] = os.path.join(aux_path, aux_output + ".tif")
             initial_elevation = final_conf[INPUT][
                 sens_cst.INITIAL_ELEVATION
             ].get("dem", None)
@@ -782,7 +822,16 @@ class DefaultPipeline(PipelineTemplate):
             filling_pipeline = FillingPipeline(
                 self.filling_conf, self.config_dir
             )
-            filling_pipeline.run()
+            filling_pipeline.run(
+                log_dir=current_log_dir,
+            )
+
+            # generate summary
+            log_wrapper.generate_summary(
+                current_log_dir,
+                filling_pipeline.used_conf,
+                pipeline_cst.FILLING,
+            )
 
             formatting_input_dir = os.path.join(
                 filling_pipeline.used_conf[OUTPUT][out_cst.OUT_DIRECTORY],
@@ -790,6 +839,13 @@ class DefaultPipeline(PipelineTemplate):
             )
 
         if self.pipeline_to_use[pipeline_cst.FORMATTING]:
+            current_log_dir = os.path.join(self.out_dir, "logs", "formatting")
+            cars_logging.setup_logging(
+                loglevel,
+                out_dir=current_log_dir,
+                pipeline="formatting",
+                global_log_file=global_log_file,
+            )
             formatting_conf = self.construct_formatting_conf(
                 formatting_input_dir
             )
@@ -797,7 +853,15 @@ class DefaultPipeline(PipelineTemplate):
                 formatting_conf, self.config_dir
             )
             formatting_pipeline.run(
-                surface_modeling_dir=current_surface_modeling_out_dir
+                surface_modeling_dir=current_surface_modeling_out_dir,
+                log_dir=current_log_dir,
+            )
+
+            # generate summary
+            log_wrapper.generate_summary(
+                current_log_dir,
+                formatting_pipeline.used_conf,
+                pipeline_cst.FORMATTING,
             )
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:

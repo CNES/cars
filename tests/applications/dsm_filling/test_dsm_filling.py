@@ -32,6 +32,7 @@ import pytest
 from shapely import Polygon
 
 # CARS imports
+import cars.orchestrator.orchestrator as ocht
 from cars.applications.application import Application
 from cars.pipelines.parameters import output_constants
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -111,69 +112,65 @@ def test_fill_dsm(method):
             ]
         )
 
-        kwargs = {
-            "dsm_file": input_dsm_noroi,
-            "classif_file": None,
-            "filling_file": None,
-            "dump_dir": dump_dir,
-            "roi_polys": None,
-            "roi_epsg": None,
-        }
+        with ocht.Orchestrator(
+            orchestrator_conf={"mode": "sequential"}
+        ) as orchestrator:
+            kwargs = {
+                "dsm_file": input_dsm_noroi,
+                "classif_file": None,
+                "filling_file": None,
+                "dump_dir": dump_dir,
+                "roi_polys": None,
+                "roi_epsg": None,
+                "orchestrator": orchestrator,
+            }
 
-        if method == "exogenous_filling":
-            kwargs["output_geoid"] = False
-            kwargs["geom_plugin"] = geometry_plugin
-        elif method == "bulldozer":
-            kwargs["orchestrator"] = None
-        elif method == "border_interpolation":
-            kwargs["dtm_file"] = None
+            if method == "exogenous_filling":
+                kwargs["output_geoid"] = False
+                kwargs["geom_plugin"] = geometry_plugin
+            elif method == "border_interpolation":
+                kwargs["dtm_file"] = None
 
-        # first test with no roi (fill everything)
-        _ = dsm_filling_application.run(**kwargs)
+            # first test with no roi (fill everything)
+            _ = dsm_filling_application.run(**kwargs)
+            # save results
+            orchestrator.breakpoint()
 
-        # copy2(
-        #     input_dsm_noroi,
-        #     absolute_data_path(
-        #         "ref_output_application/dsm_filling/"
-        #         "dsm_filling_{}_gizeh_crop_no_roi.tif".format(
-        #             method
-        #         )
-        #     ),
-        # )
+            # copy2(
+            #     input_dsm_noroi,
+            #     absolute_data_path(
+            #         "ref_output_application/dsm_filling/"
+            #         "dsm_filling_{}_gizeh_crop_no_roi.tif".format(
+            #             method
+            #         )
+            #     ),
+            # )
 
-        assert_same_images(
-            input_dsm_noroi,
-            absolute_data_path(
-                "ref_output_application/dsm_filling/"
-                "dsm_filling_{}_gizeh_crop_no_roi.tif".format(method)
-            ),
-            rtol=0.1,
-            atol=0.1,
-        )
+            assert_same_images(
+                input_dsm_noroi,
+                absolute_data_path(
+                    "ref_output_application/dsm_filling/"
+                    "dsm_filling_{}_gizeh_crop_no_roi.tif".format(method)
+                ),
+                rtol=0.1,
+                atol=0.1,
+            )
 
-        kwargs["dsm_file"] = input_dsm_roi
-        kwargs["roi_polys"] = roi_poly
-        kwargs["roi_epsg"] = roi_epsg
+            kwargs["dsm_file"] = input_dsm_roi
+            kwargs["roi_polys"] = roi_poly
+            kwargs["roi_epsg"] = roi_epsg
 
-        # second test with an roi
-        _ = dsm_filling_application.run(**kwargs)
+            # second test with an roi
+            _ = dsm_filling_application.run(**kwargs)
+            # save results
+            orchestrator.breakpoint()
 
-        # copy2(
-        #     input_dsm_roi,
-        #     absolute_data_path(
-        #         "ref_output_application/dsm_filling/"
-        #         "dsm_filling_{}_gizeh_crop_roi.tif".format(
-        #             method
-        #         )
-        #     ),
-        # )
-
-        assert_same_images(
-            input_dsm_roi,
-            absolute_data_path(
-                "ref_output_application/dsm_filling/"
-                "dsm_filling_{}_gizeh_crop_roi.tif".format(method)
-            ),
-            rtol=0.1,
-            atol=0.1,
-        )
+            assert_same_images(
+                input_dsm_roi,
+                absolute_data_path(
+                    "ref_output_application/dsm_filling/"
+                    "dsm_filling_{}_gizeh_crop_roi.tif".format(method)
+                ),
+                rtol=0.1,
+                atol=0.1,
+            )

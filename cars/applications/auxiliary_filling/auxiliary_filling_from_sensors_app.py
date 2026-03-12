@@ -474,7 +474,7 @@ def filling_from_sensor_wrapper(
     nodata_color = None
     nodata_classif = None
 
-    if os.path.exists(color_file):
+    if color_file is not None and os.path.exists(color_file):
         with rio.open(color_file) as color_image:
             profile = color_image.profile
             nodata_color = color_image.nodata

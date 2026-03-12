@@ -441,6 +441,8 @@ class CarsDataset:
         tag=None,
         dtype=None,
         nodata=None,
+        rio_tags=None,
+        rio_band_description=None,
         nbits=None,
     ):
         """
@@ -482,6 +484,15 @@ class CarsDataset:
         descriptor = rio.open(
             file_name, "w+", nbits=nbits, **new_profile, BIGTIFF="IF_SAFER"
         )
+
+        # add tags and desciption
+        if rio_tags is not None:
+            for band, classif in rio_tags:
+                descriptor.update_tags(band=band, class_name=str(classif))
+
+        if rio_band_description is not None:
+            for band, classif in rio_band_description:
+                descriptor.set_band_description(band, str(classif))
 
         return descriptor
 

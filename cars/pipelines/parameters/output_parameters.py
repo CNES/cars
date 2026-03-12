@@ -460,4 +460,7 @@ def intialize_product_index(orchestrator, product_levels, input_pairs):
                 cst.INDEX_DEPTH_MAP_EPSG: None,
             }
 
-    orchestrator.update_index(index)
+    if orchestrator is not None:
+        orchestrator.update_index(index)
+
+    return index

@@ -24,6 +24,7 @@ This module contains the advanced parameter definitions
 """
 
 SAVE_INTERMEDIATE_DATA = "save_intermediate_data"
+FILLING_TILE_SIZE = "filling_tile_size"
 KEEP_LOW_RES_DIR = "keep_low_res_dir"
 PHASING = "phasing"
 DEBUG_WITH_ROI = "debug_with_roi"

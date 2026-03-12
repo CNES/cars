@@ -174,7 +174,7 @@ def exception_safe(func):
     return wrapper
 
 
-@exception_safe
+# @exception_safe
 def generate_summary(
     out_dir, used_conf, pipeline_name, clean_worker_logs=False
 ):
@@ -184,8 +184,11 @@ def generate_summary(
     nb_workers = 1
     if "orchestrator" not in used_conf:
         first_key = next(iter(used_conf))
-        if "nb_workers" in used_conf[first_key]["orchestrator"]:
-            nb_workers = used_conf[first_key]["orchestrator"]["nb_workers"]
+        if "orchestrator" in used_conf[first_key]:
+            if "nb_workers" in used_conf[first_key]["orchestrator"]:
+                nb_workers = used_conf[first_key]["orchestrator"]["nb_workers"]
+            else:
+                logging.debug("nb_workers not in conf, set to 1")
     else:
         if "nb_workers" in used_conf["orchestrator"]:
             nb_workers = used_conf["orchestrator"]["nb_workers"]
@@ -212,18 +215,17 @@ def generate_summary(
     for log_file in log_files:
         if not os.path.exists(log_file):
             logging.debug("{} log file does not exist".format(log_file))
-            return
-
-        with open(log_file, encoding="UTF-8") as file_desc:
-            for item in file_desc:
-                if "CarsProfiling" in item:
-                    splited_items = item.split("%")
-                    names.append(splited_items[1])
-                    times.append(float(splited_items[3]))
-                    max_ram.append(float(splited_items[5]))
-                    start_ram.append(float(splited_items[7]))
-                    end_ram.append(float(splited_items[9]))
-                    max_cpu.append(float(splited_items[11]))
+        else:
+            with open(log_file, encoding="UTF-8") as file_desc:
+                for item in file_desc:
+                    if "CarsProfiling" in item:
+                        splited_items = item.split("%")
+                        names.append(splited_items[1])
+                        times.append(float(splited_items[3]))
+                        max_ram.append(float(splited_items[5]))
+                        start_ram.append(float(splited_items[7]))
+                        end_ram.append(float(splited_items[9]))
+                        max_cpu.append(float(splited_items[11]))
 
     times_df = pd.DataFrame(
         {
@@ -394,7 +396,7 @@ def generate_summary(
     (_, [pipeline_time]) = filter_lists(
         summary_names,
         summary_total_time,
-        lambda name: pipeline_name in name,
+        lambda name: pipeline_name + "_pipeline" in name,
     )
 
     (_, [multiprocessing_time]) = filter_lists(
@@ -409,15 +411,16 @@ def generate_summary(
 
     _, axs2 = plt.subplots(2, 1, figsize=(40, 40), layout="tight")
 
-    generate_pie_chart(
-        axs2.flat[0],
-        name_task_workers,
-        100 * np.array(summary_workers) / total_time_workers,
-        "Total time in parallel tasks ({} workers) : {}".format(
-            nb_workers,
-            str(datetime.timedelta(seconds=int(multiprocessing_time))),
-        ),
-    )
+    if total_time_workers > 0:
+        generate_pie_chart(
+            axs2.flat[0],
+            name_task_workers,
+            100 * np.array(summary_workers) / total_time_workers,
+            "Total time in parallel tasks ({} workers) : {}".format(
+                nb_workers,
+                str(datetime.timedelta(seconds=int(multiprocessing_time))),
+            ),
+        )
 
     generate_pie_chart(
         axs2.flat[1],
@@ -450,13 +453,18 @@ def generate_pdf_profiling(log_dir):
 
     for item in os.listdir(log_dir):
         item_path = os.path.join(log_dir, item)
-        if os.path.isdir(item_path) and item.startswith("res"):
-            # Get resolution
-            res = int(item[4:])
-            resolutions.append(res)
-
+        if os.path.isdir(item_path) and item.startswith(
+            (
+                "surface_",
+                "formatting",
+                "filling",
+                "tie_points",
+                "merging",
+                "subsampling",
+            )
+        ):
             # Add paths
-            pages_data[res] = {
+            pages_data[item] = {
                 "function_profiling_histo": os.path.join(
                     item_path, "profiling", "profiling_plots_histo.png"
                 ),
@@ -475,15 +483,14 @@ def generate_pdf_profiling(log_dir):
     pdf_path = os.path.join(log_dir, "profiling_summary.pdf")
 
     with PdfPages(pdf_path) as pdf:
-        for res in resolutions:
+        for key, page_data in pages_data.items():
             # function_profiling
-            if os.path.exists(pages_data[res]["function_profiling_histo"]):
-                img = Image.open(pages_data[res]["function_profiling_histo"])
+            if os.path.exists(page_data["function_profiling_histo"]):
+                img = Image.open(page_data["function_profiling_histo"])
                 fig, axis = plt.subplots(1, 1, figsize=(11.69, 8.27), dpi=300)
                 axis.imshow(img, interpolation="none")
                 axis.set_title(
-                    f"Function Profiling Histograms - "
-                    f"Epipolar Resolution {res}",
+                    f"Function Profiling Histograms - " f" {key}",
                     fontsize=16,
                     fontweight="bold",
                 )
@@ -492,14 +499,12 @@ def generate_pdf_profiling(log_dir):
                 pdf.savefig(fig, bbox_inches="tight", dpi=300)
                 plt.close(fig)
 
-            if os.path.exists(pages_data[res]["function_profiling_pie_chart"]):
-                img = Image.open(
-                    pages_data[res]["function_profiling_pie_chart"]
-                )
+            if os.path.exists(page_data["function_profiling_pie_chart"]):
+                img = Image.open(page_data["function_profiling_pie_chart"])
                 fig, axis = plt.subplots(1, 1, figsize=(11.69, 8.27), dpi=300)
                 axis.imshow(img, interpolation="none")
                 axis.set_title(
-                    f"Function Profiling Pie Chart - Epipolar Resolution {res}",
+                    f"Function Profiling Pie Chart - {key}",
                     fontsize=16,
                     fontweight="bold",
                 )
@@ -509,12 +514,12 @@ def generate_pdf_profiling(log_dir):
                 plt.close(fig)
 
             # global_profiling
-            if os.path.exists(pages_data[res]["global_profiling"]):
-                img = Image.open(pages_data[res]["global_profiling"])
+            if os.path.exists(page_data["global_profiling"]):
+                img = Image.open(page_data["global_profiling"])
                 fig, axis = plt.subplots(1, 1, figsize=(11.69, 8.27), dpi=300)
                 axis.imshow(img, interpolation="none")
                 axis.set_title(
-                    f"Global Profiling - Epipolar Resolution {res}",
+                    f"Global Profiling - {key}",
                     fontsize=16,
                     fontweight="bold",
                 )
@@ -539,9 +544,14 @@ def filter_lists(names, data, cond):
             filtered_names.append(name)
             filtered_data.append(dat)
 
+    if len(filtered_data) == 0:
+        logging.debug("No data after filtering with condition on names")
+        return ["no name"], [0]
+
     return filtered_names, filtered_data
 
 
+@exception_safe
 def generate_boxplot(axis, names, data_full, title, data_type):
     """
     Generate boxplot
@@ -553,6 +563,7 @@ def generate_boxplot(axis, names, data_full, title, data_type):
     axis.set_title(title)
 
 
+@exception_safe
 def generate_histo(  # pylint: disable=too-many-positional-arguments
     axis, names, data, title, data_type, data_min_err=None, data_max_err=None
 ):
@@ -575,6 +586,7 @@ def generate_histo(  # pylint: disable=too-many-positional-arguments
     axis.set_title(title)
 
 
+@exception_safe
 def generate_pie_chart(axis, names, data, title):
     """
     Generate pie chart, data in %

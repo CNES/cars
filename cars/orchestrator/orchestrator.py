@@ -201,6 +201,8 @@ class Orchestrator:
         cars_ds_name=None,
         optional_data=False,
         save_by_pair=False,
+        rio_tags=None,
+        rio_band_description=None,
         nbits=None,
     ):
         """
@@ -225,6 +227,8 @@ class Orchestrator:
             nodata=nodata,
             optional_data=optional_data,
             save_by_pair=save_by_pair,
+            rio_tags=rio_tags,
+            rio_band_description=rio_band_description,
             nbits=nbits,
         )
 

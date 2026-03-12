@@ -129,9 +129,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         out_dir = config["output"]["directory"]
 
+        log_dir = os.path.join(out_dir, "logs")
+
         cars_logging.setup_logging(
             loglevel,
-            out_dir=os.path.join(out_dir, "logs"),
+            out_dir=log_dir,
             pipeline=pipeline_name,
         )
 
@@ -143,12 +145,13 @@ def main_cli(args, dry_run=False):  # noqa: C901
         cars_logging.add_progress_message("CARS pipeline is started.")
         if not dry_run:
             # run pipeline
+            args.log_dir = log_dir
             used_pipeline.run(args)
 
         # Generate summary of tasks
         if pipeline_name != "default":
             log_wrapper.generate_summary(
-                os.path.join(out_dir, "logs"),
+                log_dir,
                 used_pipeline.used_conf,
                 config["pipeline"],
                 clean_worker_logs=True,
@@ -158,9 +161,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
             "CARS has successfully completed the pipeline."
         )
 
-    except BaseException:
+    except BaseException as exc:
         # Catch all exceptions, show debug traceback and exit
-        logging.exception("CARS terminated with following error")
+        logging.exception(
+            "CARS terminated with following error: {}".format(exc)
+        )
         sys.exit(1)
 
 

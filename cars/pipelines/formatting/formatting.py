@@ -37,6 +37,7 @@ from pathlib import Path
 from json_checker import Checker
 
 from cars.core import cars_logging
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 # CARS imports
 from cars.pipelines.parameters import output_constants as out_cst
@@ -169,8 +170,9 @@ class FormattingPipeline(PipelineTemplate):
 
                 shutil.move(str(element), str(dest))
 
+    @cars_profile(name="run_formatting_pipeline", interval=0.5)
     def run(
-        self, args=None, surface_modeling_dir=None
+        self, args=None, surface_modeling_dir=None, log_dir=None
     ):  # pylint: disable=W0613
         """
         Run the formatting pipeline
