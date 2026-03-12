@@ -33,21 +33,25 @@ from __future__ import print_function
 import copy
 import logging
 import os
-import warnings
 from collections import OrderedDict
 
-import numpy as np
 import rasterio
 from json_checker import Checker, OptionalKey, Or
 from pyproj import CRS
-from rasterio.errors import NodataShadowWarning
 
+import cars.orchestrator.orchestrator as ocht
 from cars.applications.application import Application
-from cars.core import cars_logging, inputs, projection
+from cars.core import cars_logging, inputs, projection, tiling
 from cars.core.inputs import read_vector
 from cars.core.utils import safe_makedirs
-from cars.orchestrator import orchestrator
+from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines import pipeline_constants as pipeline_cst
+from cars.pipelines.filling.filling_pipeline_wrapper import (
+    merge_classif_bands_wrapper,
+    merge_filling_bands_wrapper,
+    monoband_to_multiband_wrapper,
+)
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import output_constants as out_cst
@@ -133,6 +137,10 @@ class FillingPipeline(PipelineTemplate):
             self.used_conf[INPUT]
         )
 
+        self.filling_tile_size = self.used_conf[ADVANCED][
+            adv_cst.FILLING_TILE_SIZE
+        ]
+
         applications_conf = self.overide_pipeline_conf(
             pipeline_conf.get(APPLICATIONS, {}),
             filling_applications,
@@ -148,10 +156,12 @@ class FillingPipeline(PipelineTemplate):
         )
         self.dump_dir = os.path.join(self.filling_dir, "dump_dir")
 
-        if isinstance(self.used_conf[INPUT]["dsm_to_fill"], str):
-            self.dsm_to_fill = {"dsm": self.used_conf[INPUT]["dsm_to_fill"]}
+        if isinstance(self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL], str):
+            self.dsm_to_fill = {
+                "dsm": self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]
+            }
         else:
-            self.dsm_to_fill = self.used_conf[INPUT]["dsm_to_fill"]
+            self.dsm_to_fill = self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]
 
         if not pre_check:
             for key, path in self.dsm_to_fill.items():
@@ -228,8 +238,11 @@ class FillingPipeline(PipelineTemplate):
 
         overloaded_conf = conf_advanced.copy()
 
-        overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
+        overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf_advanced.get(
             adv_cst.SAVE_INTERMEDIATE_DATA, False
+        )
+        overloaded_conf[adv_cst.FILLING_TILE_SIZE] = conf_advanced.get(
+            adv_cst.FILLING_TILE_SIZE, 10000
         )
         # Check geometry plugin and overwrite geomodel in conf inputs
         (
@@ -248,6 +261,7 @@ class FillingPipeline(PipelineTemplate):
         schema = {
             adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
             adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
+            adv_cst.FILLING_TILE_SIZE: int,
         }
         checker_advanced_parameters = Checker(schema)
         checker_advanced_parameters.validate(overloaded_conf)
@@ -496,167 +510,182 @@ class FillingPipeline(PipelineTemplate):
         return res_as_string_list
 
     @cars_profile(name="merge filling bands", interval=0.5)
-    def merge_filling_bands(self, filling_path, aux_filling, dsm_file):
+    def merge_filling_bands(  # pylint: disable=R0917
+        self,
+        in_filling_path,
+        out_filling_path,
+        aux_filling,
+        dsm_file,
+        orchestrator=None,
+        tile_size=10000,
+    ):
         """
         Merge filling bands to get mono band in output
         """
 
-        with rasterio.open(dsm_file) as in_dsm:
-            dsm_msk = in_dsm.read_masks(1)
+        if orchestrator is None:
+            orchestrator = ocht.Orchestrator(
+                orchestrator_conf={"mode": "sequential"}
+            )
 
-        with rasterio.open(filling_path) as src:
+        with rasterio.open(in_filling_path) as src:
             nb_bands = src.count
 
             if nb_bands == 1:
-                return False
+                return None
 
-            filling_multi_bands = src.read()
-            filling_mono_bands = np.zeros(filling_multi_bands.shape[1:3])
-            descriptions = src.descriptions
-            dict_temp = {name: i for i, name in enumerate(descriptions)}
             profile = src.profile
+            height = src.height
+            width = src.width
+            filling_dtype = src.dtypes[0]
+            nodata_value = src.nodata
 
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", NodataShadowWarning)
-                filling_mask = src.read_masks(1)
+        # Update to one band
+        profile.update(count=1, dtype=filling_dtype)
 
-            filling_mono_bands[filling_mask == 0] = 0
+        filling_cars_ds = cars_dataset.CarsDataset(
+            "arrays", name="Monoband Filling"
+        )
+        # Compute tiling grid
+        filling_cars_ds.tiling_grid = tiling.generate_tiling_grid(
+            0,
+            0,
+            height,
+            width,
+            tile_size,
+            tile_size,
+        )
 
-            filling_bands_list = {
-                "fill_with_geoid": ["filling_exogenous"],
-                "interpolate_from_borders": [
-                    "bulldozer",
-                    "border_interpolation",
-                ],
-                "fill_with_endogenous_dem": [
-                    "filling_exogenous",
-                    "bulldozer",
-                ],
-                "fill_with_exogenous_dem": ["bulldozer"],
-            }
+        # Saving infos
+        [
+            saving_info,
+        ] = orchestrator.get_saving_infos([filling_cars_ds])
 
-            # To get the right footprint
-            filling_mono_bands = np.logical_or(dsm_msk, filling_mask).astype(
-                np.uint8
-            )
+        # Save list
+        orchestrator.add_to_save_lists(
+            out_filling_path,
+            "mono_filling",
+            filling_cars_ds,
+            dtype=filling_dtype,
+            nodata=nodata_value,
+            optional_data=False,
+            cars_ds_name="MonoBand Filling",
+        )
 
-            # to keep the previous classif convention
-            filling_mono_bands[filling_mono_bands == 0] = src.nodata
-            filling_mono_bands[filling_mono_bands == 1] = 0
-
-            no_match = False
-            for key, value in aux_filling.items():
-                if isinstance(value, str):
-                    value = [value]
-
-                if isinstance(value, list):
-                    for elem in value:
-                        if elem != "other":
-                            filling_method = filling_bands_list[elem]
-
-                            if all(
-                                method in descriptions
-                                for method in filling_method
-                            ):
-                                indices_true = [
-                                    dict_temp[m] for m in filling_method
-                                ]
-
-                                mask_true = np.all(
-                                    filling_multi_bands[indices_true, :, :]
-                                    == 1,
-                                    axis=0,
-                                )
-
-                                indices_false = [
-                                    i
-                                    for i in range(filling_multi_bands.shape[0])
-                                    if i not in indices_true
-                                ]
-
-                                mask_false = np.all(
-                                    filling_multi_bands[indices_false, :, :]
-                                    == 0,
-                                    axis=0,
-                                )
-
-                                mask = mask_true & mask_false
-
-                                filling_mono_bands[mask] = key
-                            else:
-                                no_match = True
-
-            if no_match:
-                mask_1 = np.all(
-                    filling_multi_bands[1:, :, :] == 1,
-                    axis=0,
+        for row in range(filling_cars_ds.shape[0]):
+            for col in range(filling_cars_ds.shape[1]):
+                # update saving infos  for potential replacement
+                full_saving_info = ocht.update_saving_infos(
+                    saving_info, row=row, col=col
                 )
 
-                mask_2 = np.all(
-                    filling_mono_bands == 0,
-                    axis=0,
+                window = filling_cars_ds.get_window_as_dict(row, col)
+                # Compute images
+                (filling_cars_ds[row, col]) = orchestrator.cluster.create_task(
+                    merge_filling_bands_wrapper, nout=1
+                )(
+                    in_filling_path,
+                    aux_filling,
+                    dsm_file,
+                    window=window,
+                    saving_info=full_saving_info,
+                    profile=profile,
                 )
 
-                filling_mono_bands[mask_1 & mask_2] = (
-                    aux_filling["other"] if "other" in aux_filling else 50
-                )
-
-            profile.update(count=1, dtype=filling_mono_bands.dtype)
-            with rasterio.open(filling_path, "w", **profile) as src:
-                src.write(filling_mono_bands, 1)
-
-        return True
+        return filling_cars_ds
 
     @cars_profile(name="merge classif bands", interval=0.5)
-    def merge_classif_bands(self, classif_path, aux_classif, dsm_file):
+    def merge_classif_bands(  # pylint: disable=R0917
+        self,
+        in_classif_path,
+        out_classif_path,
+        aux_classif,
+        dsm_file,
+        orchestrator=None,
+        tile_size=10000,
+    ):
         """
         Merge classif bands to get mono band in output
         """
-        with rasterio.open(dsm_file) as in_dsm:
-            dsm_msk = in_dsm.read_masks(1)
+        if orchestrator is None:
+            orchestrator = ocht.Orchestrator(
+                orchestrator_conf={"mode": "sequential"}
+            )
 
-        with rasterio.open(classif_path) as src:
+        with rasterio.open(in_classif_path) as src:
             nb_bands = src.count
 
             if nb_bands == 1:
-                return False
+                return None
 
-            classif_multi_bands = src.read()
-            classif_mono_band = np.zeros(classif_multi_bands.shape[1:3])
-            descriptions = src.descriptions
             profile = src.profile
-            classif_mask = src.read_masks(1)
-            classif_mono_band[classif_mask == 0] = 0
+            height = src.height
+            width = src.width
+            classif_dtype = src.dtypes[0]
+            nodata_value = src.nodata
 
-            # To get the right footprint
-            classif_mono_band = np.logical_or(dsm_msk, classif_mask).astype(
-                np.uint8
-            )
+        # Update to one band
+        profile.update(count=1, dtype=classif_dtype)
 
-            # to keep the previous classif convention
-            classif_mono_band[classif_mono_band == 0] = src.nodata
-            classif_mono_band[classif_mono_band == 1] = 0
+        classif_cars_ds = cars_dataset.CarsDataset(
+            "arrays", name="Monoband Classification"
+        )
+        # Compute tiling grid
+        classif_cars_ds.tiling_grid = tiling.generate_tiling_grid(
+            0,
+            0,
+            height,
+            width,
+            tile_size,
+            tile_size,
+        )
 
-            for key, value in aux_classif.items():
-                if isinstance(value, int):
-                    num_band = descriptions.index(str(value))
-                    mask_1 = classif_mono_band == 0
-                    mask_2 = classif_multi_bands[num_band, :, :] == 1
-                    classif_mono_band[mask_1 & mask_2] = key
-                elif isinstance(value, list):
-                    for elem in value:
-                        num_band = descriptions.index(str(elem))
-                        mask_1 = classif_mono_band == 0
-                        mask_2 = classif_multi_bands[num_band, :, :] == 1
-                        classif_mono_band[mask_1 & mask_2] = key
+        # Saving infos
+        [
+            saving_info,
+        ] = orchestrator.get_saving_infos([classif_cars_ds])
 
-        profile.update(count=1, dtype=classif_mono_band.dtype)
-        with rasterio.open(classif_path, "w", **profile) as src:
-            src.write(classif_mono_band, 1)
+        # Save list
+        orchestrator.add_to_save_lists(
+            out_classif_path,
+            "classification",
+            classif_cars_ds,
+            dtype=classif_dtype,
+            nodata=nodata_value,
+            optional_data=False,
+            cars_ds_name="MonoBand Classification",
+        )
 
-        return True
+        for row in range(classif_cars_ds.shape[0]):
+            for col in range(classif_cars_ds.shape[1]):
+                # update saving infos  for potential replacement
+                full_saving_info = ocht.update_saving_infos(
+                    saving_info, row=row, col=col
+                )
 
-    def monoband_to_multiband(self, input_raster, output_raster, bands_classif):
+                window = classif_cars_ds.get_window_as_dict(row, col)
+                # Compute images
+                (classif_cars_ds[row, col]) = orchestrator.cluster.create_task(
+                    merge_classif_bands_wrapper, nout=1
+                )(
+                    in_classif_path,
+                    aux_classif,
+                    dsm_file,
+                    window=window,
+                    saving_info=full_saving_info,
+                    profile=profile,
+                )
+
+        return classif_cars_ds
+
+    def monoband_to_multiband(  # pylint: disable=R0917
+        self,
+        input_raster,
+        output_raster,
+        bands_classif,
+        orchestrator=None,
+        tile_size=10000,
+    ):
         """
         Convert classification from monoband to multiband
 
@@ -669,29 +698,72 @@ class FillingPipeline(PipelineTemplate):
         """
 
         with rasterio.open(input_raster) as src:
-            mono = src.read(1)
-            mono_msk = src.read_masks(1)
             profile = src.profile
             nodata_value = src.nodata
+            height = src.height
+            width = src.width
+            dtype = src.dtypes[0]
 
-        multiband = np.zeros(
-            (len(bands_classif), mono.shape[0], mono.shape[1]), dtype=np.uint8
-        )
-        multiband_msk = np.broadcast_to(mono_msk, multiband.shape)
-
-        for i, cls in enumerate(bands_classif):
-            multiband[i] = mono == cls
-
-        multiband[multiband_msk == 0] = nodata_value
-
+        # update profile
         profile.update(count=len(bands_classif))
 
-        with rasterio.open(output_raster, "w", **profile) as dst:
-            dst.write(multiband)
+        classif_cars_ds = cars_dataset.CarsDataset(
+            "arrays", name="Multiband Classification"
+        )
+        # Compute tiling grid
+        classif_cars_ds.tiling_grid = tiling.generate_tiling_grid(
+            0,
+            0,
+            height,
+            width,
+            tile_size,
+            tile_size,
+        )
 
-            for i, cls in enumerate(bands_classif, start=1):
-                dst.update_tags(band=i, class_name=str(cls))
-                dst.set_band_description(i, str(cls))
+        # Saving infos
+        [
+            saving_info,
+        ] = orchestrator.get_saving_infos([classif_cars_ds])
+
+        classif_tags = []
+        band_description = []
+        for band, classif in enumerate(bands_classif, start=1):
+            classif_tags.append((band, classif))
+            band_description.append((band, classif))
+
+        # Save list
+        orchestrator.add_to_save_lists(
+            output_raster,
+            "classification",
+            classif_cars_ds,
+            dtype=dtype,
+            nodata=nodata_value,
+            optional_data=False,
+            rio_tags=classif_tags,
+            rio_band_description=band_description,
+            cars_ds_name="Multiband Classification",
+        )
+
+        for row in range(classif_cars_ds.shape[0]):
+            for col in range(classif_cars_ds.shape[1]):
+
+                # update saving infos  for potential replacement
+                full_saving_info = ocht.update_saving_infos(
+                    saving_info, row=row, col=col
+                )
+
+                window = classif_cars_ds.get_window_as_dict(row, col)
+                # Compute images
+                (classif_cars_ds[row, col]) = orchestrator.cluster.create_task(
+                    monoband_to_multiband_wrapper, nout=1
+                )(
+                    input_raster,
+                    bands_classif,
+                    nodata_value,
+                    window=window,
+                    saving_info=full_saving_info,
+                    profile=profile,
+                )
 
         return output_raster
 
@@ -712,7 +784,7 @@ class FillingPipeline(PipelineTemplate):
 
         color_file_name = (
             self.dsm_to_fill["image"]
-            if "image" in self.used_conf[INPUT]["dsm_to_fill"]
+            if "image" in self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]
             else None
         )
 
@@ -724,20 +796,23 @@ class FillingPipeline(PipelineTemplate):
         if input_classif is not None:
             bands_classif = input_classif["values"]
 
-        classif_file_name = (
+        classif_file_name = None
+        if sens_cst.INPUT_CLASSIFICATION:
+            classif_file_name = os.path.join(
+                dsm_filled_dir, "classification.tif"
+            )
             self.monoband_to_multiband(
                 self.dsm_to_fill["classification"],
-                os.path.join(dsm_filled_dir, "classification.tif"),
+                classif_file_name,
                 bands_classif,
+                orchestrator=self.cars_orchestrator,
+                tile_size=self.filling_tile_size,
             )
-            if sens_cst.INPUT_CLASSIFICATION
-            in self.used_conf[INPUT]["dsm_to_fill"]
-            else None
-        )
+            self.cars_orchestrator.breakpoint()
 
         filling_file_name = (
             self.dsm_to_fill["filling"]
-            if "filling" in self.used_conf[INPUT]["dsm_to_fill"]
+            if "filling" in self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]
             else None
         )
 
@@ -886,9 +961,11 @@ class FillingPipeline(PipelineTemplate):
                     output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
                     geom_plugin=self.geom_plugin_with_dem_and_geoid,
                     dsm_dir=dsm_filled_dir,
+                    tile_size=self.filling_tile_size,
+                    orchestrator=self.cars_orchestrator,
                 )
             elif app.get_conf()["method"] == "bulldozer":
-                dtm_file_name = app.run(
+                _, dtm_file_name = app.run(
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
@@ -897,6 +974,7 @@ class FillingPipeline(PipelineTemplate):
                     roi_epsg=self.epsg,
                     orchestrator=self.cars_orchestrator,
                     dsm_dir=dsm_filled_dir,
+                    tile_size=self.filling_tile_size,
                 )
             elif app.get_conf()["method"] == "border_interpolation":
                 _ = app.run(
@@ -908,6 +986,8 @@ class FillingPipeline(PipelineTemplate):
                     roi_polys=self.list_intersection_poly,
                     roi_epsg=self.epsg,
                     dsm_dir=dsm_filled_dir,
+                    orchestrator=self.cars_orchestrator,
+                    tile_size=self.filling_tile_size,
                 )
 
             if not app.save_intermediate_data:
@@ -916,11 +996,13 @@ class FillingPipeline(PipelineTemplate):
             if dsm_file_name == self.dsm_to_fill["dsm"]:
                 dsm_file_name = os.path.join(dsm_filled_dir, "dsm.tif")
 
-            if "filling" in self.used_conf[INPUT]["dsm_to_fill"]:
+            if "filling" in self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]:
                 if filling_file_name == self.dsm_to_fill["filling"]:
                     filling_file_name = os.path.join(
                         dsm_filled_dir, "filling.tif"
                     )
+
+            self.cars_orchestrator.breakpoint()
 
         _ = self.auxiliary_filling_application.run(
             dsm_file=os.path.join(dsm_filled_dir, "dsm.tif"),
@@ -943,35 +1025,66 @@ class FillingPipeline(PipelineTemplate):
                 out_cst.AUX_CLASSIFICATION
             ]
         ):
-            self.merge_classif_bands(
+            tmp_classif_file_name = os.path.join(
+                dsm_filled_dir, "tmp_classification.tif"
+            )
+            merged_classif = self.merge_classif_bands(
                 classif_file_name,
+                tmp_classif_file_name,
                 self.used_conf[OUTPUT][out_cst.AUXILIARY][
                     out_cst.AUX_CLASSIFICATION
                 ],
                 dsm_file_name,
+                orchestrator=self.cars_orchestrator,
+                tile_size=self.filling_tile_size,
             )
+            self.cars_orchestrator.breakpoint()
+            # move tmp classif to final classif
+            if merged_classif is not None:
+                os.replace(tmp_classif_file_name, classif_file_name)
         if (
             filling_file_name is not None
             and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]
         ):
-            self.merge_filling_bands(
+            tmp_filling_file_name = os.path.join(
+                dsm_filled_dir, "tmp_filling.tif"
+            )
+
+            merged_filling = self.merge_filling_bands(
                 os.path.join(dsm_filled_dir, "filling.tif"),
+                tmp_filling_file_name,
                 self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING],
                 dsm_file_name,
+                orchestrator=self.cars_orchestrator,
             )
+            self.cars_orchestrator.breakpoint()
+            # move tmp fillinf to final filling
+            if merged_filling is not None:
+                os.replace(
+                    tmp_filling_file_name,
+                    os.path.join(dsm_filled_dir, "filling.tif"),
+                )
 
         return True
 
-    @cars_profile(name="Run_subsampling_pipeline", interval=0.5)
-    def run(self, args=None):  # noqa C901 # pylint: disable=W0613
+    @cars_profile(name="Run_filling_pipeline", interval=0.5)
+    def run(self, args=None, log_dir=None):  # noqa C901 # pylint: disable=W0613
         """
         Run pipeline
         """
         cars_logging.add_progress_message("Starting filling pipeline")
 
         self.log_dir = os.path.join(self.filling_dir, "logs")
+        if log_dir is not None:
+            self.log_dir = log_dir
+        elif (
+            args is not None
+            and hasattr(args, "log_dir")
+            and args.log_dir is not None
+        ):
+            self.log_dir = args.log_dir
 
-        with orchestrator.Orchestrator(
+        with ocht.Orchestrator(
             orchestrator_conf=self.used_conf[ORCHESTRATOR],
             out_dir=self.filling_dir,
             log_dir=self.log_dir,

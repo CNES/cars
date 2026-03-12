@@ -282,7 +282,11 @@ def test_pipeline():
                     "mode": "full",
                     "save_intermediate_data": True,
                 }
-            }
+            },
+            "advanced": {
+                "save_intermediate_data": True,
+                "filling_tile_size": 150,
+            },
         }
 
         input_conf["output"]["auxiliary"] = {

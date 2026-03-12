@@ -152,7 +152,7 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
         try:
             save_data(self.memory_data, self.file_plot)
         except Exception as exc:
-            logging.warning("unable to save monitoring graph : {}".format(exc))
+            logging.debug("unable to save monitoring graph : {}".format(exc))
 
 
 def clean_thread(thread):
@@ -203,18 +203,21 @@ def save_figure_in_thread(to_fill_dataframe, file_path):
 
     thread = threading.current_thread()
 
-    start_time = time.time()
+    # force saving at the beginning of the process
+    start_time = time.time() - 2 * SAVE_TIME
     while thread._state == RUN:  # pylint: disable=protected-access
-        time.sleep(RAM_PER_WORKER_CHECK_SLEEP_TIME)
+
         if time.time() - start_time > SAVE_TIME:
             start_time = time.time()
             # Save file
             try:
                 save_data(to_fill_dataframe, file_path)
             except Exception as exc:
-                logging.warning(
+                logging.debug(
                     "unable to save monitoring graph : {}".format(exc)
                 )
+
+        time.sleep(RAM_PER_WORKER_CHECK_SLEEP_TIME)
 
 
 def check_pool_memory_usage(

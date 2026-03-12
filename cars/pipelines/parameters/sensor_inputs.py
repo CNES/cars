@@ -31,11 +31,15 @@ import numpy as np
 import rasterio as rio
 from json_checker import Checker, Or
 
+import cars.core.constants as cst
+
 # CARS imports
 from cars.core import inputs, projection
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines import pipeline_constants as pipeline_cst
+from cars.pipelines.parameters import output_parameters
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_loaders.sensor_loader import SensorLoader
 
@@ -56,7 +60,9 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
 
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
 
-    overloaded_conf["dsm_to_fill"] = conf.get("dsm_to_fill", None)
+    overloaded_conf[pipeline_cst.DSM_TO_FILL] = conf.get(
+        pipeline_cst.DSM_TO_FILL, None
+    )
 
     overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
 
@@ -87,7 +93,7 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         sens_cst.ROI: Or(str, dict, None),
         sens_cst.LOADERS: dict,
         sens_cst.FILLING: dict,
-        "dsm_to_fill": Or(str, dict, None),
+        pipeline_cst.DSM_TO_FILL: Or(str, dict, None),
     }
 
     checker_inputs = Checker(inputs_schema)
@@ -95,8 +101,13 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
 
     overloaded_conf = check_sensors(conf, overloaded_conf, config_dir)
 
+    # check filling parameters
     overloaded_conf[sens_cst.FILLING] = check_filling(
         overloaded_conf.get(sens_cst.FILLING, {}), classif_loader
+    )
+    # check dsm to fill
+    overloaded_conf[pipeline_cst.DSM_TO_FILL] = check_dsm_to_fill(
+        overloaded_conf.get(pipeline_cst.DSM_TO_FILL, {})
     )
 
     # Check srtm dir
@@ -865,3 +876,33 @@ def generate_pairs(conf):
         list_sensor_pairs.append((merged_key, sensor1, sensor2))
 
     return list_sensor_pairs
+
+
+def check_dsm_to_fill(conf):
+    """
+    Check dsm to fill section
+    :param conf: conf
+    :return: checked conf
+    """
+
+    # Get potential products to fill
+    products = output_parameters.intialize_product_index(None, ["dsm"], None)
+    keys = list(products["dsm"].keys())
+
+    overloaded_conf = conf.copy() if conf is not None else {}
+    for key in keys:
+        overloaded_conf[key] = overloaded_conf.get(key, None)
+
+    if conf is not None:
+        dsm_to_fill_schema = {
+            cst.INDEX_DSM_ALT: str,
+        }
+
+        for key in keys:
+            if key != cst.INDEX_DSM_ALT:
+                dsm_to_fill_schema[key] = Or(str, None)
+
+        checker_dsm_to_fill = Checker(dsm_to_fill_schema)
+        checker_dsm_to_fill.validate(overloaded_conf)
+
+    return conf

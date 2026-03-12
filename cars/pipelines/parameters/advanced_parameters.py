@@ -163,6 +163,7 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         adv_cst.LAND_COVER_MAP: str,
         adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: str,
         adv_cst.USE_ENDOGENOUS_DEM: bool,
+        OptionalKey(adv_cst.FILLING_TILE_SIZE): And(int, lambda x: x > 0),
     }
 
     checker_advanced_parameters = Checker(schema)

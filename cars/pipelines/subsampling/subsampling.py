@@ -308,14 +308,17 @@ class SubsamplingPipeline(PipelineTemplate):
             band_info["path"] = replace_path(band_info["path"])
 
     @cars_profile(name="Run_subsampling_pipeline", interval=0.5)
-    def run(self, args=None):  # noqa C901 # pylint: disable=W0613
+    def run(self, args=None, log_dir=None):  # noqa C901 # pylint: disable=W0613
         """
         Run pipeline
         """
         cars_logging.add_progress_message("Starting subsampling pipeline")
         inputs = copy.deepcopy(self.used_conf[INPUT])
 
-        self.log_dir = os.path.join(self.subsampling_dir, "logs")
+        if log_dir is not None:
+            self.log_dir = log_dir
+        else:
+            self.log_dir = os.path.join(self.subsampling_dir, "logs")
 
         with orchestrator.Orchestrator(
             orchestrator_conf=self.used_conf[ORCHESTRATOR],
