@@ -233,6 +233,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         if saved_transform is not None:
             edit_transform(dtm_path, transform=saved_transform)
+            edit_transform(dsm_file, transform=saved_transform)
 
         with rio.open(dtm_path) as in_dtm:
             dtm = in_dtm.read(1)
