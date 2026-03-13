@@ -257,7 +257,7 @@ def temporary_dir():
 
 
 @check.check_func  # pylint: disable=no-member
-def assert_same_images(actual, expected, rtol=0, atol=0):
+def assert_same_images(actual, expected, rtol=0, atol=0, nb_outliers_allowed=0):
     """
     Compare two image files with assertion:
     * same height, width, transform, crs
@@ -276,7 +276,12 @@ def assert_same_images(actual, expected, rtol=0, atol=0):
             data1[np.isnan(data1)] = 0
             data2[data2 == rio_expected.nodata] = 0
             data2[np.isnan(data2)] = 0
-            np.testing.assert_allclose(data1, data2, rtol=rtol, atol=atol)
+            if nb_outliers_allowed == 0:
+                np.testing.assert_allclose(data1, data2, rtol=rtol, atol=atol)
+            else:
+                mask = np.isclose(data1, data2, rtol=rtol, atol=atol)
+                diff = np.count_nonzero(~mask)
+                assert diff <= nb_outliers_allowed
 
 
 def assert_same_carsdatasets(actual, expected, rtol=0, atol=0):
