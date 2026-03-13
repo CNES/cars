@@ -470,6 +470,11 @@ def test_end2end_ventoux_with_filling_in_4326():
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
+        with rio.open(os.path.join(out_dir, "dsm", "filling.tif")) as src:
+            epsg = src.crs.to_epsg()
+
+        assert epsg == 9707  # vertical crs
+
 
 @pytest.mark.end2end_tests
 def test_end2end_gizeh_merging():
