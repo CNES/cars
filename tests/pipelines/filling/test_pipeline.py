@@ -90,6 +90,7 @@ def test_pipeline_filling_end2end_global():
         input_conf["pipeline"] = [
             "subsampling",
             "surface_modeling",
+            "tie_points",
             "filling",
         ]
 
