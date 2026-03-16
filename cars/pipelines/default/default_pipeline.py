@@ -175,8 +175,6 @@ class DefaultPipeline(PipelineTemplate):
 
         if pipeline_cst.SURFACE_MODELING not in conf:
             conf[pipeline_cst.SURFACE_MODELING] = {}
-        if pipeline_cst.TIE_POINTS not in conf:
-            conf[pipeline_cst.TIE_POINTS] = {}
 
         used_configurations = {}
         self.positions = {}
@@ -244,6 +242,7 @@ class DefaultPipeline(PipelineTemplate):
                     intermediate_res,
                     last_res,
                     self.intermediate_data_dir,
+                    self.pipeline_to_use,
                 )
 
                 if not isinstance(epipolar_res, int) or epipolar_res < 0:
@@ -352,6 +351,7 @@ class DefaultPipeline(PipelineTemplate):
         possible_pipeline = [
             pipeline_cst.SUBSAMPLING,
             pipeline_cst.SURFACE_MODELING,
+            pipeline_cst.TIE_POINTS,
             pipeline_cst.FILLING,
             pipeline_cst.MERGING,
             pipeline_cst.FORMATTING,
@@ -365,6 +365,7 @@ class DefaultPipeline(PipelineTemplate):
                 conf[PIPELINE] = [
                     pipeline_cst.SUBSAMPLING,
                     pipeline_cst.SURFACE_MODELING,
+                    pipeline_cst.TIE_POINTS,
                     pipeline_cst.FORMATTING,
                 ]
 
@@ -443,6 +444,12 @@ class DefaultPipeline(PipelineTemplate):
             and not dict_pipeline[pipeline_cst.SUBSAMPLING]
         ):
             dict_pipeline[pipeline_cst.SUBSAMPLING] = True
+
+        if (
+            pipeline_cst.TIE_POINTS in conf[INPUT]
+            and not dict_pipeline[pipeline_cst.TIE_POINTS]
+        ):
+            dict_pipeline[pipeline_cst.TIE_POINTS] = True
 
         return dict_pipeline
 
@@ -943,6 +950,7 @@ def extract_conf_with_resolution(
     intermediate_res,
     last_res,
     intermediate_data_dir,
+    pipeline_to_use,
 ):
     """
     Extract the configuration for the given resolution
@@ -1010,17 +1018,19 @@ def extract_conf_with_resolution(
     )
 
     # Extract tie points conf
-    if current_conf[pipeline_cst.TIE_POINTS] is not None:
+    if pipeline_to_use[pipeline_cst.TIE_POINTS]:
         new_conf[pipeline_cst.TIE_POINTS] = {}
         new_conf[pipeline_cst.TIE_POINTS][APPLICATIONS] = extract_conf_section(
-            current_conf[pipeline_cst.TIE_POINTS].get(APPLICATIONS, {}),
+            current_conf.get(pipeline_cst.TIE_POINTS, {}).get(APPLICATIONS, {}),
             res,
             overiding_conf.get(APPLICATIONS, {}),
         )
         new_conf[pipeline_cst.TIE_POINTS][ADVANCED] = extract_conf_section(
-            current_conf[pipeline_cst.TIE_POINTS].get(ADVANCED, {}),
+            current_conf.get(pipeline_cst.TIE_POINTS, {}).get(ADVANCED, {}),
             res,
         )
+    else:
+        new_conf[pipeline_cst.TIE_POINTS] = None
 
     overiding_conf = {
         OUTPUT: {out_cst.OUT_DIRECTORY: surface_modeling_out_dir},
