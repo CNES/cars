@@ -9,10 +9,11 @@ input:
 
 tie_points:
   applications:
-    resampling:
-      strip_height: 80
-    sparse_matching:
-      used_band: b2
+    all:
+      resampling:
+        strip_height: 80
+      sparse_matching:
+        used_band: b2
 
   advanced:
     save_intermediate_data: true
