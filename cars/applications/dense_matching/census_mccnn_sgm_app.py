@@ -209,7 +209,7 @@ class CensusMccnnSgm(
         )
 
         overloaded_conf["classification_fusion_margin"] = conf.get(
-            "classification_fusion_margin", -1
+            "classification_fusion_margin", 5
         )
         overloaded_conf["min_elevation_offset"] = conf.get(
             "min_elevation_offset", None
