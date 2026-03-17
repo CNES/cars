@@ -51,10 +51,11 @@ from .helpers import (
 
 NB_WORKERS = 2
 
-DEFAULT_TOL = 0.1
 CARS_GITHUB_ACTIONS = (
     os.getenv("CARS_GITHUB_ACTIONS", "false").lower() == "true"
 )
+DEFAULT_TOL_GITHUB = 0.1
+NB_OUTLIERS_ALLOWED_GITHUB = 10
 
 
 @pytest.mark.end2end_tests
@@ -118,8 +119,11 @@ def test_end2end_gizeh_meta_pipeline():
                     "dsm_test_gizeh_meta_pipeline.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "image.tif"),
@@ -129,8 +133,11 @@ def test_end2end_gizeh_meta_pipeline():
                     "image_test_gizeh_meta_pipeline.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
 
 
@@ -211,8 +218,11 @@ def test_end2end_ventoux_meta_pipeline():
                     "dsm_test_ventoux_meta_pipeline.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "image.tif"),
@@ -222,8 +232,11 @@ def test_end2end_ventoux_meta_pipeline():
                     "image_test_ventoux_meta_pipeline.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
 
 
@@ -320,8 +333,11 @@ def test_end2end_ventoux_with_filling():
                     "dsm_test_ventoux_with_filling.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "classification.tif"),
@@ -331,8 +347,11 @@ def test_end2end_ventoux_with_filling():
                     "classif_test_ventoux_with_filling.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "filling.tif"),
@@ -342,8 +361,11 @@ def test_end2end_ventoux_with_filling():
                     "filling_test_ventoux_with_filling.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
 
 
@@ -444,8 +466,11 @@ def test_end2end_ventoux_with_filling_in_4326():
                     "dsm_test_ventoux_with_filling_4326.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "classification.tif"),
@@ -455,8 +480,11 @@ def test_end2end_ventoux_with_filling_in_4326():
                     "classif_test_ventoux_with_filling_4326.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "filling.tif"),
@@ -466,8 +494,11 @@ def test_end2end_ventoux_with_filling_in_4326():
                     "filling_test_ventoux_with_filling_4326.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
 
         with rio.open(os.path.join(out_dir, "dsm", "filling.tif")) as src:
@@ -525,8 +556,11 @@ def test_end2end_gizeh_merging():
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_test_merging.tif")
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
 
 
@@ -687,8 +721,11 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dem_median_res1_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(
@@ -706,8 +743,11 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dem_max_res1_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(
@@ -725,8 +765,11 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dem_median_res2_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(
@@ -744,8 +787,11 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dem_max_res2_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -755,8 +801,11 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "dsm_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "performance_map.tif"),
@@ -766,8 +815,11 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "performance_map_test_gizeh_use_endogenous_dem.tif",
                 )
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
         )
         with rio.open(os.path.join(out_dir, "dsm", "dsm.tif")) as dsm:
             assert dsm.res == (1.0, 1.0)

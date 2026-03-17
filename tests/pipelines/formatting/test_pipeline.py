@@ -75,7 +75,11 @@ def test_pipeline():
         input_conf["subsampling"]["advanced"]["resolutions"] = 1
 
         # without formatting
-        input_conf["pipeline"] = ["subsampling", "surface_modeling"]
+        input_conf["pipeline"] = [
+            "subsampling",
+            "tie_points",
+            "surface_modeling",
+        ]
 
         pipeline = default_pipeline.DefaultPipeline(
             input_conf, absolute_data_path(directory)
@@ -167,6 +171,7 @@ def test_pipeline():
         input_conf["pipeline"] = [
             "subsampling",
             "surface_modeling",
+            "tie_points",
             "formatting",
         ]
 
