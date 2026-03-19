@@ -16,7 +16,7 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
     """
 
     available_methods: Dict = {}
-    default_method = "pandora"
+    default_method = "pandora_auto"
 
     def __new__(cls, conf=None):  # pylint: disable=W0613
         """
