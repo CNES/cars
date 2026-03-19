@@ -1,83 +1,59 @@
-#!/usr/bin/env python
-# coding: utf8
-#
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
-#
-# This file is part of CARS
-# (see https://github.com/CNES/cars).
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 """
 this module contains the abstract matching application class.
 """
+
 import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.applications.dense_matching.methods import (
+    abstract_dense_matching_method as adm,
+)
+
+AbstractDenseMatchingMethod = adm.AbstractDenseMatchingMethod
 
 
 @Application.register("dense_matching")
-class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
+class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
     """
-    AbstractDenseMatching
+    AbstractDenseMatchingApplication
     """
 
     available_applications: Dict = {}
-    default_application = "census_sgm_default"
+    default_application = "basic"
+    default_method = "pandora_auto"
 
-    def __new__(cls, conf=None):  # pylint: disable=W0613
-        """
-        Return the required application
-        :raises:
-         - KeyError when the required application is not registered
+    def __new__(cls, conf=None):
 
-        :param conf: configuration for matching
-        :return: a application_to_use object
-        """
-
-        matching_method = cls.default_application
-        if bool(conf) is False or "method" not in conf:
+        matching_application = cls.default_application
+        if bool(conf) is False or "application" not in conf:
             logging.info(
-                "Dense Matching method not specified, "
-                "default {} is used".format(matching_method)
+                "Dense Matching application not specified, "
+                f"default {matching_application} is used"
             )
         else:
-            matching_method = conf.get("method", cls.default_application)
+            matching_application = conf.get(
+                "application", cls.default_application
+            )
 
-        if matching_method not in cls.available_applications:
+        if matching_application not in cls.available_applications:
             logging.error(
-                "No matching application named {} registered".format(
-                    matching_method
-                )
+                f"No matching application named {matching_application} "
+                "registered"
             )
             raise KeyError(
-                "No matching application named {} registered".format(
-                    matching_method
-                )
+                f"No matching application named {matching_application} "
+                "registered"
             )
 
         logging.info(
-            "The AbstractDenseMatching({}) application will be used".format(
-                matching_method
-            )
+            f"The AbstractDenseMatching({matching_application}) application "
+            "will be used"
         )
 
-        return super(DenseMatching, cls).__new__(
-            cls.available_applications[matching_method]
-        )
+        return super().__new__(cls.available_applications[matching_application])
 
     def __init_subclass__(cls, short_name, **kwargs):  # pylint: disable=E0302
         super().__init_subclass__(**kwargs)
@@ -85,12 +61,11 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
             cls.available_applications[name] = cls
 
     def __init__(self, conf=None):
-        """
-        Init function of DenseMatching
 
-        :param conf: configuration
-        :return: an application_to_use object
-        """
+        # init the method before the application
+        conf["method"] = conf.get("method", self.default_method)
+        # pylint: disable=abstract-class-instantiated
+        self.dense_matching_method = AbstractDenseMatchingMethod(conf)
 
         super().__init__(conf=conf)
 
@@ -237,7 +212,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :param pair_key: pair id
         :type pair_key: str
         :param disp_range_grid: minimum and maximum disparity grid
-        :type disp_range_grid: CarsDataset
+        :type disp_range_grid: dict
         :param disp_to_alt_ratio: disp to alti ratio used for performance map
         :type disp_to_alt_ratio: float
         :param margins_to_keep: margin to keep after dense matching

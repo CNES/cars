@@ -101,69 +101,35 @@ class PandoraLoader:
             uses_cars_pandora_conf = True
             package_path = os.path.dirname(__file__)
 
-            if method_name == "mccnn_sgm":
-                # Use mccn_conf
+            config_map = {
+                "pandora_mccnn_sgm": "config_mccnn.json",
+                "pandora_census_sgm_urban": "config_census_sgm_urban.json",
+                "pandora_census_sgm_shadow": "config_census_sgm_shadow.json",
+                "pandora_census_sgm_mountain_and_vegetation": (
+                    "config_census_sgm_mountain_and_vegetation.json"
+                ),
+                "pandora_census_sgm_homogeneous": (
+                    "config_census_sgm_homogeneous.json"
+                ),
+                "pandora_census_sgm_default": "config_census_sgm_default.json",
+                "pandora_census_sgm_sparse": "config_census_sgm_sparse.json",
+                "pandora_auto": "config_census_sgm_default.json",
+            }
 
-                conf_file_path = os.path.join(package_path, "config_mccnn.json")
-                # Read conf
-                with open(conf_file_path, "r", encoding="utf8") as fstream:
-                    conf = json.load(fstream)
-            elif method_name == "census_sgm_urban":
-                # Use census sgm conf
-                conf_file_path = os.path.join(
-                    package_path, "config_census_sgm_urban.json"
-                )
-                # read conf
-                with open(conf_file_path, "r", encoding="utf8") as fstream:
-                    conf = json.load(fstream)
-            elif method_name == "census_sgm_shadow":
-                # Use census sgm conf
-                conf_file_path = os.path.join(
-                    package_path, "config_census_sgm_shadow.json"
-                )
-                # read conf
-                with open(conf_file_path, "r", encoding="utf8") as fstream:
-                    conf = json.load(fstream)
-            elif method_name == "census_sgm_mountain_and_vegetation":
-                # Use census sgm conf
-                conf_file_path = os.path.join(
-                    package_path,
-                    "config_census_sgm_mountain_and_vegetation.json",
-                )
-                # read conf
-                with open(conf_file_path, "r", encoding="utf8") as fstream:
-                    conf = json.load(fstream)
-            elif method_name == "census_sgm_homogeneous":
-                # Use census sgm conf
-                conf_file_path = os.path.join(
-                    package_path, "config_census_sgm_homogeneous.json"
-                )
-                # read conf
-                with open(conf_file_path, "r", encoding="utf8") as fstream:
-                    conf = json.load(fstream)
-            elif method_name in ("census_sgm_default", "auto"):
-                # Use census sgm conf
-                conf_file_path = os.path.join(
-                    package_path, "config_census_sgm_default.json"
-                )
-                # read conf
-                with open(conf_file_path, "r", encoding="utf8") as fstream:
-                    conf = json.load(fstream)
-            elif method_name == "census_sgm_sparse":
-                # Use census sgm conf
-                conf_file_path = os.path.join(
-                    package_path, "config_census_sgm_sparse.json"
-                )
-                # read conf
-                with open(conf_file_path, "r", encoding="utf8") as fstream:
-                    conf = json.load(fstream)
-            else:
+            try:
+                filename = config_map[method_name]
+            except KeyError as err:
                 logging.error(
                     "No method named {} in pandora loader".format(method_name)
                 )
                 raise NameError(
                     "No method named {} in pandora loader".format(method_name)
-                )
+                ) from err
+
+            conf_file_path = os.path.join(package_path, filename)
+
+            with open(conf_file_path, "r", encoding="utf8") as fstream:
+                conf = json.load(fstream)
 
         perf_ambiguity_conf = {
             "cost_volume_confidence.cars_1": {
