@@ -803,10 +803,9 @@ def test_end2end_gizeh_use_endogenous_dem():
             ),
             atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
-            nb_outliers_allowed=(
-                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
-            ),
+            nb_outliers_allowed=500 if CARS_GITHUB_ACTIONS else 0,
         )
+
         assert_same_images(
             os.path.join(out_dir, "dsm", "performance_map.tif"),
             absolute_data_path(
@@ -817,9 +816,7 @@ def test_end2end_gizeh_use_endogenous_dem():
             ),
             atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
-            nb_outliers_allowed=(
-                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
-            ),
+            nb_outliers_allowed=6000 if CARS_GITHUB_ACTIONS else 0,
         )
         with rio.open(os.path.join(out_dir, "dsm", "dsm.tif")) as dsm:
             assert dsm.res == (1.0, 1.0)

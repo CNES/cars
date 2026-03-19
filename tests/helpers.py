@@ -281,7 +281,10 @@ def assert_same_images(actual, expected, rtol=0, atol=0, nb_outliers_allowed=0):
             else:
                 mask = np.isclose(data1, data2, rtol=rtol, atol=atol)
                 diff = np.count_nonzero(~mask)
-                assert diff <= nb_outliers_allowed
+                if diff > nb_outliers_allowed:
+                    raise AssertionError(
+                        "{} points differ from reference".format(diff)
+                    )
 
 
 def assert_same_carsdatasets(actual, expected, rtol=0, atol=0):
