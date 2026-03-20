@@ -342,12 +342,18 @@ class PandoraMethod(
     ):
         """
         Get Margins function that generates margins needed by
-        matching method, to use during resampling
+        matching method, to use during resampling.
 
         :param grid_left: left epipolar grid
         :type grid_left: dict
         :param disp_range_grid: minimum and maximum disparity grid
+        :type disp_range_grid: dict
+        :param min_elevation_offset: minimum elevation offset
+        :type min_elevation_offset: float
+        :param max_elevation_offset: maximum elevation offset
+        :type max_elevation_offset: float
         :return: function that generates margin for given roi
+        :rtype: callable
         """
 
         disp_min_grid_arr, _ = inputs.rasterio_read_as_array(
@@ -478,9 +484,19 @@ class PandoraMethod(
         Get the optimal tile size to use during dense matching.
 
         :param disp_range_grid: minimum and maximum disparity grid
-        :param max_ram_per_worker: maximum ram per worker
-        :return: optimal tile size
-
+        :type disp_range_grid: dict
+        :param max_ram_per_worker: maximum RAM per worker
+        :type max_ram_per_worker: int
+        :param min_epi_tile_size: minimum epipolar tile size
+        :type min_epi_tile_size: int
+        :param max_epi_tile_size: maximum epipolar tile size
+        :type max_epi_tile_size: int
+        :param local_disp_grid_step: disparity grid step
+        :type local_disp_grid_step: int
+        :param epipolar_tile_margin_in_percent: margin percentage
+        :type epipolar_tile_margin_in_percent: float
+        :return: optimal tile size and local function
+        :rtype: tuple
         """
 
         disp_min_grids, _ = inputs.rasterio_read_as_array(
@@ -582,6 +598,61 @@ class PandoraMethod(
         texture_bands=None,
         classif_bands_to_mask=None,
     ):
+        """
+        Run dense matching on a pair of epipolar images.
+
+        Compute the disparity map between left and right images using the
+        configured dense matching method.
+
+        :param left_image_object: left epipolar image as xarray Dataset with:
+                - data with keys: "im", optionally "msk", "texture", "classif"
+                - attrs with keys: "margins" with "disp_min" and "disp_max",
+                "transform", "crs", "valid_pixels", "no_data_mask",
+                "no_data_img"
+        :type left_image_object: xr.Dataset
+        :param right_image_object: right epipolar image as xarray Dataset with:
+                - data with keys: "im", optionally "msk", "texture", "classif"
+                - attrs with keys: "margins" with "disp_min" and "disp_max",
+                "transform", "crs", "valid_pixels", "no_data_mask",
+                "no_data_img"
+        :type right_image_object: xr.Dataset
+        :param disp_range_grid: minimum and maximum disparity grid
+        :type disp_range_grid: dict
+        :param saving_info: information for saving outputs
+        :type saving_info: dict
+        :param compute_disparity_masks: activate computation of disparity masks
+        :type compute_disparity_masks: bool
+        :param crop_with_range: crop disparity map using provided range
+        :type crop_with_range: int or None
+        :param left_overlaps: overlaps associated to left image tiles
+        :type left_overlaps: dict or None
+        :param margins_to_keep: margins to keep after dense matching
+        :type margins_to_keep: int
+        :param texture_bands: indices of bands from left image used for texture
+        :type texture_bands: list
+        :param classif_bands_to_mask: bands from classification to mask
+        :type classif_bands_to_mask: list of str or int
+
+        :return: disparity map.
+
+            The CarsDataset contains:
+
+            - N x M delayed tiles.
+
+            Each tile is an xarray Dataset containing:
+
+            - data with keys: "disp", "disp_msk"
+            - attrs with keys: "profile", "window", "overlaps"
+
+            - attributes containing:
+
+            - "largest_epipolar_region"
+            - "opt_epipolar_tile_size"
+            - "disp_min_tiling"
+            - "disp_max_tiling"
+
+        :rtype: CarsDataset
+        """
         if self.edges_3sgm and "edges_mask" in left_image_object:
             self.corr_config["pipeline"]["optimization"][
                 "optimization_method"

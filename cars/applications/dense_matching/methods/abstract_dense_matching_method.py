@@ -80,9 +80,19 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
         Get the optimal tile size to use during dense matching.
 
         :param disp_range_grid: minimum and maximum disparity grid
-        :param max_ram_per_worker: maximum ram per worker
-        :return: optimal tile size
-
+        :type disp_range_grid: dict
+        :param max_ram_per_worker: maximum RAM per worker
+        :type max_ram_per_worker: int
+        :param min_epi_tile_size: minimum epipolar tile size
+        :type min_epi_tile_size: int
+        :param max_epi_tile_size: maximum epipolar tile size
+        :type max_epi_tile_size: int
+        :param local_disp_grid_step: disparity grid step
+        :type local_disp_grid_step: int
+        :param epipolar_tile_margin_in_percent: margin percentage
+        :type epipolar_tile_margin_in_percent: float
+        :return: optimal tile size and local function
+        :rtype: tuple
         """
 
     @abstractmethod
@@ -110,12 +120,18 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
     ):
         """
         Get Margins function that generates margins needed by
-        matching method, to use during resampling
+        matching method, to use during resampling.
 
         :param grid_left: left epipolar grid
         :type grid_left: dict
         :param disp_range_grid: minimum and maximum disparity grid
+        :type disp_range_grid: dict
+        :param min_elevation_offset: minimum elevation offset
+        :type min_elevation_offset: float
+        :param max_elevation_offset: maximum elevation offset
+        :type max_elevation_offset: float
         :return: function that generates margin for given roi
+        :rtype: callable
         """
 
     @abstractmethod
@@ -167,15 +183,23 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
         :param classif_bands_to_mask: bands from classification to mask
         :type classif_bands_to_mask: list of str or int
 
-        :return: disparity map: \
+        :return: disparity map.
+
             The CarsDataset contains:
-            - N x M Delayed tiles.\
-              Each tile will be a future xarray Dataset containing:
-                - data with keys : "disp", "disp_msk"
-                - attrs with keys: profile, window, overlaps
+
+            - N x M delayed tiles.
+
+            Each tile is an xarray Dataset containing:
+
+            - data with keys: "disp", "disp_msk"
+            - attrs with keys: "profile", "window", "overlaps"
+
             - attributes containing:
-                "largest_epipolar_region","opt_epipolar_tile_size",
-                 "disp_min_tiling", "disp_max_tiling"
+
+            - "largest_epipolar_region"
+            - "opt_epipolar_tile_size"
+            - "disp_min_tiling"
+            - "disp_max_tiling"
 
         :rtype: CarsDataset
         """
