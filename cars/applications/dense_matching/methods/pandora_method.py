@@ -37,6 +37,12 @@ from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 AbstractDenseMatchingMethod = adm.AbstractDenseMatchingMethod
 
+# pylint:disable=C0302,R0902,R0917
+
+
+def is_valid_perf_method(x):
+    return all(y in ["risk", "intervals"] for y in x)
+
 
 class PandoraMethod(
     AbstractDenseMatchingMethod,
@@ -66,7 +72,7 @@ class PandoraMethod(
             "generate_ambiguity": bool,
             "performance_map_method": And(
                 list,
-                lambda x: all(y in ["risk", "intervals"] for y in x),
+                is_valid_perf_method,
             ),
             "perf_eta_max_ambiguity": float,
             "perf_eta_max_risk": float,

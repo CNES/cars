@@ -62,6 +62,9 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
 
     def __init__(self, conf=None):
 
+        if conf is None:
+            conf = {}
+
         # init the method before the application
         conf["method"] = conf.get("method", self.default_method)
         # pylint: disable=abstract-class-instantiated
@@ -103,19 +106,17 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
 
     # pylint: disable=too-many-positional-arguments
     @abstractmethod
-    def generate_disparity_grids(
+    def generate_disparity_grids(  # noqa: C901
         self,
-        epipolar_images_left,
-        epipolar_images_right,
-        local_tile_optimal_size_fun,
-        orchestrator=None,
+        sensor_image_right,
+        grid_right,
+        geom_plugin_with_dem_and_geoid,
+        dmin=None,
+        dmax=None,
+        dem_min=None,
+        dem_max=None,
         pair_folder=None,
-        pair_key="PAIR_0",
-        disp_range_grid=None,
-        compute_disparity_masks=False,
-        margins_to_keep=0,
-        texture_bands=None,
-        classif_bands_to_mask=None,
+        orchestrator=None,
     ):
         """
         Generate disparity grids min and max, with given step
@@ -128,10 +129,6 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
         :type sensor_image_right: dict
         :param grid_right: right epipolar grid
         :type grid_right: CarsDataset
-        :param geometry_plugin_with_dem_min: geometry plugin with dem min
-        :type geometry_plugin_with_dem_min: GeometryPlugin
-        :param geometry_plugin_with_dem_max: geometry plugin with dem max
-        :type geometry_plugin_with_dem_max: GeometryPlugin
         :param geom_plugin_with_dem_and_geoid: geometry plugin with dem mean
             used to generate epipolar grids
         :type geom_plugin_with_dem_and_geoid: GeometryPlugin
@@ -139,18 +136,14 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
         :type dmin: float
         :param dmax: maximum disparity
         :type dmax: float
-        :param altitude_delta_max: Delta max of altitude
-        :type altitude_delta_max: int
-        :param altitude_delta_min: Delta min of altitude
-        :type altitude_delta_min: int
         :param dem_min: path to minimum dem
         :type dem_min: str
         :param dem_max: path to maximum dem
         :type dem_max: str
         :param pair_folder: folder used for current pair
         :type pair_folder: str
-        :param loc_inverse_orchestrator: orchestrator to perform inverse locs
-        :type loc_inverse_orchestrator: Orchestrator
+        :param orchestrator: orchestrator to perform inverse locs
+        :type orchestrator: Orchestrator
 
 
         :return disparity grid range, containing grid min and max

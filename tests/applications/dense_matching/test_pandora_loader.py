@@ -44,7 +44,9 @@ def test_configure_pandora_default():
     Test configure pandora correlator (default configuration)
     """
 
-    pandora_loader = PandoraLoader(conf=None, method_name="census_sgm_default")
+    pandora_loader = PandoraLoader(
+        conf=None, method_name="pandora_census_sgm_default"
+    )
     corr_config = pandora_loader.get_conf()
     assert (
         corr_config["pipeline"]["matching_cost"]["matching_cost_method"]
@@ -62,7 +64,9 @@ def test_denoise_disparity_map_parameter():
     """
 
     pandora_loader = PandoraLoader(
-        conf=None, method_name="census_sgm_default", denoise_disparity_map=True
+        conf=None,
+        method_name="pandora_census_sgm_default",
+        denoise_disparity_map=True,
     )
     corr_config = pandora_loader.get_conf()
     assert (
@@ -87,7 +91,7 @@ def test_validation_parameter(cross_value, expected_value):
 
     pandora_loader = PandoraLoader(
         conf=None,
-        method_name="census_sgm_default",
+        method_name="pandora_census_sgm_default",
         use_cross_validation=cross_value,
     )
     corr_config = pandora_loader.get_conf()

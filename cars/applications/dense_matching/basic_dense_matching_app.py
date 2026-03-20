@@ -30,6 +30,10 @@ from cars.data_structures import cars_dataset, format_transformation
 from cars.data_structures.cars_dict import CarsDict
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
+# disable too many lines, too many instance attributes,
+# too many positional arguments
+# pylint:disable=C0302,R0902,R0917
+
 
 class BasicDenseMatchingApplication(
     AbstractDenseMatchingApplication,
@@ -128,6 +132,39 @@ class BasicDenseMatchingApplication(
 
         checker = Checker(complete_schema)
         checker.validate(used_conf)
+
+        # additional checks: min/max consistency
+        min_epi_tile_size = used_conf["min_epi_tile_size"]
+        max_epi_tile_size = used_conf["max_epi_tile_size"]
+        if min_epi_tile_size > max_epi_tile_size:
+            raise ValueError(
+                "Maximal tile size should be bigger than "
+                "minimal tile size for optimal tile size search"
+            )
+
+        min_elevation_offset = used_conf["min_elevation_offset"]
+        max_elevation_offset = used_conf["max_elevation_offset"]
+        if (
+            min_elevation_offset is not None
+            and max_elevation_offset is not None
+            and min_elevation_offset > max_elevation_offset
+        ):
+            raise ValueError(
+                "Maximal elevation should be bigger than "
+                "minimal elevation for dense matching"
+            )
+
+        disp_min_threshold = used_conf["disp_min_threshold"]
+        disp_max_threshold = used_conf["disp_max_threshold"]
+        if (
+            disp_min_threshold is not None
+            and disp_max_threshold is not None
+            and disp_min_threshold > disp_max_threshold
+        ):
+            raise ValueError(
+                "Maximal disparity should be bigger than "
+                "minimal disparity for dense matching"
+            )
 
         return used_conf
 

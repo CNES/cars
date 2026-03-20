@@ -67,7 +67,7 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
         self.loader = None
 
     @abstractmethod
-    def get_optimal_tile_size(
+    def get_optimal_tile_size(  # pylint: disable=R0917
         self,
         disp_range_grid,
         max_ram_per_worker,
@@ -119,7 +119,7 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def run(
+    def run(  # pylint: disable=R0917
         self,
         left_image_object: xr.Dataset,
         right_image_object: xr.Dataset,

@@ -1437,7 +1437,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             if (
                 self.save_output_dsm
                 or self.save_output_point_cloud
-                or self.dense_matching_app.get_method() == "auto"
+                or self.dense_matching_app.get_method() == "pandora_auto"
             ):
                 # Compute terrain bounding box /roi related to
                 # current images
