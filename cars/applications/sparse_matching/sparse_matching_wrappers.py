@@ -37,8 +37,6 @@ import xarray as xr
 # CARS imports
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications import application_constants
-from cars.applications.point_cloud_outlier_removal import outlier_removal_algo
-from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 def euclidean_matrix_distance(descr1: np.array, descr2: np.array):
@@ -168,45 +166,6 @@ def compute_disp_min_disp_max(
     orchestrator.update_out_info(updating_infos)
 
     return dmin, dmax
-
-
-@cars_profile(name="Filter_point_cloud_matches")
-def filter_point_cloud_matches(
-    pd_cloud,
-    match_filter_knn=25,
-    match_filter_constant=0,
-    match_filter_mean_factor=1,
-    match_filter_dev_factor=3,
-):
-    """
-    Filter triangulated  matches
-
-    :param pd_cloud: triangulated_matches
-    :type pd_cloud: pandas Dataframe
-    :param match_filter_knn: number of neighboors used to measure
-                               isolation of matches
-    :type match_filter_knn: int
-    :param match_filter_dev_factor: factor of deviation in the
-                                      formula to compute threshold of outliers
-    :type match_filter_dev_factor: float
-
-    :return: disp min and disp max
-    :rtype: float, float
-    """
-
-    # Statistical filtering
-    filter_cloud, _ = outlier_removal_algo.statistical_outlier_filtering(
-        pd_cloud,
-        k=match_filter_knn,
-        filtering_constant=match_filter_constant,
-        mean_factor=match_filter_mean_factor,
-        dev_factor=match_filter_dev_factor,
-    )
-
-    # filter nans
-    filter_cloud.dropna(axis=0, inplace=True)
-
-    return filter_cloud
 
 
 def transform_triangulated_matches_to_dataframe(triangulated_matches):

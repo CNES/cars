@@ -86,14 +86,6 @@ class BasicSparseMatchingApplication(
         ]
 
         self.minimum_nb_matches = self.used_config["minimum_nb_matches"]
-        self.match_filter_knn = self.used_config["match_filter_knn"]
-        self.match_filter_constant = self.used_config["match_filter_constant"]
-        self.match_filter_mean_factor = self.used_config[
-            "match_filter_mean_factor"
-        ]
-        self.match_filter_dev_factor = self.used_config[
-            "match_filter_dev_factor"
-        ]
         self.decimation_factor = self.used_config["decimation_factor"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
         self.disparity_bounds_estimation = self.used_config[
