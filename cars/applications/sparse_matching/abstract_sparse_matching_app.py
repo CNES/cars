@@ -54,35 +54,37 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :return: a application_to_use object
         """
 
-        matching_method = cls.default_application
-        if bool(conf) is False or "method" not in conf:
+        matching_application = cls.default_application
+        if bool(conf) is False or "application" not in conf:
             logging.info(
-                "Sparse Matching method not specified, default "
-                " {} is used".format(matching_method)
+                "Sparse Matching application not specified, default "
+                " {} is used".format(matching_application)
             )
         else:
-            matching_method = conf.get("method", cls.default_application)
+            matching_application = conf.get(
+                "application", cls.default_application
+            )
 
-        if matching_method not in cls.available_applications:
+        if matching_application not in cls.available_applications:
             logging.error(
                 "No matching application named {} registered".format(
-                    matching_method
+                    matching_application
                 )
             )
             raise KeyError(
                 "No matching application named {} registered".format(
-                    matching_method
+                    matching_application
                 )
             )
 
         logging.info(
             "The SparseMatching({}) application will be used".format(
-                matching_method
+                matching_application
             )
         )
 
         return super(SparseMatching, cls).__new__(
-            cls.available_applications[matching_method]
+            cls.available_applications[matching_application]
         )
 
     def __init_subclass__(cls, short_name, **kwargs):  # pylint: disable=E0302

@@ -52,7 +52,7 @@ from cars.data_structures import cars_dataset
 
 class BasicSparseMatchingApplication(
     SparseMatching,
-    short_name=["basic", "sift"],
+    short_name=["basic"],
 ):
     """
     SparseMatching
@@ -69,6 +69,8 @@ class BasicSparseMatchingApplication(
         """
 
         super().__init__(conf=conf)
+
+        self.used_config["application"] = "basic"
 
         # app-owned parameters
         self.elevation_delta_lower_bound = self.used_config[
@@ -111,6 +113,7 @@ class BasicSparseMatchingApplication(
             conf = {}
 
         self.schema = {
+            "application": And(str, lambda x: x in self.available_applications),
             "decimation_factor": And(int, lambda x: x > 0),
             "elevation_delta_lower_bound": Or(int, float, None),
             "elevation_delta_upper_bound": Or(int, float, None),
@@ -118,15 +121,12 @@ class BasicSparseMatchingApplication(
             "epipolar_error_upper_bound": And(float, lambda x: x > 0),
             "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
             "minimum_nb_matches": And(int, lambda x: x > 0),
-            "match_filter_knn": int,
-            "match_filter_constant": Or(int, float),
-            "match_filter_mean_factor": Or(int, float),
-            "match_filter_dev_factor": Or(int, float),
             "save_intermediate_data": bool,
             "disparity_bounds_estimation": dict,
         }
 
         default_conf = {
+            "application": "basic",
             "decimation_factor": 30,
             "elevation_delta_lower_bound": None,
             "elevation_delta_upper_bound": None,
@@ -134,10 +134,6 @@ class BasicSparseMatchingApplication(
             "epipolar_error_upper_bound": 10.0,
             "epipolar_error_maximum_bias": 50.0,
             "minimum_nb_matches": 90,
-            "match_filter_knn": 25,
-            "match_filter_constant": 0.0,
-            "match_filter_mean_factor": 1.3,
-            "match_filter_dev_factor": 3.0,
             "save_intermediate_data": False,
             "disparity_bounds_estimation": {},
         }

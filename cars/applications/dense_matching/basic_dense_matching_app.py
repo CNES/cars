@@ -47,6 +47,7 @@ class BasicDenseMatchingApplication(
     def __init__(self, conf=None):
 
         self.schema = {
+            "application": And(str, lambda x: x in self.available_applications),
             "min_epi_tile_size": And(int, lambda x: x > 0),
             "max_epi_tile_size": And(int, lambda x: x > 0),
             "epipolar_tile_margin_in_percent": int,
@@ -65,6 +66,8 @@ class BasicDenseMatchingApplication(
         }
 
         super().__init__(conf=conf)
+
+        self.used_config["application"] = "basic"
 
         # required for pylint
         self.orchestrator = None
@@ -106,6 +109,7 @@ class BasicDenseMatchingApplication(
 
         # default configuration
         default_conf = {
+            "application": "basic",
             "save_intermediate_data": save_intermediate_data,
             "min_epi_tile_size": 300,
             "max_epi_tile_size": 1500,
