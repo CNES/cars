@@ -9,6 +9,18 @@ Dense matching
 
 Compute the disparity map from stereo-rectified pair images
 
+**Architecture Note**
+
+This application uses a plugin-based architecture separating the application layer from the method layer:
+
+- **Application Parameters**: These control the orchestration and tiling of the dense matching process (tile sizes, disparity range estimation, global settings, etc.) and are independent of the matching algorithm used.
+- **Method Parameters**: These are algorithm-specific parameters (e.g., Pandora confidence filtering, cross-validation mode, etc.) and belong to the selected method plugin.
+
+The `method` parameter selects which matching algorithm/preset to use, and its specific parameters are documented in the Methods section below.
+
+Application-level Parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. list-table:: Configuration
     :widths: 19 19 19 19 19 19
     :header-rows: 1
@@ -19,23 +31,17 @@ Compute the disparity map from stereo-rectified pair images
       - Available value
       - Default value
       - Required
+    * - application
+      - Application to use
+      - string
+      - "basic"
+      - "basic"
+      - No
     * - method
       - Method for dense matching
       - string
-      - "census_sgm_default", "mccnn_sgm", "census_sgm_urban", "census_sgm_shadow", "census_sgm_mountain_and_vegetation", "census_sgm_homogeneous", "auto"
-      - "auto"
-      - No
-    * - loader
-      - external library use to compute dense matching
-      - string
-      - "pandora"
-      - "pandora"
-      - No
-    * - loader_conf
-      - Configuration associated with loader, dictionary or path to config
-      - dict or str
-      -
-      -
+      - see Methods section below
+      - "pandora_auto"
       - No
     * - min_elevation_offset
       - Override minimum disparity from prepare step with this offset in meters
@@ -79,36 +85,6 @@ Compute the disparity map from stereo-rectified pair images
       -
       - 60
       - No
-    * - performance_map_method
-      - Compute performance map with selected method(s).
-      - str, list, None
-      - "risk", "intervals"
-      - "risk"
-      - No
-    * - perf_eta_max_ambiguity
-      - Ambiguity confidence eta max used for performance map (risk method)
-      - float
-      -
-      - 0.99
-      - No
-    * - perf_eta_max_risk
-      - Risk confidence eta max used for performance map (risk method)
-      - float
-      -
-      - 0.25
-      - No
-    * - perf_eta_step
-      - Risk and Ambiguity confidence eta step used for performance map (risk method)
-      - float
-      -
-      - 0.04
-      - No
-    * - perf_ambiguity_threshold
-      - Maximal ambiguity considered for performance map (risk method)
-      - float
-      -
-      - 0.6
-      - No
     * - save_intermediate_data
       - Save disparity map and disparity confidence
       - boolean
@@ -139,71 +115,89 @@ Compute the disparity map from stereo-rectified pair images
       - should be > 0
       - 800
       - No
-    * - use_cross_validation
-      - Add cross validation step
-      - bool, str
-      - true, false, "fast", "accurate"
-      - true
-      - No
-    * - denoise_disparity_map
-      - Add disparity denoiser filter
-      - bool
-      -
-      - false
-      - No
     * - required_bands
-      - Bands given to pandora
+      - Bands required by the dense matching application
       - list
       - should be in input sensor
       - ["b0"]
       - No
-    * - used_band
-      - Band used for correlation
-      - str
-      - should be in input sensor
-      - "b0"
-      - No
-    * - classification_fusion_margin
-      - Margin for the fusion 
-      - int 
-      - should be > 0
-      - -1
-      - No
-    * - threshold_disp_range_to_borders
-      - Clip the disparity range to the valid region of right image
-      - bool
-      - 
-      - False
-      - No
-    * - confidence_filtering
-      - Parameters for the confidence filtering
-      - dict
-      - see below
-      - see below
-      - No
-    * - filter_incomplete_disparity_range
-      - Removes pixels whose disparity range is not fully valid pixels
-      - bool
-      -
-      - True
-      - No
-    * - generate_ambiguity
-      - Generate the ambiguity
-      - bool
-      -
-      - False
-      - No
-    * - edges_3sgm
-      - Use 3SGM in Pandora, using the edge mask as the mode (when edges_mask is given as input)
-      - bool
-      -
-      - False
-      - No
 
-        
-See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
+Methods
+~~~~~~~
 
-Confidence filtering:
+Pandora Method
+--------------
+
+**Names**: "pandora_custom", "pandora_mccnn_sgm", "pandora_census_sgm_urban", "pandora_census_sgm_shadow", "pandora_census_sgm_mountain_and_vegetation", "pandora_census_sgm_homogeneous", "pandora_census_sgm_default", "pandora_census_sgm_sparse", "pandora_auto"
+
+**Description**: Dense matching method using Pandora, with various presets available for different scenes
+
+**Available Method Presets**:
+
+.. list-table::
+    :widths: 25 75
+    :header-rows: 1
+
+    * - Method Name
+      - Description
+    * - pandora_census_sgm_default
+      - Default configuration using Census 5 with SGM (p1 = 8, p2 = 32), works in most cases
+    * - pandora_mccnn_sgm
+      - MCCNN with SGM (p1 = 2.3, p2 = 55.9)
+    * - pandora_census_sgm_urban
+      - Optimized for urban scenes using Census 11 with SGM (p1 = 20, p2 = 80)
+    * - pandora_census_sgm_shadow
+      - Optimized for scenes with shadows using Census 11 with SGM (p1 = 20, p2 = 160)
+    * - pandora_census_sgm_mountain_and_vegetation
+      - Optimized for mountainous or vegetated scenes using Census 11 with SGM (p1 = 38, p2 = 464)
+    * - pandora_census_sgm_homogeneous
+      - Optimized for homogeneous scenes using Census 11 with SGM (p1 = 72, p2 = 309)
+    * - pandora_custom
+      - Custom Pandora configuration defined in loader_conf
+    * - pandora_auto
+      - Automatic method selection based on global classification map
+
+**Method-specific Parameters**:
+
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| Name                                 | Description                                                                                    | Type        | Available value                 | Default value         | Required |
++======================================+================================================================================================+=============+=================================+=======================+==========+
+| generate_ambiguity                   | Generate the ambiguity map                                                                     | bool        |                                 | False                 | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| performance_map_method               | Compute performance map with selected method(s)                                                | str, list   | "risk", "intervals"             | None                  | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| perf_eta_max_ambiguity               | Ambiguity confidence eta max used for performance map (risk method)                            | float       |                                 | 0.99                  | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| perf_eta_max_risk                    | Risk confidence eta max used for performance map (risk method)                                 | float       |                                 | 0.25                  | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| perf_eta_step                        | Risk and Ambiguity confidence eta step used for performance map (risk method)                  | float       |                                 | 0.04                  | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| perf_ambiguity_threshold             | Maximal ambiguity considered for performance map (risk method)                                 | float       |                                 | 0.6                   | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| classification_fusion_margin         | Margin for the fusion                                                                          | int         |                                 | -1                    | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| use_cross_validation                 | Add cross validation step                                                                      | bool, str   | true, false, "fast", "accurate" | "fast"                | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| denoise_disparity_map                | Add disparity denoiser filter                                                                  | bool        |                                 | false                 | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| used_band                            | Band used for correlation                                                                      | str         | should be in input sensor       | "b0"                  | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| loader                               | External library used to compute dense matching                                                | str         | "pandora"                       | "pandora"             | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| loader_conf                          | Configuration for Pandora loader (for pandora_custom method)                                   | dict or str |                                 | None                  | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| confidence_filtering                 | Parameters for dense match filtering using confidence                                          | dict        | see details table below         | {}                    | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| threshold_disp_range_to_borders      | Clip the disparity range to the valid region of right image                                    | bool        |                                 | False                 | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| filter_incomplete_disparity_range    | Removes pixels whose disparity range is not fully valid                                        | bool        |                                 | True                  | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| edges_3sgm                           | Use 3SGM in Pandora with edge mask as mode (when edges_mask is given as input)                 | bool        |                                 | True                  | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+
+The following table details the method-specific ``confidence_filtering`` parameter of Pandora.
+
+Pandora confidence_filtering parameter details:
 
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
 | Name                                 | Description                                                                                    | Type        | Available value        | Default value         | Required |
@@ -234,6 +228,8 @@ Confidence filtering:
     * To save the confidence, the save_intermediate_data parameter should be activated.
     * The cross-validation step supports two modes: fast and accurate. Setting the configuration to true or "fast" will use the fast method, while setting it to "accurate" will enable the accurate method.
     * When setting the method to auto, cars will use a global classification map to select the optimal pandora configuration for dense matching
+
+*Pandora Preset Configurations*:
 
 .. list-table::
     :widths: 19 19
