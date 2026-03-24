@@ -27,7 +27,7 @@ import pytest
 
 # CARS imports
 from cars.applications.sparse_matching.basic_sparse_matching_app import (
-    BasicSparseMatchingApp,
+    BasicSparseMatchingApplication,
 )
 
 
@@ -51,13 +51,9 @@ def test_check_full_conf():
         "sift_edge_threshold": 5.0,
         "sift_magnification": 2.0,
         "sift_back_matching": True,
-        "match_filter_knn": 25,
-        "match_filter_constant": 0,
-        "match_filter_mean_factor": 1,
-        "match_filter_dev_factor": 3.0,
         "save_intermediate_data": False,
     }
-    _ = BasicSparseMatchingApp(conf)
+    _ = BasicSparseMatchingApplication(conf)
 
 
 @pytest.mark.unit_tests
@@ -72,4 +68,4 @@ def test_check_conf_with_error():
         "elevation_delta_upper_bound": -1000,  # should be > lower bound
     }
     with pytest.raises(ValueError):
-        _ = BasicSparseMatchingApp(conf)
+        _ = BasicSparseMatchingApplication(conf)
