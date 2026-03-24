@@ -21,8 +21,6 @@ activate_ground_anchors : False
 nb_max_workers : null
 # [Optional] - If True, keep the intermediate results
 developer_mode : False
-# [Optional] - If True, keep temporary results in memory instead of writing files
-memory_mode : False
 
 #-------------------------#
 #     Expert options      #
