@@ -26,7 +26,9 @@ Test module for config of cars/applications/sparse_matching/sift_app.py
 import pytest
 
 # CARS imports
-from cars.applications.sparse_matching.sift_app import Sift
+from cars.applications.sparse_matching.basic_sparse_matching_app import (
+    BasicSparseMatchingApp,
+)
 
 
 @pytest.mark.unit_tests
@@ -55,7 +57,7 @@ def test_check_full_conf():
         "match_filter_dev_factor": 3.0,
         "save_intermediate_data": False,
     }
-    _ = Sift(conf)
+    _ = BasicSparseMatchingApp(conf)
 
 
 @pytest.mark.unit_tests
@@ -70,4 +72,4 @@ def test_check_conf_with_error():
         "elevation_delta_upper_bound": -1000,  # should be > lower bound
     }
     with pytest.raises(ValueError):
-        _ = Sift(conf)
+        _ = BasicSparseMatchingApp(conf)

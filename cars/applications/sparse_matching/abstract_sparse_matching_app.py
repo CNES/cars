@@ -22,24 +22,16 @@
 this module contains the abstract matching application class.
 """
 import logging
-import math
-import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
-import numpy as np
-import xarray as xr
-from shareloc.geofunctions.rectification_grid import RectificationGrid
-
-import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
-import cars.applications.sparse_matching.sparse_matching_wrappers as sm_wrapper
-import cars.orchestrator.orchestrator as ocht
-from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
-from cars.core import constants as cst
-from cars.core import inputs
-from cars.core.utils import safe_makedirs
+from cars.applications.sparse_matching.methods import (
+    abstract_sparse_matching_method as asmm,
+)
+
+AbstractSparseMatchingMethod = asmm.AbstractSparseMatchingMethod
 
 
 @Application.register("sparse_matching")
@@ -49,7 +41,8 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
     """
 
     available_applications: Dict = {}
-    default_application = "sift"
+    default_application = "basic"
+    default_method = "sift"
 
     def __new__(cls, conf=None):  # pylint: disable=W0613
         """
@@ -105,87 +98,26 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :return: an application_to_use object
         """
 
+        if conf is None:
+            conf = {}
+
+        # init the method before the application
+        conf["method"] = conf.get("method", self.default_method)
+        # pylint: disable=abstract-class-instantiated
+        self.sparse_matching_method = AbstractSparseMatchingMethod(conf)
+
         super().__init__(conf=conf)
 
     @abstractmethod
-    def get_tile_margin(self):
+    def get_required_bands(self):
         """
-        Get tile margin corresponding to sparse matches
+        Get bands required by this application.
 
-        :return: margin
-
-        """
-
-    @abstractmethod
-    def get_epipolar_error_upper_bound(self):
-        """
-        Get epipolar error upper bound corresponding to sparse matches
-
-        :return: margin
-
+        :return: required bands for left and right image
+        :rtype: dict
         """
 
     @abstractmethod
-    def get_epipolar_error_maximum_bias(self):
-        """
-        Get epipolar error lower bound corresponding to sparse matches
-
-        :return: margin
-
-        """
-
-    @abstractmethod
-    def get_match_filter_constant(self):
-        """
-        Get get_match_filter_constant :
-        constant in the formula to compute threshold of outliers
-
-        :return: match_filter_constant
-
-        """
-
-    @abstractmethod
-    def get_match_filter_mean_factor(self):
-        """
-        Get match_filter_mean_factor :
-        factor of mean in the formula
-        to compute threshold of outliers
-
-        :return: match_filter_mean_factor
-
-        """
-
-    @abstractmethod
-    def get_match_filter_knn(self):
-        """
-        Get match_filter_knn :
-        number of neighboors used to measure isolation of matches
-
-        :return: match_filter_knn
-
-        """
-
-    @abstractmethod
-    def get_match_filter_dev_factor(self):
-        """
-        Get match_filter_dev_factor :
-        factor of deviation in the formula
-        to compute threshold of outliers
-
-        :return: match_filter_dev_factor
-
-        """
-
-    @abstractmethod
-    def get_minimum_nb_matches(self):
-        """
-        Get minimum_nb_matches :
-        get the minimum number of matches
-
-        :return: minimum_nb_matches
-
-        """
-
     def get_margins_strip_fun(
         self, disp_min=None, disp_max=None, method="sift"
     ):
@@ -201,69 +133,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
         """
 
-        # Compute margins
-        corner = ["left", "up", "right", "down"]
-        data = np.zeros(len(corner))
-        col = np.arange(len(corner))
-        margins = xr.Dataset(
-            {"left_margin": (["col"], data)}, coords={"col": col}
-        )
-        margins["right_margin"] = xr.DataArray(data, dims=["col"])
-
-        left_margin = self.get_tile_margin()
-
-        if method == "sift":
-            right_margin = self.get_tile_margin() + int(
-                math.floor(
-                    self.get_epipolar_error_upper_bound()
-                    + self.get_epipolar_error_maximum_bias()
-                )
-            )
-        else:
-            right_margin = left_margin
-
-        # Compute margins for left region
-        margins["left_margin"].data = [0, left_margin, 0, left_margin]
-
-        # Compute margins for right region
-        margins["right_margin"].data = [0, right_margin, 0, right_margin]
-
-        # add disp range info
-        margins.attrs["disp_min"] = disp_min
-        margins.attrs["disp_max"] = disp_max
-
-        logging.info(
-            "Margins added to left region for matching: {}".format(
-                margins["left_margin"].data
-            )
-        )
-
-        logging.info(
-            "Margins added to right region for matching: {}".format(
-                margins["right_margin"].data
-            )
-        )
-
-        def margins_wrapper(  # pylint: disable=unused-argument
-            row_min, row_max, col_min, col_max
-        ):
-            """
-            Generates margins Dataset used in resampling
-
-            :param row_min: row min
-            :param row_max: row max
-            :param col_min: col min
-            :param col_max: col max
-
-            :return: margins
-            :rtype: xr.Dataset
-            """
-
-            # Constant margins for all tiles
-            return margins
-
-        return margins_wrapper
-
+    @abstractmethod
     def get_margins_tile_fun(self, grid_left, disp_range_grid, method="sift"):
         """
         Get Margins function that generates margins needed by
@@ -276,96 +146,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
         """
 
-        if method == "sift":
-            right_margin = self.get_tile_margin() + int(
-                math.floor(
-                    self.get_epipolar_error_upper_bound()
-                    + self.get_epipolar_error_maximum_bias()
-                )
-            )
-        else:
-            right_margin = self.get_tile_margin()
-
-        disp_min_grid_arr, _ = inputs.rasterio_read_as_array(
-            disp_range_grid["grid_min_path"]
-        )
-        disp_max_grid_arr, _ = inputs.rasterio_read_as_array(
-            disp_range_grid["grid_max_path"]
-        )
-        step_row = disp_range_grid["step_row"]
-        step_col = disp_range_grid["step_col"]
-        row_range = disp_range_grid["row_range"]
-        col_range = disp_range_grid["col_range"]
-
-        # get disp_to_alt_ratio
-        disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
-
-        # Compute global range of logging
-        disp_min_global = np.min(disp_min_grid_arr)
-        disp_max_global = np.max(disp_max_grid_arr)
-
-        logging.info(
-            "Global Disparity range for current pair:  "
-            "[{:.3f} pix., {:.3f} pix.] "
-            "(or [{:.3f} m., {:.3f} m.])".format(
-                disp_min_global,
-                disp_max_global,
-                disp_min_global * disp_to_alt_ratio,
-                disp_max_global * disp_to_alt_ratio,
-            )
-        )
-
-        def margins_wrapper(row_min, row_max, col_min, col_max):
-            """
-            Generates margins Dataset used in resampling
-
-            :param row_min: row min
-            :param row_max: row max
-            :param col_min: col min
-            :param col_max: col max
-
-            :return: margins
-            :rtype: xr.Dataset
-            """
-
-            assert row_min < row_max
-            assert col_min < col_max
-
-            # Get region in grid
-
-            grid_row_min = max(0, int(np.floor((row_min - 1) / step_row)) - 1)
-            grid_row_max = min(
-                len(row_range), int(np.ceil((row_max + 1) / step_row) + 1)
-            )
-            grid_col_min = max(0, int(np.floor((col_min - 1) / step_col)) - 1)
-            grid_col_max = min(
-                len(col_range), int(np.ceil((col_max + 1) / step_col)) + 1
-            )
-
-            # Compute disp min and max in row
-            disp_min = np.min(
-                disp_min_grid_arr[
-                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
-                ]
-            )
-            disp_max = np.max(
-                disp_max_grid_arr[
-                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
-                ]
-            )
-            # round disp min and max
-            disp_min = int(math.floor(disp_min))
-            disp_max = int(math.ceil(disp_max))
-
-            # Compute margins for the correlator
-            margins = sm_wrapper.get_margins(
-                self.get_tile_margin(), right_margin, disp_min, disp_max
-            )
-
-            return margins
-
-        return margins_wrapper
-
+    @abstractmethod
     def filter_matches(  # pylint: disable=too-many-positional-arguments
         self,
         epipolar_matches_left,
@@ -400,182 +181,6 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :return filtered matches
         :rtype: np.ndarray
 
-        """
-
-        # Default orchestrator
-        if orchestrator is None:
-            # Create default sequential orchestrator for current application
-            # be awere, no out_json will be shared between orchestrators
-            # No files saved
-            cars_orchestrator = ocht.Orchestrator(
-                orchestrator_conf={"mode": "sequential"}
-            )
-        else:
-            cars_orchestrator = orchestrator
-
-        if pair_folder is None:
-            pair_folder = os.path.join(cars_orchestrator.out_dir, "tmp")
-
-        epipolar_error_upper_bound = self.get_epipolar_error_upper_bound()
-        epipolar_error_maximum_bias = self.get_epipolar_error_maximum_bias()
-
-        grid_left = RectificationGrid(
-            grid_left["path"],
-            interpolator=geom_plugin.interpolator,
-        )
-        grid_right = RectificationGrid(
-            grid_right["path"],
-            interpolator=geom_plugin.interpolator,
-        )
-
-        # Concatenated matches
-        list_matches = []
-        for row in range(epipolar_matches_left.shape[0]):
-            for col in range(epipolar_matches_left.shape[1]):
-                # CarsDataset containing Pandas DataFrame, not Delayed anymore
-                if epipolar_matches_left[row, col] is not None:
-                    epipolar_matches = epipolar_matches_left[
-                        row, col
-                    ].to_numpy()
-
-                    sensor_matches = geom_plugin.matches_to_sensor_coords(
-                        grid_left,
-                        grid_right,
-                        epipolar_matches,
-                        cst.MATCHES_MODE,
-                    )
-                    sensor_matches = np.concatenate(sensor_matches, axis=1)
-                    matches = np.concatenate(
-                        [
-                            epipolar_matches,
-                            sensor_matches,
-                        ],
-                        axis=1,
-                    )
-                    list_matches.append(matches)
-
-        matches = np.concatenate(list_matches)
-
-        raw_nb_matches = matches.shape[0]
-
-        logging.info(
-            "Raw number of matches found: {} matches".format(raw_nb_matches)
-        )
-
-        # Export matches
-        raw_matches_array_path = None
-        if save_matches:
-            safe_makedirs(pair_folder)
-
-            logging.info("Writing raw matches file")
-            raw_matches_array_path = os.path.join(
-                pair_folder, "raw_matches.npy"
-            )
-            np.save(raw_matches_array_path, matches)
-
-        # Filter matches that are out of margin
-        epipolar_median_shift = np.median(matches[:, 3] - matches[:, 1])
-
-        if np.abs(epipolar_median_shift) > epipolar_error_maximum_bias:
-            epipolar_median_shift = epipolar_error_maximum_bias * np.sign(
-                epipolar_median_shift
-            )
-
-        matches = matches[
-            ((matches[:, 3] - matches[:, 1]) - epipolar_median_shift)
-            >= -epipolar_error_upper_bound
-        ]
-        matches = matches[
-            ((matches[:, 3] - matches[:, 1]) - epipolar_median_shift)
-            <= epipolar_error_upper_bound
-        ]
-
-        matches_discarded_message = (
-            "{} matches discarded because their epipolar error "
-            "is greater than --epipolar_error_upper_bound = {} pix"
-        ).format(raw_nb_matches - matches.shape[0], epipolar_error_upper_bound)
-
-        if epipolar_error_maximum_bias != 0:
-            matches_discarded_message += (
-                " considering a shift of {} pix".format(epipolar_median_shift)
-            )
-
-        logging.info(matches_discarded_message)
-
-        filtered_matches_array_path = None
-        if save_matches:
-            logging.info("Writing filtered matches file")
-            filtered_matches_array_path = os.path.join(
-                pair_folder, "filtered_matches.npy"
-            )
-            np.save(filtered_matches_array_path, matches)
-
-        # Retrieve number of matches
-        nb_matches = matches.shape[0]
-
-        # Check if we have enough matches
-        # TODO: we could also make it a warning and continue
-        # with uncorrected grid
-        # and default disparity range
-        if nb_matches < self.get_minimum_nb_matches():
-            error_message_matches = (
-                "Insufficient amount of matches found ({} < {}), "
-                "can not safely estimate epipolar error correction "
-                " and disparity range".format(
-                    nb_matches, self.get_minimum_nb_matches()
-                )
-            )
-            logging.warning(error_message_matches)
-
-        logging.info(
-            "Number of matches kept for epipolar "
-            "error correction: {} matches".format(nb_matches)
-        )
-
-        # Compute epipolar error
-        if matches.shape[0] > 0:
-            epipolar_error = matches[:, 1] - matches[:, 3]
-            epi_error_mean = np.mean(epipolar_error)
-            epi_error_std = np.std(epipolar_error)
-            epi_error_max = np.max(np.fabs(epipolar_error))
-        else:
-            epi_error_mean = 0
-            epi_error_std = 0
-            epi_error_max = 0
-            logging.info(
-                "Epipolar error before correction: mean = {:.3f} pix., "
-                "standard deviation = {:.3f} pix., max = {:.3f} pix.".format(
-                    epi_error_mean,
-                    epi_error_std,
-                    epi_error_max,
-                )
-            )
-
-        # Update orchestrator out_json
-        raw_matches_infos = {
-            application_constants.APPLICATION_TAG: {
-                sm_cst.MATCH_FILTERING_TAG: {
-                    pair_key: {
-                        sm_cst.NUMBER_MATCHES_TAG: nb_matches,
-                        sm_cst.RAW_NUMBER_MATCHES_TAG: raw_nb_matches,
-                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN: epi_error_mean,
-                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD: epi_error_std,
-                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_MAX: epi_error_max,
-                    }
-                }
-            }
-        }
-        cars_orchestrator.update_out_info(raw_matches_infos)
-
-        return matches
-
-    @abstractmethod
-    def get_save_matches(self):
-        """
-        Get save_matches parameter
-
-        :return: true is save_matches activated
-        :rtype: bool
         """
 
     @abstractmethod

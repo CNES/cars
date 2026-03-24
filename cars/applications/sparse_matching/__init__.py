@@ -23,8 +23,8 @@ CARS core matching module init file
 """
 # flake8: noqa: F401
 
-from cars.applications.sparse_matching.abstract_sparse_matching_app import (
-    SparseMatching,
+from cars.applications.sparse_matching import (
+    abstract_sparse_matching_app,
+    basic_sparse_matching_app,
+    methods,
 )
-
-from . import sift_app

@@ -1068,7 +1068,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     self.grid_correction_app.get_minimum_nb_matches()
                 )
                 nb_matches = self.pairs[pair_key]["matches_array"].shape[0]
-                save_matches = sparse_mtch_app.get_save_matches()
+                save_matches = sparse_mtch_app.save_intermediate_data
 
                 if nb_matches > minimum_nb_matches:
                     # Compute grid correction
