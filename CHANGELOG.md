@@ -13,6 +13,7 @@
 - Fix the use of CARS in EPSG:4326 [#1319]
 - Fix deactivation of tie points in the configuration [#1304]
 - Fix security vulnerabilities [#1292]
+- Fix warning for Bulldozer configuration [#1316]
 
 ## 1.0.0 CARS 1.0 (January 2026)
 
