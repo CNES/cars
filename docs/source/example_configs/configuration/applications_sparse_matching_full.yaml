@@ -1,0 +1,18 @@
+---
+applications:
+  sparse_matching:
+    application: basic
+    method: sift
+    tile_margin: 12
+    minimum_nb_matches: 120
+    decimation_factor: 40
+    disparity_bounds_estimation:
+      activated: true
+      percentile: 1
+      lower_margin: 500
+      upper_margin: 1000
+    sift_matching_threshold: 0.7
+    sift_n_octave: 8
+    sift_peak_threshold: 4.0
+    sift_back_matching: true
+    used_band: b0

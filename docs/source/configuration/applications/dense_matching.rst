@@ -16,10 +16,16 @@ This application uses a plugin-based architecture separating the application lay
 - **Application Parameters**: These control the orchestration and tiling of the dense matching process (tile sizes, disparity range estimation, global settings, etc.) and are independent of the matching algorithm used.
 - **Method Parameters**: These are algorithm-specific parameters (e.g., Pandora confidence filtering, cross-validation mode, etc.) and belong to the selected method plugin.
 
-The `method` parameter selects which matching algorithm/preset to use, and its specific parameters are documented in the Methods section below.
+The `application` parameter selects which parallelization strategy to use.
+The `method` parameter selects which matching algorithm/preset to use.
 
-Application-level Parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Both application and method may have their own parameters, which should then be put all together in the `dense_matching` configuration key.
+
+Applications
+~~~~~~~~~~~~
+
+Basic Application
+-----------------
 
 .. list-table:: Configuration
     :widths: 19 19 19 19 19 19
@@ -122,6 +128,11 @@ Application-level Parameters
       - ["b0"]
       - No
 
+.. note::
+
+    * ``use_global_disp_range``: Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
+    * To save the confidence, the save_intermediate_data parameter should be activated.
+
 Methods
 ~~~~~~~
 
@@ -140,6 +151,10 @@ Pandora Method
 
     * - Method Name
       - Description
+    * - pandora_auto
+      - Automatic method selection based on global classification map
+    * - pandora_custom
+      - Uses the custom Pandora configuration defined in loader_conf
     * - pandora_census_sgm_default
       - Default configuration using Census 5 with SGM (p1 = 8, p2 = 32), works in most cases
     * - pandora_mccnn_sgm
@@ -149,13 +164,9 @@ Pandora Method
     * - pandora_census_sgm_shadow
       - Optimized for scenes with shadows using Census 11 with SGM (p1 = 20, p2 = 160)
     * - pandora_census_sgm_mountain_and_vegetation
-      - Optimized for mountainous or vegetated scenes using Census 11 with SGM (p1 = 38, p2 = 464)
+      - Optimized for mountainous or vegetation scenes using Census 11 with SGM (p1 = 38, p2 = 464)
     * - pandora_census_sgm_homogeneous
       - Optimized for homogeneous scenes using Census 11 with SGM (p1 = 72, p2 = 309)
-    * - pandora_custom
-      - Custom Pandora configuration defined in loader_conf
-    * - pandora_auto
-      - Automatic method selection based on global classification map
 
 **Method-specific Parameters**:
 
@@ -195,6 +206,12 @@ Pandora Method
 | edges_3sgm                           | Use 3SGM in Pandora with edge mask as mode (when edges_mask is given as input)                 | bool        |                                 | True                  | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
 
+.. note::
+
+    * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
+    * The cross-validation step supports two modes: fast and accurate. Setting the configuration to true or "fast" will use the fast method, while setting it to "accurate" will enable the accurate method.
+    * When setting the method to pandora_auto, CARS will use a global classification map to select the optimal pandora configuration for dense matching.
+
 The following table details the method-specific ``confidence_filtering`` parameter of Pandora.
 
 Pandora confidence_filtering parameter details:
@@ -217,35 +234,17 @@ Pandora confidence_filtering parameter details:
 | risk_range_threshold                 | Both filters : threshold for (risk_max - risk_min)                                             | int         |                        | 9                     | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
 
-**Example**
+Examples
+~~~~~~~~
 
-.. include-cars-config:: ../../example_configs/configuration/applications_dense_matching
+Minimal example:
 
-.. note::
+.. include-cars-config:: ../../example_configs/configuration/applications_dense_matching_minimal
 
-    * Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
-    * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
-    * To save the confidence, the save_intermediate_data parameter should be activated.
-    * The cross-validation step supports two modes: fast and accurate. Setting the configuration to true or "fast" will use the fast method, while setting it to "accurate" will enable the accurate method.
-    * When setting the method to auto, cars will use a global classification map to select the optimal pandora configuration for dense matching
+Example with both application and method parameters:
 
-*Pandora Preset Configurations*:
+.. include-cars-config:: ../../example_configs/configuration/applications_dense_matching_full
 
-.. list-table::
-    :widths: 19 19
-    :header-rows: 1
+Example using a custom Pandora preset:
 
-    * - Conf_name
-      - Purpose
-    * - census_sgm_default
-      - This configuration is the one that works in most of cases using census 5 with sgm (p1 = 8, p2 = 32)
-    * - mccnn_sgm
-      - This configuration is the one that works in most of cases using mccnn with sgm (p1 = 2.3, p2 = 55.9)
-    * - census_sgm_urban
-      - This configuration is suitable for urban scene. It uses census11 with sgm (p1 = 20, p2 = 80)
-    * - census_sgm_shadow
-      - This configuration is suitable for shadow scene. It uses census11 with sgm (p1 = 20, p2 = 160)
-    * - census_sgm_mountain_and_vegetation
-      - This configuration is suitable for mountain or vegetation scene. It uses census11 with sgm (p1 = 38, p2 = 464)
-    * - census_sgm_homogeneous
-      - This configuration is suitable for homogeneous scene. It uses census11 with sgm (p1 = 72, p2 = 309)
+.. include-cars-config:: ../../example_configs/configuration/applications_dense_matching_custom

@@ -16,10 +16,16 @@ This application uses a plugin-based architecture separating the application lay
 - **Application Parameters**: These control the parallelization at the application level (tiling, margins, match validation, etc.) and are independent of the matching algorithm used.
 - **Method Parameters**: These are algorithm-specific parameters (e.g., SIFT tuning parameters) and belong to the selected method plugin.
 
-The `method` parameter selects which matching algorithm to use, and its specific parameters are documented in the Methods section below.
+The `application` parameter selects which parallelization strategy to use.
+The `method` parameter selects which matching algorithm/preset to use.
 
-Application-level Parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Both application and method may have their own parameters, which should then be put all together in the `sparse_matching` configuration key.
+
+Applications
+~~~~~~~~~~~~
+
+Basic Application
+-----------------
 
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | Name                                 | Description                                                                                    | Type        | Available value           | Default value | Required |
@@ -61,6 +67,10 @@ Disparity bounds estimation:
 | lower_margin                         | margin (in meters) substracted from altitude of lower SIFT match retained                      | int         |                        | 500                   | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
 
+.. note::
+
+    'elevation_delta_lower_bound' and 'elevation_delta_upper_bound' are overidden to  [-1000, 9000] in default pipeline if no initial elevation is set.
+    If initial elevation is set, it is overridden to [-500, 1000].
 
 Methods
 ~~~~~~~
@@ -101,14 +111,16 @@ Method-specific Parameters:
 For more information about SIFT parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
 
 .. note::
-
-    'elevation_delta_lower_bound' and 'elevation_delta_upper_bound' are overidden to  [-1000, 9000] in default pipeline if no initial elevation is set.
-    If initial elevation is set, it is overridden to [-500, 1000].
-
-.. note::
     For the decimation factor, a value of 33 means that we divide the number of sift by 3, a value of 100 means that we do not decimate them
 
 
-**Example**
+Examples
+~~~~~~~~
 
-.. include-cars-config:: ../../example_configs/configuration/applications_sparse_matching
+Minimal example:
+
+.. include-cars-config:: ../../example_configs/configuration/applications_sparse_matching_minimal
+
+Example with both application and method parameters:
+
+.. include-cars-config:: ../../example_configs/configuration/applications_sparse_matching_full
