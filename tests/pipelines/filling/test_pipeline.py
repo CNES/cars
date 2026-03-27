@@ -27,8 +27,10 @@ import copy
 import json
 import os
 import tempfile
+from unittest.mock import MagicMock, patch
 
 import pytest
+from json_checker import MissKeyCheckerError
 
 from cars.cars import main_cli
 from cars.pipelines.default import default_pipeline
@@ -170,6 +172,64 @@ def test_pipeline_filling_end2end_global():
                     atol=atol,
                     rtol=rtol,
                 )
+
+
+@pytest.mark.unit_tests
+def test_check_applications_accepts_dsm_filling_key():
+    """
+    check_applications must accept legitimate dsm_filling.* keys.
+    """
+    # Build a bare instance without triggering __init__
+    pipeline = object.__new__(filling.FillingPipeline)
+    pipeline.save_all_intermediate_data = False
+    pipeline.scaling_coeff = 1.0
+
+    conf = {
+        "auxiliary_filling": {},
+        "dem_generation": {},
+        "dsm_filling.1": {"method": "exogenous_filling"},
+        "dsm_filling.my_filling": {"method": "exogenous_filling"},
+    }
+
+    mock_app = MagicMock()
+    mock_app.get_conf.return_value = {}
+    mock_app.used_method = "mock_method"
+
+    with patch(
+        "cars.pipelines.filling.filling.Application", return_value=mock_app
+    ):
+        used_conf = pipeline.check_applications(conf)
+
+    assert "dsm_filling.1" in used_conf
+    assert "dsm_filling.my_filling" in used_conf
+
+
+@pytest.mark.unit_tests
+def test_check_applications_rejects_unknown_key():
+    """
+    check_applications must raise MissKeyCheckerError when the applications
+    dict contains a key that is neither 'auxiliary_filling', 'dem_generation'
+    nor a 'dsm_filling.*' entry.
+    """
+    # Build a bare instance without triggering __init__
+    pipeline = object.__new__(filling.FillingPipeline)
+    pipeline.save_all_intermediate_data = False
+    pipeline.scaling_coeff = 1.0
+
+    conf = {
+        "auxiliary_filling": {},
+        "dem_generation": {},
+        "unknown_key": {},
+    }
+
+    mock_app = MagicMock()
+    mock_app.get_conf.return_value = {}
+
+    with patch(
+        "cars.pipelines.filling.filling.Application", return_value=mock_app
+    ):
+        with pytest.raises(MissKeyCheckerError):
+            pipeline.check_applications(conf)
 
 
 @pytest.mark.end2end_tests

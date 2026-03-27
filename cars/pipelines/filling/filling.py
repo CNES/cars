@@ -275,7 +275,7 @@ class FillingPipeline(PipelineTemplate):
         :param conf: configuration of applications
         :type conf: dict
         """
-        used_conf = {}
+        used_conf = conf.copy()
         self.dsm_filling_apps = {}
 
         needed_applications = []
@@ -298,10 +298,9 @@ class FillingPipeline(PipelineTemplate):
             )
 
             if app_key == "auxiliary_filling":
-                if used_conf[app_key] is not None:
-                    used_conf[app_key]["activated"] = used_conf[app_key].get(
-                        "activated", True
-                    )
+                used_conf[app_key]["activated"] = used_conf[app_key].get(
+                    "activated", True
+                )
 
         for app_key, app_conf in used_conf.items():
             if not app_key.startswith("dsm_filling"):
@@ -361,6 +360,21 @@ class FillingPipeline(PipelineTemplate):
             scaling_coeff=self.scaling_coeff,
         )
         used_conf["dem_generation"] = self.dem_generation_application.get_conf()
+
+        # check the overall schema of used_conf for applications
+        schema = {
+            "auxiliary_filling": Or(None, dict),
+            "dem_generation": Or(None, dict),
+        }
+
+        # explicitly authorize every dsm_filling.* key
+        # present in the configuration
+        for app_key in used_conf:
+            if app_key.startswith("dsm_filling"):
+                schema[OptionalKey(app_key)] = Or(None, dict)
+
+        checker_applications = Checker(schema)
+        checker_applications.validate(used_conf)
 
         return used_conf
 
