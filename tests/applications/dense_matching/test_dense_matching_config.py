@@ -27,6 +27,7 @@ import os
 
 # Third party imports
 import pytest
+from json_checker.core.exceptions import DictCheckerError
 
 # CARS imports
 from cars.applications.dense_matching.abstract_dense_matching_app import (
@@ -214,3 +215,75 @@ def test_check_conf_with_error(
     }
     with pytest.raises(expected_error):
         _ = AbstractDenseMatchingApplication(conf)
+
+
+@pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "classif_values",
+    [
+        None,
+        [6],
+        [2, 4],
+        [1, 3, 5],
+    ],
+)
+def test_classification_3sgm(classif_values):
+    """
+    Test classification_3sgm parameter configuration
+    """
+    conf = {"classification_3sgm": classif_values}
+    # check there's no crash when creating the application/method
+    app = AbstractDenseMatchingApplication(conf)
+    # Check that the parameter is properly stored
+    # pylint: disable=E1101
+    assert app.dense_matching_method.classification_3sgm == classif_values
+
+
+@pytest.mark.unit_tests
+def test_classification_3sgm_forces_3sgm_optimization():
+    """
+    Test that classification_3sgm activates 3sgm in Pandora configuration
+    """
+    app = AbstractDenseMatchingApplication({"classification_3sgm": [6]})
+
+    # pylint: disable=E1101
+    optimization = app.dense_matching_method.corr_config["pipeline"][
+        "optimization"
+    ]
+
+    assert optimization["optimization_method"] == "3sgm"
+    assert optimization["geometric_prior"]["source"] == "classif"
+    assert optimization["geometric_prior"]["classes"] == ["6"]
+
+
+@pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "classif_values",
+    [
+        [1, "2"],
+        [1, None],
+        [1, True],
+    ],
+)
+def test_classification_3sgm_rejects_non_int_values(classif_values):
+    """
+    Test that classification_3sgm only accepts list of int values
+    """
+    conf = {"classification_3sgm": classif_values}
+    with pytest.raises(DictCheckerError):
+        _ = AbstractDenseMatchingApplication(conf)
+
+
+@pytest.mark.unit_tests
+def test_empty_classification_3sgm_keeps_default_optimization():
+    """
+    Test that empty classification_3sgm keeps default optimization method
+    """
+    app = AbstractDenseMatchingApplication({"classification_3sgm": []})
+
+    # pylint: disable=E1101
+    optimization = app.dense_matching_method.corr_config["pipeline"][
+        "optimization"
+    ]
+
+    assert optimization["optimization_method"] == "sgm"
