@@ -11,6 +11,7 @@ applications:
     denoise_disparity_map: false
     generate_ambiguity: true
     edges_3sgm: true
+    classification_3sgm: [6, 17]
     confidence_filtering:
       activated: true
       bounds_ratio_threshold: 0.2
