@@ -72,6 +72,10 @@ def is_valid_perf_method(x):
     return all(y in ["risk", "intervals"] for y in x)
 
 
+def is_valid_classification_3sgm_value(x):
+    return isinstance(x, int) and not isinstance(x, bool)
+
+
 class PandoraMethod(
     AbstractDenseMatchingMethod,
     short_name=[
@@ -116,6 +120,10 @@ class PandoraMethod(
             "threshold_disp_range_to_borders": bool,
             "filter_incomplete_disparity_range": bool,
             "edges_3sgm": bool,
+            "classification_3sgm": Or(
+                [is_valid_classification_3sgm_value],
+                None,
+            ),
         }
 
         # those will be defined in check_conf
@@ -149,6 +157,7 @@ class PandoraMethod(
             "filter_incomplete_disparity_range"
         ]
         self.edges_3sgm = self.used_config["edges_3sgm"]
+        self.classification_3sgm = self.used_config["classification_3sgm"]
 
     def check_conf(self, conf):
         """
@@ -183,6 +192,7 @@ class PandoraMethod(
             "threshold_disp_range_to_borders": False,
             "filter_incomplete_disparity_range": True,
             "edges_3sgm": True,
+            "classification_3sgm": None,
         }
 
         # Merge defaults with user conf
@@ -190,6 +200,8 @@ class PandoraMethod(
         used_conf.update(conf)
 
         # --- Update parameters
+        if not used_conf["classification_3sgm"]:
+            used_conf["classification_3sgm"] = None
 
         if used_conf["use_cross_validation"] is True:
             used_conf["use_cross_validation"] = "fast"
@@ -246,6 +258,13 @@ class PandoraMethod(
             lambda record: "to model due to model override policy"
             not in record.getMessage()
         )
+
+        # classification_3sgm is values, we want their band names
+        # (str of the values)
+        classification_3sgm = conf["classification_3sgm"]
+        if classification_3sgm is not None:
+            classification_3sgm = [str(value) for value in classification_3sgm]
+
         pandora_loader = PandoraLoader(
             conf=loader_conf,
             method_name=method,
@@ -259,6 +278,7 @@ class PandoraMethod(
             use_cross_validation=conf["use_cross_validation"],
             denoise_disparity_map=conf["denoise_disparity_map"],
             used_band=conf["used_band"],
+            classification_3sgm=classification_3sgm,
         )
 
         self.loader = pandora_loader
@@ -665,7 +685,12 @@ class PandoraMethod(
 
         :rtype: CarsDataset
         """
-        if self.edges_3sgm and "edges_mask" in left_image_object:
+        # ensure classification_3sgm is used over edges_3sgm if both are true
+        if (
+            self.edges_3sgm
+            and "edges_mask" in left_image_object
+            and not self.classification_3sgm
+        ):
             self.corr_config["pipeline"]["optimization"][
                 "optimization_method"
             ] = "3sgm"
