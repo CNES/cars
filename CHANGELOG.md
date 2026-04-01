@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.1 Bugfix release (March 2026)
+
+### Fixed
+
+- Fix crash when using a global VRT [#986]
+- Add options to save raw performance map [#1252]
+- Fix the log with displacement/altitude ratio [#1301]
+- Masks after subsampling are now 1-bit for low resolutions [#1317]
+- Filling is automatically activated when using SLURP loader [#1320]
+- Fix issue with DSM_sup and DSM_inf outputs [#1305]
+- Fix the use of CARS in EPSG:4326 [#1319]
+- Fix deactivation of tie points in the configuration [#1304]
+- Fix security vulnerabilities [#1292]
+- Fix warning for Bulldozer configuration [#1316]
 
 ## 1.0.0 CARS 1.0 (January 2026)
 
