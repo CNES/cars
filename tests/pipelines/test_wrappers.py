@@ -212,6 +212,8 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
             conf={"plugin_name": "SharelocGeometry", "interpolator": "linear"}
         ),
         32636,
+        False,
+        None,
     )
 
     # Uncomment to update reference
