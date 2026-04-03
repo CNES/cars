@@ -79,6 +79,9 @@ class LineOfSightIntersection(
         self.snap_to_img1 = self.used_config["snap_to_img1"]
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
+        self.z_inf_sup_bh_approximation = self.used_config[
+            "z_inf_sup_bh_approximation"
+        ]
 
         # global value for left image to check if snap_to_img1 can
         # be applied : Need than same application object is run
@@ -118,10 +121,15 @@ class LineOfSightIntersection(
             "save_intermediate_data", False
         )
 
+        overloaded_conf["z_inf_sup_bh_approximation"] = conf.get(
+            "z_inf_sup_bh_approximation", True
+        )
+
         triangulation_schema = {
             "method": str,
             "snap_to_img1": bool,
             "save_intermediate_data": bool,
+            "z_inf_sup_bh_approximation": bool,
         }
 
         # Check conf
@@ -613,6 +621,8 @@ class LineOfSightIntersection(
         geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
         geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
 
+        disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
+
         if epipolar_disparity_map.dataset_type != "points":
             if source_pc_names is None:
                 source_pc_names = ["PAIR_0"]
@@ -842,6 +852,8 @@ class LineOfSightIntersection(
                             broadcasted_interpolated_grid_right,
                             geometry_plugin,
                             epsg,
+                            self.z_inf_sup_bh_approximation,
+                            disp_to_alt_ratio,
                             geoid_path=geoid_path,
                             denoising_overload_fun=denoising_overload_fun,
                             cloud_id=cloud_id,
@@ -902,12 +914,15 @@ class LineOfSightIntersection(
                             geometry_plugin,
                             full_saving_info_matches,
                             epsg,
+                            self.z_inf_sup_bh_approximation,
+                            disp_to_alt_ratio,
                         )
 
         return epipolar_point_cloud
 
 
-def triangulation_wrapper(  # pylint: disable=too-many-positional-arguments
+def triangulation_wrapper(  # noqa: C901 function is too complex
+    # pylint: disable=too-many-positional-arguments
     disparity_object: xr.Dataset,
     sensor1,
     sensor2,
@@ -917,6 +932,8 @@ def triangulation_wrapper(  # pylint: disable=too-many-positional-arguments
     grid2,
     geometry_plugin,
     epsg,
+    z_inf_sup_bh_approximation,
+    disp_to_alt_ratio,
     geoid_path=None,
     denoising_overload_fun=None,
     cloud_id=None,
@@ -1022,37 +1039,63 @@ def triangulation_wrapper(  # pylint: disable=too-many-positional-arguments
                     perf_ambiguity_threshold = performance_maps_parameters[
                         "perf_ambiguity_threshold"
                     ]
-                # triangulate disp inf and supp
-                points_inf = triangulation_algo.triangulate(
-                    geometry_plugin,
-                    sensor1,
-                    sensor2,
-                    geomodel1,
-                    geomodel2,
-                    grid1,
-                    grid2,
-                    disp_ref,
-                    disp_key=disp_keys[0],
-                )
 
-                points_sup = triangulation_algo.triangulate(
-                    geometry_plugin,
-                    sensor1,
-                    sensor2,
-                    geomodel1,
-                    geomodel2,
-                    grid1,
-                    grid2,
-                    disp_ref,
-                    disp_key=disp_keys[1],
-                )
+                if z_inf_sup_bh_approximation:
+                    z_points = points[cst.STEREO_REF][cst.Z]
+                    disp_min = disp_ref[disp_keys[0]]
+                    disp_max = disp_ref[disp_keys[1]]
 
-                points[cst.STEREO_REF][cars_inf_key] = points_inf[
-                    cst.STEREO_REF
-                ][cst.Z]
-                points[cst.STEREO_REF][cars_sup_key] = points_sup[
-                    cst.STEREO_REF
-                ][cst.Z]
+                    points_inf = (
+                        -disp_to_alt_ratio * (disp_min - disp_ref["disp"])
+                        + z_points.values
+                    )
+
+                    points_sup = (
+                        -disp_to_alt_ratio * (disp_max - disp_ref["disp"])
+                        + z_points.values
+                    )
+
+                    points[cst.STEREO_REF][cars_inf_key] = (
+                        ("row", "col"),
+                        points_inf.data,
+                    )
+                    points[cst.STEREO_REF][cars_sup_key] = (
+                        ("row", "col"),
+                        points_sup.data,
+                    )
+                else:
+                    # triangulate disp inf and supp
+                    points_inf = triangulation_algo.triangulate(
+                        geometry_plugin,
+                        sensor1,
+                        sensor2,
+                        geomodel1,
+                        geomodel2,
+                        grid1,
+                        grid2,
+                        disp_ref,
+                        disp_key=disp_keys[0],
+                    )
+
+                    points_sup = triangulation_algo.triangulate(
+                        geometry_plugin,
+                        sensor1,
+                        sensor2,
+                        geomodel1,
+                        geomodel2,
+                        grid1,
+                        grid2,
+                        disp_ref,
+                        disp_key=disp_keys[1],
+                    )
+
+                    points[cst.STEREO_REF][cars_inf_key] = points_inf[
+                        cst.STEREO_REF
+                    ][cst.Z]
+                    points[cst.STEREO_REF][cars_sup_key] = points_sup[
+                        cst.STEREO_REF
+                    ][cst.Z]
+
                 # Generate performance map
                 points[cst.STEREO_REF][cars_perf_key] = (
                     triangulation_wrap.compute_performance_map(
