@@ -109,7 +109,7 @@ class AbstractSparseMatchingMethod(metaclass=ABCMeta):
         disp_lower_bound=None,
         disp_upper_bound=None,
         classif_bands_to_mask=None,
-    ):
+    ):  # pylint: disable=R0917
         """
         Run sparse matching on a pair of epipolar tiles.
 

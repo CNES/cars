@@ -142,7 +142,7 @@ class SiftSparseMethod(AbstractSparseMatchingMethod, short_name=["sift"]):
         disp_lower_bound=None,
         disp_upper_bound=None,
         classif_bands_to_mask=None,
-    ):
+    ):  # pylint: disable=R0917
         """
         Compute and filter sparse matches for one pair of epipolar tiles.
         """

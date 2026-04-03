@@ -61,6 +61,15 @@ AbstractDenseMatchingMethod = adm.AbstractDenseMatchingMethod
 
 
 def is_valid_perf_method(x):
+    """
+    Helper function
+    Returns whether the performance map method x is valid
+
+    :param x: performance map method
+    :type x: str
+    :return: true or false
+    :rtype: bool
+    """
     return all(y in ["risk", "intervals"] for y in x)
 
 
