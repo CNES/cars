@@ -108,7 +108,12 @@ def test_subsampling(resolution):
             },
         )
 
-        input_conf["subsampling"] = {"advanced": {"resolutions": resolution}}
+        input_conf["subsampling"] = {
+            "advanced": {
+                "resolutions": resolution,
+                "min_image_size": 1,  # to keep all resolutions
+            }
+        }
 
         out_dirs = {
             "api": input_conf["output"]["directory"],
