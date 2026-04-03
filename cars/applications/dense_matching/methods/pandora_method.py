@@ -73,6 +73,15 @@ def is_valid_perf_method(x):
 
 
 def is_valid_classification_3sgm_value(x):
+    """
+    Helper function
+    Returns whether the classification value x is valid
+
+    :param x: classification value
+    :type x: any
+    :return: true or false
+    :rtype: bool
+    """
     return isinstance(x, int) and not isinstance(x, bool)
 
 
