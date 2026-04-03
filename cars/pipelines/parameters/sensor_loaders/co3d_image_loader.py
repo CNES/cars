@@ -19,12 +19,11 @@
 # limitations under the License.
 #
 """
-This module contains the BasicImageSensorLoader class.
+This module contains the CO3DImageSensorLoader class.
 """
 
 from json_checker import Checker, Or
 
-from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.parameters.sensor_loaders.pivot_image_loader import (
@@ -35,9 +34,11 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
     SensorLoaderTemplate,
 )
 
+RGB = "RGB"
 
-@SensorLoader.register("basic_image")
-class BasicImageSensorLoader(SensorLoaderTemplate):
+
+@SensorLoader.register("CO3D_image")
+class CO3DImageSensorLoader(SensorLoaderTemplate):
     """
     Default sensor loader for image (used when no sensor loader is specified)
     """
@@ -54,22 +55,18 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         if isinstance(conf, str):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
-            overloaded_conf[sens_cst.INPUT_PATH] = image_path
-            overloaded_conf[sens_cst.INPUT_NODATA] = 0
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
             image_path = make_relative_path_absolute(
-                conf[sens_cst.INPUT_PATH], self.config_dir
-            )
-            overloaded_conf[sens_cst.INPUT_PATH] = image_path
-            overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
-                sens_cst.INPUT_NODATA, 0
+                conf["RGB"], self.config_dir
             )
         else:
-            raise TypeError(f"Input {conf} is not a string or dict")
+            raise TypeError(f"Input {conf} is not a string ot dict")
+        overloaded_conf["RGB"] = image_path
+        overloaded_conf["no_data"] = 0
 
         sensor_schema = {
-            sens_cst.INPUT_PATH: str,
+            "RGB": str,
             sens_cst.INPUT_NODATA: Or(None, int),
         }
 
@@ -84,14 +81,19 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {"bands": {}}
-        for band_id in range(
-            inputs.rasterio_get_nb_bands(self.used_config[sens_cst.INPUT_PATH])
-        ):
-            band_name = "b" + str(band_id)
-            pivot_config["bands"][band_name] = {
-                sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
-                "band": band_id,
-            }
+        pivot_config["bands"]["b0"] = {
+            sens_cst.INPUT_PATH: self.used_config[RGB],
+            "band": 1,
+        }
+        pivot_config["bands"]["b1"] = {
+            sens_cst.INPUT_PATH: self.used_config[RGB],
+            "band": 0,
+        }
+        pivot_config["bands"]["b2"] = {
+            sens_cst.INPUT_PATH: self.used_config[RGB],
+            "band": 2,
+        }
+        pivot_config[sens_cst.SENSOR_TYPE] = "CO3D"
         pivot_sensor_loader = PivotImageSensorLoader(
             pivot_config, self.config_dir
         )

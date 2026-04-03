@@ -35,9 +35,12 @@ from cars.pipelines.parameters.sensor_loaders.sensor_loader_template import (
     SensorLoaderTemplate,
 )
 
+PAN = "PAN"
+PXS = "PXS"
 
-@SensorLoader.register("basic_image")
-class BasicImageSensorLoader(SensorLoaderTemplate):
+
+@SensorLoader.register("PHR_image")
+class PHRImageSensorLoader(SensorLoaderTemplate):
     """
     Default sensor loader for image (used when no sensor loader is specified)
     """
@@ -51,25 +54,26 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         :return: overloaded configuration
         :rtype: dict
         """
+        color_path = None
         if isinstance(conf, str):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
-            overloaded_conf[sens_cst.INPUT_PATH] = image_path
-            overloaded_conf[sens_cst.INPUT_NODATA] = 0
         elif isinstance(conf, dict):
             overloaded_conf = conf.copy()
-            image_path = make_relative_path_absolute(
-                conf[sens_cst.INPUT_PATH], self.config_dir
-            )
-            overloaded_conf[sens_cst.INPUT_PATH] = image_path
-            overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
-                sens_cst.INPUT_NODATA, 0
-            )
+            image_path = make_relative_path_absolute(conf[PAN], self.config_dir)
+            if PXS in conf:
+                color_path = make_relative_path_absolute(
+                    conf[PXS], self.config_dir
+                )
         else:
-            raise TypeError(f"Input {conf} is not a string or dict")
+            raise TypeError(f"Input {conf} is not a string ot dict")
+        overloaded_conf[PAN] = image_path
+        overloaded_conf[PXS] = color_path
+        overloaded_conf[sens_cst.INPUT_NODATA] = 0
 
         sensor_schema = {
-            sens_cst.INPUT_PATH: str,
+            PAN: str,
+            PXS: Or(None, str),
             sens_cst.INPUT_NODATA: Or(None, int),
         }
 
@@ -84,14 +88,20 @@ class BasicImageSensorLoader(SensorLoaderTemplate):
         Transform input configuration to pivot format and store it
         """
         pivot_config = {"bands": {}}
-        for band_id in range(
-            inputs.rasterio_get_nb_bands(self.used_config[sens_cst.INPUT_PATH])
-        ):
-            band_name = "b" + str(band_id)
-            pivot_config["bands"][band_name] = {
-                sens_cst.INPUT_PATH: self.used_config[sens_cst.INPUT_PATH],
-                "band": band_id,
-            }
+        pivot_config["bands"]["b0"] = {
+            sens_cst.INPUT_PATH: self.used_config[PAN],
+            "band": 0,
+        }
+        if self.used_config[PXS] is not None:
+            for band_id in range(
+                inputs.rasterio_get_nb_bands(self.used_config[PXS])
+            ):
+                band_name = "b" + str(band_id + 1)
+                pivot_config["bands"][band_name] = {
+                    sens_cst.INPUT_PATH: self.used_config[PXS],
+                    "band": band_id,
+                }
+        pivot_config[sens_cst.SENSOR_TYPE] = "PHR"
         pivot_sensor_loader = PivotImageSensorLoader(
             pivot_config, self.config_dir
         )

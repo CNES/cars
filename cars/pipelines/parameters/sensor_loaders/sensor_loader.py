@@ -23,8 +23,6 @@
 This module contains sensor loader factory.
 """
 
-import logging
-
 
 class SensorLoader:
     """
@@ -67,9 +65,10 @@ class SensorLoader:
 
         try:
             loader_class = cls.available_loaders[name]
-        except KeyError:
-            logging.error("No sensor loader named {0} supported".format(name))
-            return None
+        except KeyError as err:
+            raise KeyError(
+                "No sensor loader named {0} supported".format(name)
+            ) from err
         loader = loader_class(cfg, config_dir)
         return loader
 

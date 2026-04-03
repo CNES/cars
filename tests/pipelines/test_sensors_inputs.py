@@ -515,3 +515,74 @@ def test_input_pivot_loader_fail_undefined_texture_band():
     }
     with pytest.raises(RuntimeError):
         sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
+
+
+@pytest.mark.end2end_tests
+def test_input_phr_loader():
+    """
+    End to end pipeline processing
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "loaders": {"image": "PHR"},
+        "sensors": {
+            "image1": {
+                "image": {
+                    "PAN": absolute_data_path(
+                        "input/phr_ventoux/left_image.tif"
+                    ),
+                    "PXS": absolute_data_path(
+                        "input/phr_ventoux/color_image.tif"
+                    ),
+                },
+                "geomodel": absolute_data_path(
+                    "input/phr_ventoux/left_image.geom"
+                ),
+            },
+            "image2": {
+                "image": absolute_data_path(
+                    "input/phr_ventoux/right_image.tif"
+                ),
+                "geomodel": absolute_data_path(
+                    "input/phr_ventoux/right_image.geom"
+                ),
+            },
+        },
+    }
+    _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
+
+
+@pytest.mark.end2end_tests
+def test_input_co3d_loader():
+    """
+    End to end pipeline processing
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "loaders": {"image": "CO3D"},
+        "sensors": {
+            "image1": {
+                "image": {
+                    "RGB": absolute_data_path(
+                        "input/phr_ventoux/color_image.tif"
+                    ),
+                },
+                "geomodel": absolute_data_path(
+                    "input/phr_ventoux/left_image.geom"
+                ),
+            },
+            "image2": {
+                "image": absolute_data_path(
+                    "input/phr_ventoux/color_image.tif"
+                ),
+                "geomodel": absolute_data_path(
+                    "input/phr_ventoux/left_image.geom"
+                ),
+            },
+        },
+    }
+    _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)

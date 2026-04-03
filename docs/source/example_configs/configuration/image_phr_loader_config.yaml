@@ -1,0 +1,7 @@
+---
+loaders:
+  image: PHR
+sensors:
+  image:
+    PAN: img1.tif
+    PXS: color1.tif
