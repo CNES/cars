@@ -185,13 +185,13 @@ class SubsamplingPipeline(PipelineTemplate):
         :rtype: dict
         """
 
-        overloaded_conf = conf.copy()
+        overloaded_conf = copy.deepcopy(conf)
 
         overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
             adv_cst.SAVE_INTERMEDIATE_DATA, False
         )
 
-        overloaded_conf[adv_cst.RESOLUTIONS] = conf.get(
+        overloaded_conf[adv_cst.RESOLUTIONS] = overloaded_conf.get(
             adv_cst.RESOLUTIONS, [16, 4, 1]
         )
 
@@ -217,11 +217,21 @@ class SubsamplingPipeline(PipelineTemplate):
                 sizes.append(image_width)
             except (KeyError, rio.errors.RasterioIOError):
                 logging.warning("Sensor {} not found".format(sensor))
+
+        min_resolution = 1
         if sizes:
             min_size = min(sizes)
-            for res in overloaded_conf[adv_cst.RESOLUTIONS]:
+            min_resolution = min(overloaded_conf[adv_cst.RESOLUTIONS])
+            for res in overloaded_conf[adv_cst.RESOLUTIONS][:]:
                 if min_size / res < overloaded_conf[adv_cst.MIN_IMAGE_SIZE]:
                     overloaded_conf[adv_cst.RESOLUTIONS].remove(res)
+
+        if len(overloaded_conf[adv_cst.RESOLUTIONS]) == 0:
+            logging.warning(
+                "All resolutions are too low for the given images, {} is"
+                " used as resolution".format(min_resolution)
+            )
+            overloaded_conf[adv_cst.RESOLUTIONS] = [min_resolution]
 
         schema = {
             adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
@@ -256,7 +266,7 @@ class SubsamplingPipeline(PipelineTemplate):
                 logging.error(msg)
                 raise NameError(msg)
 
-        used_conf = {}
+        used_conf = copy.deepcopy(conf)
 
         self.sensors_subsampling = Application(
             "sensors_subsampling",

@@ -38,8 +38,6 @@ Subsample the sensor images.
 +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+------------------------+----------+
 | interpolator_mask               | Interpolator that should be used for the mask                            | str        |                                      | "nearest"              | No       |
 +---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+------------------------+----------+
-| min_image_size                  | Image size below which subsampling is not done                           | int        | should be > 0                        | 80                     | No       |
-+---------------------------------+--------------------------------------------------------------------------+------------+--------------------------------------+------------------------+----------+
 
 Advanced Parameters
 -------------------
@@ -59,6 +57,10 @@ Advanced Parameters
       - The resolution(s) at which the outputs should be resampled.
       - list[int]
       - [16, 4, 1]
+    * - min_image_size
+      - Image size below which subsampling is not done.
+      - int
+      - 80
 
 Below is an example configuration for this pipeline :
 
