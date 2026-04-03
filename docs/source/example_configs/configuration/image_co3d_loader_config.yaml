@@ -1,0 +1,6 @@
+---
+loaders:
+  image: CO3D
+sensors:
+  image:
+    RGB: color1.tif

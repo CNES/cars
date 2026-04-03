@@ -89,10 +89,14 @@ class PivotImageSensorLoader(SensorLoaderTemplate):
         overloaded_conf[sens_cst.INPUT_NODATA] = conf.get(
             sens_cst.INPUT_NODATA, 0
         )
+        overloaded_conf[sens_cst.SENSOR_TYPE] = conf.get(
+            sens_cst.SENSOR_TYPE, None
+        )
 
         sensor_schema = {
             "bands": dict,
             sens_cst.INPUT_NODATA: Or(None, int),
+            sens_cst.SENSOR_TYPE: Or(None, str),
         }
 
         # Check conf

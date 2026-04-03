@@ -24,6 +24,8 @@ CARS application module init file
 
 from .basic_classif_loader import BasicClassifSensorLoader  # noqa: F401
 from .basic_image_loader import BasicImageSensorLoader  # noqa: F401
+from .co3d_image_loader import CO3DImageSensorLoader  # noqa: F401
+from .phr_image_loader import PHRImageSensorLoader  # noqa: F401
 from .pivot_classif_loader import PivotClassifSensorLoader  # noqa: F401
 from .pivot_image_loader import PivotImageSensorLoader  # noqa: F401
 from .slurp_classif_loader import SlurpClassifSensorLoader  # noqa: F401

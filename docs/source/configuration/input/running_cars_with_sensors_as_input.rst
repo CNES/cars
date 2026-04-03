@@ -237,6 +237,40 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         +-------------------+--------------------------------------------------+-----------+------------------+------------------+----------+
         | *classification*  | Sensor loader for classification parameter       | str       | "basic"          | "slurp", "pivot" | No       |
         +-------------------+--------------------------------------------------+-----------+------------------+------------------+----------+
+
+        **Image PHR loader**
+
+        PHR loader must be used for Pléiades images. The panchromatic image is required and a pansharpened image can be used for texture.
+
+        +-----------------+---------------------------------+--------+----------+
+        | Name            | Description                     | Type   | Required |
+        +=================+=================================+========+==========+
+        | *PAN*           | Path for the panchromatic image | str    | Yes      |
+        +-----------------+---------------------------------+--------+----------+
+        | *PXS*           | Path for the pansharpened image | str    | No       |
+        +-----------------+---------------------------------+--------+----------+
+
+        An example of configuration using PHR loader is shown below :
+
+        .. include-cars-config:: ../../example_configs/configuration/image_phr_loader_config
+
+        By using the PHR loader, the output image bands will automatically be the bands of the PXS image, but it can be changed in the output configuration.
+
+        **Image CO3D loader**
+
+        CO3D loader must be used for CO3D images. The RGB image is required.
+
+        +-----------------+---------------------------------+--------+----------+
+        | Name            | Description                     | Type   | Required |
+        +=================+=================================+========+==========+
+        | *RGB*           | Path for the RGB image          | str    | Yes      |
+        +-----------------+---------------------------------+--------+----------+
+
+        An example of configuration using PHR loader is shown below :
+
+        .. include-cars-config:: ../../example_configs/configuration/image_co3d_loader_config
+
+        By using the CO3D loader, the output image bands will automatically be the RGB bands, but it can be changed in the output configuration.
     
         **Image pivot loader**
 

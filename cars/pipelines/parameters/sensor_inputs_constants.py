@@ -47,5 +47,6 @@ INPUT_GEO_MODEL_FILTER = "geomodel_filters"
 INPUT_NODATA = "no_data"
 INPUT_PATH = "path"
 INPUT_VALUES = "values"
+SENSOR_TYPE = "sensor_type"
 
 CARS_DEFAULT_ALT = 0  # Default altitude used in cars pipelines

@@ -272,6 +272,7 @@ def check_texture_bands(inputs, overloaded_conf):
         first_key = list(inputs[sens_cst.SENSORS].keys())[0]
         image = inputs[sens_cst.SENSORS][first_key][sens_cst.INPUT_IMG]
         bands = set(image["bands"].keys())
+        sensor_type = image.get(sens_cst.SENSOR_TYPE, None)
 
         if isinstance(texture_bands, list):
             for elem in texture_bands:
@@ -298,9 +299,36 @@ def check_texture_bands(inputs, overloaded_conf):
                     f"the input image"
                 )
         elif texture_bands is True:
-            overloaded_conf[output_constants.AUXILIARY][
-                output_constants.AUX_IMAGE
-            ] = sorted(bands)
+            if sensor_type == "PHR":
+                if len(bands) == 1:
+                    overloaded_conf[output_constants.AUXILIARY][
+                        output_constants.AUX_IMAGE
+                    ] = ["b0"]
+                elif len(bands) >= 4:  # RGB or RGBN
+                    overloaded_conf[output_constants.AUXILIARY][
+                        output_constants.AUX_IMAGE
+                    ] = sorted(bands)[1:]
+                else:
+                    overloaded_conf[output_constants.AUXILIARY][
+                        output_constants.AUX_IMAGE
+                    ] = sorted(bands)
+            elif sensor_type == "CO3D":
+                if len(bands) == 3:  # RGB
+                    overloaded_conf[output_constants.AUXILIARY][
+                        output_constants.AUX_IMAGE
+                    ] = [
+                        "b1",
+                        "b0",
+                        "b2",
+                    ]  # RGB
+                else:
+                    overloaded_conf[output_constants.AUXILIARY][
+                        output_constants.AUX_IMAGE
+                    ] = sorted(bands)
+            else:
+                overloaded_conf[output_constants.AUXILIARY][
+                    output_constants.AUX_IMAGE
+                ] = sorted(bands)
 
 
 def check_classification_parameter(inputs, overloaded_conf):
