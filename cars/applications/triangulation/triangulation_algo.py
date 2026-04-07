@@ -362,6 +362,36 @@ def compute_point_cloud(  # pylint: disable=too-many-positional-arguments
             point_cloud,
         )
 
+    # add edges in data
+    if cst.EPI_EDGES_DEPTH_MAP in data:
+        triang_wrap.add_layer(
+            data,
+            cst.EPI_EDGES_DEPTH_MAP,
+            cst.BAND_EDGES_DEPTH_MAP,
+            point_cloud,
+        )
+    if cst.EPI_EDGES_NORMALS in data:
+        triang_wrap.add_layer(
+            data,
+            cst.EPI_EDGES_NORMALS,
+            cst.BAND_EDGES_NORMALS,
+            point_cloud,
+        )
+    if cst.EPI_EDGES_MASK in data:
+        triang_wrap.add_layer(
+            data,
+            cst.EPI_EDGES_MASK,
+            cst.BAND_EDGES_MASK,
+            point_cloud,
+        )
+    if cst.EPI_EDGES_TILE_ID in data:
+        triang_wrap.add_layer(
+            data,
+            cst.EPI_EDGES_TILE_ID,
+            cst.BAND_EDGES_TILE_ID,
+            point_cloud,
+        )
+
     point_cloud.attrs[cst.ROI] = data.attrs[cst.ROI]
     point_cloud.attrs[cst.ROI_WITH_MARGINS] = data.attrs[cst.ROI_WITH_MARGINS]
     point_cloud.attrs[cst.EPI_MARGINS] = data.attrs[cst.EPI_MARGINS]

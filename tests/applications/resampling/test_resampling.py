@@ -211,11 +211,20 @@ def test_epipolar_rectify_images_1(
     if classif2 is not None:
         right_classifs = {img1: {"band_name": ["b0"], "band_id": [1]}}
 
+    empty_edges = {
+        "edges_mask": None,
+        "depth_map": None,
+        "normals": None,
+        "tile_id": None,
+    }
+
     (
         left,
         right,
         classif1,
         classif2,
+        _,
+        _,
     ) = resampling_algo.epipolar_rectify_images(
         left_imgs,
         right_imgs,
@@ -231,6 +240,8 @@ def test_epipolar_rectify_images_1(
         right_classifs=right_classifs,
         nodata1=nodata1,
         nodata2=nodata2,
+        edges1=empty_edges,  # default empty edges dict
+        edges2=empty_edges,
     )
 
     # Uncomment to update baseline
@@ -327,11 +338,21 @@ def test_epipolar_rectify_images_3(
     right_classifs = None
     if classif2 is not None:
         right_classifs = {img1: {"band_name": ["b0"], "band_id": [1]}}
+
+    empty_edges = {
+        "edges_mask": None,
+        "depth_map": None,
+        "normals": None,
+        "tile_id": None,
+    }
+
     (
         left,
         right,
         class1,
         class2,
+        _,
+        _,
     ) = resampling_algo.epipolar_rectify_images(
         left_imgs,
         right_imgs,
@@ -347,6 +368,8 @@ def test_epipolar_rectify_images_3(
         right_classifs=right_classifs,
         nodata1=nodata1,
         nodata2=nodata2,
+        edges1=empty_edges,
+        edges2=empty_edges,
     )
 
     left_ref = xr.open_dataset(

@@ -1350,3 +1350,97 @@ def test_ventoux_filling():
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_with_edge_detection_data():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                        "edges": {
+                            "edges_mask": absolute_data_path(
+                                "input/phr_gizeh/edge_detection/edges.tif"
+                            ),
+                            "depth_map": absolute_data_path(
+                                "input/phr_gizeh/edge_detection/depth.tif"
+                            ),
+                            "normals": absolute_data_path(
+                                "input/phr_gizeh/edge_detection/normals.tif"
+                            ),
+                            "tile_id": absolute_data_path(
+                                "input/phr_gizeh/edge_detection/tile_id.tif"
+                            ),
+                        },
+                    },
+                    "image2": {
+                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+                "low_res_dsm": absolute_data_path(
+                    "input/phr_gizeh/low_res_dsm.tif"
+                ),
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+        }
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_surface_modeling_gizeh_edge_detection.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_surface_modeling_gizeh_edge_detection.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_surface_modeling_gizeh_edge_detection.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_surface_modeling_gizeh_edge_detection.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )

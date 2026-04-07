@@ -42,6 +42,7 @@ AUX_PERFORMANCE_MAP = "performance_map"
 AUX_FILLING = "filling"
 AUX_CONTRIBUTING_PAIR = "contributing_pair"
 AUX_AMBIGUITY = "ambiguity"
+AUX_EDGES = "edges"
 
 AUX_DEM_MIN = "dem_min"
 AUX_DEM_MAX = "dem_max"

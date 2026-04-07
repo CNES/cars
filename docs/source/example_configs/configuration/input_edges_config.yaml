@@ -1,0 +1,15 @@
+---
+input:
+  one:
+    image: path/to/img1.tif
+    # directly provide edges
+    edges: path/to/edges_mask1.tif
+
+  two:
+    image: path/to/img2.tif
+    # provide more auxiliary data
+    edges:
+      edges_mask: path/to/edges_mask2.tif
+      depth_map: path/to/depth_map2.tif
+      normals: path/to/normals2.tif
+      tile_id: path/to/tile_id2.tif

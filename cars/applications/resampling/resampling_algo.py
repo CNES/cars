@@ -52,18 +52,30 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
     interpolator_image="bicubic",
     interpolator_classif="nearest",
     interpolator_mask="nearest",
+    interpolators_edges=None,
     step=None,
     mask1=None,
     mask2=None,
+    edges1=None,
+    edges2=None,
     left_classifs=None,
     right_classifs=None,
     nodata1=0,
     nodata2=0,
     add_classif=True,
+    add_edges=True,
 ):
     """
     Resample left and right images
     """
+
+    if interpolators_edges is None:
+        interpolators_edges = {
+            "edges_mask": "nearest",
+            "depth_map": "nearest",
+            "normals": "nearest",
+            "tile_id": "nearest",
+        }
 
     # Force region to be float
     region = [int(x) for x in region]
@@ -189,11 +201,58 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
                 img_transform=right_img_transform,
             )
 
+    # Resample edges
+    left_edges_datasets = {
+        "edges_mask": None,
+        "depth_map": None,
+        "normals": None,
+        "tile_id": None,
+    }
+    right_edges_datasets = {
+        "edges_mask": None,
+        "depth_map": None,
+        "normals": None,
+        "tile_id": None,
+    }
+    if add_edges:
+        band_format_edges1 = (
+            to_band_format(edges1) if edges1 is not None else None
+        )
+        band_format_edges2 = (
+            to_band_format(edges2) if edges2 is not None else None
+        )
+
+        edge_sources = [
+            (band_format_edges1, left_edges_datasets),
+            (band_format_edges2, right_edges_datasets),
+        ]
+
+        for key, band_name in [
+            ("edges_mask", cst.BAND_EDGES_MASK),
+            ("depth_map", cst.BAND_EDGES_DEPTH_MAP),
+            ("normals", cst.BAND_EDGES_NORMALS),
+            ("tile_id", cst.BAND_EDGES_TILE_ID),
+        ]:
+            for band_format, target_dataset in edge_sources:
+                if band_format and band_format.get(key):
+                    target_dataset[key] = resample_image(
+                        band_format[key],
+                        grid1,
+                        [epipolar_size_x, epipolar_size_y],
+                        region=left_region,
+                        band_coords=band_name,
+                        interpolator_img=interpolators_edges[key],
+                        interpolator_mask=interpolator_mask,
+                        img_transform=left_img_transform,
+                    )
+
     return (
         left_dataset,
         right_dataset,
         left_classif_dataset,
         right_classif_dataset,
+        left_edges_datasets,
+        right_edges_datasets,
     )
 
 
@@ -588,3 +647,30 @@ def oversampling_func(  # pylint: disable=too-many-positional-arguments
     msk[:, ystart : ystart + ysize, xstart : xstart + xsize] = block_msk
 
     return resamp, msk
+
+
+def to_band_format(edges_dict):
+    """
+    Helper function, that takes the edges input dict and transforms it into a
+    band format image, so resampling can understand it
+    """
+    band_format = edges_dict.copy()
+
+    for key in edges_dict.keys():
+        if edges_dict[key] is not None:
+            if key == "normals":
+                band_format[key] = {
+                    edges_dict[key]: {
+                        "band_id": [1, 2, 3],
+                        "band_name": ["b0", "b1", "b2"],
+                    }
+                }
+            else:
+                band_format[key] = {
+                    edges_dict[key]: {
+                        "band_id": [1],
+                        "band_name": ["b0"],
+                    }
+                }
+
+    return band_format

@@ -24,6 +24,9 @@ The output directory, defined in the configuration file, contains at the end of 
             If `performance_map_method` in dense matching configuration is a list with more than one element, `performance_map.tif` will be a 3 dimension raster: each band contains the performance map for each method.
             Else, it will be a two dimension raster
 
+        .. note::
+            Edge auxiliary data configured with ``output.auxiliary.edges`` are not part of current DSM auxiliary outputs.
+
     .. tab:: Depth map
 
         If product type `depth_map` is selected, a directory named `depth_map` will be created with a subfolder for every pair. The file `depth_map/index.json` shows the path of every generated file. For example :

@@ -145,36 +145,19 @@ def check_output_parameters(  # noqa: C901 : too complex
             output_constants.AUX_IMAGE, True
         )
     )
-    overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_WEIGHTS
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_WEIGHTS, False
-    )
-    overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_CLASSIFICATION
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_CLASSIFICATION, False
-    )
-    overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_PERFORMANCE_MAP
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_PERFORMANCE_MAP, False
-    )
-    overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_CONTRIBUTING_PAIR
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_CONTRIBUTING_PAIR, False
-    )
-    overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_FILLING
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_FILLING, False
-    )
-    overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_AMBIGUITY
-    ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_AMBIGUITY, False
-    )
+
+    for key in [
+        output_constants.AUX_WEIGHTS,
+        output_constants.AUX_CLASSIFICATION,
+        output_constants.AUX_PERFORMANCE_MAP,
+        output_constants.AUX_CONTRIBUTING_PAIR,
+        output_constants.AUX_FILLING,
+        output_constants.AUX_AMBIGUITY,
+        output_constants.AUX_EDGES,
+    ]:
+        overloaded_conf[output_constants.AUXILIARY][key] = overloaded_conf[
+            output_constants.AUXILIARY
+        ].get(key, False)
 
     # Check schema
     output_schema = {
@@ -198,6 +181,7 @@ def check_output_parameters(  # noqa: C901 : too complex
         output_constants.AUX_CONTRIBUTING_PAIR: bool,
         output_constants.AUX_FILLING: Or(bool, dict),
         output_constants.AUX_AMBIGUITY: bool,
+        output_constants.AUX_EDGES: bool,
     }
 
     # Check and overload classification parameter

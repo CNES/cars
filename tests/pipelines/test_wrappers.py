@@ -154,6 +154,13 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
     img2 = configuration["input"][in_params.IMG2_TAG]
     right_imgs = {img2: {"band_name": ["b0"], "band_id": [1]}}
 
+    empty_edges = {
+        "edges_mask": None,
+        "depth_map": None,
+        "normals": None,
+        "tile_id": None,
+    }
+
     left_image, right_image = generate_epipolar_images_wrapper(
         overlaps,
         overlaps,
@@ -167,12 +174,15 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
         interpolator_image="bicubic",
         interpolator_classif="nearest",
         interpolator_mask="nearest",
+        interpolators_edges=None,
         used_disp_min=global_disp_min,
         used_disp_max=global_disp_max,
         mask1=mask1,
         mask2=mask2,
         nodata1=nodata1,
         nodata2=nodata2,
+        edges1=empty_edges,
+        edges2=empty_edges,
     )
 
     right_grid = {
