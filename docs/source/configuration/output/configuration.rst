@@ -80,10 +80,18 @@ Output configuration
         +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
         | *ambiguity*           | Save output ambiguity                                       | bool             | False          | No        |
         +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
+        | *edges*               | Save output edge rasters (depth_map only)                   | bool             | False          | No        |
+        +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
 
         .. include-cars-config:: ../../example_configs/configuration/output_auxiliary_basic
 
         Note that not all rasters associated to the DSM that CARS can produce are available in the output product auxiliary data. For example, confidence intervals are not part of the output product but can be found in the rasterization `dump_dir` if `save_intermediate_data` is activated in the `rasterization` application configuration.
+
+        .. note::
+
+            The auxiliary parameter ``edges`` currently acts at triangulation level.
+            When enabled, it exports edge data in the depth map product (``depth_map`` in ``product_level``).
+            It currently does not work with DSM auxiliary outputs, and won't save additional data for the DSM.
 
         **Advanced usage**
         
