@@ -27,7 +27,6 @@ import collections
 # Standard imports
 import copy
 import logging
-import math
 
 # Third party imports
 import numpy as np
@@ -51,7 +50,7 @@ from cars.applications.dense_matching.methods import (
     abstract_dense_matching_method as adm,
 )
 from cars.core import constants as cst
-from cars.core import inputs
+from cars.core import inputs, tiling
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -463,34 +462,18 @@ class PandoraMethod(
             :rtype: xr.Dataset
             """
 
-            assert row_min < row_max
-            assert col_min < col_max
-
-            # Get region in grid
-
-            grid_row_min = max(0, int(np.floor((row_min - 1) / step_row)) - 1)
-            grid_row_max = min(
-                len(row_range), int(np.ceil((row_max + 1) / step_row) + 1)
+            disp_min, disp_max = tiling.compute_local_disp_range_from_grids(
+                row_min,
+                row_max,
+                col_min,
+                col_max,
+                disp_min_grid_arr,
+                disp_max_grid_arr,
+                step_row,
+                step_col,
+                row_range,
+                col_range,
             )
-            grid_col_min = max(0, int(np.floor((col_min - 1) / step_col)) - 1)
-            grid_col_max = min(
-                len(col_range), int(np.ceil((col_max + 1) / step_col)) + 1
-            )
-
-            # Compute disp min and max in row
-            disp_min = np.min(
-                disp_min_grid_arr[
-                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
-                ]
-            )
-            disp_max = np.max(
-                disp_max_grid_arr[
-                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
-                ]
-            )
-            # round disp min and max
-            disp_min = int(math.floor(disp_min))
-            disp_max = int(math.ceil(disp_max))
 
             # Compute margins for the correlator
             margins = dm_wrappers.get_margins(self.margins, disp_min, disp_max)

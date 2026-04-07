@@ -45,7 +45,7 @@ from cars.applications.sparse_matching.abstract_sparse_matching_app import (
     SparseMatching,
 )
 from cars.core import constants as cst
-from cars.core import inputs
+from cars.core import inputs, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -291,30 +291,18 @@ class BasicSparseMatchingApplication(
             Generates margins Dataset used in resampling
             """
 
-            assert row_min < row_max
-            assert col_min < col_max
-
-            grid_row_min = max(0, int(np.floor((row_min - 1) / step_row)) - 1)
-            grid_row_max = min(
-                len(row_range), int(np.ceil((row_max + 1) / step_row) + 1)
+            disp_min, disp_max = tiling.compute_local_disp_range_from_grids(
+                row_min,
+                row_max,
+                col_min,
+                col_max,
+                disp_min_grid_arr,
+                disp_max_grid_arr,
+                step_row,
+                step_col,
+                row_range,
+                col_range,
             )
-            grid_col_min = max(0, int(np.floor((col_min - 1) / step_col)) - 1)
-            grid_col_max = min(
-                len(col_range), int(np.ceil((col_max + 1) / step_col)) + 1
-            )
-
-            disp_min = np.min(
-                disp_min_grid_arr[
-                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
-                ]
-            )
-            disp_max = np.max(
-                disp_max_grid_arr[
-                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
-                ]
-            )
-            disp_min = int(math.floor(disp_min))
-            disp_max = int(math.ceil(disp_max))
 
             margins = sm_wrapper.get_margins(
                 self.tile_margin,
