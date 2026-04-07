@@ -1,0 +1,7 @@
+---
+applications:
+  dense_matching:
+    application: basic
+    method: pandora_custom
+    loader: pandora
+    loader_conf: /path/to/pandora_config.json

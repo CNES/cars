@@ -1,0 +1,17 @@
+---
+applications:
+  dense_matching:
+    application: basic
+    method: pandora_census_sgm_default
+    min_epi_tile_size: 300
+    max_epi_tile_size: 1500
+    epipolar_tile_margin_in_percent: 60
+    use_global_disp_range: false
+    use_cross_validation: fast
+    denoise_disparity_map: false
+    generate_ambiguity: true
+    edges_3sgm: true
+    confidence_filtering:
+      activated: true
+      bounds_ratio_threshold: 0.2
+      risk_ratio_threshold: 0.75

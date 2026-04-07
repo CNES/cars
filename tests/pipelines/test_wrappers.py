@@ -35,9 +35,8 @@ from pandora.margins import Margins
 from cars.applications.dense_matching import (
     dense_matching_wrappers as dense_match_wrappers,
 )
-from cars.applications.dense_matching.census_mccnn_sgm_app import (
-    CensusMccnnSgm,
-    compute_disparity_wrapper,
+from cars.applications.dense_matching.abstract_dense_matching_app import (
+    AbstractDenseMatchingApplication,
 )
 from cars.applications.resampling.bicubic_resampling_app import (
     generate_epipolar_images_wrapper,
@@ -190,7 +189,10 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
         "epipolar_size_y": epipolar_size_y,
         "disp_to_alt_ratio": None,
     }
-    dense_matching_app = CensusMccnnSgm()
+    # pylint: disable=E0110
+    dense_matching_app = AbstractDenseMatchingApplication(
+        {"method": "pandora_custom", "loader_conf": corr_cfg}
+    )
     # Overide margin
     disp_range_grid = dense_matching_app.generate_disparity_grids(
         None,
@@ -201,11 +203,9 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
         pair_folder=None,
     )
 
-    disp_map = compute_disparity_wrapper(
+    disp_map = dense_matching_app.dense_matching_method.run(
         left_image,
         right_image,
-        corr_cfg,
-        "b0",
         CarsDict(disp_range_grid),
         texture_bands=[0],
     )

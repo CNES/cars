@@ -801,7 +801,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     "classification"
                 ]["values"]
                 values_classif_right = list(map(str, values_classif_right))
-            self.dense_matching_app.corr_config = (
+            self.dense_matching_app.dense_matching_method.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
                     nodata_left,
@@ -1068,7 +1068,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     self.grid_correction_app.get_minimum_nb_matches()
                 )
                 nb_matches = self.pairs[pair_key]["matches_array"].shape[0]
-                save_matches = sparse_mtch_app.get_save_matches()
+                save_matches = sparse_mtch_app.save_intermediate_data
 
                 if nb_matches > minimum_nb_matches:
                     # Compute grid correction
@@ -1437,7 +1437,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             if (
                 self.save_output_dsm
                 or self.save_output_point_cloud
-                or self.dense_matching_app.get_method() == "auto"
+                or self.dense_matching_app.get_method() == "pandora_auto"
             ):
                 # Compute terrain bounding box /roi related to
                 # current images
@@ -1489,10 +1489,11 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         self.epsg,
                     )
 
-            if self.dense_matching_app.get_method() == "auto":
+            if self.dense_matching_app.get_method() == "pandora_auto":
                 # Copy the initial corr_config in order to keep
                 # the inputs that have already been checked
-                corr_cfg = self.dense_matching_app.corr_config.copy()
+                method = self.dense_matching_app.dense_matching_method
+                corr_cfg = method.corr_config.copy()
 
                 # Find the conf that correspond to the land cover map
                 conf = self.dense_matching_app.loader.find_auto_conf(
@@ -1511,7 +1512,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 ] = conf
                 self.used_conf[PIPELINE][APPLICATIONS]["dense_matching"][
                     "method"
-                ] = "custom"
+                ] = "pandora_custom"
 
                 # Re initialization of the dense matching application
                 self.dense_matching_app = Application(
@@ -1523,7 +1524,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
                 # Update the corr_config with the inputs that have
                 # already been checked
-                self.dense_matching_app.corr_config["input"] = corr_cfg["input"]
+                self.dense_matching_app.dense_matching_method.corr_config[
+                    "input"
+                ] = corr_cfg["input"]
 
             # Run epipolar matching application
             epipolar_disparity_map = self.dense_matching_app.run(

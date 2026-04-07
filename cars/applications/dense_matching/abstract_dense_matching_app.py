@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of CARS
 # (see https://github.com/CNES/cars).
@@ -21,63 +21,59 @@
 """
 this module contains the abstract matching application class.
 """
+
 import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.applications.dense_matching.methods import (
+    abstract_dense_matching_method as adm,
+)
+
+AbstractDenseMatchingMethod = adm.AbstractDenseMatchingMethod
 
 
 @Application.register("dense_matching")
-class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
+class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
     """
-    AbstractDenseMatching
+    AbstractDenseMatchingApplication
     """
 
     available_applications: Dict = {}
-    default_application = "census_sgm_default"
+    default_application = "basic"
+    default_method = "pandora_auto"
 
-    def __new__(cls, conf=None):  # pylint: disable=W0613
-        """
-        Return the required application
-        :raises:
-         - KeyError when the required application is not registered
+    def __new__(cls, conf=None):
 
-        :param conf: configuration for matching
-        :return: a application_to_use object
-        """
-
-        matching_method = cls.default_application
-        if bool(conf) is False or "method" not in conf:
+        matching_application = cls.default_application
+        if bool(conf) is False or "application" not in conf:
             logging.info(
-                "Dense Matching method not specified, "
-                "default {} is used".format(matching_method)
+                "Dense Matching application not specified, "
+                f"default {matching_application} is used"
             )
         else:
-            matching_method = conf.get("method", cls.default_application)
+            matching_application = conf.get(
+                "application", cls.default_application
+            )
 
-        if matching_method not in cls.available_applications:
+        if matching_application not in cls.available_applications:
             logging.error(
-                "No matching application named {} registered".format(
-                    matching_method
-                )
+                f"No matching application named {matching_application} "
+                "registered"
             )
             raise KeyError(
-                "No matching application named {} registered".format(
-                    matching_method
-                )
+                f"No matching application named {matching_application} "
+                "registered"
             )
 
         logging.info(
-            "The AbstractDenseMatching({}) application will be used".format(
-                matching_method
-            )
+            f"The AbstractDenseMatching({matching_application}) application "
+            "will be used"
         )
 
-        return super(DenseMatching, cls).__new__(
-            cls.available_applications[matching_method]
-        )
+        return super().__new__(cls.available_applications[matching_application])
 
     def __init_subclass__(cls, short_name, **kwargs):  # pylint: disable=E0302
         super().__init_subclass__(**kwargs)
@@ -85,12 +81,14 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
             cls.available_applications[name] = cls
 
     def __init__(self, conf=None):
-        """
-        Init function of DenseMatching
 
-        :param conf: configuration
-        :return: an application_to_use object
-        """
+        if conf is None:
+            conf = {}
+
+        # init the method before the application
+        conf["method"] = conf.get("method", self.default_method)
+        # pylint: disable=abstract-class-instantiated
+        self.dense_matching_method = AbstractDenseMatchingMethod(conf)
 
         super().__init__(conf=conf)
 
@@ -128,19 +126,17 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
     # pylint: disable=too-many-positional-arguments
     @abstractmethod
-    def generate_disparity_grids(
+    def generate_disparity_grids(  # noqa: C901
         self,
-        epipolar_images_left,
-        epipolar_images_right,
-        local_tile_optimal_size_fun,
-        orchestrator=None,
+        sensor_image_right,
+        grid_right,
+        geom_plugin_with_dem_and_geoid,
+        dmin=None,
+        dmax=None,
+        dem_min=None,
+        dem_max=None,
         pair_folder=None,
-        pair_key="PAIR_0",
-        disp_range_grid=None,
-        compute_disparity_masks=False,
-        margins_to_keep=0,
-        texture_bands=None,
-        classif_bands_to_mask=None,
+        orchestrator=None,
     ):
         """
         Generate disparity grids min and max, with given step
@@ -153,10 +149,6 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type sensor_image_right: dict
         :param grid_right: right epipolar grid
         :type grid_right: CarsDataset
-        :param geometry_plugin_with_dem_min: geometry plugin with dem min
-        :type geometry_plugin_with_dem_min: GeometryPlugin
-        :param geometry_plugin_with_dem_max: geometry plugin with dem max
-        :type geometry_plugin_with_dem_max: GeometryPlugin
         :param geom_plugin_with_dem_and_geoid: geometry plugin with dem mean
             used to generate epipolar grids
         :type geom_plugin_with_dem_and_geoid: GeometryPlugin
@@ -164,18 +156,14 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type dmin: float
         :param dmax: maximum disparity
         :type dmax: float
-        :param altitude_delta_max: Delta max of altitude
-        :type altitude_delta_max: int
-        :param altitude_delta_min: Delta min of altitude
-        :type altitude_delta_min: int
         :param dem_min: path to minimum dem
         :type dem_min: str
         :param dem_max: path to maximum dem
         :type dem_max: str
         :param pair_folder: folder used for current pair
         :type pair_folder: str
-        :param loc_inverse_orchestrator: orchestrator to perform inverse locs
-        :type loc_inverse_orchestrator: Orchestrator
+        :param orchestrator: orchestrator to perform inverse locs
+        :type orchestrator: Orchestrator
 
 
         :return disparity grid range, containing grid min and max
@@ -237,7 +225,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :param pair_key: pair id
         :type pair_key: str
         :param disp_range_grid: minimum and maximum disparity grid
-        :type disp_range_grid: CarsDataset
+        :type disp_range_grid: dict
         :param disp_to_alt_ratio: disp to alti ratio used for performance map
         :type disp_to_alt_ratio: float
         :param margins_to_keep: margin to keep after dense matching

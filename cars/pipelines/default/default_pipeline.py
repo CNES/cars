@@ -98,6 +98,8 @@ PIPELINE_CONFS = {
     ),
 }
 
+# pylint: disable=E0401
+
 
 @Pipeline.register(
     "default",

@@ -203,6 +203,61 @@ def generate_tiling_grid(  # pylint: disable=too-many-positional-arguments
     return out_grid
 
 
+def compute_local_disp_range_from_grids(  # pylint: disable=R0917
+    row_min,
+    row_max,
+    col_min,
+    col_max,
+    disp_min_grid_arr,
+    disp_max_grid_arr,
+    step_row,
+    step_col,
+    row_range,
+    col_range,
+):
+    """
+    Compute local disparity min and max from disparity grids for a tile ROI.
+
+    :param row_min: row min
+    :param row_max: row max
+    :param col_min: col min
+    :param col_max: col max
+    :param disp_min_grid_arr: disparity minimum grid
+    :param disp_max_grid_arr: disparity maximum grid
+    :param step_row: disparity grid row step
+    :param step_col: disparity grid col step
+    :param row_range: disparity grid row coordinates
+    :param col_range: disparity grid col coordinates
+
+    :return: rounded local disparity min and max
+    :rtype: tuple(int, int)
+    """
+
+    assert row_min < row_max
+    assert col_min < col_max
+
+    # Get region in grid
+    grid_row_min = max(0, int(np.floor((row_min - 1) / step_row)) - 1)
+    grid_row_max = min(
+        len(row_range), int(np.ceil((row_max + 1) / step_row) + 1)
+    )
+    grid_col_min = max(0, int(np.floor((col_min - 1) / step_col)) - 1)
+    grid_col_max = min(
+        len(col_range), int(np.ceil((col_max + 1) / step_col)) + 1
+    )
+
+    # Compute disp min and max in row
+    disp_min = np.min(
+        disp_min_grid_arr[grid_row_min:grid_row_max, grid_col_min:grid_col_max]
+    )
+    disp_max = np.max(
+        disp_max_grid_arr[grid_row_min:grid_row_max, grid_col_min:grid_col_max]
+    )
+
+    # Round disp min and max
+    return int(math.floor(disp_min)), int(math.ceil(disp_max))
+
+
 def split(
     xmin, ymin, xmax, ymax, xsplit, ysplit
 ):  # pylint: disable=too-many-positional-arguments

@@ -1,7 +1,7 @@
-# !/usr/bin/env python
+#!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of CARS
 # (see https://github.com/CNES/cars).
@@ -19,12 +19,10 @@
 # limitations under the License.
 #
 """
-CARS core matching module init file
+Methods module init file
 """
-# flake8: noqa: F401
 
-from cars.applications.sparse_matching import (
-    abstract_sparse_matching_app,
-    basic_sparse_matching_app,
-    methods,
+from . import (  # noqa: F401
+    abstract_sparse_matching_method,
+    sift_sparse_method,
 )
