@@ -64,6 +64,14 @@ def cars_parser() -> argparse.ArgumentParser:
         "(DEBUG, INFO, PROGRESS, WARNING, ERROR, CRITICAL)",
     )
 
+    parser.add_argument(
+        "--check",
+        "-c",
+        action="store_true",
+        help="Check configuration and generate a report of"
+        " what to expect from full run",
+    )
+
     # General arguments at first level
     parser.add_argument(
         "--version",
@@ -122,6 +130,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
         config_dir = os.path.abspath(os.path.dirname(config_path))
         pipeline_name = config.get("pipeline", "default")
 
+        if getattr(args, "check", False):
+            # use checker pipeline
+            pipeline_name = "analysis"
+            config["pipeline"] = pipeline_name
+
         if not isinstance(pipeline_name, str):
             pipeline_name = "default"
 
@@ -149,7 +162,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
             used_pipeline.run(args)
 
         # Generate summary of tasks
-        if pipeline_name != "default":
+        if pipeline_name not in ("default", "analysis"):
             log_wrapper.generate_summary(
                 log_dir,
                 used_pipeline.used_conf,

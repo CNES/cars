@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of CARS
 # (see https://github.com/CNES/cars).
@@ -19,9 +19,8 @@
 # limitations under the License.
 #
 """
-CARS pipelines module init file
+CARS analysis pipeline module init file
 """
 
-# Imports needed in order to register pipeline for Pipeline factory
-from . import analysis  # noqa: F401
-from . import default  # noqa: F401
+# Cars imports
+from cars.pipelines.analysis import analysis  # noqa: F401

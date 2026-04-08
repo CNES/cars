@@ -101,6 +101,7 @@ def test_low_res_dsm_args():
             "sequential",
         )
         args.conf = filled_absolute_path_input
+        args.check = False
 
         with open(filled_absolute_path_input, "w", encoding="utf8") as fstream:
             json.dump(conf_, fstream, indent=2)
@@ -110,6 +111,7 @@ def test_low_res_dsm_args():
         # degraded cases injson
         args_bad_conf = args
         args_bad_conf.conf = absolute_data_path("input/cars_input/test.json")
+        args_bad_conf.check = False
         with pytest.raises(SystemExit) as exit_error:
             main_cli(args_bad_conf, dry_run=True)
         assert exit_error.type == SystemExit
@@ -135,6 +137,7 @@ def test_full_res_dsm_args():
             "sequential",
         )
         args.conf = filled_absolute_path_input
+        args.check = False
 
         with open(filled_absolute_path_input, "w", encoding="utf8") as fstream:
             json.dump(conf_, fstream, indent=2)
@@ -144,6 +147,7 @@ def test_full_res_dsm_args():
         # degraded cases injson
         args_bad_conf = args
         args_bad_conf.conf = absolute_data_path("input/cars_input/test.json")
+        args_bad_conf.check = False
         with pytest.raises(SystemExit) as exit_error:
             main_cli(args_bad_conf, dry_run=True)
         assert exit_error.type == SystemExit

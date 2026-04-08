@@ -168,6 +168,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 )
 
         # Init tie points pipelines
+        self.tie_point_save = False
         if TIE_POINTS in conf and conf[TIE_POINTS] is None:
             self.tie_points_pipelines = None
         else:
@@ -207,6 +208,10 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         ADVANCED
                     ]
                 )
+                if self.used_conf[TIE_POINTS][ADVANCED][
+                    adv_cst.SAVE_INTERMEDIATE_DATA
+                ]:
+                    self.tie_point_save = True
 
         # Check advanced parameters
         # TODO static method in the base class
@@ -2050,9 +2055,12 @@ class SurfaceModelingPipeline(PipelineTemplate):
         Clean temporary files and directory at the end of cars processing
         """
 
-        if not self.used_conf[PIPELINE][ADVANCED][
-            adv_cst.SAVE_INTERMEDIATE_DATA
-        ]:
+        if (
+            not self.used_conf[PIPELINE][ADVANCED][
+                adv_cst.SAVE_INTERMEDIATE_DATA
+            ]
+            and not self.tie_point_save
+        ):
             # delete everything in tile_processing if save_intermediate_data is
             # not activated
             self.cars_orchestrator.add_to_clean(

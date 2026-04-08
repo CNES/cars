@@ -27,6 +27,15 @@ RUN apt-get update && apt-get install -y \
     gfortran \
     && rm -rf /var/lib/apt/lists/*
 
+# WeasyPrint dependencies
+RUN apt-get update && apt-get install -y \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    && rm -rf /var/lib/apt/lists/*
+
 # Python 3.10
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet git python3.10-dev python3.10-venv \

@@ -70,7 +70,10 @@ dependencies = [
     "shareloc==0.2.12",
     "bulldozer-dtm==1.2.*",
     "xdem==0.2.*",
-    "geopandas"
+    "geopandas",
+    "pypdf",
+    "contextily",
+    "weasyprint<53"
 ]
 
 [project.urls]
