@@ -67,6 +67,7 @@ class PandoraLoader:
         use_cross_validation=True,
         denoise_disparity_map=False,
         used_band="b0",
+        classification_3sgm=None,
     ):
         """
         Init function of PandoraLoader
@@ -83,6 +84,8 @@ class PandoraLoader:
         :param denoise_disparity_map: true to add the disparity denoiser filter
         :param used_band: name of band used for correlation
         :type used_band: str
+        :param classification_3sgm: use 3SGM with classif (list of bands)
+        :type classification_3sgm: list[str] or None
         """
 
         if method_name is None:
@@ -198,6 +201,13 @@ class PandoraLoader:
             != "disparity_denoiser"
         ):
             conf["pipeline"].update(disparity_denoiser_conf)
+
+        if classification_3sgm:
+            conf["pipeline"]["optimization"]["optimization_method"] = "3sgm"
+            conf["pipeline"]["optimization"]["geometric_prior"] = {
+                "source": "classif",
+                "classes": classification_3sgm,
+            }
 
         if "band" not in conf["pipeline"]["matching_cost"]:
             conf["pipeline"]["matching_cost"]["band"] = used_band
@@ -390,6 +400,32 @@ class PandoraLoader:
         metadata_right = metadata_right.assign_coords(band_im=bands_right)
 
         user_cfg_pipeline = get_config_pipeline(user_cfg)
+
+        # check that if validation is cross_checking_*, both
+        # images have a classification band for 3SGM
+        validation_method = (
+            user_cfg_pipeline["pipeline"]
+            .get("validation", {})
+            .get("validation_method", None)
+        )
+        sgm_optimization_method = (
+            user_cfg_pipeline["pipeline"]
+            .get("optimization", {})
+            .get("optimization_method", None)
+        )
+
+        if validation_method is not None and validation_method.startswith(
+            "cross_checking"
+        ):
+            if sgm_optimization_method == "3sgm":
+                has_classif_left = bands_classif_left is not None
+                has_classif_right = bands_classif_right is not None
+                if not (has_classif_left and has_classif_right):
+                    raise ValueError(
+                        "When using 3SGM and cross-validation at the same time,"
+                        " both of the images should have a classification."
+                    )
+
         saved_schema = copy.deepcopy(
             pandora.matching_cost.matching_cost.AbstractMatchingCost.schema
         )

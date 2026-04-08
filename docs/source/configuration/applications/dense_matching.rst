@@ -205,12 +205,15 @@ Pandora Method
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
 | edges_3sgm                           | Use 3SGM in Pandora with edge mask as mode (when edges_mask is given as input)                 | bool        |                                 | True                  | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
+| classification_3sgm                  | Use 3SGM in Pandora with classification as mode (when classification is given as input)        | list[int]   | list of integer class IDs       | None                  | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------------+-----------------------+----------+
 
 .. note::
 
     * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
     * The cross-validation step supports two modes: fast and accurate. Setting the configuration to true or "fast" will use the fast method, while setting it to "accurate" will enable the accurate method.
     * When setting the method to pandora_auto, CARS will use a global classification map to select the optimal pandora configuration for dense matching.
+    * The ``classification_3sgm`` parameter is used over ``edges_3sgm`` when both are activated, as both can't be used simultaneously.
 
 The following table details the method-specific ``confidence_filtering`` parameter of Pandora.
 
