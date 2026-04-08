@@ -59,7 +59,6 @@ dependencies = [
     "urllib3",
     "laspy[laszip]",
     "pandora[sgm]==1.8.0",
-    "pandora_plugin_mccnn==1.3.6",
     "cars-rasterize==0.2.*",
     "cars-resample==0.1.*",
     "cars-filter==0.2.*",
@@ -113,7 +112,7 @@ docs = [
 
 # [pandora_mccnn] add heavy mccnn capability for dense matching pandora already install in main requires
 pandora_mccnn = [
-    "pandora_plugin_mccnn==1.3.5"
+    "pandora_plugin_mccnn==1.3.6"
 ]
 
 bundleadjustment = [
