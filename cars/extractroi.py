@@ -23,13 +23,19 @@ cars-extractroi: helper to extract region of interest from image product
 """
 
 import argparse
+import logging
 import os
 
 import numpy as np
 import rasterio as rio
 from affine import Affine
+from rasterio.rpc import RPC
 from shapely.geometry import box
-from shareloc.geomodels.rpc_writers import write_rio_rpc_as_rpb
+from shareloc.geomodels.rpc_readers import rpc_reader
+from shareloc.geomodels.rpc_writers import (
+    rpc_dict_to_rio_rpcs,
+    write_rio_rpc_as_rpb,
+)
 
 
 def is_bbx_in_image(bbx, image_dataset):
@@ -41,12 +47,17 @@ def is_bbx_in_image(bbx, image_dataset):
         image_dataset (rio.DatasetReader): Opened image dataset.
 
     """
-    image_box = box(0, 0, image_dataset.height, image_dataset.width)
+    img_bounds = image_dataset.bounds
+    min_height = min(img_bounds.bottom, img_bounds.top)
+    max_height = max(img_bounds.bottom, img_bounds.top)
+    min_width = min(img_bounds.left, img_bounds.right)
+    max_width = max(img_bounds.left, img_bounds.right)
+    image_box = box(min_height, min_width, max_height, max_width)
 
-    return image_box.contains(bbx)
+    return image_box.contains(bbx), image_box.intersects(bbx), image_box
 
 
-def get_slices_from_bbx(image_dataset, bbx, rpc_options):
+def get_slices_from_bbx(image_dataset, bbx, rpc_options, external_rpc=None):
     """get slices from bounding box
 
     Parameters:
@@ -57,9 +68,11 @@ def get_slices_from_bbx(image_dataset, bbx, rpc_options):
     Returns:
         tuple: The slices from the bounding box.
     """
-    transformer = rio.transform.RPCTransformer(
-        image_dataset.rpcs, **rpc_options
-    )
+    rpcs = image_dataset.rpcs
+    if external_rpc is not None:
+        rpcs = external_rpc
+
+    transformer = rio.transform.RPCTransformer(rpcs, **rpc_options)
     coordinates = [
         transformer.rowcol(bbx[0], bbx[1]),
         transformer.rowcol(bbx[2], bbx[1]),
@@ -69,14 +82,25 @@ def get_slices_from_bbx(image_dataset, bbx, rpc_options):
     coordinates = np.array(coordinates)
     (row_start, col_start) = np.amin(coordinates, axis=0)
     (row_stop, col_stop) = np.amax(coordinates, axis=0)
-    rows = (row_start, row_stop)
-    cols = (col_start, col_stop)
+    rows_global = (row_start, row_stop)
+    cols_global = (col_start, col_stop)
 
-    return rows, cols
+    x_origin = image_dataset.transform.c
+    y_origin = image_dataset.transform.f
+
+    rows_local = (rows_global[0] - y_origin, rows_global[1] - y_origin)
+    cols_local = (cols_global[0] - x_origin, cols_global[1] - x_origin)
+
+    return rows_local, cols_local
 
 
-def process_image_file(
-    bbx, input_image_path, output_image_path, rpb_file_path, rpc_options
+def process_image_file(  # pylint: disable=R0917
+    bbx,
+    input_image_path,
+    output_image_path,
+    rpb_file_path,
+    rpc_options,
+    external_rpc_file=None,
 ):
     """
     Processes an image file by extracting a region based on the given geometry.
@@ -88,19 +112,41 @@ def process_image_file(
         rpb_file_path (str): Path to save the .RPB file.
         rpc_options (dict): Options for GDALCreateRPCTransformer.
     """
+    external_rpc = None
+    if external_rpc_file is not None:
+        external_rpc_dict = rpc_reader(external_rpc_file)
+        rio_rpcs = rpc_dict_to_rio_rpcs(external_rpc_dict)
+
+        external_rpc = RPC(**rio_rpcs)
 
     with rio.open(input_image_path) as image_dataset:
-        if not image_dataset.rpcs:
+        if not image_dataset.rpcs and external_rpc is None:
             raise ValueError("Image dataset has no RPCs")
-        validate_bounding_box(bbx, image_dataset, rpc_options)
-        row, col = get_slices_from_bbx(image_dataset, bbx, rpc_options)
-        window = rio.windows.Window.from_slices(row, col)
+        validate_bounding_box(
+            bbx, image_dataset, rpc_options, external_rpc=external_rpc
+        )
+        rows, cols = get_slices_from_bbx(
+            image_dataset, bbx, rpc_options, external_rpc=external_rpc
+        )
+        row_start = rows[0]
+        row_stop = rows[1]
+        col_start = cols[0]
+        col_stop = cols[1]
+        window = rio.windows.Window(
+            col_off=col_start,
+            row_off=row_start,
+            width=(col_stop - col_start),
+            height=(row_stop - row_start),
+        )
+        window = window.intersection(
+            rio.windows.Window(0, 0, image_dataset.width, image_dataset.height)
+        )
         array = image_dataset.read(window=window)
         profile = image_dataset.profile
         profile["driver"] = "GTiff"
         profile["width"] = window.width
         profile["height"] = window.height
-        profile["transform"] = Affine.translation(
+        profile["transform"] = image_dataset.transform * Affine.translation(
             window.col_off, window.row_off
         )
         if "crs" in profile:
@@ -109,13 +155,16 @@ def process_image_file(
             # write data
             dst.write(array)
             # copy rpc
-            dst.rpcs = image_dataset.rpcs
+            if external_rpc is not None:
+                dst.rpcs = external_rpc
+            else:
+                dst.rpcs = image_dataset.rpcs
 
         if rpb_file_path is not None:
             create_rpb_file(image_dataset, rpb_file_path)
 
 
-def get_human_readable_bbox(image_dataset, rpc_options):
+def get_human_readable_bbox(image_dataset, rpc_options, external_rpc=None):
     """
     Get the human-readable bounding box from an image dataset.
 
@@ -127,10 +176,11 @@ def get_human_readable_bbox(image_dataset, rpc_options):
         tuple: The human-readable bounding box in the format
         (min_x, max_x, min_y, max_y).
     """
+    rpcs = image_dataset.rpcs
+    if external_rpc is not None:
+        rpcs = external_rpc
 
-    transformer = rio.transform.RPCTransformer(
-        image_dataset.rpcs, **rpc_options
-    )
+    transformer = rio.transform.RPCTransformer(rpcs, **rpc_options)
 
     human_readable_bbx = [
         transformer.xy(0, 0),
@@ -148,7 +198,7 @@ def get_human_readable_bbox(image_dataset, rpc_options):
     return min_x, max_x, min_y, max_y
 
 
-def validate_bounding_box(bbx, image_dataset, rpc_options):
+def validate_bounding_box(bbx, image_dataset, rpc_options, external_rpc=None):
     """
     Validate the bounding box coordinates.
 
@@ -158,20 +208,30 @@ def validate_bounding_box(bbx, image_dataset, rpc_options):
         rpc_options (dict): Options for GDALCreateRPCTransformer.
     """
 
-    transformer = rio.transform.RPCTransformer(
-        image_dataset.rpcs, **rpc_options
-    )
+    rpcs = image_dataset.rpcs
+    if external_rpc is not None:
+        rpcs = external_rpc
+
+    transformer = rio.transform.RPCTransformer(rpcs, **rpc_options)
     input_box = box(
         *transformer.rowcol(bbx[0], bbx[1]), *transformer.rowcol(bbx[2], bbx[3])
     )
-    if not is_bbx_in_image(input_box, image_dataset):
+    contains, intersects, _ = is_bbx_in_image(input_box, image_dataset)
+    if not contains:
         min_x, max_x, min_y, max_y = get_human_readable_bbox(
-            image_dataset, rpc_options
+            image_dataset, rpc_options, external_rpc=external_rpc
         )
-        raise ValueError(
-            f"Coordinates must be between "
+        msg = (
+            "Coordinates must be between "
             f"({min_x}, {min_y}) and ({max_x}, {max_y})"
         )
+        if intersects:
+            logging.error(msg)
+        else:
+            raise ValueError(
+                f"Coordinates must be between "
+                f"({min_x}, {min_y}) and ({max_x}, {max_y})"
+            )
 
 
 def create_rpb_file(image_dataset, rpb_filename):

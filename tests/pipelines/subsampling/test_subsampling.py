@@ -137,7 +137,7 @@ def test_subsampling(resolution):
         ).run()
 
         # Run CLI
-        main_cli(argparse.Namespace(conf=conf_path))
+        main_cli(argparse.Namespace(conf=conf_path, check=False))
 
         # Validation
         for out_dir in out_dirs.values():

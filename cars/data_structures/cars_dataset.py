@@ -608,6 +608,7 @@ def run_save_points(  # pylint: disable=too-many-positional-arguments
     save_by_pair=False,
     point_cloud_format="csv",
     overwrite_file_name=True,
+    nbits=None,  # pylint: disable=unused-argument
 ):
     """
     Save future result when arrived
