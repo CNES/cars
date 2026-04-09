@@ -3,7 +3,7 @@
 .. role:: raw-html(raw)
    :format: html
 
-CARS software conception
+Software conception
 ========================
 
 
