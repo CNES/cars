@@ -37,6 +37,8 @@ The surface modeling pipeline uses these applications:
 
   - :ref:`grid_generation <grid_generation_app>`
   - :ref:`grid_correction <grid_correction_app>`
+  - :ref:`dem_generation <dem_generation_app>`
+  - :ref:`ground_truth_reprojection <ground_truth_reprojection_app>` 
   - :ref:`resampling <resampling_app>`
   - :ref:`dense_matching <dense_matching_app>`
   - :ref:`dense_match_filling <dense_match_filling_app>`
