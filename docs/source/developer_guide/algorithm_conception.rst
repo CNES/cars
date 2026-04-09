@@ -5,12 +5,8 @@
 .. _algorithm_conception:
 
 =========================
-CARS Algorithm Conception
+Algorithm Conception
 =========================
-
-.. note::
-	Work in progress !
-
 
 
 .. toctree::
