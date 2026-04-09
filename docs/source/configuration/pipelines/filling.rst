@@ -20,6 +20,7 @@ Applications
 
 This pipeline uses the following applications : 
 
+- :ref:`dem_generation <dem_generation_app>`
 - :ref:`dsm_filling <dsm_filling_app>`
 - :ref:`auxiliary_filling <auxiliary_filling_app>`
 
