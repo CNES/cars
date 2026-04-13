@@ -38,7 +38,7 @@ classifiers = [
 requires-python = ">= 3.10"
 # cars packages dependencies
 dependencies = [
-    "numpy>=1.17.0",
+    "numpy>=2.0.0",
     "scipy>=1.7.1,!=1.10.0",
     "matplotlib",
     "affine",
