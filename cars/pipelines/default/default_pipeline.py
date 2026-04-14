@@ -628,6 +628,7 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         previous_out_dir = None
+        previous_res = None
         current_surface_modeling_out_dir = None
         updated_conf = {}
 
@@ -743,6 +744,11 @@ class DefaultPipeline(PipelineTemplate):
                             "tile_id": None,
                         }
 
+                if previous_res is not None:
+                    res_factor = previous_res / epipolar_res
+                else:
+                    res_factor = None
+
                 updated_pipeline = SurfaceModelingPipeline(
                     current_conf,
                     config_dir=self.config_dir,
@@ -750,7 +756,9 @@ class DefaultPipeline(PipelineTemplate):
                 updated_pipeline.run(
                     which_resolution=which_resolution,
                     working_res=epipolar_res,
+                    res_factor=res_factor,
                     log_dir=current_log_dir,
+                    previous_out_dir=previous_out_dir,
                 )
 
                 # Update metadata
@@ -762,6 +770,7 @@ class DefaultPipeline(PipelineTemplate):
 
                 # update previous out dir
                 previous_out_dir = current_surface_modeling_out_dir
+                previous_res = epipolar_res
 
                 # generate summary
                 log_wrapper.generate_summary(

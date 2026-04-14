@@ -118,8 +118,8 @@ class BasicSparseMatchingApplication(
             "elevation_delta_lower_bound": Or(int, float, None),
             "elevation_delta_upper_bound": Or(int, float, None),
             "tile_margin": And(int, lambda x: x > 0),
-            "epipolar_error_upper_bound": And(float, lambda x: x > 0),
-            "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
+            "epipolar_error_upper_bound": Or(float, str),
+            "epipolar_error_maximum_bias": Or(float, str),
             "minimum_nb_matches": And(int, lambda x: x > 0),
             "save_intermediate_data": bool,
             "disparity_bounds_estimation": dict,
@@ -131,8 +131,8 @@ class BasicSparseMatchingApplication(
             "elevation_delta_lower_bound": None,
             "elevation_delta_upper_bound": None,
             "tile_margin": 10,
-            "epipolar_error_upper_bound": 10.0,
-            "epipolar_error_maximum_bias": 50.0,
+            "epipolar_error_upper_bound": "auto",
+            "epipolar_error_maximum_bias": "auto",
             "minimum_nb_matches": 90,
             "save_intermediate_data": False,
             "disparity_bounds_estimation": {},
@@ -162,7 +162,45 @@ class BasicSparseMatchingApplication(
                 "for expected elevation delta"
             )
 
+        self.check_epipolar_error_values(used_conf)
+
         return used_conf
+
+    def check_epipolar_error_values(self, used_conf):
+        """check the epipolar_error values"""
+        epipolar_error_upper_bound = used_conf["epipolar_error_upper_bound"]
+        if isinstance(epipolar_error_upper_bound, str):
+            if epipolar_error_upper_bound != "auto":
+                raise RuntimeError(
+                    "The value of epipolar_error_upper_bound "
+                    "must be a float bigger than 0 or auto"
+                )
+
+        epipolar_error_maximum_bias = used_conf["epipolar_error_maximum_bias"]
+        if isinstance(epipolar_error_maximum_bias, str):
+            if epipolar_error_maximum_bias != "auto":
+                raise RuntimeError(
+                    "The value of epipolar_error_maximum_bias "
+                    "must be a float bigger than 0 or auto"
+                )
+
+        if (
+            isinstance(epipolar_error_upper_bound, float)
+            and epipolar_error_upper_bound <= 0
+        ):
+            raise RuntimeError(
+                "The value of epipolar_error_upper_bound "
+                "must be a float bigger than 0"
+            )
+
+        if (
+            isinstance(epipolar_error_maximum_bias, float)
+            and epipolar_error_maximum_bias < 0
+        ):
+            raise RuntimeError(
+                "The value of epipolar_error_maximum_bias "
+                "must be a float bigger or equal to 0"
+            )
 
     def get_required_bands(self):
         """
@@ -400,6 +438,7 @@ class BasicSparseMatchingApplication(
                 epipolar_median_shift
             )
 
+        # pylint: disable=invalid-unary-operand-type
         matches = matches[
             ((matches[:, 3] - matches[:, 1]) - epipolar_median_shift)
             >= -epipolar_error_upper_bound
@@ -470,7 +509,9 @@ class BasicSparseMatchingApplication(
                     pair_key: {
                         sm_cst.NUMBER_MATCHES_TAG: nb_matches,
                         sm_cst.RAW_NUMBER_MATCHES_TAG: raw_nb_matches,
-                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN: epi_error_mean,
+                        sm_cst.EPIPOLAR_ERROR_ESTIMATION: epi_error_mean,
+                        sm_cst.EPIPOLAR_ERROR_MAXIMUM_BIAS: epi_error_std,
+                        sm_cst.EPIPOLAR_ERROR_UPPER_BOUND: 2 * epi_error_std,
                         sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD: epi_error_std,
                         sm_cst.BEFORE_CORRECTION_EPI_ERROR_MAX: epi_error_max,
                     }

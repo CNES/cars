@@ -24,6 +24,7 @@ CARS tie points pipeline class file
 import logging
 import os
 
+import yaml
 from json_checker import Checker, Or
 
 from cars.applications.application import Application
@@ -379,12 +380,14 @@ class TiePointsPipeline(PipelineTemplate):
 
         return used_conf
 
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         args=None,  # pylint: disable=W0613
         log_dir=None,
         disp_range_grid=None,
         cars_orchestrator=None,
+        previous_dir=None,
+        res_factor=None,
     ):
         """
         Run pipeline
@@ -426,6 +429,60 @@ class TiePointsPipeline(PipelineTemplate):
             sensor_image_left,
             sensor_image_right,
         ) in list_sensor_pairs:
+
+            if previous_dir is not None:
+                path_metadata = os.path.join(previous_dir, "metadata.yaml")
+                with open(path_metadata, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+                    if (
+                        self.sparse_matching_app.epipolar_error_maximum_bias
+                        == "auto"
+                    ):
+                        self.sparse_matching_app.epipolar_error_maximum_bias = (
+                            data["applications"]["match_filtering"][pair_key][
+                                "epipolar_error_maximum_bias"
+                            ]
+                            * res_factor
+                        )
+
+                        self.used_conf[PIPELINE][APPLICATIONS][
+                            "sparse_matching"
+                        ]["epipolar_error_maximum_bias"] = "auto"
+
+                    if (
+                        self.sparse_matching_app.epipolar_error_upper_bound
+                        == "auto"
+                    ):
+                        self.sparse_matching_app.epipolar_error_upper_bound = (
+                            data["applications"]["match_filtering"][pair_key][
+                                "epipolar_error_upper_bound"
+                            ]
+                            * res_factor
+                        )
+
+                        self.used_conf[PIPELINE][APPLICATIONS][
+                            "sparse_matching"
+                        ]["epipolar_error_upper_bound"] = "auto"
+
+                    self.sparse_matching_app.epipolar_error_maximum_bias = min(
+                        self.sparse_matching_app.epipolar_error_maximum_bias, 50
+                    )
+
+                    self.sparse_matching_app.epipolar_error_upper_bound = min(
+                        self.sparse_matching_app.epipolar_error_upper_bound, 10
+                    )
+            else:
+                if (
+                    self.sparse_matching_app.epipolar_error_maximum_bias
+                    == "auto"
+                ):
+                    self.sparse_matching_app.epipolar_error_maximum_bias = 50
+
+                if (
+                    self.sparse_matching_app.epipolar_error_upper_bound
+                    == "auto"
+                ):
+                    self.sparse_matching_app.epipolar_error_upper_bound = 10
 
             if self.used_conf[INPUT][sens_cst.RECTIFICATION_GRIDS] is None:
                 # Generate rectification grids
@@ -480,7 +537,6 @@ class TiePointsPipeline(PipelineTemplate):
                 )
 
             else:
-
                 tile_width = None
                 tile_height = None
                 margins_fun = self.sparse_matching_app.get_margins_strip_fun()
