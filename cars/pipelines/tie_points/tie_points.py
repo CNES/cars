@@ -445,10 +445,6 @@ class TiePointsPipeline(PipelineTemplate):
                             * res_factor
                         )
 
-                        self.used_conf[PIPELINE][APPLICATIONS][
-                            "sparse_matching"
-                        ]["epipolar_error_maximum_bias"] = "auto"
-
                     if (
                         self.sparse_matching_app.epipolar_error_upper_bound
                         == "auto"
@@ -459,10 +455,6 @@ class TiePointsPipeline(PipelineTemplate):
                             ]
                             * res_factor
                         )
-
-                        self.used_conf[PIPELINE][APPLICATIONS][
-                            "sparse_matching"
-                        ]["epipolar_error_upper_bound"] = "auto"
 
                     self.sparse_matching_app.epipolar_error_maximum_bias = min(
                         self.sparse_matching_app.epipolar_error_maximum_bias, 50
