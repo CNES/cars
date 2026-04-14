@@ -175,6 +175,16 @@ def test_end2end_ventoux_meta_pipeline():
                     "input/phr_ventoux/srtm/N44E005.hgt"
                 ),
             },
+            "tie_points": {
+                "applications": {
+                    "all": {
+                        "sparse_matching": {
+                            "epipolar_error_maximum_bias": 50.0,
+                            "epipolar_error_upper_bound": 10.0,
+                        }
+                    }
+                }
+            },
             "surface_modeling": {
                 "applications": {
                     "all": {
@@ -280,6 +290,16 @@ def test_end2end_ventoux_with_filling():
                     "input/phr_ventoux/srtm/N44E005.hgt"
                 ),
                 "filling": {"fill_with_geoid": 3},
+            },
+            "tie_points": {
+                "applications": {
+                    "all": {
+                        "sparse_matching": {
+                            "epipolar_error_maximum_bias": 50.0,
+                            "epipolar_error_upper_bound": 10.0,
+                        }
+                    }
+                }
             },
             "surface_modeling": {
                 "applications": {
@@ -431,6 +451,16 @@ def test_end2end_ventoux_with_filling_in_4326():
                     "input/phr_ventoux/srtm/N44E005.hgt"
                 ),
                 "filling": {"fill_with_geoid": 3},
+            },
+            "tie_points": {
+                "applications": {
+                    "all": {
+                        "sparse_matching": {
+                            "epipolar_error_maximum_bias": 50.0,
+                            "epipolar_error_upper_bound": 10.0,
+                        }
+                    }
+                }
             },
             "surface_modeling": {
                 "applications": {
