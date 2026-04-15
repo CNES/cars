@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.1.0  Guided dense matching optimization (April 2026)
+
+### Added
+
+ - Support of edges as input to improve SGM optimization [#1238]
+ - CO3D and PHR image loaders [#1134]
+ - Approximated triangulation for performance map computing [#1294]
+ - Introduction of low-level tool concept to allow for easier customization of applications [#1284]
+ - Parameter to activate 3SGM directly from CARS configuration [#1340]
+ - New check pipeline for fast check of products
+
+### Changed
+
+ - Parallelization of DSM filling applications [#1297]
+ - Update Pandora to 1.8.0 [#1337]
+ - Update Bulldozer to 1.3.* [#1296]
+ - Refactorisation of developer documentation [#834]
+ - Require numpy>=2.0.0
+
+### Fixed
+
+ - Robustification of filling pipeline configuration check [#1328]
+ - Fix bug when several surface modeling steps are skipped
+
 ## 1.0.1 Bugfix release (March 2026)
 
 ### Fixed
