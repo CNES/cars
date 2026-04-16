@@ -26,7 +26,6 @@ import contextlib
 import logging
 import os
 import shutil
-import warnings
 
 import numpy as np
 import rasterio as rio
@@ -35,7 +34,6 @@ import yaml
 from bulldozer.pipeline.bulldozer_pipeline import dsm_to_dtm
 from json_checker import Checker, Or
 from pyproj import CRS
-from rasterio.errors import NodataShadowWarning
 from rasterio.windows import Window
 from rasterio.windows import transform as row_col_to_coords
 from shapely import Polygon
@@ -44,7 +42,7 @@ import cars.orchestrator.orchestrator as ocht
 from cars.applications.dem_generation.dem_generation_wrappers import (
     edit_transform,
 )
-from cars.core import inputs, preprocessing, projection, tiling
+from cars.core import preprocessing, projection, tiling
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -110,6 +108,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         dsm_file,
         classif_file,
         filling_file,
+        classif_values,
         dump_dir,
         roi_polys,
         roi_epsg,
@@ -322,6 +321,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                     old_dsm_path,
                     filling_file,
                     classif_file,
+                    classif_values,
                     dtm_path,
                     roi_polys,
                     roi_epsg,
@@ -338,6 +338,7 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     dsm_file,
     filling_file,
     classif_file,
+    classif_values,
     dtm_path,
     roi_polys,
     roi_epsg,
@@ -404,41 +405,30 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     with rio.open(dtm_path) as in_dtm:
         dtm = in_dtm.read(1, window=rasterio_window)
 
-    if classif_file is not None and os.path.exists(classif_file):
-        classif_descriptions = inputs.get_descriptions_bands(classif_file)
-    else:
-        classif_descriptions = []
     combined_mask = np.zeros_like(dsm).astype(np.uint8)
+    classif = None
+    classif_msk = None
+    dsm_msk = None
+    if classif_file is not None:
+        with rio.open(classif_file) as in_classif:
+            classif = in_classif.read(1, window=rasterio_window)
+            classif_msk = in_classif.read_masks(1, window=rasterio_window)
+    else:
+        with rio.open(dsm_file) as in_dsm:
+            dsm_msk = in_dsm.read_masks(1, window=rasterio_window)
     for label in classification:
-        if label in classif_descriptions:
-            index_classif = classif_descriptions.index(label) + 1
-            with rio.open(classif_file) as in_classif:
-                classif = in_classif.read(index_classif, window=rasterio_window)
-
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", NodataShadowWarning)
-                    classif_msk = in_classif.read_masks(
-                        1, window=rasterio_window
-                    )
-            classif[classif_msk == 0] = 0
-
-            filling_mask = np.logical_and(classif, roi_raster > 0)
+        if label in classif_values:
+            filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
         elif label == "nodata":
             if classif_file is not None and os.path.exists(classif_file):
-                with rio.open(classif_file) as in_classif:
-                    classif_msk = in_classif.read_masks(
-                        1, window=rasterio_window
-                    )
-                classif = ~classif_msk
+                filling_mask = ~classif_msk
             else:
-                with rio.open(dsm_file) as in_dsm:
-                    dsm_msk = in_dsm.read_masks(1, window=rasterio_window)
-                classif = ~dsm_msk
-            filling_mask = np.logical_and(classif, roi_raster > 0)
+                filling_mask = ~dsm_msk
+            filling_mask = np.logical_and(filling_mask, roi_raster > 0)
         else:
             logging.error(
                 "Label {} not found in classification "
-                "descriptions {}".format(label, classif_descriptions)
+                "descriptions {}".format(label, classif_values)
             )
             continue
         logging.info("Filling of {} with Bulldozer DTM".format(label))
