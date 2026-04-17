@@ -36,7 +36,7 @@ def fill_auxiliary(  # pylint: disable=too-many-positional-arguments
     altitudes,
     geom_plugin,
     number_of_color_bands,
-    number_of_classification_bands,
+    classification,
     texture_bands,
     texture_interpolator,
     use_mask=False,
@@ -59,8 +59,8 @@ def fill_auxiliary(  # pylint: disable=too-many-positional-arguments
     :type geom_plugin: AbstractGeometry
     :param number_of_color_bands: number of bands in the color image
     :type number_of_color_bands: int
-    :param number_of_classification_bands: number of bands in the color image
-    :type number_of_classification_bands: int
+    :param classification: whether classification is present
+    :type classification: bool
     :param texture_bands: list of band names used for output texture
     :type texture_bands: list
     :param texture_interpolator: scipy interpolator use to interpolate color
@@ -74,10 +74,8 @@ def fill_auxiliary(  # pylint: disable=too-many-positional-arguments
     filled_color = np.zeros((number_of_color_bands, len(altitudes)))
 
     filled_classif = None
-    if number_of_classification_bands:
-        filled_classif = np.zeros(
-            (number_of_classification_bands, len(altitudes)), dtype=bool
-        )
+    if classification:
+        filled_classif = np.zeros((1, len(altitudes)))
 
     weights = np.zeros(len(altitudes))
     full_weights = np.zeros(len(altitudes))
@@ -106,7 +104,6 @@ def fill_auxiliary(  # pylint: disable=too-many-positional-arguments
                 altitudes,
                 geom_plugin,
                 number_of_color_bands,
-                number_of_classification_bands,
                 texture_bands,
                 texture_interpolator,
                 not_interpolated_mask=None,
@@ -132,7 +129,6 @@ def fill_auxiliary(  # pylint: disable=too-many-positional-arguments
                     altitudes,
                     geom_plugin,
                     number_of_color_bands,
-                    number_of_classification_bands,
                     texture_bands,
                     texture_interpolator,
                     not_interpolated_mask,
@@ -166,7 +162,6 @@ def fill_from_one_sensor(  # pylint: disable=too-many-positional-arguments  # no
     altitudes,
     geom_plugin,
     number_of_color_bands,
-    number_of_classification_bands,
     texture_bands,
     texture_interpolator,
     not_interpolated_mask=None,
@@ -412,64 +407,49 @@ def fill_from_one_sensor(  # pylint: disable=too-many-positional-arguments  # no
             weights[interpolated_mask] += 1
 
     if filled_classif is not None and sensor.get("classification"):
-        if number_of_classification_bands == len(
-            sensor["classification"]["values"]
-        ):
-            with rio.open(
-                sensor["classification"]["path"]
-            ) as sensor_classif_image:
-
-                first_row = np.floor(
-                    max(
-                        np.min(ind_rows_sensor) - classif_interpolator_margin, 0
-                    )
+        with rio.open(sensor["classification"]["path"]) as sensor_classif_image:
+            first_row = np.floor(
+                max(np.min(ind_rows_sensor) - classif_interpolator_margin, 0)
+            )
+            last_row = np.ceil(
+                min(
+                    np.max(ind_rows_sensor) + classif_interpolator_margin,
+                    sensor_classif_image.height,
                 )
-                last_row = np.ceil(
-                    min(
-                        np.max(ind_rows_sensor) + classif_interpolator_margin,
-                        sensor_classif_image.height,
-                    )
+            )
+            first_col = np.floor(
+                max(np.min(ind_cols_sensor) - classif_interpolator_margin, 0)
+            )
+            last_col = np.ceil(
+                min(
+                    np.max(ind_cols_sensor) + classif_interpolator_margin,
+                    sensor_classif_image.width,
                 )
-                first_col = np.floor(
-                    max(
-                        np.min(ind_cols_sensor) - classif_interpolator_margin, 0
-                    )
-                )
-                last_col = np.ceil(
-                    min(
-                        np.max(ind_cols_sensor) + classif_interpolator_margin,
-                        sensor_classif_image.width,
-                    )
-                )
-
-            rio_window = rio.windows.Window.from_slices(
-                (first_row, last_row),
-                (first_col, last_col),
             )
 
-            sensor_points = (
-                np.arange(first_row, last_row),
-                np.arange(first_col, last_col),
-            )
+        rio_window = rio.windows.Window.from_slices(
+            (first_row, last_row),
+            (first_col, last_col),
+        )
 
-            classif_data = rio.open(sensor["classification"]["path"]).read(
-                1, window=rio_window
-            )
+        sensor_points = (
+            np.arange(first_row, last_row),
+            np.arange(first_col, last_col),
+        )
 
-            for output_band, value in enumerate(
-                sensor["classification"]["values"]
-            ):
-                binary_band_data = classif_data == value
+        classif_data = rio.open(sensor["classification"]["path"]).read(
+            1, window=rio_window
+        )
 
-                filled_classif[output_band, :] = np.logical_or(
-                    filled_classif[output_band, :],
-                    interpolate.interpn(
-                        sensor_points,
-                        binary_band_data,
-                        (ind_rows_sensor, ind_cols_sensor),
-                        bounds_error=False,
-                        method=classif_interpolator,
-                    ),
-                )
+        filled_classif[0, :] = np.maximum(
+            filled_classif[0, :],
+            interpolate.interpn(
+                sensor_points,
+                classif_data,
+                (ind_rows_sensor, ind_cols_sensor),
+                bounds_error=False,
+                method=classif_interpolator,
+            ),
+        )
 
     return output_not_interpolated_mask, all_values

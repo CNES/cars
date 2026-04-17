@@ -443,6 +443,7 @@ class FillingPipeline(PipelineTemplate):
                 new_filling_conf,
                 append_classification=True,
             )
+            filling_applications = dict(sorted(filling_applications.items()))
 
         return filling_applications
 
@@ -627,13 +628,7 @@ class FillingPipeline(PipelineTemplate):
             else None
         )
 
-        first_key = list(inputs_conf[sens_cst.SENSORS].keys())[0]
-        input_classif = inputs_conf[sens_cst.SENSORS][first_key][
-            sens_cst.INPUT_CLASSIFICATION
-        ]
-        classif_values = []
-        if input_classif is not None:
-            classif_values = list(map(str, input_classif["values"]))
+        classif_values = self.used_classif_values_for_filling
 
         classif_file_name = (
             self.dsm_to_fill["classification"]
