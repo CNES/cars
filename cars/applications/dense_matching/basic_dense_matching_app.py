@@ -64,7 +64,7 @@ class BasicDenseMatchingApplication(
     dense matching methods
     """
 
-    def __init__(self, scaling_coeff, conf=None):
+    def __init__(self, conf=None):
 
         self.schema = {
             "application": And(str, lambda x: x in self.available_applications),
@@ -85,7 +85,7 @@ class BasicDenseMatchingApplication(
             "required_bands": [str],
         }
 
-        super().__init__(scaling_coeff, conf=conf)
+        super().__init__(conf=conf)
 
         self.used_config["application"] = "basic"
 
