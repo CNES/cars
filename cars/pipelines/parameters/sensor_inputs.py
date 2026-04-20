@@ -60,6 +60,10 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
 
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
 
+    overloaded_conf[sens_cst.IGNORE_ROI_DURING_APRIORI] = conf.get(
+        sens_cst.IGNORE_ROI_DURING_APRIORI, False
+    )
+
     overloaded_conf[pipeline_cst.DSM_TO_FILL] = conf.get(
         pipeline_cst.DSM_TO_FILL, None
     )
@@ -91,6 +95,7 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
         sens_cst.LOW_RES_DSM: Or(str, None),
         sens_cst.ROI: Or(str, dict, None),
+        sens_cst.IGNORE_ROI_DURING_APRIORI: Or(bool, False),
         sens_cst.LOADERS: dict,
         sens_cst.FILLING: dict,
         pipeline_cst.DSM_TO_FILL: Or(str, dict, None),

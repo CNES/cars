@@ -33,6 +33,7 @@ INITIAL_ELEVATION = "initial_elevation"
 LOW_RES_DSM = "low_res_dsm"
 
 ROI = "roi"
+IGNORE_ROI_DURING_APRIORI = "ignore_roi_during_a_priori"
 GEOID = "geoid"
 DEM_PATH = "dem"
 LOADERS = "loaders"

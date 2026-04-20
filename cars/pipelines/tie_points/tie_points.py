@@ -56,6 +56,8 @@ class TiePointsPipeline(PipelineTemplate):
     Tie points pipeline
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     def __init__(self, conf, config_dir=None):
         """
         Creates pipeline
@@ -116,6 +118,7 @@ class TiePointsPipeline(PipelineTemplate):
         self.used_conf[PIPELINE][ADVANCED] = advanced
         self.resampling_tile_width = advanced["resampling_tile_width"]
         self.resampling_tile_height = advanced["resampling_tile_height"]
+        self.epipolar_roi_margin_factor = advanced["epipolar_roi_margin_factor"]
 
         # Check conf output
         output = self.check_output(conf[OUTPUT])
@@ -267,6 +270,10 @@ class TiePointsPipeline(PipelineTemplate):
             "resampling_tile_height", 60
         )
 
+        overloaded_conf["epipolar_roi_margin_factor"] = conf.get(
+            "epipolar_roi_margin_factor", 0.2
+        )
+
         overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
             adv_cst.SAVE_INTERMEDIATE_DATA, False
         )
@@ -291,6 +298,7 @@ class TiePointsPipeline(PipelineTemplate):
             adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
             "resampling_tile_width": int,
             "resampling_tile_height": int,
+            "epipolar_roi_margin_factor": float,
         }
 
         checker_advanced_parameters = Checker(schema)
@@ -381,6 +389,25 @@ class TiePointsPipeline(PipelineTemplate):
 
         return used_conf
 
+    def expand_roi(self, roi, margin_ratio=0.2):
+        """
+        Appli epipolar margin to the given roi.
+        """
+        x_min, x_max, y_min, y_max = roi
+
+        width = x_max - x_min
+        height = y_max - y_min
+
+        margin_x = (margin_ratio / 2) * width
+        margin_y = (margin_ratio / 2) * height
+
+        return (
+            x_min - margin_x,
+            y_min - margin_y,
+            x_max + margin_x,
+            y_max + margin_y,
+        )
+
     def update_via_metadata_file(self, previous_dir, pair_key, res_factor):
         """
         Update the eipolar error values via the metatdata.yaml file
@@ -426,6 +453,7 @@ class TiePointsPipeline(PipelineTemplate):
         args=None,  # pylint: disable=W0613
         log_dir=None,
         disp_range_grid=None,
+        epipolar_roi=None,
         cars_orchestrator=None,
         previous_dir=None,
         res_factor=None,
@@ -457,6 +485,10 @@ class TiePointsPipeline(PipelineTemplate):
             inherent_orchestrator = True
 
         # Run applications
+        if epipolar_roi is not None:
+            self.expand_roi(
+                epipolar_roi, margin_ratio=self.epipolar_roi_margin_factor
+            )
 
         # Run grid generation
         # We generate grids with dem if it is provided.
@@ -550,6 +582,7 @@ class TiePointsPipeline(PipelineTemplate):
                 margins_fun=margins_fun,
                 tile_width=tile_width,
                 tile_height=tile_height,
+                epipolar_roi=epipolar_roi,
                 required_bands=required_bands,
             )
 

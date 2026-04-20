@@ -64,7 +64,7 @@ class BasicDenseMatchingApplication(
     dense matching methods
     """
 
-    def __init__(self, conf=None):
+    def __init__(self, scaling_coeff, conf=None):
 
         self.schema = {
             "application": And(str, lambda x: x in self.available_applications),
@@ -85,7 +85,7 @@ class BasicDenseMatchingApplication(
             "required_bands": [str],
         }
 
-        super().__init__(conf=conf)
+        super().__init__(scaling_coeff, conf=conf)
 
         self.used_config["application"] = "basic"
 
@@ -131,8 +131,8 @@ class BasicDenseMatchingApplication(
         default_conf = {
             "application": "basic",
             "save_intermediate_data": save_intermediate_data,
-            "min_epi_tile_size": 300,
-            "max_epi_tile_size": 1500,
+            "min_epi_tile_size": int(300 / self.scaling_coeff),
+            "max_epi_tile_size": int(1500 / self.scaling_coeff),
             "epipolar_tile_margin_in_percent": 60,
             "min_elevation_offset": None,
             "max_elevation_offset": None,

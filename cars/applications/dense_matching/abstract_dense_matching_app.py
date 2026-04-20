@@ -27,7 +27,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
-from cars.applications.application_template import ApplicationTemplate
+from cars.applications.application_template import ScalingApplicationTemplate
 from cars.applications.dense_matching.methods import (
     abstract_dense_matching_method as adm,
 )
@@ -36,7 +36,9 @@ AbstractDenseMatchingMethod = adm.AbstractDenseMatchingMethod
 
 
 @Application.register("dense_matching")
-class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
+class AbstractDenseMatchingApplication(
+    ScalingApplicationTemplate, metaclass=ABCMeta
+):
     """
     AbstractDenseMatchingApplication
     """
@@ -45,7 +47,7 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
     default_application = "basic"
     default_method = "pandora_auto"
 
-    def __new__(cls, conf=None):
+    def __new__(cls, scaling_coeff, conf=None):
 
         matching_application = cls.default_application
         if bool(conf) is False or "application" not in conf:
@@ -80,7 +82,7 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
         for name in short_name:
             cls.available_applications[name] = cls
 
-    def __init__(self, conf=None):
+    def __init__(self, scaling_coeff, conf=None):
 
         if conf is None:
             conf = {}
@@ -90,7 +92,7 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
         # pylint: disable=abstract-class-instantiated
         self.dense_matching_method = AbstractDenseMatchingMethod(conf)
 
-        super().__init__(conf=conf)
+        super().__init__(scaling_coeff, conf=conf)
 
     @abstractmethod
     def get_optimal_tile_size(self, disp_range_grid, max_ram_per_worker):
