@@ -561,8 +561,8 @@ class TiePointsPipeline(PipelineTemplate):
                 )
 
             else:
-                tile_width = None
-                tile_height = None
+                tile_width = 500
+                tile_height = 500
                 margins_fun = self.sparse_matching_app.get_margins_strip_fun()
 
             (
