@@ -845,6 +845,112 @@ def test_gizeh_res4_with_roi():
                 }
             ],
             "crs": {"type": "name", "properties": {"name": "EPSG:32636"}},
+            "ignore_roi_during_a_priori": True,
+        }
+
+        conf["input"]["roi"] = roi_geo_json
+        out_dir = conf["output"]["directory"]
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_surface_modeling_gizeh_res4_with_roi.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_surface_modeling_gizeh_res4_with_roi.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_res4_with_a_priori_roi():
+    """
+    End to end pipeline processing
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img1_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/img2_res4.tif"
+                        ),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+        }
+        roi_geo_json = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "coordinates": [
+                            [
+                                [320000, 3317850],
+                                [320000, 3318000],
+                                [320200, 3318000],
+                                [320200, 3317850],
+                                [320000, 3317850],
+                            ]
+                        ],
+                        "type": "Polygon",
+                    },
+                }
+            ],
+            "crs": {"type": "name", "properties": {"name": "EPSG:32636"}},
         }
 
         conf["input"]["roi"] = roi_geo_json
