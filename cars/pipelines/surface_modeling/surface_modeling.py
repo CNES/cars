@@ -259,24 +259,25 @@ class SurfaceModelingPipeline(PipelineTemplate):
         ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff, bounds)
 
         # Get the right roi coord system
-        if "crs" not in inputs["roi"]:
-            crs = CRS.from_epsg(4326)
-        else:
-            crs = CRS(inputs["roi"]["crs"]["properties"]["name"])
+        if inputs["roi"] is not None:
+            if "crs" not in inputs["roi"]:
+                crs = CRS.from_epsg(4326)
+            else:
+                crs = CRS(inputs["roi"]["crs"]["properties"]["name"])
 
-        xmin = bounds[0]
-        ymin = bounds[1]
-        utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
-        conversion_factor = preprocessing.get_conversion_factor(
-            bounds, utm_epsg, crs.to_epsg()
-        )
-        res_roi_epsg = output["resolution"] / conversion_factor
+            xmin = bounds[0]
+            ymin = bounds[1]
+            utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+            conversion_factor = preprocessing.get_conversion_factor(
+                bounds, utm_epsg, crs.to_epsg()
+            )
+            res_roi_epsg = output["resolution"] / conversion_factor
 
-        terrain_margin = 10 * self.scaling_coeff * res_roi_epsg
-        self.apply_margin_to_roi(
-            inputs["roi"]["features"][0]["geometry"]["coordinates"][0],
-            terrain_margin,
-        )
+            terrain_margin = 10 * self.scaling_coeff * res_roi_epsg
+            self.apply_margin_to_roi(
+                inputs["roi"]["features"][0]["geometry"]["coordinates"][0],
+                terrain_margin,
+            )
 
         # Get ROI
         (
@@ -1106,8 +1107,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     disp_min_sparse = disp_range_grid["global_min"]
                     disp_max_sparse = disp_range_grid["global_max"]
                 else:
-                    disp_min_sparse = -20
-                    disp_max_sparse = 30
+                    disp_min_sparse = self.elevation_delta_lower_bound
+                    disp_max_sparse = self.elevation_delta_upper_bound
 
                 epipolar_roi = None
                 ignore_roi_during_a_priori = inputs[

@@ -538,9 +538,9 @@ class TiePointsPipeline(PipelineTemplate):
             # Get required bands of resampling
             required_bands = self.sparse_matching_app.get_required_bands()
 
+            tile_width = self.resampling_tile_width
+            tile_height = self.resampling_tile_height
             if disp_range_grid is not None:
-                tile_width = self.resampling_tile_width
-                tile_height = self.resampling_tile_height
                 margins_fun = self.sparse_matching_app.get_margins_tile_fun(
                     grid_left, disp_range_grid
                 )
@@ -561,8 +561,6 @@ class TiePointsPipeline(PipelineTemplate):
                 )
 
             else:
-                tile_width = 500
-                tile_height = 500
                 margins_fun = self.sparse_matching_app.get_margins_strip_fun()
 
             (
