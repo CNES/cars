@@ -27,6 +27,7 @@ import os
 import yaml
 from json_checker import Checker, Or
 
+import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications.application import Application
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
@@ -440,7 +441,7 @@ class TiePointsPipeline(PipelineTemplate):
                     ):
                         self.sparse_matching_app.epipolar_error_maximum_bias = (
                             data["applications"]["match_filtering"][pair_key][
-                                "epipolar_error_maximum_bias"
+                                sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD
                             ]
                             * res_factor
                         )
@@ -450,8 +451,9 @@ class TiePointsPipeline(PipelineTemplate):
                         == "auto"
                     ):
                         self.sparse_matching_app.epipolar_error_upper_bound = (
-                            data["applications"]["match_filtering"][pair_key][
-                                "epipolar_error_upper_bound"
+                            2
+                            * data["applications"]["match_filtering"][pair_key][
+                                sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD
                             ]
                             * res_factor
                         )

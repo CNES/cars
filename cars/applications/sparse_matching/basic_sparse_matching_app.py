@@ -509,9 +509,7 @@ class BasicSparseMatchingApplication(
                     pair_key: {
                         sm_cst.NUMBER_MATCHES_TAG: nb_matches,
                         sm_cst.RAW_NUMBER_MATCHES_TAG: raw_nb_matches,
-                        sm_cst.EPIPOLAR_ERROR_ESTIMATION: epi_error_mean,
-                        sm_cst.EPIPOLAR_ERROR_MAXIMUM_BIAS: epi_error_std,
-                        sm_cst.EPIPOLAR_ERROR_UPPER_BOUND: 2 * epi_error_std,
+                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN: epi_error_mean,
                         sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD: epi_error_std,
                         sm_cst.BEFORE_CORRECTION_EPI_ERROR_MAX: epi_error_max,
                     }
