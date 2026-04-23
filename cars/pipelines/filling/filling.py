@@ -107,7 +107,7 @@ class FillingPipeline(PipelineTemplate):
         self.filling_dir = os.path.join(self.out_dir, "filling")
 
         # Check input
-        conf[INPUT] = self.check_inputs(conf)
+        conf[INPUT] = self.check_inputs(conf, config_dir=config_dir)
 
         pipeline_conf = conf.get(PIPELINE, {})
 
@@ -190,7 +190,7 @@ class FillingPipeline(PipelineTemplate):
         checker_inputs = Checker(pipeline_schema)
         checker_inputs.validate(conf[PIPELINE])
 
-    def check_inputs(self, conf, config_json_dir=None):
+    def check_inputs(self, conf, config_dir=None):
         """
         Check the inputs given
 
@@ -204,7 +204,7 @@ class FillingPipeline(PipelineTemplate):
         :rtype: dict
         """
         return sensor_inputs.sensors_check_inputs(
-            conf[INPUT], config_dir=config_json_dir
+            conf[INPUT], config_dir=config_dir
         )
 
     def check_output(self, conf):

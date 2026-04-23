@@ -103,7 +103,7 @@ class SubsamplingPipeline(PipelineTemplate):
         pipeline_conf = conf.get(PIPELINE, {})
 
         # Check input
-        conf[INPUT] = self.check_inputs(conf[INPUT], config_json_dir=config_dir)
+        conf[INPUT] = self.check_inputs(conf[INPUT], config_dir=config_dir)
 
         # check advanced
         conf[PIPELINE][ADVANCED] = self.check_advanced(
@@ -145,7 +145,7 @@ class SubsamplingPipeline(PipelineTemplate):
         checker_inputs = Checker(pipeline_schema)
         checker_inputs.validate(conf[PIPELINE])
 
-    def check_inputs(self, conf, config_json_dir=None):
+    def check_inputs(self, conf, config_dir=None):
         """
         Check the inputs given
 
@@ -158,9 +158,7 @@ class SubsamplingPipeline(PipelineTemplate):
         :return: overloader inputs
         :rtype: dict
         """
-        return sensor_inputs.sensors_check_inputs(
-            conf, config_dir=config_json_dir
-        )
+        return sensor_inputs.sensors_check_inputs(conf, config_dir=config_dir)
 
     def check_output(self, conf):
         """
