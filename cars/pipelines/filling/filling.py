@@ -150,7 +150,8 @@ class FillingPipeline(PipelineTemplate):
         )
         # Used classification values, for filling -> will be masked
         self.used_classif_values_for_filling = self.get_classif_values_filling(
-            self.used_conf[INPUT]
+            self.used_conf[INPUT],
+            self.used_conf[APPLICATIONS],
         )
         self.dump_dir = os.path.join(self.filling_dir, "dump_dir")
 
@@ -492,31 +493,35 @@ class FillingPipeline(PipelineTemplate):
 
         return result
 
-    def get_classif_values_filling(self, inputs_conf):
+    def get_classif_values_filling(self, inputs_conf, app_conf):
         """
         Get values in classif, used for filling
 
         :param inputs_conf: inputs
         :type inputs_conf: dict
+        :param app_conf: applications
+        :type app_conf: dict
 
         :return: list of values
         :rtype: list
         """
 
         if (
-            sens_cst.FILLING not in inputs_conf
-            or inputs_conf[sens_cst.FILLING] is None
+            sens_cst.FILLING in inputs_conf
+            and inputs_conf[sens_cst.FILLING] is not None
         ):
-            logging.info("No filling in input configuration")
-            return None
-
-        filling_classif_values = []
-        for _, classif_values in inputs_conf[sens_cst.FILLING].items():
-            # Add new value to filling bands
-            if classif_values is not None:
-                if isinstance(classif_values, str):
-                    classif_values = [classif_values]
-                filling_classif_values += classif_values
+            filling_classif_values = []
+            for _, classif_values in inputs_conf[sens_cst.FILLING].items():
+                # Add new value to filling bands
+                if classif_values is not None:
+                    if isinstance(classif_values, str):
+                        classif_values = [classif_values]
+                    filling_classif_values += classif_values
+        for app_key in app_conf:
+            if app_conf[app_key] is None:
+                continue
+            if "classification" in app_conf[app_key]:
+                filling_classif_values += app_conf[app_key]["classification"]
 
         simplified_list = list(OrderedDict.fromkeys(filling_classif_values))
         res_as_string_list = [str(value) for value in simplified_list]
