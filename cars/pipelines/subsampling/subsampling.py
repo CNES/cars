@@ -88,6 +88,9 @@ class SubsamplingPipeline(PipelineTemplate):
         if config_dir is not None:
             config_dir = os.path.abspath(config_dir)
 
+        # metadata
+        self.metadata = None
+
         # Check global conf
         self.check_global_schema(conf)
 
@@ -339,6 +342,8 @@ class SubsamplingPipeline(PipelineTemplate):
                 out_cst.INFO_FILENAME,
             ),
         ) as self.cars_orchestrator:
+            # link metadata
+            self.metadata = self.cars_orchestrator.out_yaml
             for res in self.resolutions:
                 if res != 1:
                     conf_to_save = copy.deepcopy(self.used_conf)

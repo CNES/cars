@@ -131,6 +131,9 @@ class DefaultPipeline(PipelineTemplate):
         # Check global conf
         self.check_global_schema(conf)
 
+        # init global metadata
+        self.metadata = {}
+
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
         conf[PIPELINE] = self.check_pipeline(conf)
@@ -644,6 +647,11 @@ class DefaultPipeline(PipelineTemplate):
                 log_dir=current_log_dir,
             )
 
+            # Update metadata
+            self.metadata[pipeline_cst.SUBSAMPLING] = (
+                subsampling_pipeline.metadata
+            )
+
             # generate summary
             log_wrapper.generate_summary(
                 current_log_dir,
@@ -745,6 +753,13 @@ class DefaultPipeline(PipelineTemplate):
                     log_dir=current_log_dir,
                 )
 
+                # Update metadata
+                if pipeline_cst.SURFACE_MODELING not in self.metadata:
+                    self.metadata[pipeline_cst.SURFACE_MODELING] = {}
+                self.metadata[pipeline_cst.SURFACE_MODELING][
+                    str(epipolar_res)
+                ] = updated_pipeline.metadata
+
                 # update previous out dir
                 previous_out_dir = current_surface_modeling_out_dir
 
@@ -778,6 +793,9 @@ class DefaultPipeline(PipelineTemplate):
             merging_conf = self.construct_merging_conf(self.used_conf)
             merging_pipeline = MergingPipeline(merging_conf, self.config_dir)
             merging_pipeline.run()
+
+            # Update metadata
+            self.metadata[pipeline_cst.MERGING] = merging_pipeline.metadata
 
             # generate summary
             log_wrapper.generate_summary(
@@ -846,6 +864,9 @@ class DefaultPipeline(PipelineTemplate):
                 log_dir=current_log_dir,
             )
 
+            # Update metadata
+            self.metadata[pipeline_cst.FILLING] = filling_pipeline.metadata
+
             # generate summary
             log_wrapper.generate_summary(
                 current_log_dir,
@@ -877,6 +898,11 @@ class DefaultPipeline(PipelineTemplate):
                 log_dir=current_log_dir,
             )
 
+            # Update metadata
+            self.metadata[pipeline_cst.FORMATTING] = (
+                formatting_pipeline.metadata
+            )
+
             # generate summary
             log_wrapper.generate_summary(
                 current_log_dir,
@@ -894,6 +920,12 @@ class DefaultPipeline(PipelineTemplate):
         cars_dataset.save_dict(
             full_used_conf,
             os.path.join(self.out_dir, "global_used_conf.yaml"),
+        )
+
+        # Save metadata file
+        cars_dataset.save_dict(
+            self.metadata,
+            os.path.join(self.out_dir, "metadata.yaml"),
         )
 
         # Merge profiling in pdf

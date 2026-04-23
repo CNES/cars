@@ -74,6 +74,8 @@ class MergingPipeline(PipelineTemplate):
 
         # Used conf
         self.used_conf = {}
+        # metadata
+        self.metadata = None
 
         # Transform relative path to absolute path
         if config_dir is not None:
@@ -326,6 +328,8 @@ class MergingPipeline(PipelineTemplate):
                 out_cst.INFO_FILENAME,
             ),
         ) as cars_orchestrator:
+            # link metadata
+            self.metadata = cars_orchestrator.out_yaml
 
             dsms_merging_dump_dir = os.path.join(self.dump_dir, "dsms_merging")
 

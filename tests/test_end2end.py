@@ -140,6 +140,10 @@ def test_end2end_gizeh_meta_pipeline():
             ),
         )
 
+        # Check metadata file
+        metadata_path = os.path.join(out_dir, "metadata.yaml")
+        assert os.path.isfile(metadata_path)
+
 
 @pytest.mark.end2end_tests
 def test_end2end_ventoux_meta_pipeline():
@@ -367,6 +371,28 @@ def test_end2end_ventoux_with_filling():
                 NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
             ),
         )
+
+        # Check metadata file
+        metadata_path = os.path.join(out_dir, "metadata.yaml")
+        assert os.path.isfile(metadata_path)
+        with open(metadata_path, encoding="utf-8") as metadata_file:
+            metadata_dict = yaml.safe_load(metadata_file)
+            assert "surface_modeling" in metadata_dict
+            assert "filling" in metadata_dict
+            assert "formatting" in metadata_dict
+            assert "subsampling" in metadata_dict
+            assert (
+                "before_correction_epi_error_mean"
+                in metadata_dict["surface_modeling"]["1"]["applications"][
+                    "match_filtering"
+                ]["image1_image2"]
+            )
+            assert (
+                "disp_to_alt_ratio"
+                in metadata_dict["surface_modeling"]["1"]["applications"][
+                    "grid_generation"
+                ]["image1_image2"]
+            )
 
 
 @pytest.mark.end2end_tests

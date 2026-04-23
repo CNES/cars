@@ -98,6 +98,9 @@ class FillingPipeline(PipelineTemplate):
         if config_dir is not None:
             config_dir = os.path.abspath(config_dir)
 
+        # metadata
+        self.metadata = None
+
         # Check global conf
         self.check_global_schema(conf)
 

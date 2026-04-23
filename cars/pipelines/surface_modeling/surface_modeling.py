@@ -122,6 +122,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
         # refined conf
         self.refined_conf = {}
 
+        # metadata
+        self.metadata = None
+
         # Transform relative path to absolute path
         if config_dir is not None:
             config_dir = os.path.abspath(config_dir)
@@ -2118,6 +2121,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 out_cst.INFO_FILENAME,
             ),
         ) as self.cars_orchestrator:
+            # link metadata
+            self.metadata = self.cars_orchestrator.out_yaml
             # initialize out_json
             self.cars_orchestrator.update_out_info({"version": __version__})
 
