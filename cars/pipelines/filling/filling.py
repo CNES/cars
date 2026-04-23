@@ -524,7 +524,9 @@ class FillingPipeline(PipelineTemplate):
                 filling_classif_values += app_conf[app_key]["classification"]
 
         simplified_list = list(OrderedDict.fromkeys(filling_classif_values))
-        res_as_string_list = [str(value) for value in simplified_list]
+        res_as_string_list = [
+            str(value) for value in simplified_list if value != "nodata"
+        ]
         return res_as_string_list
 
     @cars_profile(name="merge filling bands", interval=0.5)
