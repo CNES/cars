@@ -87,6 +87,10 @@ class BasicSparseMatchingApplication(
             "epipolar_error_maximum_bias"
         ]
 
+        self.epipolar_error_estimation = self.used_config[
+            "epipolar_error_estimation"
+        ]
+
         self.minimum_nb_matches = self.used_config["minimum_nb_matches"]
         self.decimation_factor = self.used_config["decimation_factor"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -120,6 +124,7 @@ class BasicSparseMatchingApplication(
             "tile_margin": And(int, lambda x: x > 0),
             "epipolar_error_upper_bound": Or(float, str),
             "epipolar_error_maximum_bias": Or(float, str),
+            "epipolar_error_estimation": Or(float, str),
             "minimum_nb_matches": And(int, lambda x: x > 0),
             "save_intermediate_data": bool,
             "disparity_bounds_estimation": dict,
@@ -133,6 +138,7 @@ class BasicSparseMatchingApplication(
             "tile_margin": 10,
             "epipolar_error_upper_bound": "auto",
             "epipolar_error_maximum_bias": "auto",
+            "epipolar_error_estimation": "auto",
             "minimum_nb_matches": 90,
             "save_intermediate_data": False,
             "disparity_bounds_estimation": {},
@@ -182,6 +188,14 @@ class BasicSparseMatchingApplication(
                 raise RuntimeError(
                     "The value of epipolar_error_maximum_bias "
                     "must be a float bigger than 0 or auto"
+                )
+
+        epipolar_error_estimation = used_conf["epipolar_error_estimation"]
+        if isinstance(epipolar_error_estimation, str):
+            if epipolar_error_estimation != "auto":
+                raise RuntimeError(
+                    "The value of epipolar_error_estimation "
+                    "must be auto or a float"
                 )
 
         if (
@@ -235,13 +249,16 @@ class BasicSparseMatchingApplication(
         margins["right_margin"] = xr.DataArray(data, dims=["col"])
 
         left_margin = self.tile_margin
-
         if method == "sift":
-            right_margin = self.tile_margin + int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
+            right_margin = (
+                self.tile_margin
+                + int(
+                    math.floor(
+                        self.epipolar_error_upper_bound
+                        + self.epipolar_error_maximum_bias
+                    )
                 )
+                + np.abs(self.epipolar_error_estimation)
             )
         else:
             right_margin = left_margin
@@ -286,13 +303,16 @@ class BasicSparseMatchingApplication(
         :return: function that generates margin for given roi
 
         """
-
         if method == "sift":
-            right_margin = self.tile_margin + int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
+            right_margin = (
+                self.tile_margin
+                + int(
+                    math.floor(
+                        self.epipolar_error_upper_bound
+                        + self.epipolar_error_maximum_bias
+                    )
                 )
+                + np.abs(self.epipolar_error_estimation)
             )
         else:
             right_margin = self.tile_margin

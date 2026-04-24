@@ -458,6 +458,16 @@ class TiePointsPipeline(PipelineTemplate):
                             * res_factor
                         )
 
+                    if (
+                        self.sparse_matching_app.epipolar_error_estimation
+                        == "auto"
+                    ):
+                        self.sparse_matching_app.epipolar_error_estimation = (
+                            data["applications"]["match_filtering"][pair_key][
+                                sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN
+                            ]
+                        )
+
                     self.sparse_matching_app.epipolar_error_maximum_bias = min(
                         self.sparse_matching_app.epipolar_error_maximum_bias, 50
                     )
@@ -466,17 +476,15 @@ class TiePointsPipeline(PipelineTemplate):
                         self.sparse_matching_app.epipolar_error_upper_bound, 10
                     )
             else:
-                if (
-                    self.sparse_matching_app.epipolar_error_maximum_bias
-                    == "auto"
-                ):
-                    self.sparse_matching_app.epipolar_error_maximum_bias = 50
+                defaults = {
+                    "epipolar_error_maximum_bias": 50,
+                    "epipolar_error_upper_bound": 10,
+                    "epipolar_error_estimation": 0,
+                }
 
-                if (
-                    self.sparse_matching_app.epipolar_error_upper_bound
-                    == "auto"
-                ):
-                    self.sparse_matching_app.epipolar_error_upper_bound = 10
+                for attr, default in defaults.items():
+                    if getattr(self.sparse_matching_app, attr) == "auto":
+                        setattr(self.sparse_matching_app, attr, default)
 
             if self.used_conf[INPUT][sens_cst.RECTIFICATION_GRIDS] is None:
                 # Generate rectification grids
