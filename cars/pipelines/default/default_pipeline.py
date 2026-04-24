@@ -141,7 +141,7 @@ class DefaultPipeline(PipelineTemplate):
         self.pipeline_to_use = conf[PIPELINE]
 
         # Check input
-        conf[INPUT] = self.check_inputs(conf, config_json_dir=config_dir)
+        conf[INPUT] = self.check_inputs(conf, config_dir=config_dir)
 
         # check output
         conf[OUTPUT] = self.check_output(conf)
@@ -304,7 +304,7 @@ class DefaultPipeline(PipelineTemplate):
             os.path.join(self.out_dir, "global_used_conf.yaml"),
         )
 
-    def check_inputs(self, conf, config_json_dir=None):
+    def check_inputs(self, conf, config_dir=None):
         """
         Check the inputs given
 
@@ -320,13 +320,13 @@ class DefaultPipeline(PipelineTemplate):
         output_config = {}
         if sens_cst.SENSORS in conf[INPUT] and dsm_cst.DSMS not in conf[INPUT]:
             output_config = sensor_inputs.sensors_check_inputs(
-                conf[INPUT], config_dir=config_json_dir
+                conf[INPUT], config_dir=config_dir
             )
         elif dsm_cst.DSMS in conf[INPUT]:
             output_config = {
                 **output_config,
                 **dsm_inputs.check_dsm_inputs(
-                    conf[INPUT], config_dir=config_json_dir
+                    conf[INPUT], config_dir=config_dir
                 ),
             }
         else:

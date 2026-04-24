@@ -25,7 +25,6 @@ This module contains the border interpolation dsm filling application class.
 import logging
 import os
 import shutil
-import warnings
 
 import numpy as np
 import rasterio as rio
@@ -34,13 +33,12 @@ import skimage
 import xarray as xr
 from json_checker import Checker, Or
 from pyproj import CRS
-from rasterio.errors import NodataShadowWarning
 from rasterio.windows import Window
 from rasterio.windows import transform as row_col_to_coords
 from shapely import Polygon
 
 import cars.orchestrator.orchestrator as ocht
-from cars.core import inputs, projection, tiling
+from cars.core import projection, tiling
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -115,6 +113,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         dsm_file,
         classif_file,
         filling_file,
+        classif_values,
         dtm_file,
         dump_dir,
         roi_polys,
@@ -266,6 +265,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
                     old_dsm_path,
                     filling_file,
                     classif_file,
+                    classif_values,
                     dtm_file,
                     roi_polys,
                     roi_epsg,
@@ -285,6 +285,7 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
     dsm_file,
     filling_file,
     classif_file,
+    classif_values,
     dtm_file,
     roi_polys,
     roi_epsg,
@@ -369,37 +370,25 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
         dtm_nodata = dsm_nodata
     dtm[dtm == dtm_nodata] = np.nan
 
-    if classif_file is not None:
-        classif_descriptions = inputs.get_descriptions_bands(classif_file)
-    else:
-        classif_descriptions = []
     combined_mask = np.zeros_like(dsm).astype(np.uint8)
     stacked_labels = None
+    classif = None
+    if classif_file is not None:
+        with rio.open(classif_file) as in_classif:
+            classif = in_classif.read(1, window=rasterio_window)
     for label in classification:
-        if label in classif_descriptions:
-            index_classif = classif_descriptions.index(label) + 1
-            with rio.open(classif_file) as in_classif:
-                classif = in_classif.read(index_classif, window=rasterio_window)
-
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", NodataShadowWarning)
-                    classif_msk = in_classif.read_masks(
-                        1, window=rasterio_window
-                    )
-
-            classif[classif_msk == 0] = 0
-            filling_mask = np.logical_and(classif, roi_raster > 0)
+        if label in classif_values:
+            filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
         else:
             logging.error(
                 "Label {} not found in classification "
-                "descriptions {}".format(label, classif_descriptions)
+                "descriptions {}".format(label, classif_values)
             )
             continue
         logging.info(
             "Filling of {} with Bulldozer DTM using "
             "border interpolation".format(label)
         )
-        filling_mask[classif_msk == 0] = 0
         filling_mask = skimage.morphology.binary_opening(
             filling_mask,
             footprint=[

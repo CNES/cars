@@ -81,15 +81,15 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         checker_inputs.validate(conf)
 
     @abstractmethod
-    def check_inputs(self, conf, config_json_dir=None):
+    def check_inputs(self, conf, config_dir=None):
         """
         Check the inputs given
 
         :param conf: configuration of inputs
         :type conf: dict
-        :param config_json_dir: directory of used json, if
+        :param config_dir: directory of used json, if
             user filled paths with relative paths
-        :type config_json_dir: str
+        :type config_dir: str
 
         :return: overloader inputs
         :rtype: dict

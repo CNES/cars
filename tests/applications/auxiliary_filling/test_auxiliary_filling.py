@@ -75,18 +75,18 @@ conf_2 = {
     [
         (
             conf_0,
-            "input/color_end2end_paca_aux_filling_0.tif",
-            "input/classification_end2end_paca_aux_filling_0.tif",
+            "ref_output/color_end2end_paca_aux_filling_0.tif",
+            "ref_output/classification_end2end_paca_aux_filling_0.tif",
         ),
         (
             conf_1,
-            "input/color_end2end_paca_aux_filling_1.tif",
-            "input/classification_end2end_paca_aux_filling_1.tif",
+            "ref_output/color_end2end_paca_aux_filling_1.tif",
+            "ref_output/classification_end2end_paca_aux_filling_1.tif",
         ),
         (
             conf_2,
-            "input/color_end2end_paca_aux_filling_2.tif",
-            "input/classification_end2end_paca_aux_filling_2.tif",
+            "ref_output/color_end2end_paca_aux_filling_2.tif",
+            "ref_output/classification_end2end_paca_aux_filling_2.tif",
         ),
     ],
 )
@@ -138,12 +138,13 @@ def test_auxiliary_filling_paca(
             geom_plugin=geo_plugin,
             texture_bands=["b0"],
             output_geoid=None,
+            dsm_dir=directory,
         )
 
         # Copy output to intermediate_data dir
         intermediate_output_dir = "intermediate_data"
         shutil.copy2(
-            os.path.join(local_image_color),
+            os.path.join(directory, "color.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir, os.path.basename(color_reference)
@@ -151,7 +152,7 @@ def test_auxiliary_filling_paca(
             ),
         )
         shutil.copy2(
-            os.path.join(local_classification_input),
+            os.path.join(directory, "classification.tif"),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,

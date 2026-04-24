@@ -48,9 +48,7 @@ from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.filling.filling_pipeline_wrapper import (
-    merge_classif_bands_wrapper,
     merge_filling_bands_wrapper,
-    monoband_to_multiband_wrapper,
 )
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
@@ -112,7 +110,7 @@ class FillingPipeline(PipelineTemplate):
         self.filling_dir = os.path.join(self.out_dir, "filling")
 
         # Check input
-        conf[INPUT] = self.check_inputs(conf)
+        conf[INPUT] = self.check_inputs(conf, config_dir=config_dir)
 
         pipeline_conf = conf.get(PIPELINE, {})
 
@@ -155,7 +153,8 @@ class FillingPipeline(PipelineTemplate):
         )
         # Used classification values, for filling -> will be masked
         self.used_classif_values_for_filling = self.get_classif_values_filling(
-            self.used_conf[INPUT]
+            self.used_conf[INPUT],
+            self.used_conf[APPLICATIONS],
         )
         self.dump_dir = os.path.join(self.filling_dir, "dump_dir")
 
@@ -195,7 +194,7 @@ class FillingPipeline(PipelineTemplate):
         checker_inputs = Checker(pipeline_schema)
         checker_inputs.validate(conf[PIPELINE])
 
-    def check_inputs(self, conf, config_json_dir=None):
+    def check_inputs(self, conf, config_dir=None):
         """
         Check the inputs given
 
@@ -209,7 +208,7 @@ class FillingPipeline(PipelineTemplate):
         :rtype: dict
         """
         return sensor_inputs.sensors_check_inputs(
-            conf[INPUT], config_dir=config_json_dir
+            conf[INPUT], config_dir=config_dir
         )
 
     def check_output(self, conf):
@@ -448,6 +447,7 @@ class FillingPipeline(PipelineTemplate):
                 new_filling_conf,
                 append_classification=True,
             )
+            filling_applications = dict(sorted(filling_applications.items()))
 
         return filling_applications
 
@@ -496,34 +496,40 @@ class FillingPipeline(PipelineTemplate):
 
         return result
 
-    def get_classif_values_filling(self, inputs_conf):
+    def get_classif_values_filling(self, inputs_conf, app_conf):
         """
         Get values in classif, used for filling
 
         :param inputs_conf: inputs
         :type inputs_conf: dict
+        :param app_conf: applications
+        :type app_conf: dict
 
         :return: list of values
         :rtype: list
         """
 
         if (
-            sens_cst.FILLING not in inputs_conf
-            or inputs_conf[sens_cst.FILLING] is None
+            sens_cst.FILLING in inputs_conf
+            and inputs_conf[sens_cst.FILLING] is not None
         ):
-            logging.info("No filling in input configuration")
-            return None
-
-        filling_classif_values = []
-        for _, classif_values in inputs_conf[sens_cst.FILLING].items():
-            # Add new value to filling bands
-            if classif_values is not None:
-                if isinstance(classif_values, str):
-                    classif_values = [classif_values]
-                filling_classif_values += classif_values
+            filling_classif_values = []
+            for _, classif_values in inputs_conf[sens_cst.FILLING].items():
+                # Add new value to filling bands
+                if classif_values is not None:
+                    if isinstance(classif_values, str):
+                        classif_values = [classif_values]
+                    filling_classif_values += classif_values
+        for app_key in app_conf:
+            if app_conf[app_key] is None:
+                continue
+            if "classification" in app_conf[app_key]:
+                filling_classif_values += app_conf[app_key]["classification"]
 
         simplified_list = list(OrderedDict.fromkeys(filling_classif_values))
-        res_as_string_list = [str(value) for value in simplified_list]
+        res_as_string_list = [
+            str(value) for value in simplified_list if value != "nodata"
+        ]
         return res_as_string_list
 
     @cars_profile(name="merge filling bands", interval=0.5)
@@ -611,179 +617,6 @@ class FillingPipeline(PipelineTemplate):
 
         return filling_cars_ds
 
-    @cars_profile(name="merge classif bands", interval=0.5)
-    def merge_classif_bands(  # pylint: disable=R0917
-        self,
-        in_classif_path,
-        out_classif_path,
-        aux_classif,
-        dsm_file,
-        orchestrator=None,
-        tile_size=10000,
-    ):
-        """
-        Merge classif bands to get mono band in output
-        """
-        if orchestrator is None:
-            orchestrator = ocht.Orchestrator(
-                orchestrator_conf={"mode": "sequential"}
-            )
-
-        with rasterio.open(in_classif_path) as src:
-            nb_bands = src.count
-
-            if nb_bands == 1:
-                return None
-
-            profile = src.profile
-            height = src.height
-            width = src.width
-            classif_dtype = src.dtypes[0]
-            nodata_value = src.nodata
-
-        # Update to one band
-        profile.update(count=1, dtype=classif_dtype)
-
-        classif_cars_ds = cars_dataset.CarsDataset(
-            "arrays", name="Monoband Classification"
-        )
-        # Compute tiling grid
-        classif_cars_ds.tiling_grid = tiling.generate_tiling_grid(
-            0,
-            0,
-            height,
-            width,
-            tile_size,
-            tile_size,
-        )
-
-        # Saving infos
-        [
-            saving_info,
-        ] = orchestrator.get_saving_infos([classif_cars_ds])
-
-        # Save list
-        orchestrator.add_to_save_lists(
-            out_classif_path,
-            "classification",
-            classif_cars_ds,
-            dtype=classif_dtype,
-            nodata=nodata_value,
-            optional_data=False,
-            cars_ds_name="MonoBand Classification",
-        )
-
-        for row in range(classif_cars_ds.shape[0]):
-            for col in range(classif_cars_ds.shape[1]):
-                # update saving infos  for potential replacement
-                full_saving_info = ocht.update_saving_infos(
-                    saving_info, row=row, col=col
-                )
-
-                window = classif_cars_ds.get_window_as_dict(row, col)
-                # Compute images
-                (classif_cars_ds[row, col]) = orchestrator.cluster.create_task(
-                    merge_classif_bands_wrapper, nout=1
-                )(
-                    in_classif_path,
-                    aux_classif,
-                    dsm_file,
-                    window=window,
-                    saving_info=full_saving_info,
-                    profile=profile,
-                )
-
-        return classif_cars_ds
-
-    def monoband_to_multiband(  # pylint: disable=R0917
-        self,
-        input_raster,
-        output_raster,
-        bands_classif,
-        orchestrator=None,
-        tile_size=10000,
-    ):
-        """
-        Convert classification from monoband to multiband
-
-        :param input_raster: the intput classification path
-        :type input_raster: str
-        :param output_raster: the output classification path
-        :type output_raster: str
-        :param bands_classif: the bands values
-        :type bands_classif: list
-        """
-
-        with rasterio.open(input_raster) as src:
-            profile = src.profile
-            nodata_value = src.nodata
-            height = src.height
-            width = src.width
-            dtype = src.dtypes[0]
-
-        # update profile
-        profile.update(count=len(bands_classif))
-
-        classif_cars_ds = cars_dataset.CarsDataset(
-            "arrays", name="Multiband Classification"
-        )
-        # Compute tiling grid
-        classif_cars_ds.tiling_grid = tiling.generate_tiling_grid(
-            0,
-            0,
-            height,
-            width,
-            tile_size,
-            tile_size,
-        )
-
-        # Saving infos
-        [
-            saving_info,
-        ] = orchestrator.get_saving_infos([classif_cars_ds])
-
-        classif_tags = []
-        band_description = []
-        for band, classif in enumerate(bands_classif, start=1):
-            classif_tags.append((band, classif))
-            band_description.append((band, classif))
-
-        # Save list
-        orchestrator.add_to_save_lists(
-            output_raster,
-            "classification",
-            classif_cars_ds,
-            dtype=dtype,
-            nodata=nodata_value,
-            optional_data=False,
-            rio_tags=classif_tags,
-            rio_band_description=band_description,
-            cars_ds_name="Multiband Classification",
-        )
-
-        for row in range(classif_cars_ds.shape[0]):
-            for col in range(classif_cars_ds.shape[1]):
-
-                # update saving infos  for potential replacement
-                full_saving_info = ocht.update_saving_infos(
-                    saving_info, row=row, col=col
-                )
-
-                window = classif_cars_ds.get_window_as_dict(row, col)
-                # Compute images
-                (classif_cars_ds[row, col]) = orchestrator.cluster.create_task(
-                    monoband_to_multiband_wrapper, nout=1
-                )(
-                    input_raster,
-                    bands_classif,
-                    nodata_value,
-                    window=window,
-                    saving_info=full_saving_info,
-                    profile=profile,
-                )
-
-        return output_raster
-
     def filling(self):  # noqa: C901
         """
         Filling method
@@ -805,27 +638,14 @@ class FillingPipeline(PipelineTemplate):
             else None
         )
 
-        first_key = list(inputs_conf[sens_cst.SENSORS].keys())[0]
-        input_classif = inputs_conf[sens_cst.SENSORS][first_key][
-            sens_cst.INPUT_CLASSIFICATION
-        ]
-        bands_classif = None
-        if input_classif is not None:
-            bands_classif = input_classif["values"]
+        classif_values = self.used_classif_values_for_filling
 
-        classif_file_name = None
-        if sens_cst.INPUT_CLASSIFICATION:
-            classif_file_name = os.path.join(
-                dsm_filled_dir, "classification.tif"
-            )
-            self.monoband_to_multiband(
-                self.dsm_to_fill["classification"],
-                classif_file_name,
-                bands_classif,
-                orchestrator=self.cars_orchestrator,
-                tile_size=self.filling_tile_size,
-            )
-            self.cars_orchestrator.breakpoint()
+        classif_file_name = (
+            self.dsm_to_fill["classification"]
+            if "classification"
+            in self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]
+            else None
+        )
 
         filling_file_name = (
             self.dsm_to_fill["filling"]
@@ -972,6 +792,7 @@ class FillingPipeline(PipelineTemplate):
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
+                    classif_values=classif_values,
                     dump_dir=app_dump_dir,
                     roi_polys=self.list_intersection_poly,
                     roi_epsg=self.epsg,
@@ -986,6 +807,7 @@ class FillingPipeline(PipelineTemplate):
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
+                    classif_values=classif_values,
                     dump_dir=app_dump_dir,
                     roi_polys=self.list_intersection_poly,
                     roi_epsg=self.epsg,
@@ -998,6 +820,7 @@ class FillingPipeline(PipelineTemplate):
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
+                    classif_values=classif_values,
                     dtm_file=dtm_file_name,
                     dump_dir=app_dump_dir,
                     roi_polys=self.list_intersection_poly,
@@ -1036,29 +859,6 @@ class FillingPipeline(PipelineTemplate):
         )
         self.cars_orchestrator.breakpoint()
 
-        if (
-            os.path.join(dsm_filled_dir, "classification.tif") is not None
-            and self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                out_cst.AUX_CLASSIFICATION
-            ]
-        ):
-            tmp_classif_file_name = os.path.join(
-                dsm_filled_dir, "tmp_classification.tif"
-            )
-            merged_classif = self.merge_classif_bands(
-                classif_file_name,
-                tmp_classif_file_name,
-                self.used_conf[OUTPUT][out_cst.AUXILIARY][
-                    out_cst.AUX_CLASSIFICATION
-                ],
-                dsm_file_name,
-                orchestrator=self.cars_orchestrator,
-                tile_size=self.filling_tile_size,
-            )
-            self.cars_orchestrator.breakpoint()
-            # move tmp classif to final classif
-            if merged_classif is not None:
-                os.replace(tmp_classif_file_name, classif_file_name)
         if (
             filling_file_name is not None
             and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]

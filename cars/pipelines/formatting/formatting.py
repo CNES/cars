@@ -92,7 +92,7 @@ class FormattingPipeline(PipelineTemplate):
 
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
-    def check_inputs(self, conf, config_json_dir=None):
+    def check_inputs(self, conf, config_dir=None):
         """
         Check the inputs
         """

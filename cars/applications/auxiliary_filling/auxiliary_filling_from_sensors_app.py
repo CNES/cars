@@ -174,8 +174,10 @@ class AuxiliaryFillingFromSensors(
 
         if dsm_dir is not None:
             image_path_out = os.path.join(dsm_dir, "image.tif")
+            classif_path_out = os.path.join(dsm_dir, "classification.tif")
         else:
             image_path_out = color_file
+            classif_path_out = classif_file
 
         if not self.used_config["activated"]:
             return None
@@ -212,7 +214,7 @@ class AuxiliaryFillingFromSensors(
             classification_not_filled_file = os.path.join(
                 dump_dir, "classification_not_filled.tif"
             )
-            shutil.move(classif_file, classification_not_filled_file)
+            shutil.copy2(classif_file, classification_not_filled_file)
 
         # Clean dump_dir at the end of processing if required
         if not self.used_config["save_intermediate_data"]:
@@ -267,9 +269,8 @@ class AuxiliaryFillingFromSensors(
                 ) as descriptor:
                     classification_no_data_value = descriptor.nodata
                     classif_dtype = descriptor.profile.get("dtype", np.uint8)
-
             self.orchestrator.add_to_save_lists(
-                os.path.join(dump_dir, classif_file),
+                os.path.join(dump_dir, classif_path_out),
                 cst.RASTER_CLASSIF,
                 aux_filled_image,
                 dtype=classif_dtype,
@@ -476,7 +477,6 @@ def filling_from_sensor_wrapper(
 
     if color_file is not None and os.path.exists(color_file):
         with rio.open(color_file) as color_image:
-            profile = color_image.profile
             nodata_color = color_image.nodata
 
             number_of_color_bands = color_image.count
@@ -489,7 +489,6 @@ def filling_from_sensor_wrapper(
                     1, window=rio_window
                 )
     else:
-        profile = dsm_profile
         number_of_color_bands = inputs.rasterio_get_nb_bands(
             sensor_inputs[list(sensor_inputs.keys())[0]].get("texture", None)
         )
@@ -499,44 +498,18 @@ def filling_from_sensor_wrapper(
         color_band_names = inputs.get_descriptions_bands(
             sensor_inputs[list(sensor_inputs.keys())[0]].get("texture", None)
         )
-        # update profile
-        profile.update(count=number_of_color_bands)
 
-    number_of_classification_bands = 0
     classification_values = None
-    classification_band_names = None
 
     if classification_file is not None:
         if os.path.exists(classification_file):
             with rio.open(classification_file) as classification_image:
                 nodata_classif = None
-
-                number_of_classification_bands = classification_image.count
-
                 classification_values = classification_image.read(
                     window=rio_window
                 )
-                classification_band_names = list(
-                    classification_image.descriptions
-                )
         else:
-            profile = dsm_profile
-            classif_sample = sensor_inputs[list(sensor_inputs.keys())[0]].get(
-                "classification", None
-            )
-            if classif_sample is None:
-                raise RuntimeError(
-                    "No classification file found for auxiliary filling"
-                )
-            number_of_classification_bands = len(classif_sample["values"])
-            classification_values = np.full(
-                (number_of_classification_bands, *target_mask.shape), np.nan
-            )
-            classification_band_names = inputs.get_descriptions_bands(
-                classif_sample
-            )
-            # update profile
-            profile.update(count=number_of_classification_bands)
+            classification_values = np.full((1, *target_mask.shape), np.nan)
 
     # 1D index list from target mask
     index_1d = target_mask.flatten().nonzero()[0]
@@ -557,7 +530,7 @@ def filling_from_sensor_wrapper(
                 alt_values.ravel()[index_1d],
                 geom_plugin,
                 number_of_color_bands,
-                number_of_classification_bands,
+                classification_file is not None,
                 texture_bands,
                 texture_interpolator=texture_interpolator,
                 use_mask=use_mask,
@@ -580,12 +553,11 @@ def filling_from_sensor_wrapper(
                 color_values_filled[band_index, :],
             )
 
-        for band_index in range(number_of_classification_bands):
-            np.put(
-                classification_values[band_index, :, :],
-                index_1d,
-                classification_values_filled[band_index, :],
-            )
+        np.put(
+            classification_values[0, :, :],
+            index_1d,
+            classification_values_filled[0, :],
+        )
 
     row_arr = np.array(range(row_min, row_max))
     col_arr = np.array(range(col_min, col_max))
@@ -609,7 +581,6 @@ def filling_from_sensor_wrapper(
             [cst.BAND_CLASSIF, cst.ROW, cst.COL],
             classification_values,
         )
-        coords[cst.BAND_CLASSIF] = list(classification_band_names)
 
     attributes = {}
 
@@ -618,13 +589,13 @@ def filling_from_sensor_wrapper(
         coords=coords,
     )
 
-    profile.update(crs=crs.to_wkt())
+    dsm_profile.update(crs=crs.to_wkt())
 
     cars_dataset.fill_dataset(
         dataset,
         saving_info=saving_info,
         window=window,
-        profile=profile,
+        profile=dsm_profile,
         attributes=attributes,
         overlaps=None,
     )
