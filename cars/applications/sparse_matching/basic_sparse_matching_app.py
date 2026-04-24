@@ -304,19 +304,25 @@ class BasicSparseMatchingApplication(
 
         """
         if method == "sift":
-            base_margin = self.tile_margin + int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
+            right_margin_up = (
+                self.tile_margin
+                + int(
+                    math.floor(
+                        self.epipolar_error_upper_bound
+                        + self.epipolar_error_maximum_bias
+                    )
                 )
+                + self.epipolar_error_estimation
             )
-
-            up_candidate = base_margin + self.epipolar_error_estimation
-            down_candidate = base_margin - self.epipolar_error_estimation
-
-            right_margin_up = up_candidate if up_candidate >= 0 else base_margin
             right_margin_down = (
-                down_candidate if down_candidate >= 0 else base_margin
+                self.tile_margin
+                + int(
+                    math.floor(
+                        self.epipolar_error_upper_bound
+                        + self.epipolar_error_maximum_bias
+                    )
+                )
+                - self.epipolar_error_estimation
             )
         else:
             right_margin_up = self.tile_margin
