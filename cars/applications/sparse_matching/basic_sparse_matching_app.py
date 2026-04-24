@@ -258,7 +258,7 @@ class BasicSparseMatchingApplication(
                         + self.epipolar_error_maximum_bias
                     )
                 )
-                + np.abs(self.epipolar_error_estimation)
+                + self.epipolar_error_estimation
             )
         else:
             right_margin = left_margin
@@ -304,18 +304,23 @@ class BasicSparseMatchingApplication(
 
         """
         if method == "sift":
-            right_margin = (
-                self.tile_margin
-                + int(
-                    math.floor(
-                        self.epipolar_error_upper_bound
-                        + self.epipolar_error_maximum_bias
-                    )
+            base_margin = self.tile_margin + int(
+                math.floor(
+                    self.epipolar_error_upper_bound
+                    + self.epipolar_error_maximum_bias
                 )
-                + np.abs(self.epipolar_error_estimation)
+            )
+
+            up_candidate = base_margin + self.epipolar_error_estimation
+            down_candidate = base_margin - self.epipolar_error_estimation
+
+            right_margin_up = up_candidate if up_candidate >= 0 else base_margin
+            right_margin_down = (
+                down_candidate if down_candidate >= 0 else base_margin
             )
         else:
-            right_margin = self.tile_margin
+            right_margin_up = self.tile_margin
+            right_margin_down = self.tile_margin
 
         disp_min_grid_arr, _ = inputs.rasterio_read_as_array(
             disp_range_grid["grid_min_path"]
@@ -364,7 +369,8 @@ class BasicSparseMatchingApplication(
 
             margins = sm_wrapper.get_margins(
                 self.tile_margin,
-                right_margin,
+                right_margin_up,
+                right_margin_down,
                 disp_min,
                 disp_max,
             )
