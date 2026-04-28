@@ -1062,7 +1062,9 @@ def extract_conf_with_resolution(
         extract_conf_section(
             current_conf[pipeline_cst.SURFACE_MODELING].get(APPLICATIONS, {}),
             res,
-            overiding_conf.get(APPLICATIONS, {}),
+            overiding_conf.get(pipeline_cst.SURFACE_MODELING, {}).get(
+                APPLICATIONS, {}
+            ),
             filling_applications_for_surface_modeling,
         )
     )
@@ -1077,7 +1079,9 @@ def extract_conf_with_resolution(
         new_conf[pipeline_cst.TIE_POINTS][APPLICATIONS] = extract_conf_section(
             current_conf.get(pipeline_cst.TIE_POINTS, {}).get(APPLICATIONS, {}),
             res,
-            overiding_conf.get(APPLICATIONS, {}),
+            overiding_conf.get(pipeline_cst.TIE_POINTS, {}).get(
+                APPLICATIONS, {}
+            ),
         )
         new_conf[pipeline_cst.TIE_POINTS][ADVANCED] = extract_conf_section(
             current_conf.get(pipeline_cst.TIE_POINTS, {}).get(ADVANCED, {}),

@@ -1,5 +1,6 @@
 ---
-applications:
-  dense_matching:
-    confidence_filtering:
-      activated: false
+surface_modeling:
+  applications:
+    dense_matching:
+      confidence_filtering:
+        activated: false

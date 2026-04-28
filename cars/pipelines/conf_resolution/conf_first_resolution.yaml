@@ -1,4 +1,5 @@
 ---
-applications:
-  sparse_matching:
-    decimation_factor: 100
+tie_points:
+  applications:
+    sparse_matching:
+      decimation_factor: 100

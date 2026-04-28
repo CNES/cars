@@ -38,7 +38,6 @@ def get_needed_apps(
             "resampling",
             "ground_truth_reprojection",
             "dense_match_filling",
-            "sparse_matching",
             "dense_matching",
             "triangulation",
             "dem_generation",
@@ -57,16 +56,10 @@ def get_needed_apps(
             ]
 
     if save_output_dsm or save_output_point_cloud:
-        needed_applications += ["pc_denoising"]
 
         if save_output_dsm:
             needed_applications += [
                 "point_cloud_rasterization",
-                "auxiliary_filling",
             ]
-
-            for key in conf:
-                if key.startswith("dsm_filling"):
-                    needed_applications += [key]
 
     return needed_applications
