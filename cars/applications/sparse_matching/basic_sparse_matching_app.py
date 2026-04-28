@@ -239,6 +239,7 @@ class BasicSparseMatchingApplication(
         :rtype: function generating  xr.Dataset
 
         """
+        self.default_value_for_epipolar_error()
 
         corner = ["left", "up", "right", "down"]
         data = np.zeros(len(corner))
@@ -303,27 +304,19 @@ class BasicSparseMatchingApplication(
         :return: function that generates margin for given roi
 
         """
+        self.default_value_for_epipolar_error()
+
         if method == "sift":
-            right_margin_up = (
-                self.tile_margin
-                + int(
-                    math.floor(
-                        self.epipolar_error_upper_bound
-                        + self.epipolar_error_maximum_bias
-                    )
+            right_margin = self.tile_margin + int(
+                math.floor(
+                    self.epipolar_error_upper_bound
+                    + self.epipolar_error_maximum_bias
                 )
-                + self.epipolar_error_estimation
             )
-            right_margin_down = (
-                self.tile_margin
-                + int(
-                    math.floor(
-                        self.epipolar_error_upper_bound
-                        + self.epipolar_error_maximum_bias
-                    )
-                )
-                - self.epipolar_error_estimation
-            )
+
+            right_margin_up = right_margin + self.epipolar_error_estimation
+            right_margin_down = right_margin - self.epipolar_error_estimation
+
         else:
             right_margin_up = self.tile_margin
             right_margin_down = self.tile_margin
@@ -385,6 +378,21 @@ class BasicSparseMatchingApplication(
 
         return margins_wrapper
 
+    def default_value_for_epipolar_error(self):
+        """
+        update epipolar error parameters with default values
+        """
+
+        defaults = {
+            "epipolar_error_maximum_bias": 50,
+            "epipolar_error_upper_bound": 10,
+            "epipolar_error_estimation": 0,
+        }
+
+        for attr, default in defaults.items():
+            if getattr(self, attr) == "auto":
+                setattr(self, attr, default)
+
     def filter_matches(  # pylint: disable=too-many-positional-arguments
         self,
         epipolar_matches_left,
@@ -399,6 +407,8 @@ class BasicSparseMatchingApplication(
         """
         Transform matches CarsDataset to numpy matches, and filters matches
         """
+
+        self.default_value_for_epipolar_error()
 
         if orchestrator is None:
             cars_orchestrator = ocht.Orchestrator(

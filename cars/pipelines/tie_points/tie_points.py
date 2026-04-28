@@ -381,6 +381,46 @@ class TiePointsPipeline(PipelineTemplate):
 
         return used_conf
 
+    def update_via_metadata_file(self, previous_dir, pair_key, res_factor):
+        """
+        Update the eipolar error values via the metatdata.yaml file
+        """
+        path_metadata = os.path.join(previous_dir, "metadata.yaml")
+        with open(path_metadata, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+            if self.sparse_matching_app.epipolar_error_maximum_bias == "auto":
+                self.sparse_matching_app.epipolar_error_maximum_bias = (
+                    data["applications"]["match_filtering"][pair_key][
+                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD
+                    ]
+                    * res_factor
+                )
+
+            if self.sparse_matching_app.epipolar_error_upper_bound == "auto":
+                self.sparse_matching_app.epipolar_error_upper_bound = (
+                    2
+                    * data["applications"]["match_filtering"][pair_key][
+                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD
+                    ]
+                    * res_factor
+                )
+
+            if self.sparse_matching_app.epipolar_error_estimation == "auto":
+                self.sparse_matching_app.epipolar_error_estimation = (
+                    data["applications"]["match_filtering"][pair_key][
+                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN
+                    ]
+                    * res_factor
+                )
+
+            self.sparse_matching_app.epipolar_error_maximum_bias = min(
+                self.sparse_matching_app.epipolar_error_maximum_bias, 50
+            )
+
+            self.sparse_matching_app.epipolar_error_upper_bound = min(
+                self.sparse_matching_app.epipolar_error_upper_bound, 10
+            )
+
     def run(  # pylint: disable=too-many-positional-arguments
         self,
         args=None,  # pylint: disable=W0613
@@ -432,59 +472,9 @@ class TiePointsPipeline(PipelineTemplate):
         ) in list_sensor_pairs:
 
             if previous_dir is not None:
-                path_metadata = os.path.join(previous_dir, "metadata.yaml")
-                with open(path_metadata, "r", encoding="utf-8") as f:
-                    data = yaml.safe_load(f)
-                    if (
-                        self.sparse_matching_app.epipolar_error_maximum_bias
-                        == "auto"
-                    ):
-                        self.sparse_matching_app.epipolar_error_maximum_bias = (
-                            data["applications"]["match_filtering"][pair_key][
-                                sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD
-                            ]
-                            * res_factor
-                        )
-
-                    if (
-                        self.sparse_matching_app.epipolar_error_upper_bound
-                        == "auto"
-                    ):
-                        self.sparse_matching_app.epipolar_error_upper_bound = (
-                            2
-                            * data["applications"]["match_filtering"][pair_key][
-                                sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD
-                            ]
-                            * res_factor
-                        )
-
-                    if (
-                        self.sparse_matching_app.epipolar_error_estimation
-                        == "auto"
-                    ):
-                        self.sparse_matching_app.epipolar_error_estimation = (
-                            data["applications"]["match_filtering"][pair_key][
-                                sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN
-                            ]
-                        )
-
-                    self.sparse_matching_app.epipolar_error_maximum_bias = min(
-                        self.sparse_matching_app.epipolar_error_maximum_bias, 50
-                    )
-
-                    self.sparse_matching_app.epipolar_error_upper_bound = min(
-                        self.sparse_matching_app.epipolar_error_upper_bound, 10
-                    )
-            else:
-                defaults = {
-                    "epipolar_error_maximum_bias": 50,
-                    "epipolar_error_upper_bound": 10,
-                    "epipolar_error_estimation": 0,
-                }
-
-                for attr, default in defaults.items():
-                    if getattr(self.sparse_matching_app, attr) == "auto":
-                        setattr(self.sparse_matching_app, attr, default)
+                self.update_via_metadata_file(
+                    previous_dir, pair_key, res_factor
+                )
 
             if self.used_conf[INPUT][sens_cst.RECTIFICATION_GRIDS] is None:
                 # Generate rectification grids
