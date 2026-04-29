@@ -34,8 +34,6 @@ SPARSE_MATCHING_RUN_TAG = "sparse_matching"
 # Sparse matching PARAMS
 ELEVATION_DELTA_LOWER_BOUND = "elevation_delta_lower_bound"
 ELEVATION_DELTA_UPPER_BOUND = "elevation_delta_upper_bound"
-EPIPOLAR_ERROR_UPPER_BOUND = "epipolar_error_upper_bound"
-EPIPOLAR_ERROR_MAXIMUM_BIAS = "epipolar_error_maximum_bias"
 
 SIFT_THRESH_HOLD = "sift_matching_threshold"
 SIFT_N_OCTAVE = "sift_n_octave"

@@ -206,11 +206,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         APPLICATIONS
                     ]
                 )
+
                 self.used_conf[TIE_POINTS][ADVANCED] = (
                     self.tie_points_pipelines[pair_key].used_conf[TIE_POINTS][
                         ADVANCED
                     ]
                 )
+
                 if self.used_conf[TIE_POINTS][ADVANCED][
                     adv_cst.SAVE_INTERMEDIATE_DATA
                 ]:
@@ -1065,6 +1067,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     disp_range_grid=disp_range_grid,
                     log_dir=self.log_dir,
                     cars_orchestrator=self.cars_orchestrator,
+                    previous_dir=self.previous_out_dir,
+                    res_factor=self.res_factor,
                 )
                 self.pairs[pair_key]["matches_array"] = np.load(
                     os.path.join(
@@ -2083,12 +2087,14 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 self.cars_orchestrator.add_to_clean(self.dump_dir)
 
     @cars_profile(name="run_surface_modeling_pipeline", interval=0.5)
-    def run(
+    def run(  # pylint: disable=too-many-positional-arguments
         self,
         args=None,  # pylint: disable=W0613
         which_resolution="single",
         working_res=1,
+        res_factor=None,
         log_dir=None,
+        previous_out_dir=None,
     ):  # noqa C901
         """
         Run pipeline
@@ -2108,6 +2114,10 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.which_resolution = which_resolution
 
         self.working_res = working_res
+
+        self.res_factor = res_factor
+
+        self.previous_out_dir = previous_out_dir
 
         # saved used configuration
         self.save_configurations()

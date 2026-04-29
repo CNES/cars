@@ -87,6 +87,10 @@ class BasicSparseMatchingApplication(
             "epipolar_error_maximum_bias"
         ]
 
+        self.epipolar_error_estimation = self.used_config[
+            "epipolar_error_estimation"
+        ]
+
         self.minimum_nb_matches = self.used_config["minimum_nb_matches"]
         self.decimation_factor = self.used_config["decimation_factor"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -118,8 +122,9 @@ class BasicSparseMatchingApplication(
             "elevation_delta_lower_bound": Or(int, float, None),
             "elevation_delta_upper_bound": Or(int, float, None),
             "tile_margin": And(int, lambda x: x > 0),
-            "epipolar_error_upper_bound": And(float, lambda x: x > 0),
-            "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
+            "epipolar_error_upper_bound": Or(float, str),
+            "epipolar_error_maximum_bias": Or(float, str),
+            "epipolar_error_estimation": Or(float, str),
             "minimum_nb_matches": And(int, lambda x: x > 0),
             "save_intermediate_data": bool,
             "disparity_bounds_estimation": dict,
@@ -131,8 +136,9 @@ class BasicSparseMatchingApplication(
             "elevation_delta_lower_bound": None,
             "elevation_delta_upper_bound": None,
             "tile_margin": 10,
-            "epipolar_error_upper_bound": 10.0,
-            "epipolar_error_maximum_bias": 50.0,
+            "epipolar_error_upper_bound": "auto",
+            "epipolar_error_maximum_bias": "auto",
+            "epipolar_error_estimation": "auto",
             "minimum_nb_matches": 90,
             "save_intermediate_data": False,
             "disparity_bounds_estimation": {},
@@ -162,7 +168,53 @@ class BasicSparseMatchingApplication(
                 "for expected elevation delta"
             )
 
+        self.check_epipolar_error_values(used_conf)
+
         return used_conf
+
+    def check_epipolar_error_values(self, used_conf):
+        """check the epipolar_error values"""
+        epipolar_error_upper_bound = used_conf["epipolar_error_upper_bound"]
+        if isinstance(epipolar_error_upper_bound, str):
+            if epipolar_error_upper_bound != "auto":
+                raise RuntimeError(
+                    "The value of epipolar_error_upper_bound "
+                    "must be a float bigger than 0 or auto"
+                )
+
+        epipolar_error_maximum_bias = used_conf["epipolar_error_maximum_bias"]
+        if isinstance(epipolar_error_maximum_bias, str):
+            if epipolar_error_maximum_bias != "auto":
+                raise RuntimeError(
+                    "The value of epipolar_error_maximum_bias "
+                    "must be a float bigger than 0 or auto"
+                )
+
+        epipolar_error_estimation = used_conf["epipolar_error_estimation"]
+        if isinstance(epipolar_error_estimation, str):
+            if epipolar_error_estimation != "auto":
+                raise RuntimeError(
+                    "The value of epipolar_error_estimation "
+                    "must be auto or a float"
+                )
+
+        if (
+            isinstance(epipolar_error_upper_bound, float)
+            and epipolar_error_upper_bound <= 0
+        ):
+            raise RuntimeError(
+                "The value of epipolar_error_upper_bound "
+                "must be a float bigger than 0"
+            )
+
+        if (
+            isinstance(epipolar_error_maximum_bias, float)
+            and epipolar_error_maximum_bias < 0
+        ):
+            raise RuntimeError(
+                "The value of epipolar_error_maximum_bias "
+                "must be a float bigger or equal to 0"
+            )
 
     def get_required_bands(self):
         """
@@ -187,6 +239,7 @@ class BasicSparseMatchingApplication(
         :rtype: function generating  xr.Dataset
 
         """
+        self.default_value_for_epipolar_error()
 
         corner = ["left", "up", "right", "down"]
         data = np.zeros(len(corner))
@@ -197,13 +250,16 @@ class BasicSparseMatchingApplication(
         margins["right_margin"] = xr.DataArray(data, dims=["col"])
 
         left_margin = self.tile_margin
-
         if method == "sift":
-            right_margin = self.tile_margin + int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
+            right_margin = (
+                self.tile_margin
+                + int(
+                    math.floor(
+                        self.epipolar_error_upper_bound
+                        + self.epipolar_error_maximum_bias
+                    )
                 )
+                + self.epipolar_error_estimation
             )
         else:
             right_margin = left_margin
@@ -248,6 +304,7 @@ class BasicSparseMatchingApplication(
         :return: function that generates margin for given roi
 
         """
+        self.default_value_for_epipolar_error()
 
         if method == "sift":
             right_margin = self.tile_margin + int(
@@ -256,8 +313,13 @@ class BasicSparseMatchingApplication(
                     + self.epipolar_error_maximum_bias
                 )
             )
+
+            right_margin_up = right_margin + self.epipolar_error_estimation
+            right_margin_down = right_margin - self.epipolar_error_estimation
+
         else:
-            right_margin = self.tile_margin
+            right_margin_up = self.tile_margin
+            right_margin_down = self.tile_margin
 
         disp_min_grid_arr, _ = inputs.rasterio_read_as_array(
             disp_range_grid["grid_min_path"]
@@ -306,7 +368,8 @@ class BasicSparseMatchingApplication(
 
             margins = sm_wrapper.get_margins(
                 self.tile_margin,
-                right_margin,
+                right_margin_up,
+                right_margin_down,
                 disp_min,
                 disp_max,
             )
@@ -314,6 +377,21 @@ class BasicSparseMatchingApplication(
             return margins
 
         return margins_wrapper
+
+    def default_value_for_epipolar_error(self):
+        """
+        update epipolar error parameters with default values
+        """
+
+        defaults = {
+            "epipolar_error_maximum_bias": 50,
+            "epipolar_error_upper_bound": 10,
+            "epipolar_error_estimation": 0,
+        }
+
+        for attr, default in defaults.items():
+            if getattr(self, attr) == "auto":
+                setattr(self, attr, default)
 
     def filter_matches(  # pylint: disable=too-many-positional-arguments
         self,
@@ -329,6 +407,8 @@ class BasicSparseMatchingApplication(
         """
         Transform matches CarsDataset to numpy matches, and filters matches
         """
+
+        self.default_value_for_epipolar_error()
 
         if orchestrator is None:
             cars_orchestrator = ocht.Orchestrator(
@@ -400,6 +480,7 @@ class BasicSparseMatchingApplication(
                 epipolar_median_shift
             )
 
+        # pylint: disable=invalid-unary-operand-type
         matches = matches[
             ((matches[:, 3] - matches[:, 1]) - epipolar_median_shift)
             >= -epipolar_error_upper_bound

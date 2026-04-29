@@ -197,7 +197,9 @@ def transform_triangulated_matches_to_dataframe(triangulated_matches):
     return triangulated_matches_df
 
 
-def get_margins(margin_left, margin_right, disp_min, disp_max):
+def get_margins(
+    margin_left, margin_right_up, margin_right_down, disp_min, disp_max
+):
     """
     Get margins for the dense matching steps
 
@@ -219,9 +221,9 @@ def get_margins(margin_left, margin_right, disp_min, disp_max):
     ]
     right_margins = [
         margin_left - disp_min,
-        margin_right,
+        margin_right_up,
         margin_left + disp_max,
-        margin_right,
+        margin_right_down,
     ]
 
     margins = xr.Dataset(

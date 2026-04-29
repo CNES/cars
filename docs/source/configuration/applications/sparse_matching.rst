@@ -38,9 +38,11 @@ Basic Application
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                           | None          | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
-| epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0             | 10.0          | No       |
+| epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float, str  | should be > 0             | auto          | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
-| epipolar_error_maximum_bias          | Maximum bias for epipolar error in pixels                                                      | float       | should be >= 0            | 50.0          | No       |
+| epipolar_error_estimation            | Mean for epipolar error in pixels                                                              | float, str  | should be >= 0            | auto          | No       |
++--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
+| epipolar_error_maximum_bias          | Maximum bias for epipolar error in pixels                                                      | float, str  | should be >= 0            | auto          | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
 | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                           | false         | No       |
 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+---------------------------+---------------+----------+
