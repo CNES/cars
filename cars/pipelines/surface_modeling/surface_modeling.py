@@ -40,7 +40,6 @@ from collections import OrderedDict
 import numpy as np
 import rasterio
 from json_checker import Checker, OptionalKey
-from pyproj import CRS
 from rasterio.errors import NodataShadowWarning
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
@@ -258,27 +257,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.scaling_coeff,
         ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff, bounds)
 
-        # Get the right roi coord system
-        if inputs["roi"] is not None:
-            if "crs" not in inputs["roi"]:
-                crs = CRS.from_epsg(4326)
-            else:
-                crs = CRS(inputs["roi"]["crs"]["properties"]["name"])
-
-            xmin = bounds[0]
-            ymin = bounds[1]
-            utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
-            conversion_factor = preprocessing.get_conversion_factor(
-                bounds, utm_epsg, crs.to_epsg()
-            )
-            res_roi_epsg = output["resolution"] / conversion_factor
-
-            terrain_margin = 10 * self.scaling_coeff * res_roi_epsg
-            self.apply_margin_to_roi(
-                inputs["roi"]["features"][0]["geometry"]["coordinates"][0],
-                terrain_margin,
-            )
-
         # Get ROI
         (
             self.input_roi_poly,
@@ -286,6 +264,21 @@ class SurfaceModelingPipeline(PipelineTemplate):
         ) = roi_tools.generate_roi_poly_from_inputs(
             self.used_conf[INPUT][sens_cst.ROI]
         )
+
+        if self.input_roi_poly is not None:
+            xmin = bounds[0]
+            ymin = bounds[1]
+            utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+            conversion_factor = preprocessing.get_conversion_factor(
+                bounds, utm_epsg, self.input_roi_epsg
+            )
+            res_roi_epsg = output["resolution"] / conversion_factor
+
+            terrain_margin = 10 * self.scaling_coeff * res_roi_epsg
+
+            self.input_roi_poly = self.input_roi_poly.buffer(
+                terrain_margin, join_style=2
+            )
 
         self.debug_with_roi = self.used_conf[PIPELINE][ADVANCED][
             adv_cst.DEBUG_WITH_ROI
@@ -368,26 +361,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
             return False
 
         return self.app_values[app_name] >= self.last_application_to_run
-
-    def apply_margin_to_roi(self, coords, terrain_margin):
-        """
-        Apply terrain margin to the roi
-        """
-        lons = [p[0] for p in coords]
-        lats = [p[1] for p in coords]
-
-        min_lon, max_lon = min(lons), max(lons)
-        min_lat, max_lat = min(lats), max(lats)
-
-        new_coords = [
-            [min_lon - terrain_margin, max_lat + terrain_margin],
-            [min_lon - terrain_margin, min_lat - terrain_margin],
-            [max_lon + terrain_margin, min_lat - terrain_margin],
-            [max_lon + terrain_margin, max_lat + terrain_margin],
-            [min_lon - terrain_margin, max_lat + terrain_margin],
-        ]
-
-        coords[:] = new_coords
 
     def infer_conditions_from_applications(self, conf):
         """

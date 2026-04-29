@@ -123,6 +123,26 @@ def resample_polygon(roi_poly, roi_epsg, resolution=100):
     return MultiPolygon(new_list_poly)
 
 
+def expand_roi(roi, margin_ratio=0.2):
+    """
+    Appli epipolar margin to the given roi.
+    """
+    x_min, x_max, y_min, y_max = roi
+
+    width = x_max - x_min
+    height = y_max - y_min
+
+    margin_x = (margin_ratio / 2) * width
+    margin_y = (margin_ratio / 2) * height
+
+    return (
+        x_min - margin_x,
+        y_min - margin_y,
+        x_max + margin_x,
+        y_max + margin_y,
+    )
+
+
 def geojson_to_shapely(geojson_dict: dict):
     """
     Transform Geojson dict to Shapely polygon

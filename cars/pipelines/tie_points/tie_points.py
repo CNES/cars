@@ -29,6 +29,7 @@ from json_checker import Checker, Or
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications.application import Application
+from cars.core import roi_tools
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
@@ -389,25 +390,6 @@ class TiePointsPipeline(PipelineTemplate):
 
         return used_conf
 
-    def expand_roi(self, roi, margin_ratio=0.2):
-        """
-        Appli epipolar margin to the given roi.
-        """
-        x_min, x_max, y_min, y_max = roi
-
-        width = x_max - x_min
-        height = y_max - y_min
-
-        margin_x = (margin_ratio / 2) * width
-        margin_y = (margin_ratio / 2) * height
-
-        return (
-            x_min - margin_x,
-            y_min - margin_y,
-            x_max + margin_x,
-            y_max + margin_y,
-        )
-
     def update_via_metadata_file(self, previous_dir, pair_key, res_factor):
         """
         Update the eipolar error values via the metatdata.yaml file
@@ -486,7 +468,7 @@ class TiePointsPipeline(PipelineTemplate):
 
         # Run applications
         if epipolar_roi is not None:
-            self.expand_roi(
+            roi_tools.expand_roi(
                 epipolar_roi, margin_ratio=self.epipolar_roi_margin_factor
             )
 
