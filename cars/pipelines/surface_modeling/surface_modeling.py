@@ -251,6 +251,12 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         self.refined_conf["pipeline"] = "surface_modeling"
 
+        # Check conf output
+        (
+            output,
+            self.scaling_coeff,
+        ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff, bounds)
+
         # Get ROI
         (
             self.input_roi_poly,
@@ -259,15 +265,24 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.used_conf[INPUT][sens_cst.ROI]
         )
 
+        if self.input_roi_poly is not None:
+            xmin = bounds[0]
+            ymin = bounds[1]
+            utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+            conversion_factor = preprocessing.get_conversion_factor(
+                bounds, utm_epsg, self.input_roi_epsg
+            )
+            res_roi_epsg = output["resolution"] / conversion_factor
+
+            terrain_margin = 10 * self.scaling_coeff * res_roi_epsg
+
+            self.input_roi_poly = self.input_roi_poly.buffer(
+                terrain_margin, join_style=2
+            )
+
         self.debug_with_roi = self.used_conf[PIPELINE][ADVANCED][
             adv_cst.DEBUG_WITH_ROI
         ]
-
-        # Check conf output
-        (
-            output,
-            self.scaling_coeff,
-        ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff, bounds)
 
         self.used_conf[OUTPUT] = output
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
@@ -1062,9 +1077,38 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         )
                     )
 
+                    disp_min_sparse = disp_range_grid["global_min"]
+                    disp_max_sparse = disp_range_grid["global_max"]
+                else:
+                    disp_min_sparse = self.elevation_delta_lower_bound
+                    disp_max_sparse = self.elevation_delta_upper_bound
+
+                epipolar_roi = None
+                ignore_roi_during_a_priori = inputs[
+                    "ignore_roi_during_a_priori"
+                ]
+                if not ignore_roi_during_a_priori:
+                    epipolar_roi = preprocessing.compute_epipolar_roi(
+                        self.input_roi_poly,
+                        self.input_roi_epsg,
+                        self.geom_plugin_with_dem_and_geoid,
+                        self.pairs[pair_key]["sensor_image_left"],
+                        self.pairs[pair_key]["sensor_image_right"],
+                        self.pairs[pair_key]["grid_left"],
+                        self.pairs[pair_key]["grid_right"],
+                        os.path.join(
+                            self.dump_dir,
+                            "compute_epipolar_roi_apriori",
+                            pair_key,
+                        ),
+                        disp_min=disp_min_sparse,
+                        disp_max=disp_max_sparse,
+                    )
+
                 # Launch tie points pipeline
                 tie_points_pipeline.run(
                     disp_range_grid=disp_range_grid,
+                    epipolar_roi=epipolar_roi,
                     log_dir=self.log_dir,
                     cars_orchestrator=self.cars_orchestrator,
                     previous_dir=self.previous_out_dir,

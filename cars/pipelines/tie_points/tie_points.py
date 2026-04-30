@@ -29,6 +29,7 @@ from json_checker import Checker, Or
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications.application import Application
+from cars.core import roi_tools
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
@@ -55,6 +56,8 @@ class TiePointsPipeline(PipelineTemplate):
     """
     Tie points pipeline
     """
+
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, conf, config_dir=None):
         """
@@ -116,6 +119,7 @@ class TiePointsPipeline(PipelineTemplate):
         self.used_conf[PIPELINE][ADVANCED] = advanced
         self.resampling_tile_width = advanced["resampling_tile_width"]
         self.resampling_tile_height = advanced["resampling_tile_height"]
+        self.epipolar_roi_margin_factor = advanced["epipolar_roi_margin_factor"]
 
         # Check conf output
         output = self.check_output(conf[OUTPUT])
@@ -267,6 +271,10 @@ class TiePointsPipeline(PipelineTemplate):
             "resampling_tile_height", 60
         )
 
+        overloaded_conf["epipolar_roi_margin_factor"] = conf.get(
+            "epipolar_roi_margin_factor", 0.2
+        )
+
         overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
             adv_cst.SAVE_INTERMEDIATE_DATA, False
         )
@@ -291,6 +299,7 @@ class TiePointsPipeline(PipelineTemplate):
             adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
             "resampling_tile_width": int,
             "resampling_tile_height": int,
+            "epipolar_roi_margin_factor": float,
         }
 
         checker_advanced_parameters = Checker(schema)
@@ -426,6 +435,7 @@ class TiePointsPipeline(PipelineTemplate):
         args=None,  # pylint: disable=W0613
         log_dir=None,
         disp_range_grid=None,
+        epipolar_roi=None,
         cars_orchestrator=None,
         previous_dir=None,
         res_factor=None,
@@ -457,6 +467,10 @@ class TiePointsPipeline(PipelineTemplate):
             inherent_orchestrator = True
 
         # Run applications
+        if epipolar_roi is not None:
+            roi_tools.expand_roi(
+                epipolar_roi, margin_ratio=self.epipolar_roi_margin_factor
+            )
 
         # Run grid generation
         # We generate grids with dem if it is provided.
@@ -506,9 +520,9 @@ class TiePointsPipeline(PipelineTemplate):
             # Get required bands of resampling
             required_bands = self.sparse_matching_app.get_required_bands()
 
+            tile_width = self.resampling_tile_width
+            tile_height = self.resampling_tile_height
             if disp_range_grid is not None:
-                tile_width = self.resampling_tile_width
-                tile_height = self.resampling_tile_height
                 margins_fun = self.sparse_matching_app.get_margins_tile_fun(
                     grid_left, disp_range_grid
                 )
@@ -529,8 +543,6 @@ class TiePointsPipeline(PipelineTemplate):
                 )
 
             else:
-                tile_width = None
-                tile_height = None
                 margins_fun = self.sparse_matching_app.get_margins_strip_fun()
 
             (
@@ -550,6 +562,7 @@ class TiePointsPipeline(PipelineTemplate):
                 margins_fun=margins_fun,
                 tile_width=tile_width,
                 tile_height=tile_height,
+                epipolar_roi=epipolar_roi,
                 required_bands=required_bands,
             )
 
