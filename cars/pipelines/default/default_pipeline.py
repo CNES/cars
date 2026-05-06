@@ -1215,7 +1215,7 @@ def merge_used_conf(used_configurations, resolutions, out_dir):
 
     merged_conf = {
         INPUT: used_configurations[resolutions[-1]][INPUT],
-        OUTPUT: used_configurations[resolutions[0]][OUTPUT],
+        OUTPUT: used_configurations[resolutions[-1]][OUTPUT],
         ORCHESTRATOR: used_configurations[resolutions[0]][ORCHESTRATOR],
     }
 

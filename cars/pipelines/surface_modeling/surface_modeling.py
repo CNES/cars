@@ -1960,6 +1960,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     "bulldozer",
                 ],
                 "fill_with_exogenous_dem": ["bulldozer"],
+                "no_edition": [],
             }
 
             # To get the right footprint
@@ -1978,7 +1979,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
                 if isinstance(value, list):
                     for elem in value:
-                        if elem != "other":
+                        if elem not in ("other", "interpolation"):
                             filling_method = filling_bands_list[elem]
 
                             if all(

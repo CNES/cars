@@ -422,10 +422,6 @@ class FillingPipeline(PipelineTemplate):
                 }
             elif filling_name == "fill_with_endogenous_dem":
                 new_filling_conf = {
-                    "dsm_filling.1": {
-                        "method": "exogenous_filling",
-                        "classification": classif_values,
-                    },
                     "dsm_filling.2": {
                         "method": "bulldozer",
                         "classification": classif_values,
@@ -433,6 +429,10 @@ class FillingPipeline(PipelineTemplate):
                 }
             elif filling_name == "fill_with_exogenous_dem":
                 new_filling_conf = {
+                    "dsm_filling.1": {
+                        "method": "exogenous_filling",
+                        "classification": classif_values,
+                    },
                     "dsm_filling.2": {
                         "method": "bulldozer",
                         "classification": classif_values,
