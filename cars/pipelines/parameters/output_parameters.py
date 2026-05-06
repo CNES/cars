@@ -223,10 +223,12 @@ def check_filling_parameter(overloaded_conf):
     ]
 
     valid_names = [
-        "fill_with_geoid",
-        "interpolate_from_borders",
-        "fill_with_endogenous_dem",
+        "no_edition",
         "fill_with_exogenous_dem",
+        "interpolation",
+        "fill_with_endogenous_dem",
+        "interpolate_from_borders",
+        "fill_with_geoid",
         "other",
     ]
 
@@ -238,6 +240,16 @@ def check_filling_parameter(overloaded_conf):
                 raise RuntimeError(
                     "Those filling methods are not available in CARS"
                 )
+        result = {}
+
+        for i, name in enumerate(valid_names):
+            if name not in filling_param:
+                result[i + 1] = name
+
+        overloaded_conf[output_constants.AUXILIARY][
+            output_constants.AUX_FILLING
+        ] = result
+
     elif filling_param is True:
         overloaded_conf[output_constants.AUXILIARY][
             output_constants.AUX_FILLING
