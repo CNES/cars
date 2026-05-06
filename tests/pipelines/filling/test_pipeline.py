@@ -346,7 +346,6 @@ def test_pipeline():
             },
             "advanced": {
                 "save_intermediate_data": True,
-                "filling_tile_size": 150,
             },
         }
 

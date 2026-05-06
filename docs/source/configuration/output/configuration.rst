@@ -59,7 +59,7 @@ Output configuration
    
     .. tab:: Auxiliary data
 
-        **Basic usage**
+        **BASIC USAGE**
 
         Additional auxiliary files can be produced by setting the `auxiliary` dictionary attribute.
 
@@ -83,6 +83,20 @@ Output configuration
         | *edges*               | Save output edge rasters (depth_map only)                   | bool             | False          | No        |
         +-----------------------+-------------------------------------------------------------+------------------+----------------+-----------+
 
+        In the table below, the default value corresponds to the value used if parameter is set to `True`. For the classification, the output values will correspond to the input ones.
+
+        +-----------------------+----------------------------------------------------------------------+--------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+        | Name                  | Description                                                          | Type   | Default value                                                                                                                                                  | Required  |
+        +=======================+======================================================================+========+================================================================================================================================================================+===========+
+        | *image*               | Define the order of the bands on the output image                    | list   | [b0, b1, b2]  (phr images), [b1, b0, b2] (co3d images)                                                                                                         | No        |
+        +-----------------------+----------------------------------------------------------------------+--------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+        | *classification*      | Edit and/or merge the values of the classification map               | dict   | {n:n} with n the label of the classification                                                                                                                   | No        |
+        +-----------------------+----------------------------------------------------------------------+--------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+        | *filling*             | Edit and/or merge the values of the filling map                      | dict   | {0: "no_data", 1: "no_edition", 2: "fill_with_exogenous_dem", 4: "fill_with_endogenous_dem", 5: "interpolate_from_borders", 6: "fill_with_geoid", 7: "other"}  | No        |
+        +-----------------------+----------------------------------------------------------------------+--------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+        | *performance_map*     | List defining intervals used in the performance map classification   | list   | [0, 0.968, 1.13375, 1.295, 1.604, 2.423, 3.428]                                                                                                                | No        |
+        +-----------------------+----------------------------------------------------------------------+--------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+
         .. include-cars-config:: ../../example_configs/configuration/output_auxiliary_basic
 
         Note that not all rasters associated to the DSM that CARS can produce are available in the output product auxiliary data. For example, confidence intervals are not part of the output product but can be found in the rasterization `dump_dir` if `save_intermediate_data` is activated in the `rasterization` application configuration.
@@ -93,52 +107,51 @@ Output configuration
             When enabled, it exports edge data in the depth map product (``depth_map`` in ``product_level``).
             It currently does not work with DSM auxiliary outputs, and won't save additional data for the DSM.
 
-        **Advanced usage**
+        **ADVANCED USAGE**
         
         For some auxiliary data, output options can be configured inside this dictionary by overloading the boolean parameter. 
         
         For each auxiliary file, if a non-boolean parameter is given, the file is saved according to this parameter.
 
-        In the table below, the default value corresponds to the value used if parameter is set to `True`.
-
-        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
-        | Name                  | Description                                                          | Type   | Default value                                                                                                       | Required  |
-        +=======================+======================================================================+========+=====================================================================================================================+===========+
-        | *image*               | Define the order of the bands on the output image                    | list   | [b0, b1, b2, ...]                                                                                                   | No        |
-        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
-        | *classification*      | Edit and/or merge the values of the classification map               | dict   | {1: 1, 2: 2, ...}                                                                                                   | No        |
-        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
-        | *filling*             | Edit and/or merge the values of the filling map                      | dict   | {1: "fill_with_geoid", 2: "interpolate_from_borders", 3: "fill_with_endogenous_dem", 4: "fill_with_exogenous_dem"}  | No        |
-        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
-        | *performance_map*     | List defining intervals used in the performance map classification   | list   | [0, 0.968, 1.13375, 1.295, 1.604, 2.423, 3.428]                                                                     | No        |
-        +-----------------------+----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------------------+-----------+
-
-        .. note::
-
-           For the image parameter:
-            You can also put a string instead of a list or a boolean. Therefore, only one band will be used for the color.
-
-
-           For the classification parameter:
-            you can configure the output. For example, by configuring `{17: [1, 2], 3:3, 15:4}`:
-
-            - The classification represented by the pixel value 1 and 2 in the input file will be represented by the value 17 in the output file.
-            - The classification represented by the pixel value 3 in the input file will be represented by the value 3 in the output file.
-            - The classification represented by the pixel value 4 in the input file will be represented by the value 15 in the output file.
-           
-            Here, if a pixel is classified by the values 1 and 3, the priority will go to the first value in the dictionary -> 17.
-           
-            You can also use a list as [3, 2, 1, 4] and a dictionary will be formatted regarding those values: {3: 1, 2: 2, 1: 3, 4: 4}. By using a list, it will not be possible for you to use values that are not in the classification input file (as 17 in this example).
-
-           It works the same for the filling parameter:
-            By configuring `{17: ["fill_with_geoid", "interpolate_from_borders"], 3: "fill_with_endogenous_dem", 15: "fill_with_exogenous_dem", "32": "other"}`:
-
-            - Pixels filled with the `fill_with_geoid` and `interpolate_from_borders` methods will be represented by the value 17 in the output file.
-            - Pixels filled with the `fill_with_endogenous_dem` method will be represented by the value 3 in the output file.
-            - Pixels filled with the `fill_with_exogenous_dem` method will be represented by the value 15 in the output file.
-            - Pixels filled with other methods will be represented by the value 32 in the output file. By default, the value is 50.
-
         .. include-cars-config:: ../../example_configs/configuration/output_auxiliary_advanced
+
+        **Image parameter**:
+
+        For this specific configuration (see yaml file above), only one band (b1) is written in the output image.
+
+        **Classification parameter**:
+
+        For this specific configuration (see yaml file above), the output classification takes the following values:
+
+        +-----------------------+----------------+
+        | input values          | output values  |
+        +=======================+================+
+        | [1, 2]                | 17             |
+        +-----------------------+----------------+
+        | 3                     | 3              |
+        +-----------------------+----------------+
+        | 4                     | 15             |
+        +-----------------------+----------------+
+
+        **Filling parameter**:
+
+        For this specific configuration (see yaml file above), the output filling takes the following values:
+
+        +--------------------------+----------------+
+        | input values             | output values  |
+        +==========================+================+
+        | fill_with_geoid          | 18             |
+        +--------------------------+----------------+
+        | interpolate_from_border  | 18             |
+        +--------------------------+----------------+
+        | fill_with_endogenous_dem | 3              |
+        +--------------------------+----------------+
+        | other filling methods    | default values |
+        +--------------------------+----------------+
+
+        **Performance map parameter**:
+
+        For this specific configuration (see yaml file above), those values will be taken into account in the output file. You can modify the list length according to your needs.
 
     .. tab:: EPSG
 

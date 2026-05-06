@@ -1,3 +1,5 @@
+.. _running_cars_with_sensor_images_as_input:
+
 Running CARS with sensor images as input
 ----------------------------------------
 
@@ -385,4 +387,13 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
         For each filling method, if you fill the parameter with `none` or [], the corresponding method will not be used.
 
+        .. note::
 
+            Each filling method combines several filling applications available in cars :
+
+            - fill_with_geoid : exogenous_filling (This filling method is specific to sea area)
+            - interpolate_from_borders : bulldozer followed by border_interpolation
+            - fill_with_endogenous_dem : bulldozer
+            - fill_with_exogenous_dem : exogenous_filling followed by bulldozer
+
+        .. include-cars-config:: ../../example_configs/configuration/filling_in_input
