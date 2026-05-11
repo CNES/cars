@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1  Improved filling map (May 2026)
+
+### Changed
+
+ - Classes no_edition and interpolation added on filling map [#1359]
+ - File metadata.yaml is now giving informations of all pipelines [#1357]
+
+### Fixed
+
+ - Fix in global_used_conf.yaml file [#1363]
+
 ## 1.1.0  Guided dense matching optimization (April 2026)
 
 ### Added
