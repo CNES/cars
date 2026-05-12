@@ -9,6 +9,10 @@ DSM Filling
 
 Fill classified values or missing values with one the three avalable methods.
 
+.. note::
+
+    Filling can be configured directly in the :ref:`input <running_cars_with_sensor_images_as_input>` configuration. Each method combines several available filling applications.
+
 **Configuration**
 
 +-------------------------------------+---------------------------------+---------+----------------------------------------------------------+--------------------+----------+
