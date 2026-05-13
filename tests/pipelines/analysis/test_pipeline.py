@@ -67,6 +67,8 @@ def test_pipeline_analysis_api():
         pipeline.run()
 
         # check output report
-        report_path = os.path.join(directory, "output", "report.pdf")
+        report_path = os.path.join(directory, "output", "report.html")
+        assert os.path.isfile(report_path)
 
+        report_path = os.path.join(directory, "output", "report.pdf")
         assert os.path.isfile(report_path)
