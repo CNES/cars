@@ -26,7 +26,9 @@ import json
 import logging
 import os
 import os.path
+import re
 from math import radians
+from urllib.parse import unquote, urlparse
 
 import contextily as ctx
 import geopandas as gpd
@@ -35,29 +37,84 @@ import numpy as np
 import rasterio
 import yaml
 from matplotlib.patches import ConnectionPatch
-from pypdf import PdfWriter
-from weasyprint import HTML
 
 
-def merge_reports(reports_pdfs, report_file):
+def make_paths_relative(html_content, output_file_path):
+    """
+    Transform absolute paths in the HTML content.
+
+    :param html_content: html content
+    :param output_file_path:
+    :return: htm content with relative paths
+    """
+    pattern = r'(src|href)=["\']([^"\']+)["\']'
+    base_dir = os.path.dirname(os.path.abspath(output_file_path))
+
+    def replacer(match):
+        """
+        Replace absolute paths with relative paths in the HTML content.
+
+        :param match: match
+        :return: transformed string with relative path if application
+        """
+        attr = match.group(1)
+        raw_path = match.group(2)
+
+        parsed_url = urlparse(raw_path)
+        if parsed_url.scheme == "file" or not parsed_url.scheme:
+            clean_path = unquote(parsed_url.path)
+            if os.path.isabs(clean_path):
+                try:
+                    rel_path = os.path.relpath(clean_path, base_dir)
+                    rel_path = rel_path.replace(os.sep, "/")
+                    return f'{attr}="{rel_path}"'  # noqa: B907
+                except ValueError:
+                    return match.group(0)
+
+        return match.group(0)
+
+    return re.sub(pattern, replacer, html_content)
+
+
+def merge_reports(reports_html_files, report_file_html, report_file_pdf):
     """
     Merge the reports pdfs into one report pdf
 
-    :param reports_pdfs: list of paths to the reports pdfs to merge
-    :type reports_pdfs: list of str
-    :param report_file: path to the merged report pdf
-    :type report_file: str
+    :param reports_html_files: list of paths to the reports htmls to merge
+    :type reports_html_files: list of str
+    :param report_file_html: path to the merged report html
+    :type report_file_html: str
+    :param report_file_pdf: path to the merged report pdf
+    :type report_file_pdf: str
     """
 
-    merger = PdfWriter()
+    # Concat all HTML strings
+    html_data = []
+    for html_file in reports_html_files:
+        with open(html_file, "r", encoding="utf-8") as f:
+            html_data.append(f.read())
+    merged_html = "".join(html_data)
 
-    for report_pdf in reports_pdfs:
-        if not os.path.exists(report_pdf):
-            logging.warning(f"Report pdf {report_pdf} not found, skipping.")
-            continue
-        merger.append(report_pdf)
+    # Change absolute paths to relative paths
+    relative_merged_html = make_paths_relative(merged_html, report_file_html)
 
-    merger.write(report_file)
+    # Save html report
+    with open(report_file_html, "w", encoding="utf-8") as f:
+        f.write(relative_merged_html)
+
+    # Save PDF report if possible
+    try:
+        from weasyprint import HTML  # pylint: disable=import-outside-toplevel
+
+        # Export to PDF
+        HTML(string=merged_html).write_pdf(report_file_pdf)
+    except ImportError:
+        logging.warning(
+            "WeasyPrint not installed, skipping PDF generation "
+            "for merged report. \n"
+            " Install with cars target : pdf_report \n"
+            "pip install cars[pdf_report]"
+        )
 
 
 def generate_report_cars_output(report_file, output_dir, log_error, used_conf):
@@ -155,8 +212,11 @@ def generate_report_cars_output(report_file, output_dir, log_error, used_conf):
 
     html_content += "</body></html>"
 
-    # Export to PDF
-    HTML(string=html_content).write_pdf(report_file)
+    # Save html report
+    with open(report_file, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    return report_file
 
 
 def safe_list_return(func):
@@ -719,8 +779,10 @@ def generate_satelite_position_report(sat_positions, sat_infos, output_dir):
     </html>
     """
 
-    report_file = os.path.join(output_dir, "report.pdf")
+    report_file = os.path.join(output_dir, "report.html")
 
-    HTML(string=html_content).write_pdf(report_file)
+    # Save html report
+    with open(report_file, "w", encoding="utf-8") as f:
+        f.write(html_content)
 
     return report_file

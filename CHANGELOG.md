@@ -6,6 +6,7 @@
 
  - Classes no_edition and interpolation added on filling map [#1359]
  - File metadata.yaml is now giving informations of all pipelines [#1357]
+ - Check report is now HTML and not PDF, dependency to WeasyPrint is removed by default
 
 ### Fixed
 
