@@ -165,13 +165,14 @@ class AnalysisPipeline(PipelineTemplate):
 
         # Generate report
         reports_to_merge = [sat_report, low_res_report, full_res_report]
-        merged_report = os.path.join(pipeline_out_dir, "report.pdf")
-        merge_reports(reports_to_merge, merged_report)
+        merged_report_pdf = os.path.join(pipeline_out_dir, "report.pdf")
+        merged_report_html = os.path.join(pipeline_out_dir, "report.html")
+        merge_reports(reports_to_merge, merged_report_html, merged_report_pdf)
 
         if low_res_error or full_res_error:
             raise RuntimeError(
                 "CARS pipeline did not run successfully, "
-                f"check report for more details in {merged_report}"
+                f"check report for more details in {merged_report_html}"
             )
 
 
@@ -181,7 +182,7 @@ def launch_low_res_pipeline(conf, low_res_dir, config_dir):
     """
 
     safe_makedirs(low_res_dir)
-    report_file = os.path.join(low_res_dir, "report.pdf")
+    report_file = os.path.join(low_res_dir, "report.html")
 
     # launch cars
     log_error = "No error during low res pipeline"
@@ -312,7 +313,7 @@ def launch_full_res_pipeline(
 
     # Generate report on crop results
 
-    report_file = os.path.join(full_res_dir, "report.pdf")
+    report_file = os.path.join(full_res_dir, "report.html")
     # Generate report
     generate_report_cars_output(
         report_file, full_res_dir, log_error, saved_cars_conf

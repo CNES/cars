@@ -67,9 +67,7 @@ dependencies = [
     "bulldozer-dtm==1.3.*",
     "xdem==0.2.*",
     "geopandas",
-    "pypdf",
     "contextily",
-    "weasyprint<53"
 ]
 
 [project.urls]
@@ -111,6 +109,11 @@ docs = [
     "graphviz",
     "sphinx_tabs",
     "sphinx-copybutton",
+]
+
+# [pdf_report] mode dependencies
+pdf_report = [
+    "weasyprint<53"
 ]
 
 # [pandora_mccnn] add heavy mccnn capability for dense matching pandora already install in main requires
