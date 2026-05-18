@@ -25,6 +25,7 @@ RUN pip install uv
 # without having to compile and install cars
 RUN uv pip compile pyproject.toml --extra dev \
                                   --extra docs \
+                                  --extra pdf_report \
                                   --output-file requirements.txt \
                                   --prerelease if-necessary-or-explicit
 

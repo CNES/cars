@@ -64,8 +64,9 @@ ARG version
 ARG GIT_BRANCH=master
 ARG CARS_URL=https://github.com/CNES/cars.git
 # hadolint ignore=DL3003,DL3013
-RUN if [ -z "$version" ] ; then git clone --single-branch --branch $GIT_BRANCH --depth 1 ${CARS_URL} --single && cd cars && python3 -m pip install --no-cache-dir -c $CONSTRAINTS_FILE build && python3 -m build &&  pip install --no-cache-dir -c $CONSTRAINTS_FILE dist/*.whl && cd - && rm -rf cars; \
-    else pip install --no-cache-dir -c $CONSTRAINTS_FILE cars==$version; fi
+RUN if [ -z "$version" ] ; then git clone --single-branch --branch $GIT_BRANCH --depth 1 ${CARS_URL} --single && cd cars && python3 -m pip install --no-cache-dir -c $CONSTRAINTS_FILE build && python3 -m build &&  pip install --no-cache-dir -c $CONSTRAINTS_FILE $(ls dist/*.whl)[pdf_report] && cd - && rm -rf cars; \
+    else pip install --no-cache-dir -c $CONSTRAINTS_FILE "cars[pdf_report]==$version"; fi
+
 
 # Launch cars
 ENTRYPOINT ["cars"]
