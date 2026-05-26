@@ -397,7 +397,7 @@ class CarsDataset:
                     col_min, col_left - col_overlap
                 )
                 out_overlap[i, j, 3] = (
-                    min(col_right, col_right + col_overlap) - col_right
+                    min(col_max, col_right + col_overlap) - col_right
                 )
 
         self.tiling_grid = out_grid

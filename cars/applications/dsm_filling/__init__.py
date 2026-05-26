@@ -29,4 +29,5 @@ from . import (
     border_interpolation_app,
     bulldozer_filling_app,
     exogenous_filling_app,
+    interpolation_filling_app,
 )
