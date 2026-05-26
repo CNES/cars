@@ -802,6 +802,18 @@ class FillingPipeline(PipelineTemplate):
                     tile_size=self.filling_tile_size,
                     orchestrator=self.cars_orchestrator,
                 )
+            elif app.get_conf()["method"] == "interpolation":
+                _ = app.run(
+                    dsm_file=dsm_file_name,
+                    classif_file=classif_file_name,
+                    filling_file=filling_file_name,
+                    classif_values=classif_values,
+                    dump_dir=app_dump_dir,
+                    roi_polys=self.list_intersection_poly,
+                    roi_epsg=self.epsg,
+                    dsm_dir=dsm_filled_dir,
+                    orchestrator=self.cars_orchestrator,
+                )
             elif app.get_conf()["method"] == "bulldozer":
                 _, dtm_file_name = app.run(
                     dsm_file=dsm_file_name,

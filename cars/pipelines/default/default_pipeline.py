@@ -266,19 +266,32 @@ class DefaultPipeline(PipelineTemplate):
                     config_dir=self.config_dir,
                 )
                 if last_res and self.pipeline_to_use[pipeline_cst.FILLING]:
-                    # Force classification saving for filling
-                    if not current_unit_pipeline.used_conf[OUTPUT][AUXILIARY][
-                        sens_cst.INPUT_CLASSIFICATION
-                    ]:
-                        current_unit_pipeline.used_conf[OUTPUT][AUXILIARY][
+                    has_classif = False
+                    # check classif is available in input before forcing it
+                    for sens in current_unit_pipeline.used_conf[INPUT][
+                        sens_cst.SENSORS
+                    ].values():
+                        if (
+                            sens_cst.INPUT_CLASSIFICATION in sens
+                            and sens[sens_cst.INPUT_CLASSIFICATION]
+                        ):
+                            has_classif = True
+                            break
+
+                    if has_classif:
+                        # Force classification saving for filling
+                        if not current_unit_pipeline.used_conf[OUTPUT][
+                            AUXILIARY
+                        ][sens_cst.INPUT_CLASSIFICATION]:
+                            current_unit_pipeline.used_conf[OUTPUT][AUXILIARY][
+                                sens_cst.INPUT_CLASSIFICATION
+                            ] = True
+                        if not self.filling_conf[OUTPUT][AUXILIARY][
                             sens_cst.INPUT_CLASSIFICATION
-                        ] = True
-                    if not self.filling_conf[OUTPUT][AUXILIARY][
-                        sens_cst.INPUT_CLASSIFICATION
-                    ]:
-                        self.filling_conf[OUTPUT][AUXILIARY][
-                            sens_cst.INPUT_CLASSIFICATION
-                        ] = True
+                        ]:
+                            self.filling_conf[OUTPUT][AUXILIARY][
+                                sens_cst.INPUT_CLASSIFICATION
+                            ] = True
                 # Get used_conf
                 used_configurations[epipolar_res] = (
                     current_unit_pipeline.used_conf

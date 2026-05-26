@@ -91,6 +91,7 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
 
         filling_bands_list = {
             "fill_with_geoid": ["filling_exogenous"],
+            "interpolation": ["interpolation"],
             "interpolate_from_borders": [
                 "bulldozer",
                 "border_interpolation",
@@ -123,7 +124,7 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
                         filling_mono_bands[mask_1 & mask_2] = key
                         continue
 
-                    if elem in ("other", "interpolation"):
+                    if elem == "other":
                         continue
 
                     filling_method = filling_bands_list[elem]

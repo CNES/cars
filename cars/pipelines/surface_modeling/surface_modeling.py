@@ -1951,6 +1951,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
             filling_bands_list = {
                 "fill_with_geoid": ["filling_exogenous"],
+                "interpolation": ["interpolation"],
                 "interpolate_from_borders": [
                     "bulldozer",
                     "border_interpolation",
@@ -1979,7 +1980,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
                 if isinstance(value, list):
                     for elem in value:
-                        if elem not in ("other", "interpolation"):
+                        if elem != "other":
                             filling_method = filling_bands_list[elem]
 
                             if all(
