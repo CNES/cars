@@ -62,6 +62,7 @@ install/deps: venv ## install python libs
 
 .PHONY: install/dev-gdal
 install/dev-gdal: install/deps ## install cars on healthy python env for gdal/proj
+	@test -f ${CARS_VENV}/bin/cars ||${CARS_VENV}/bin/python -m pip install cython
 	@test -f ${CARS_VENV}/bin/cars || echo "rasterio --no-binary rasterio" > $CONSTRAINTS_FILE  ; echo "fiona --no-binary fiona" >> $CONSTRAINTS_FILE
 	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install -c $CONSTRAINTS_FILE --no-build-isolation --editable .[dev,docs]
 	@test -f ${CARS_VENV}/bin/cars || rm  $CONSTRAINTS_FILE
