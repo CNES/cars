@@ -124,6 +124,7 @@ surface_modeling:
         save_intermediate_data: true
         method: epipolar
         epi_step: 30
+        find_optimal_altitude: true
       resampling:
         save_intermediate_data: true
         method: bicubic
@@ -269,6 +270,7 @@ surface_modeling:
         save_intermediate_data: true
         method: epipolar
         epi_step: 30
+        find_optimal_altitude: true
       resampling:
         save_intermediate_data: true
         method: bicubic
@@ -414,6 +416,7 @@ surface_modeling:
         save_intermediate_data: true
         method: epipolar
         epi_step: 30
+        find_optimal_altitude: true
       resampling:
         save_intermediate_data: true
         method: bicubic

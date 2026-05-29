@@ -108,7 +108,13 @@ def write_grid(grid, fname, origin, spacing):
 
 
 def generate_epipolar_grids(  # pylint: disable=too-many-positional-arguments
-    sensor1, sensor2, geomodel1, geomodel2, geometry_plugin, epipolar_step
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    geometry_plugin,
+    epipolar_step,
+    find_optimal_altitude,
 ):
     """
     Computes the left and right epipolar grids
@@ -120,6 +126,9 @@ def generate_epipolar_grids(  # pylint: disable=too-many-positional-arguments
     :param geometry_plugin: geometry plugin to use
     :type geometry_plugin: AbstractGeometry
     :param epipolar_step: step to use to construct the epipolar grids
+    :param find_optimal_altitude: whether to find the altitude that
+        maximize image covering
+
     :return: Tuple composed of :
 
         - the left epipolar grid as a numpy array
@@ -138,6 +147,7 @@ def generate_epipolar_grids(  # pylint: disable=too-many-positional-arguments
         geomodel1,
         geomodel2,
         epipolar_step=epipolar_step,
+        find_optimal_altitude=find_optimal_altitude,
     )
 
 
