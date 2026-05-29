@@ -68,6 +68,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         # check conf
         self.used_method = self.used_config["method"]
         self.epi_step = self.used_config["epi_step"]
+        self.find_optimal_altitude = self.used_config["find_optimal_altitude"]
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
@@ -96,6 +97,9 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "epipolar")
         overloaded_conf["epi_step"] = conf.get("epi_step", 30)
+        overloaded_conf["find_optimal_altitude"] = conf.get(
+            "find_optimal_altitude", True
+        )
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -103,6 +107,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         grid_generation_schema = {
             "method": str,
             "epi_step": And(int, lambda x: x > 0),
+            "find_optimal_altitude": bool,
             "save_intermediate_data": bool,
         }
 
@@ -246,6 +251,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             geomodel2,
             geometry_plugin,
             self.epi_step,
+            self.find_optimal_altitude,
         )
 
         # Create CarsDataset

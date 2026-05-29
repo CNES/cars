@@ -124,10 +124,10 @@ def test_pipeline_ventoux():
         }
 
         expected = {
-            "raw_count": 92,
-            "filtered_count": 88,
-            "raw_disp": -358,
-            "filtered_disp": -378,
+            "raw_count": 96,
+            "filtered_count": 93,
+            "raw_disp": -330,
+            "filtered_disp": -342,
             "raw_epi": 6,
             "filtered_epi": 4.75,
             "disp_tol": 2,
@@ -223,10 +223,10 @@ def test_pipeline_ventoux_with_mask():
         }
 
         expected = {
-            "raw_count": 92,
-            "filtered_count": 88,
-            "raw_disp": -358,
-            "filtered_disp": -378,
+            "raw_count": 96,
+            "filtered_count": 93,
+            "raw_disp": -330,
+            "filtered_disp": -342,
             "raw_epi": 6,
             "filtered_epi": 4.75,
             "disp_tol": 2,

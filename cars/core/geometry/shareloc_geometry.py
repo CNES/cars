@@ -31,10 +31,14 @@ import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
 import xarray as xr
 from json_checker import And, Checker, Or
+from shareloc import proj_utils
 from shareloc.dtm_reader import dtm_reader
 from shareloc.geofunctions import localization
 from shareloc.geofunctions.rectification_grid import RectificationGrid
-from shareloc.geofunctions.triangulation import epipolar_triangulation
+from shareloc.geofunctions.triangulation import (
+    epipolar_triangulation,
+    sensor_triangulation,
+)
 from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.grid import Grid
 from shareloc.geomodels.rpc import RPC
@@ -431,6 +435,83 @@ class SharelocGeometry(AbstractGeometry):
 
         return llh
 
+    @staticmethod
+    def find_optimal_alt(
+        image1,
+        image2,
+        geomodel1,
+        geomodel2,
+    ):
+        """
+        Find the elevation that maximizes the covering between images
+        :param image1: left image as shareloc object
+        :param image2: right image as shareloc object
+        :param geomodel1: left geomodel as shareloc object
+        :param geomodel2: right geomodel as shareloc object
+
+        :return: optimal altitude, residue of triangulation
+
+        """
+        left_center = np.array(
+            proj_utils.transform_index_to_physical_point(
+                image1.transform,
+                image1.nb_rows // 2,
+                image1.nb_columns // 2,
+            )
+        )
+        right_center = np.array(
+            proj_utils.transform_index_to_physical_point(
+                image2.transform,
+                image2.nb_rows // 2,
+                image2.nb_columns // 2,
+            )
+        )
+        alt_min, alt_max = geomodel1.get_alt_min_max()
+        [left_center_loc_a_row], [left_center_loc_a_col], _ = (
+            localization.coloc(
+                geomodel1,
+                geomodel2,
+                left_center[0],
+                left_center[1],
+                elevation=alt_min,
+                image1=image1,
+                image2=image2,
+            )
+        )
+        [left_center_loc_b_row], [left_center_loc_b_col], _ = (
+            localization.coloc(
+                geomodel1,
+                geomodel2,
+                left_center[0],
+                left_center[1],
+                elevation=alt_max,
+                image1=image1,
+                image2=image2,
+            )
+        )
+        left_center_loc_a = np.array(
+            (left_center_loc_a_row, left_center_loc_a_col)
+        )
+        left_center_loc_b = np.array(
+            (left_center_loc_b_row, left_center_loc_b_col)
+        )
+        ab = left_center_loc_b - left_center_loc_a
+        ac = right_center - left_center_loc_a
+        t = np.dot(ac, ab) / np.dot(ab, ab)
+        right_center_projected = left_center_loc_a + t * ab
+        match = np.array(
+            [
+                left_center[1],
+                left_center[0],
+                right_center_projected[1],
+                right_center_projected[0],
+            ]
+        ).reshape((1, 4))
+        (_, coords_wgs84, residue) = sensor_triangulation(
+            match, geomodel1, geomodel2, residues=True
+        )
+        return coords_wgs84[0, 2], residue[0, 0]
+
     # pylint: disable=too-many-positional-arguments
     def generate_epipolar_grids(
         self,
@@ -439,6 +520,7 @@ class SharelocGeometry(AbstractGeometry):
         geomodel1,
         geomodel2,
         epipolar_step: int = 30,
+        find_optimal_altitude: bool = False,
     ) -> Tuple[
         np.ndarray, np.ndarray, List[float], List[float], List[int], float
     ]:
@@ -450,6 +532,9 @@ class SharelocGeometry(AbstractGeometry):
         :param geomodel1: path and attributes for left geomodel
         :param geomodel2: path and attributes for right geomodel
         :param epipolar_step: step to use to construct the epipolar grids
+        :param find_optimal_altitude: whether to find the altitude that
+            maximize image covering
+
         :return: Tuple composed of :
             - the left epipolar grid as a numpy array
             - the right epipolar grid as a numpy array
@@ -466,6 +551,19 @@ class SharelocGeometry(AbstractGeometry):
 
         image1 = SharelocGeometry.load_image(sensor1)
         image2 = SharelocGeometry.load_image(sensor2)
+
+        if self.elevation == 0 and find_optimal_altitude:
+            # find the elevation that maximizes the covering between images
+            h, residue = SharelocGeometry.find_optimal_alt(
+                image1, image2, shareloc_model1, shareloc_model2
+            )
+            logging.info(
+                "Optimal altitude found for epipolar grid generation : {}m. "
+                "Residue of triangulation : {}m".format(
+                    round(h, 2), round(residue, 5)
+                )
+            )
+            self.elevation = h
 
         # compute epipolar grids
         (
