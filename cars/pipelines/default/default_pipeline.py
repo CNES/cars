@@ -644,6 +644,7 @@ class DefaultPipeline(PipelineTemplate):
         previous_res = None
         current_surface_modeling_out_dir = None
         updated_conf = {}
+        updated_conf["pipeline"] = self.pipeline_to_use
 
         if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
             current_log_dir = os.path.join(self.out_dir, "logs", "subsampling")
@@ -672,6 +673,11 @@ class DefaultPipeline(PipelineTemplate):
                 subsampling_pipeline.used_conf,
                 pipeline_cst.SUBSAMPLING,
             )
+
+            updated_conf[pipeline_cst.SUBSAMPLING] = {
+                ADVANCED: subsampling_pipeline.used_conf[ADVANCED],
+                APPLICATIONS: subsampling_pipeline.used_conf[APPLICATIONS],
+            }
 
         if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
             for resolution_index, epipolar_res in enumerate(self.resolutions):
@@ -1231,6 +1237,14 @@ def merge_used_conf(used_configurations, resolutions, out_dir):
         OUTPUT: used_configurations[resolutions[-1]][OUTPUT],
         ORCHESTRATOR: used_configurations[resolutions[0]][ORCHESTRATOR],
     }
+
+    if pipeline_cst.SUBSAMPLING in used_configurations:
+        merged_conf[pipeline_cst.SUBSAMPLING] = used_configurations[
+            pipeline_cst.SUBSAMPLING
+        ]
+
+    if "pipeline" in used_configurations:
+        merged_conf["pipeline"] = used_configurations["pipeline"]
 
     merged_conf[OUTPUT]["directory"] = out_dir
 
