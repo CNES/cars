@@ -75,6 +75,12 @@ Only one simple gaussian method is available for now.
       -
       - false
       - No
+    * - fill_nodata
+      - whether to fill nodata value or not
+      - boolean
+      -
+      - true
+      - No
 
 **Example**
 

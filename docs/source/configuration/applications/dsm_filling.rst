@@ -31,7 +31,9 @@ Method "exogenous_filling" fills with altitude of exogenous data (DEM/geoid).
 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
 | Name                                | Description                                        | Type        | Available value         | Default value      | Required |
 +=====================================+====================================================+=============+=========================+====================+==========+
-| classification                      | Values of classes to fill                          | List[str]   |                         | "nodata"           | No       |
+| fill_classification                 | Values of classes to fill                          | List[str]   |                         | "nodata"           | No       |
++-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
+| fill_nodata                         | Values of the invalidity_mask to fill              | List[str]   |                         | None               | No       |
 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
 | fill_with_geoid                     | Classes to fill with geoid                         | List[str]   |                         | None               | No       |
 +-------------------------------------+----------------------------------------------------+-------------+-------------------------+--------------------+----------+
@@ -43,11 +45,14 @@ Method "exogenous_filling" fills with altitude of exogenous data (DEM/geoid).
 
 Method "bulldozer" converts the DSM to a DTM and fills the pixels with the output DTM.
 
-+-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
-| Name                                | Description                     | Type      | Available value         | Default value      | Required |
-+=====================================+=================================+===========+=========================+====================+==========+
-| classification                      | Values of classes to fill       | List[str] |                         | "nodata"           | No       |
-+-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
++-------------------------------------+---------------------------------------+-----------+-------------------------+--------------------+----------+
+| Name                                | Description                           | Type      | Available value         | Default value      | Required |
++=====================================+=======================================+===========+=========================+====================+==========+
+| fill_classification                 | Values of classes to fill             | List[str] |                         | "nodata"           | No       |
++-------------------------------------+---------------------------------------+-----------+-------------------------+--------------------+----------+
+| fill_nodata                         | Values of the invalidity_mask to fill | List[str] |                         | None               | No       |
++-------------------------------------+---------------------------------------+-----------+-------------------------+--------------------+----------+
+
 
 **Method border_interpolation:**
 
@@ -56,7 +61,9 @@ Method "border_interpolation" use the border of every component to compute the a
 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
 | Name                                | Description                              | Type      | Available value         | Default value      | Required |
 +=====================================+==========================================+===========+=========================+====================+==========+
-| classification                      | Values of classes to fill                | List[str] |                         | "nodata"           | No       |
+| fill_classification                 | Values of classes to fill                | List[str] |                         | "nodata"           | No       |
++-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
+| fill_nodata                         | Values of the invalidity_mask to fill    | List[str] |                         | None               | No       |
 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
 | component_min_size                  | Minimal size (pixels) of feature to fill | int       |                         | 5                  | No       |
 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
@@ -65,8 +72,28 @@ Method "border_interpolation" use the border of every component to compute the a
 | percentile                          | Percentile of border taken for altitude  | float     |                         | 10                 | No       |
 +-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
 
+**Method interpolation:**
+
+Method "interpolation" reconstruct invalid or missing pixels in a raster by interpolating neighboring valid values.
+
++-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
+| Name                                | Description                              | Type      | Available value         | Default value      | Required |
++=====================================+==========================================+===========+=========================+====================+==========+
+| fill_classification                 | Values of classes to fill                | List[str] |                         | "nodata"           | No       |
++-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
+| fill_nodata                         | Values of the invalidity_mask to fill    | List[str] |                         | None               | No       |
++-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
+| tile_size                           | The size of tiles                        | int       |                         | 2000               | No       |
++-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
+| margin                              | The margin used for tiling               | int       |                         | 100                | No       |
++-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
+| percentile                          | Percentile of border taken for altitude  | float     |                         | 10                 | No       |
++-------------------------------------+------------------------------------------+-----------+-------------------------+--------------------+----------+
+
+
 .. note::
     - If the keyword "nodata" is added to the classification parameter, nodata pixels of the classification will be filled. If no classification is given, nodata pixels of DSM will be filled.
+    - The values available in fill_nodata are 1 and 2, which correspond to occlusion and mismatch, respectively.
 
 .. warning::
 

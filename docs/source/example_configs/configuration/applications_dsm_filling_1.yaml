@@ -2,18 +2,26 @@
 applications:
   dsm_filling.1:
     method: exogenous_filling
-    classification:
+    fill_classification:
     - "8"
     fill_with_geoid:
     - "8"
     save_intermediate_data: true
   dsm_filling.2:
     method: bulldozer
-    classification:
+    fill_classification:
     - "6"
+    fill_nodata:
+    - "1"
+    - "2"
     save_intermediate_data: true
   dsm_filling.3:
     method: border_interpolation
-    classification:
+    fill_classification:
     - "7"
+    save_intermediate_data: true
+  dsm_filling.4:
+    method: interpolation
+    fill_classification:
+    - "4"
     save_intermediate_data: true

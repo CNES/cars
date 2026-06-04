@@ -159,6 +159,17 @@ def create_point_cloud_index(cloud_sample):
             band_index = "{}_{}".format(cst.POINT_CLOUD_FILLING_KEY_ROOT, band)
             cloud_indexes_with_types[band_index] = "uint8"
 
+    # Add invalidity_mask information indexes
+    if cst.EPI_INVALIDITY_MASK in cloud_sample:
+        band_invalidity_mask = list(
+            cloud_sample.coords[cst.BAND_INVALIDITY_MASK].to_numpy()
+        )
+        for band in band_invalidity_mask:
+            band_index = "{}_{}".format(
+                cst.POINT_CLOUD_INVALIDITY_MASK_KEY_ROOT, band
+            )
+            cloud_indexes_with_types[band_index] = "uint8"
+
     # Add ambiguity information index
     if cst.EPI_AMBIGUITY in cloud_sample:
         cloud_indexes_with_types[cst.EPI_AMBIGUITY] = "float32"
@@ -465,6 +476,7 @@ def depth_map_dataset_to_dataframe(  # noqa: C901
         (cst.EPI_MSK, cst.POINT_CLOUD_MSK),
         (cst.EPI_CLASSIFICATION, cst.POINT_CLOUD_CLASSIF_KEY_ROOT),
         (cst.EPI_FILLING, cst.POINT_CLOUD_FILLING_KEY_ROOT),
+        (cst.EPI_INVALIDITY_MASK, cst.POINT_CLOUD_INVALIDITY_MASK_KEY_ROOT),
     ]
 
     # Add layer inf and sup
@@ -516,23 +528,15 @@ def depth_map_dataset_to_dataframe(  # noqa: C901
     # Transpose point cloud
     flatten_cloud = flatten_cloud.transpose()
 
-    # remove masked data (pandora + out of the terrain tile points)
-    crop_terrain_tile_data_msk = (
-        cloud_dataset[cst.POINT_CLOUD_CORR_MSK].values[
+    # remove masked data (out of the terrain tile points)
+    if roi:
+        crop_terrain_tile_data_msk = terrain_tile_data_msk[
             bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
         ]
-        == 255
-    )
 
-    if roi:
-        crop_terrain_tile_data_msk = np.logical_and(
-            crop_terrain_tile_data_msk,
-            terrain_tile_data_msk[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1],
+        flatten_cloud = filter_cloud_with_mask(
+            flatten_cloud, crop_terrain_tile_data_msk
         )
-
-    flatten_cloud = filter_cloud_with_mask(
-        flatten_cloud, crop_terrain_tile_data_msk
-    )
 
     # Remove points with nan values on X, Y or Z
     xyz_indexes = np.array(

@@ -460,8 +460,8 @@ def intialize_product_index(orchestrator, product_levels, input_pairs):
             cst.INDEX_DSM_CLASSIFICATION: None,
             cst.INDEX_DSM_PERFORMANCE_MAP: None,
             cst.INDEX_DSM_CONTRIBUTING_PAIR: None,
-            cst.INDEX_DSM_FILLING: None,
             cst.INDEX_DSM_WEIGHTS: None,
+            "invalidity_mask": None,
         }
 
     if "point_cloud" in product_levels:
@@ -480,8 +480,8 @@ def intialize_product_index(orchestrator, product_levels, input_pairs):
                 cst.INDEX_DEPTH_MAP_MASK: None,
                 cst.INDEX_DEPTH_MAP_CLASSIFICATION: None,
                 cst.INDEX_DEPTH_MAP_PERFORMANCE_MAP: None,
-                cst.INDEX_DEPTH_MAP_FILLING: None,
                 cst.INDEX_DEPTH_MAP_EPSG: None,
+                "invalidity_mask": None,
             }
 
     if orchestrator is not None:

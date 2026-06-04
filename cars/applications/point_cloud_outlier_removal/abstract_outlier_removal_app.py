@@ -232,6 +232,14 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
                 cars_ds_name="depth_map_z_filtered_" + app_name,
                 dtype=np.float64,
             )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(filtered_dir, "invalidity_mask.tif"),
+                cst.EPI_INVALIDITY_MASK,
+                filtered_point_cloud,
+                cars_ds_name="invalidity_mask_" + app_name,
+                dtype=np.uint8,
+                nodata=255,
+            )
 
         # update depth map index if required
         if depth_map_dir:

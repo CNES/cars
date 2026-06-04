@@ -621,6 +621,15 @@ class BasicDenseMatchingApplication(
                 )
 
                 self.orchestrator.add_to_save_lists(
+                    os.path.join(pair_folder, "invalidity_mask.tif"),
+                    "invalidity_mask",
+                    epipolar_disparity_map,
+                    dtype=np.uint8,
+                    cars_ds_name="validity_mask",
+                    optional_data=True,
+                    nodata=255,
+                )
+                self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp_classif.tif"),
                     cst.EPI_CLASSIFICATION,
                     epipolar_disparity_map,

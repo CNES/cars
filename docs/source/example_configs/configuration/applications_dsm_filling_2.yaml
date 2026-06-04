@@ -2,7 +2,9 @@
 applications:
   dsm_filling: # run single filling application
     method: exogenous_filling
-    classification:
+    fill_classification:
     - "8"
+    fill_nodata:
+    - "1"
     fill_with_geoid:
     - "8"

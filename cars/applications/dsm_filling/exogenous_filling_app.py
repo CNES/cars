@@ -61,7 +61,8 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.classification = self.used_config["classification"]
+        self.fill_classification = self.used_config["fill_classification"]
+        self.fill_nodata = self.used_config["fill_nodata"]
         self.fill_with_geoid = self.used_config["fill_with_geoid"]
         self.interpolation_method = self.used_config["interpolation_method"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -77,11 +78,16 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "exogenous_filling")
-        overloaded_conf["classification"] = conf.get("classification", "nodata")
-        if isinstance(overloaded_conf["classification"], str):
-            overloaded_conf["classification"] = [
-                overloaded_conf["classification"]
+        overloaded_conf["fill_classification"] = conf.get(
+            "fill_classification", "nodata"
+        )
+        if isinstance(overloaded_conf["fill_classification"], str):
+            overloaded_conf["fill_classification"] = [
+                overloaded_conf["fill_classification"]
             ]
+        overloaded_conf["fill_nodata"] = conf.get("fill_nodata", None)
+        if isinstance(overloaded_conf["fill_nodata"], str):
+            overloaded_conf["fill_nodata"] = [overloaded_conf["fill_nodata"]]
         overloaded_conf["fill_with_geoid"] = conf.get("fill_with_geoid", None)
         overloaded_conf["interpolation_method"] = conf.get(
             "interpolation_method", "bilinear"
@@ -101,7 +107,8 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         rectification_schema = {
             "method": str,
-            "classification": Or(None, [str]),
+            "fill_classification": Or(None, [str]),
+            "fill_nodata": Or(None, [str]),
             "fill_with_geoid": Or(None, [str]),
             "interpolation_method": str,
             "save_intermediate_data": bool,
@@ -119,6 +126,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         dsm_file,
         classif_file,
         filling_file,
+        invalidity_mask_file,
         classif_values,
         dump_dir,
         roi_polys,
@@ -152,8 +160,8 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             dsm_path_out = dsm_file
             filling_path_out = filling_file
 
-        if self.classification is None:
-            self.classification = ["nodata"]
+        if self.fill_classification is None:
+            self.fill_classification = ["nodata"]
 
         if self.fill_with_geoid is None:
             self.fill_with_geoid = []
@@ -315,6 +323,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                     old_dsm_path,
                     old_filling_path,
                     classif_file,
+                    invalidity_mask_file,
                     classif_values,
                     geom_plugin.dem,
                     geom_plugin.geoid,
@@ -323,7 +332,8 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                     roi_epsg,
                     self.fill_with_geoid,
                     interpolation_method,
-                    self.classification,
+                    self.fill_classification,
+                    self.fill_nodata,
                     window=window,
                     saving_info=full_saving_info,
                     profile=profile,
@@ -336,6 +346,7 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     dsm_file,
     filling_file,
     classif_file,
+    invalidity_mask_file,
     classif_values,
     geo_plugin_dem,
     geo_plugin_geoid,
@@ -344,7 +355,8 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     roi_epsg,
     fill_with_geoid,
     interpolation_method,
-    classification,
+    fill_classification,
+    fill_nodata,
     window=None,
     saving_info=None,
     profile=None,
@@ -463,7 +475,7 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     else:
         with rio.open(dsm_file) as in_dsm:
             dsm_msk = in_dsm.read_masks(1, window=rasterio_window)
-    for label in classification:
+    for label in fill_classification:
         if label in classif_values:
             filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
         elif label == "nodata":
@@ -498,6 +510,36 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
                 dsm[filling_mask] -= output_geoid_data[filling_mask]
 
         combined_mask = np.logical_or(combined_mask, filling_mask)
+
+    invalidity_mask = None
+    if fill_nodata is not None:
+        if invalidity_mask_file is not None:
+            with rio.open(invalidity_mask_file) as src:
+                invalidity_mask = src.read(1, window=rasterio_window)
+        for label in fill_nodata:
+            filling_mask = np.logical_and(
+                invalidity_mask == int(label), roi_raster > 0
+            )
+
+            if label in fill_with_geoid:
+                logging.info("Filling of {} with geoid".format(label))
+                dsm[filling_mask] = 0
+            else:
+                logging.info("Filling of {} with DEM and geoid".format(label))
+                dsm[filling_mask] = elev_data[filling_mask]
+
+            # apply offset to project on geoid if needed
+            if output_geoid is not True:
+                if isinstance(output_geoid, bool) and output_geoid is False:
+                    # out geoid is ellipsoid: add geoid-ellipsoid distance
+                    dsm[filling_mask] += input_geoid_data[filling_mask]
+                elif isinstance(output_geoid, str):
+                    # out geoid is a new geoid whose path is in output_geoid:
+                    # add carsgeoid-ellipsoid then add ellipsoid-outgeoid
+                    dsm[filling_mask] += input_geoid_data[filling_mask]
+                    dsm[filling_mask] -= output_geoid_data[filling_mask]
+
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
     data = {
         "exogenous_filled_dsm": (["row", "col"], dsm),

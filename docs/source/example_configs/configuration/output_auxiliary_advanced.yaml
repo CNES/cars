@@ -8,5 +8,5 @@ output:
       17: [1, 2] 
       3: 3
       15: 4
-    filling: {18: [fill_with_geoid, interpolate_from_borders], 3: fill_with_endogenous_dem}
+    filling: {18: [fill_with_geoid, interpolate_from_borders], 3: fill_with_endogenous_dem, 9: interpolation}
     performance_map: [0, 0.8, 0.9, 1.1, 1.2]

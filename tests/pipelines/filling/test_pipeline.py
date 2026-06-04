@@ -85,6 +85,7 @@ def test_pipeline_filling_end2end_global():
             "interpolate_from_borders": 2,
             "fill_with_endogenous_dem": 1,
             "fill_with_geoid": 3,
+            "interpolation": ["mismatch"],
         }
 
         input_conf["subsampling"] = {"advanced": {"resolutions": [1]}}
@@ -327,9 +328,6 @@ def test_pipeline():
             "image": base_path + "image_test_surface_modeling_ventoux.tif",
             "classification": (
                 base_path + "classif_test_surface_modeling_ventoux.tif"
-            ),
-            "filling": (
-                base_path + "filling_test_surface_modeling_ventoux.tif"
             ),
         }
 

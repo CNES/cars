@@ -4,6 +4,9 @@ applications:
     method: bulldozer
     classification:
     - "6"
+    fill_nodata:
+    - "1"
+    - "2"
   dsm_filling.use_dtm: # the second application uses the DTM created earlier
     method: border_interpolation
     classification:

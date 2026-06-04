@@ -391,6 +391,13 @@ def compute_point_cloud(  # pylint: disable=too-many-positional-arguments
             cst.BAND_EDGES_TILE_ID,
             point_cloud,
         )
+    if cst.EPI_INVALIDITY_MASK in data:
+        triang_wrap.add_layer(
+            data,
+            cst.EPI_INVALIDITY_MASK,
+            cst.BAND_INVALIDITY_MASK,
+            point_cloud,
+        )
 
     point_cloud.attrs[cst.ROI] = data.attrs[cst.ROI]
     point_cloud.attrs[cst.ROI_WITH_MARGINS] = data.attrs[cst.ROI_WITH_MARGINS]

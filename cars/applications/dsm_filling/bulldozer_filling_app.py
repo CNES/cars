@@ -65,7 +65,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.classification = self.used_config["classification"]
+        self.fill_classification = self.used_config["fill_classification"]
+        self.fill_nodata = self.used_config["fill_nodata"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
     def check_conf(self, conf):
@@ -79,12 +80,18 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
-        overloaded_conf["classification"] = conf.get("classification", "nodata")
+        overloaded_conf["fill_classification"] = conf.get(
+            "fill_classification", "nodata"
+        )
+        overloaded_conf["fill_nodata"] = conf.get("fill_nodata", None)
 
-        if isinstance(overloaded_conf["classification"], str):
-            overloaded_conf["classification"] = [
-                overloaded_conf["classification"]
+        if isinstance(overloaded_conf["fill_classification"], str):
+            overloaded_conf["fill_classification"] = [
+                overloaded_conf["fill_classification"]
             ]
+
+        if isinstance(overloaded_conf["fill_nodata"], str):
+            overloaded_conf["fill_nodata"] = [overloaded_conf["fill_nodata"]]
 
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
@@ -92,7 +99,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         rectification_schema = {
             "method": str,
-            "classification": Or(None, [str]),
+            "fill_classification": Or(None, [str]),
+            "fill_nodata": Or(None, [str]),
             "save_intermediate_data": bool,
         }
 
@@ -108,6 +116,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         dsm_file,
         classif_file,
         filling_file,
+        invalidity_mask_file,
         classif_values,
         dump_dir,
         roi_polys,
@@ -131,8 +140,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 orchestrator_conf={"mode": "sequential"}
             )
 
-        if self.classification is None:
-            self.classification = ["nodata"]
+        if self.fill_classification is None:
+            self.fill_classification = ["nodata"]
 
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
@@ -321,11 +330,13 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                     old_dsm_path,
                     filling_file,
                     classif_file,
+                    invalidity_mask_file,
                     classif_values,
                     dtm_path,
                     roi_polys,
                     roi_epsg,
-                    self.classification,
+                    self.fill_classification,
+                    self.fill_nodata,
                     window=window,
                     saving_info=full_saving_info,
                     profile=profile,
@@ -338,11 +349,13 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     dsm_file,
     filling_file,
     classif_file,
+    invalidity_mask_file,
     classif_values,
     dtm_path,
     roi_polys,
     roi_epsg,
-    classification,
+    fill_classification,
+    fill_nodata,
     window=None,
     saving_info=None,
     profile=None,
@@ -416,7 +429,7 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     else:
         with rio.open(dsm_file) as in_dsm:
             dsm_msk = in_dsm.read_masks(1, window=rasterio_window)
-    for label in classification:
+    for label in fill_classification:
         if label in classif_values:
             filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
         elif label == "nodata":
@@ -434,6 +447,20 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
         logging.info("Filling of {} with Bulldozer DTM".format(label))
         dsm[filling_mask] = dtm[filling_mask]
         combined_mask = np.logical_or(combined_mask, filling_mask)
+
+    invalidity_mask = None
+    if fill_nodata is not None:
+        if invalidity_mask_file is not None:
+            with rio.open(invalidity_mask_file) as src:
+                invalidity_mask = src.read(1, window=rasterio_window)
+        for label in fill_nodata:
+            filling_mask = np.logical_and(
+                invalidity_mask == int(label), roi_raster > 0
+            )
+
+            logging.info("Filling of {} with Bulldozer DTM".format(label))
+            dsm[filling_mask] = dtm[filling_mask]
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
     data = {
         "bulldozer_filled_dsm": (["row", "col"], dsm),

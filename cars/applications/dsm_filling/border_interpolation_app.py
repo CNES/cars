@@ -61,7 +61,8 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.classification = self.used_config["classification"]
+        self.fill_classification = self.used_config["fill_classification"]
+        self.fill_nodata = self.used_config["fill_nodata"]
         self.component_min_size = self.used_config["component_min_size"]
         self.border_size = self.used_config["border_size"]
         self.percentile = self.used_config["percentile"]
@@ -78,11 +79,16 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "border_interpolation")
-        overloaded_conf["classification"] = conf.get("classification", "nodata")
-        if isinstance(overloaded_conf["classification"], str):
-            overloaded_conf["classification"] = [
-                overloaded_conf["classification"]
+        overloaded_conf["fill_classification"] = conf.get(
+            "fill_classification", "nodata"
+        )
+        overloaded_conf["fill_nodata"] = conf.get("fill_nodata", None)
+        if isinstance(overloaded_conf["fill_classification"], str):
+            overloaded_conf["fill_classification"] = [
+                overloaded_conf["fill_classification"]
             ]
+        if isinstance(overloaded_conf["fill_nodata"], str):
+            overloaded_conf["fill_nodata"] = [overloaded_conf["fill_nodata"]]
         overloaded_conf["component_min_size"] = conf.get(
             "component_min_size", 5
         )
@@ -94,7 +100,8 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         rectification_schema = {
             "method": str,
-            "classification": Or(None, [str]),
+            "fill_classification": Or(None, [str]),
+            "fill_nodata": Or(None, [str]),
             "component_min_size": int,
             "border_size": int,
             "percentile": Or(int, float),
@@ -113,6 +120,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         dsm_file,
         classif_file,
         filling_file,
+        invalidity_mask_file,
         classif_values,
         dtm_file,
         dump_dir,
@@ -144,8 +152,8 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             dsm_path_out = dsm_file
             filling_path_out = filling_file
 
-        if self.classification is None:
-            self.classification = ["nodata"]
+        if self.fill_classification is None:
+            self.fill_classification = ["nodata"]
             logging.error(
                 "Filling method 'border_interpolation' needs a classification"
             )
@@ -265,11 +273,13 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
                     old_dsm_path,
                     filling_file,
                     classif_file,
+                    invalidity_mask_file,
                     classif_values,
                     dtm_file,
                     roi_polys,
                     roi_epsg,
-                    self.classification,
+                    self.fill_classification,
+                    self.fill_nodata,
                     self.component_min_size,
                     self.border_size,
                     self.percentile,
@@ -285,11 +295,13 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
     dsm_file,
     filling_file,
     classif_file,
+    invalidity_mask_file,
     classif_values,
     dtm_file,
     roi_polys,
     roi_epsg,
-    classification,
+    fill_classification,
+    fill_nodata,
     component_min_size,
     border_size,
     percentile,
@@ -376,7 +388,7 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
     if classif_file is not None:
         with rio.open(classif_file) as in_classif:
             classif = in_classif.read(1, window=rasterio_window)
-    for label in classification:
+    for label in fill_classification:
         if label in classif_values:
             filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
         else:
@@ -422,6 +434,54 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
             if altitude is not None:
                 dsm[features == feature_id] = altitude
         combined_mask = np.logical_or(combined_mask, filling_mask)
+
+    invalidity_mask = None
+    if fill_nodata is not None:
+        if invalidity_mask_file is not None:
+            with rio.open(invalidity_mask_file) as src:
+                invalidity_mask = src.read(1, window=rasterio_window)
+        for label in fill_nodata:
+            filling_mask = np.logical_and(
+                invalidity_mask == int(label), roi_raster > 0
+            )
+
+            logging.info(
+                "Filling of {} with Bulldozer DTM using "
+                "border interpolation".format(label)
+            )
+            filling_mask = skimage.morphology.binary_opening(
+                filling_mask,
+                footprint=[
+                    (np.ones((component_min_size, 1)), 1),
+                    (np.ones((1, component_min_size)), 1),
+                ],
+            )
+            features, num_features = scipy.ndimage.label(filling_mask)
+            logging.info("Filling of {} features".format(num_features))
+            features_boundaries = skimage.morphology.dilation(
+                features,
+                footprint=[
+                    (np.ones((border_size, 1)), 1),
+                    (np.ones((1, border_size)), 1),
+                ],
+            )
+            features_boundaries[filling_mask] = 0
+
+            # concat combined_labels for saving
+            if stacked_labels is None:
+                stacked_labels = features_boundaries[np.newaxis, :, :]
+            else:
+                stacked_labels = np.concatenate(
+                    [stacked_labels, features_boundaries[np.newaxis, :, :]]
+                )
+
+            for feature_id in range(1, num_features + 1):
+                altitude = np.nanpercentile(
+                    dtm[features_boundaries == feature_id], percentile
+                )
+                if altitude is not None:
+                    dsm[features == feature_id] = altitude
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
     data = {
         "border_interp_filled_dsm": (["row", "col"], dsm),

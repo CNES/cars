@@ -391,51 +391,81 @@ class FillingPipeline(PipelineTemplate):
         filling_applications = {}
 
         # Generate applications configuration
-        for filling_name, classif_values in inputs_conf[
-            sens_cst.FILLING
-        ].items():
+        for filling_name, values in inputs_conf[sens_cst.FILLING].items():
             # No filling
-            if classif_values is None:
+            if values is None:
                 continue
 
-            classif_values = list(map(str, classif_values))
+            if isinstance(values, str):
+                values = [values]
+
+            classif_values = []
+            fill_nodata_values = []
+            for elem in values:
+                if isinstance(elem, int):
+                    classif_values.append(str(elem))
+                elif isinstance(elem, str):
+                    if elem == "occlusion":
+                        fill_nodata_values.append("1")
+                    else:
+                        fill_nodata_values.append("2")
+
+            if not fill_nodata_values:
+                fill_nodata_values = None
+
+            if not classif_values:
+                classif_values = None
 
             # Update application configuration
             if filling_name == "fill_with_geoid":
                 new_filling_conf = {
                     "dsm_filling.1": {
                         "method": "exogenous_filling",
-                        "classification": classif_values,
+                        "fill_classification": classif_values,
                         "fill_with_geoid": classif_values,
+                        "fill_nodata": fill_nodata_values,
                     },
                 }
             elif filling_name == "interpolate_from_borders":
                 new_filling_conf = {
                     "dsm_filling.2": {
                         "method": "bulldozer",
-                        "classification": classif_values,
+                        "fill_classification": classif_values,
+                        "fill_nodata": fill_nodata_values,
                     },
                     "dsm_filling.3": {
                         "method": "border_interpolation",
-                        "classification": classif_values,
+                        "fill_classification": classif_values,
+                        "fill_nodata": fill_nodata_values,
                     },
                 }
             elif filling_name == "fill_with_endogenous_dem":
                 new_filling_conf = {
                     "dsm_filling.2": {
                         "method": "bulldozer",
-                        "classification": classif_values,
+                        "fill_classification": classif_values,
+                        "fill_nodata": fill_nodata_values,
                     },
                 }
             elif filling_name == "fill_with_exogenous_dem":
                 new_filling_conf = {
                     "dsm_filling.1": {
                         "method": "exogenous_filling",
-                        "classification": classif_values,
+                        "fill_classification": classif_values,
+                        "fill_nodata": fill_nodata_values,
                     },
                     "dsm_filling.2": {
                         "method": "bulldozer",
-                        "classification": classif_values,
+                        "fill_classification": classif_values,
+                        "fill_nodata": fill_nodata_values,
+                    },
+                }
+            elif filling_name == "interpolation":
+                new_filling_conf = {
+                    "dsm_filling.4": {
+                        "method": "interpolation",
+                        "fill_classification": classif_values,
+                        "fill_nodata": fill_nodata_values,
                     },
                 }
             else:
@@ -647,11 +677,22 @@ class FillingPipeline(PipelineTemplate):
             else None
         )
 
-        filling_file_name = (
-            self.dsm_to_fill["filling"]
-            if "filling" in self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]
+        invalidity_mask_file_name = (
+            self.dsm_to_fill["invalidity_mask"]
+            if "invalidity_mask"
+            in self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]
             else None
         )
+
+        # create filling file
+        with rasterio.open(dsm_file_name) as src:
+            profile = src.profile
+
+        profile.update(dtype="uint8", nodata=255)
+
+        filling_file_name = os.path.join(dsm_filled_dir, "filling.tif")
+        with rasterio.open(filling_file_name, "w", **profile):
+            pass
 
         if inputs_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] is None:
             dems = {}
@@ -792,6 +833,7 @@ class FillingPipeline(PipelineTemplate):
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
+                    invalidity_mask_file=invalidity_mask_file_name,
                     classif_values=classif_values,
                     dump_dir=app_dump_dir,
                     roi_polys=self.list_intersection_poly,
@@ -807,6 +849,7 @@ class FillingPipeline(PipelineTemplate):
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
+                    invalidity_mask_file=invalidity_mask_file_name,
                     classif_values=classif_values,
                     dump_dir=app_dump_dir,
                     roi_polys=self.list_intersection_poly,
@@ -819,6 +862,7 @@ class FillingPipeline(PipelineTemplate):
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
+                    invalidity_mask_file=invalidity_mask_file_name,
                     classif_values=classif_values,
                     dump_dir=app_dump_dir,
                     roi_polys=self.list_intersection_poly,
@@ -832,6 +876,7 @@ class FillingPipeline(PipelineTemplate):
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
                     filling_file=filling_file_name,
+                    invalidity_mask_file=invalidity_mask_file_name,
                     classif_values=classif_values,
                     dtm_file=dtm_file_name,
                     dump_dir=app_dump_dir,

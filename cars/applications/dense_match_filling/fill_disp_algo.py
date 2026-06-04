@@ -97,12 +97,17 @@ def fill_disp_using_zero_padding(
             )
             stack_index = np.logical_or(stack_index, nodata_mask)
 
+        mask = np.any(disp_map["invalidity_mask"].values == 1, axis=0)
+
+        stack_index = np.logical_or(stack_index, mask)
+
         # Exclude pixels invalid in epipolar mask
         mask = disp_map[cst.EPI_MSK].values == 0
 
         if not fill_valid_pixels:
             # Exclude valid pixels
             mask = np.logical_and(mask, disp_map["disp_msk"].values == 0)
+
         stack_index = np.logical_and(stack_index, mask)
         # set disparity value to zero where the class is
         # non zero value and masked region

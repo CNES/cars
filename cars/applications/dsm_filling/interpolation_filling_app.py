@@ -60,10 +60,11 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.classification = self.used_config["classification"]
+        self.fill_classification = self.used_config["fill_classification"]
         self.tile_size = self.used_config["tile_size"]
         self.margin = self.used_config["margin"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
+        self.fill_nodata = self.used_config["fill_nodata"]
 
     def check_conf(self, conf):
         """
@@ -78,10 +79,14 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
             overloaded_conf = {}
 
         overloaded_conf["method"] = conf.get("method", "interpolation")
-        overloaded_conf["classification"] = conf.get("classification", "nodata")
-        if isinstance(overloaded_conf["classification"], str):
-            overloaded_conf["classification"] = [
-                overloaded_conf["classification"]
+        overloaded_conf["fill_classification"] = conf.get(
+            "fill_classification", "nodata"
+        )
+        overloaded_conf["fill_nodata"] = conf.get("fill_nodata", None)
+
+        if isinstance(overloaded_conf["fill_classification"], str):
+            overloaded_conf["fill_classification"] = [
+                overloaded_conf["fill_classification"]
             ]
         overloaded_conf["tile_size"] = conf.get("tile_size", 2000)
         overloaded_conf["margin"] = conf.get("margin", 100)
@@ -91,9 +96,10 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
 
         rectification_schema = {
             "method": str,
-            "classification": Or(None, [str]),
+            "fill_classification": Or(None, [str]),
             "tile_size": int,
             "margin": int,
+            "fill_nodata": Or(None, [str]),
             "save_intermediate_data": bool,
         }
 
@@ -109,6 +115,7 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
         dsm_file,
         classif_file,
         filling_file,
+        invalidity_mask_file,
         classif_values,
         dump_dir,
         roi_polys,
@@ -139,8 +146,8 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
             dsm_path_out = dsm_file
             filling_path_out = filling_file
 
-        if self.classification is None:
-            self.classification = ["nodata"]
+        if self.fill_classification is None:
+            self.fill_classification = ["nodata"]
 
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
@@ -239,12 +246,14 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
                     old_dsm_path,
                     old_filling_path,
                     classif_file,
+                    invalidity_mask_file,
                     classif_values,
                     roi_polys,
                     roi_epsg,
-                    self.classification,
+                    self.fill_classification,
                     window=window,
                     overlaps=overlaps,
+                    fill_nodata=self.fill_nodata,
                     saving_info=full_saving_info,
                     profile=profile,
                 )
@@ -252,16 +261,18 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
         return filled_dsm_cars_ds
 
 
-def interpolation_filling_wrapper(  # pylint: disable=R0917
+def interpolation_filling_wrapper(  # pylint: disable=R0917 # noqa: C901
     dsm_file,
     filling_file,
     classif_file,
+    invalidity_mask_file,
     classif_values,
     roi_polys,
     roi_epsg,
-    classification,
+    fill_classification,
     window=None,
     overlaps=None,
+    fill_nodata=None,
     saving_info=None,
     profile=None,
 ):
@@ -287,6 +298,7 @@ def interpolation_filling_wrapper(  # pylint: disable=R0917
             height=(row_max - row_min),
         )
 
+    with rio.open(dsm_file) as in_dsm:
         dsm = in_dsm.read(1, window=rasterio_window).astype(np.float32)
         dsm_mask = in_dsm.read_masks(1, window=rasterio_window)
         dsm_crs = in_dsm.crs
@@ -332,7 +344,7 @@ def interpolation_filling_wrapper(  # pylint: disable=R0917
             classif = in_classif.read(1, window=rasterio_window)
             classif_msk = in_classif.read_masks(1, window=rasterio_window)
 
-    for label in classification:
+    for label in fill_classification:
         if label in classif_values and classif is not None:
             filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
         elif label == "nodata":
@@ -353,6 +365,18 @@ def interpolation_filling_wrapper(  # pylint: disable=R0917
 
     # Keep only targets inside DSM contour to preserve true outside nodata.
     combined_mask = np.logical_and(combined_mask, inside_contour_mask)
+
+    invalidity_mask = None
+    if fill_nodata is not None:
+        if invalidity_mask_file is not None:
+            with rio.open(invalidity_mask_file) as src:
+                invalidity_mask = src.read(1, window=rasterio_window)
+        for label in fill_nodata:
+            filling_mask = np.logical_and(
+                invalidity_mask == int(label), roi_raster > 0
+            )
+
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
     filled_dsm = dsm.copy()
     if np.any(combined_mask) and np.any(

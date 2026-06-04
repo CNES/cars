@@ -144,9 +144,10 @@ def test_compute_disparity_1():
     )
 
     # Uncomment to update baseline
-    # output.to_netcdf(absolute_data_path(
-    # "ref_output_application/dense_matching"
-    # "/disp1_ref_pandora.nc")
+    # output.to_netcdf(
+    #     absolute_data_path(
+    #         "ref_output_application/dense_matching" "/disp1_ref_pandora.nc"
+    #     )
     # )
 
     ref = xr.open_dataset(
@@ -196,9 +197,10 @@ def test_compute_disparity_3():
     )
 
     # Uncomment to update baseline
-    # output.to_netcdf(absolute_data_path(
-    # "ref_output_application/dense_matching"
-    # "/disp3_ref_pandora.nc")
+    # output.to_netcdf(
+    #     absolute_data_path(
+    #         "ref_output_application/dense_matching" "/disp3_ref_pandora.nc"
+    #     )
     # )
 
     ref = xr.open_dataset(
@@ -246,8 +248,10 @@ def test_compute_disparity_with_all_confidences():
 
     # Uncomment to update baseline
     # output.to_netcdf(
-    #     absolute_data_path("ref_output_application/dense_matching"
-    #     "/disp_with_confidences_ref_pandora.nc")
+    #     absolute_data_path(
+    #         "ref_output_application/dense_matching"
+    #         "/disp_with_confidences_ref_pandora.nc"
+    #     )
     # )
     ref = xr.open_dataset(
         absolute_data_path(
@@ -298,8 +302,10 @@ def test_compute_disparity_1_msk_ref():
 
     # Uncomment to update baseline
     # output.to_netcdf(
-    #     absolute_data_path("ref_output_application/dense_matching"
-    #     "/disp1_ref_pandora_mask_ref.nc")
+    #     absolute_data_path(
+    #         "ref_output_application/dense_matching"
+    #         "/disp1_ref_pandora_mask_ref.nc"
+    #     )
     # )
 
     ref = xr.open_dataset(
@@ -351,8 +357,10 @@ def test_compute_disparity_1_msk_sec():
 
     # Uncomment to update baseline
     # output.to_netcdf(
-    #     absolute_data_path("ref_output_application/dense_matching"
-    #     "/disp1_ref_pandora_mask_sec.nc")
+    #     absolute_data_path(
+    #         "ref_output_application/dense_matching"
+    #         "/disp1_ref_pandora_mask_sec.nc"
+    #     )
     # )
 
     ref = xr.open_dataset(
