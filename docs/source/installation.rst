@@ -21,6 +21,16 @@ It is recommended to use a virtual environment :
     source cars_env/bin/activate
     pip install cars
 
+Optional edge detection integration can be installed with:
+
+.. code-block:: console
+
+    pip install "cars[edge-detection]"
+
+When the edge detection plugin is installed, the default CARS pipeline
+automatically enables edge detection. If it is not installed, CARS runs
+without edge detection.
+
 This is the preferred method to install CARS, but it is required to have a Linux system.
 
 With Docker

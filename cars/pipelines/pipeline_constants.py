@@ -36,6 +36,7 @@ TIE_POINTS = "tie_points"
 MERGING = "merging"
 SURFACE_MODELING = "surface_modeling"
 FORMATTING = "formatting"
+EDGE_DETECTION = "edge_detection"
 
 # Input keys
 DSM_TO_FILL = "dsm_to_fill"

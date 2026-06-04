@@ -125,6 +125,10 @@ bundleadjustment = [
     "rpcfit"
 ]
 
+edge-detection = [
+    "cars-edge-detection-plugin==0.1.0"
+]
+
 [tool.black]
 # https://github.com/psf/black
 line-length = 80

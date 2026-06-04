@@ -81,6 +81,15 @@ def test_end2end_gizeh_meta_pipeline():
                     },
                 },
             },
+            "pipeline": {
+                "subsampling": True,
+                "surface_modeling": True,
+                "tie_points": True,
+                "filling": False,
+                "merging": False,
+                "formatting": True,
+                "edge_detection": True,
+            },
             "orchestrator": {
                 "mode": "multiprocessing",
                 "nb_workers": 4,
@@ -197,6 +206,15 @@ def test_end2end_ventoux_meta_pipeline():
                     }
                 }
             },
+            "pipeline": {
+                "subsampling": True,
+                "surface_modeling": True,
+                "tie_points": True,
+                "filling": False,
+                "merging": False,
+                "formatting": True,
+                "edge_detection": False,
+            },
             "orchestrator": {
                 "mode": "multiprocessing",
                 "nb_workers": 4,
@@ -312,6 +330,15 @@ def test_end2end_ventoux_with_filling():
                         }
                     }
                 }
+            },
+            "pipeline": {
+                "subsampling": True,
+                "surface_modeling": True,
+                "tie_points": True,
+                "filling": True,
+                "merging": False,
+                "formatting": True,
+                "edge_detection": False,
             },
             "orchestrator": {
                 "mode": "multiprocessing",
@@ -474,6 +501,15 @@ def test_end2end_ventoux_with_filling_in_4326():
                     }
                 }
             },
+            "pipeline": {
+                "subsampling": True,
+                "surface_modeling": True,
+                "tie_points": True,
+                "filling": True,
+                "merging": False,
+                "formatting": True,
+                "edge_detection": False,
+            },
             "orchestrator": {
                 "mode": "multiprocessing",
                 "nb_workers": 4,
@@ -593,6 +629,15 @@ def test_end2end_gizeh_merging():
                     },
                 }
             },
+            "pipeline": {
+                "subsampling": False,
+                "surface_modeling": False,
+                "tie_points": False,
+                "filling": False,
+                "merging": True,
+                "formatting": True,
+                "edge_detection": False,
+            },
             "merging": {
                 "applications": {"dsm_merging": {"method": "weighted_fusion"}},
                 "advanced": {"save_intermediate_data": True},
@@ -659,6 +704,15 @@ def test_end2end_gizeh_use_endogenous_dem():
                     "2": {"dem_generation": {"save_intermediate_data": True}},
                     "1": {"dem_generation": {"save_intermediate_data": True}},
                 },
+            },
+            "pipeline": {
+                "subsampling": True,
+                "surface_modeling": True,
+                "tie_points": True,
+                "filling": False,
+                "merging": False,
+                "formatting": True,
+                "edge_detection": False,
             },
             "orchestrator": {
                 "mode": "multiprocessing",
@@ -908,6 +962,15 @@ def test_init_with_used_conf():
                 "mode": "multiprocessing",
                 "nb_workers": 4,
                 "max_ram_per_worker": 1000,
+            },
+            "pipeline": {
+                "subsampling": True,
+                "surface_modeling": True,
+                "tie_points": True,
+                "filling": False,
+                "merging": False,
+                "formatting": True,
+                "edge_detection": False,
             },
             "output": {"directory": directory},
         }

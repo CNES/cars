@@ -57,6 +57,10 @@ Meta pipeline
     The Meta pipeline is the name given to CARS's default pipeline, who itself makes calls to all the other pipelines following the schema provided above.
     By setting a list of pipelines in the ``pipeline`` field, you can control which pipelines will be ran exactly.
 
+    When the optional edge detection plugin is installed, CARS also enables the
+    ``edge_detection`` pipeline by default. If the plugin is not installed, CARS continues without 
+    edge detection and emits a warning.
+
     A dict will enable you to specify via true or false which pipelines will be ran, instead of relying on presence in the list. In the ``used_conf.yaml`` file, the dict is used for better clarity.
 
     For example, with this configuration :
