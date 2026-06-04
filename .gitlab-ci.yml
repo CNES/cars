@@ -73,9 +73,15 @@ include:
 .cars-python-job:
   image: ${UL_ARTIFACTORY_HOST}/${CARS_ENV_IMAGE_NAME}:${CARS_ENV_IMAGE_TAG}
   before_script:
+    - apt-get update -y
+    - apt-get install -y libgl1-mesa-glx libsm6 libxext6 ffmpeg
     - source /app/cars/venv/bin/activate
+    # install edge-detection plugin from TestPyPI (PyPI as fallback for deps)
+    - pip install cars-edge-detection-plugin
     # All dependencies should already be installed in the docker env
     - pip install --no-build-isolation --editable .[dev,docs]
+    # print installed packages for debugging purposes
+    - pip freeze
 
 # job to test the build of cars Dockerfile
 docker-image-build:

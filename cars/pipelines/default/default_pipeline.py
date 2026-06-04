@@ -76,6 +76,7 @@ package_path = os.path.dirname(__file__)
 FIRST_RES = "first_resolution"
 INTERMEDIATE_RES = "intermediate_resolution"
 FINAL_RES = "final_resolution"
+EDGE_DETECTION = "edge_detection"
 
 PIPELINE_CONFS = {
     FIRST_RES: os.path.join(
@@ -219,8 +220,21 @@ class DefaultPipeline(PipelineTemplate):
             if not consistent_filling:
                 self.pipeline_to_use[pipeline_cst.FILLING] = False
 
+        if (
+            self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]
+            and self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]
+        ):
+            self.edge_detection_out_dir = os.path.join(
+                self.intermediate_data_dir, EDGE_DETECTION
+            )
+            self.edge_detection_conf = self.construct_edge_detection_conf(conf)
+            conf[pipeline_cst.EDGE_DETECTION] = self.check_edge_detection(
+                self.edge_detection_conf
+            )
+
         subsampling_used_conf = conf.get(pipeline_cst.SUBSAMPLING, {})
         filling_used_conf = conf.get(pipeline_cst.FILLING, {})
+        edge_detection_used_conf = conf.get(pipeline_cst.EDGE_DETECTION, {})
 
         if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
             for epipolar_resolution_index, epipolar_res in enumerate(
@@ -310,6 +324,10 @@ class DefaultPipeline(PipelineTemplate):
         full_used_conf[pipeline_cst.SUBSAMPLING] = subsampling_used_conf
         full_used_conf[pipeline_cst.PIPELINE] = conf[PIPELINE]
         full_used_conf[pipeline_cst.FILLING] = filling_used_conf
+        if self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]:
+            full_used_conf[pipeline_cst.EDGE_DETECTION] = (
+                edge_detection_used_conf
+            )
 
         # Save used_conf
         cars_dataset.save_dict(
@@ -373,6 +391,7 @@ class DefaultPipeline(PipelineTemplate):
             pipeline_cst.FILLING,
             pipeline_cst.MERGING,
             pipeline_cst.FORMATTING,
+            pipeline_cst.EDGE_DETECTION,
         ]
         dict_pipeline = {}
 
@@ -386,6 +405,8 @@ class DefaultPipeline(PipelineTemplate):
                     pipeline_cst.TIE_POINTS,
                     pipeline_cst.FORMATTING,
                 ]
+                if edge_detection_available():
+                    conf[PIPELINE] += [pipeline_cst.EDGE_DETECTION]
 
         if isinstance(conf[PIPELINE], str):
             if conf[PIPELINE] not in possible_pipeline:
@@ -469,6 +490,20 @@ class DefaultPipeline(PipelineTemplate):
         ):
             dict_pipeline[pipeline_cst.TIE_POINTS] = True
 
+        # always check the plugin install if edge_detection is involved
+        if (
+            pipeline_cst.EDGE_DETECTION in conf[INPUT]
+            or dict_pipeline[pipeline_cst.EDGE_DETECTION]
+        ):
+            if not edge_detection_available():
+                dict_pipeline[pipeline_cst.EDGE_DETECTION] = False
+                logging.warning(
+                    "The edge detection plugin is not installed. "
+                    "Continuing without edge detection."
+                )
+            else:
+                dict_pipeline[pipeline_cst.EDGE_DETECTION] = True
+
         return dict_pipeline
 
     def check_subsampling(self, conf):
@@ -507,6 +542,21 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         return {ADVANCED: advanced, APPLICATIONS: applications}
+
+    def check_edge_detection(self, conf):
+        """
+        Check the edge detection section
+
+        :param conf: configuration of edge detection
+        :type conf: dict
+        """
+        pipeline = Pipeline(
+            pipeline_cst.EDGE_DETECTION,
+            conf,
+            self.config_dir,
+        )
+
+        return pipeline.used_conf["edge_detection"]
 
     def check_pipeline_section(self, pipeline_name, pipeline_conf):
         """
@@ -624,6 +674,25 @@ class DefaultPipeline(PipelineTemplate):
         filling_conf[pipeline_cst.FILLING] = conf.get(pipeline_cst.FILLING, {})
         return filling_conf
 
+    def construct_edge_detection_conf(self, conf):
+        """
+        Construct the configuration used to run the edge detection plugin.
+        """
+        edge_detection_conf = {
+            INPUT: copy.deepcopy(conf[INPUT]),
+            ORCHESTRATOR: copy.deepcopy(conf[ORCHESTRATOR]),
+            OUTPUT: {out_cst.OUT_DIRECTORY: self.edge_detection_out_dir},
+            pipeline_cst.EDGE_DETECTION: copy.deepcopy(
+                conf.get(pipeline_cst.EDGE_DETECTION, {})
+            ),
+        }
+
+        edge_detection_conf[pipeline_cst.EDGE_DETECTION].setdefault(
+            ADVANCED, {}
+        )
+
+        return edge_detection_conf
+
     @cars_profile(name="Run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
         """
@@ -645,6 +714,31 @@ class DefaultPipeline(PipelineTemplate):
         current_surface_modeling_out_dir = None
         updated_conf = {}
         updated_conf["pipeline"] = self.pipeline_to_use
+
+        if self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]:
+            current_log_dir = os.path.join(self.out_dir, "logs", EDGE_DETECTION)
+            cars_logging.setup_logging(
+                loglevel,
+                out_dir=current_log_dir,
+                pipeline=EDGE_DETECTION,
+                global_log_file=global_log_file,
+            )
+
+            edge_detection_pipeline = Pipeline(
+                pipeline_cst.EDGE_DETECTION,
+                self.construct_edge_detection_conf(
+                    self.used_conf[len(self.resolutions) - 1]
+                ),
+                self.config_dir,
+            )
+            edge_detection_pipeline.run()
+            self.edge_detection_used_conf = edge_detection_pipeline.used_conf
+
+            log_wrapper.generate_summary(
+                current_log_dir,
+                edge_detection_pipeline.used_conf,
+                pipeline_cst.EDGE_DETECTION,
+            )
 
         if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
             current_log_dir = os.path.join(self.out_dir, "logs", "subsampling")
@@ -752,7 +846,20 @@ class DefaultPipeline(PipelineTemplate):
                     dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
                     current_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
 
-                if not last_res:
+                if (
+                    last_res
+                    and self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]
+                ):
+                    add_edge_detection_inputs(
+                        current_conf[INPUT],
+                        self.edge_detection_out_dir,
+                        right_image_edge_detection=(
+                            self.edge_detection_used_conf[
+                                pipeline_cst.EDGE_DETECTION
+                            ][ADVANCED]["right_image_edge_detection"]
+                        ),
+                    )
+                elif not last_res:
                     for _, data in current_conf[INPUT][
                         sens_cst.SENSORS
                     ].items():
@@ -948,6 +1055,11 @@ class DefaultPipeline(PipelineTemplate):
                 ADVANCED: filling_pipeline.used_conf[ADVANCED],
                 APPLICATIONS: filling_pipeline.used_conf[APPLICATIONS],
             }
+
+        if self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]:
+            full_used_conf[pipeline_cst.EDGE_DETECTION] = (
+                self.edge_detection_used_conf[pipeline_cst.EDGE_DETECTION]
+            )
 
         # Save used_conf
         cars_dataset.save_dict(
@@ -1196,6 +1308,93 @@ def generate_filling_applications_for_surface_modeling(inputs_conf):
         )
 
     return filling_applications
+
+
+def edge_detection_available():
+    """
+    Return True if edge detection plugin is installed within the environment,
+    False otherwise.
+    """
+    return pipeline_cst.EDGE_DETECTION in Pipeline.available_pipeline
+
+
+def get_edge_detection_sensor_keys(
+    inputs_conf, right_image_edge_detection=False
+):
+    """
+    Return the sensor keys for which edge detection outputs are available.
+    """
+
+    sensor_keys = [left for left, _ in inputs_conf["pairing"]]
+    if right_image_edge_detection:
+        sensor_keys.extend([right for _, right in inputs_conf["pairing"]])
+
+    return set(sensor_keys)
+
+
+def get_edge_detection_inputs(edge_detection_out_dir, sensor_key):
+    """
+    Build the sensor inputs dictionary from edge detection plugin outputs.
+    """
+    default_files = {
+        sens_cst.INPUT_EDGES_MASK: os.path.join(
+            edge_detection_out_dir,
+            pipeline_cst.EDGE_DETECTION,
+            sensor_key,
+            "edges.tif",
+        ),
+        sens_cst.INPUT_EDGES_DEPTH_MAP: os.path.join(
+            edge_detection_out_dir,
+            "dump_dir",
+            "depth_map_generation",
+            sensor_key,
+            "depth.tif",
+        ),
+        sens_cst.INPUT_EDGES_NORMALS: os.path.join(
+            edge_detection_out_dir,
+            "dump_dir",
+            "depth_map_generation",
+            sensor_key,
+            "normals.tif",
+        ),
+        sens_cst.INPUT_EDGES_TILE_ID: os.path.join(
+            edge_detection_out_dir,
+            "dump_dir",
+            "depth_map_generation",
+            sensor_key,
+            "tile_id.tif",
+        ),
+    }
+
+    actual_files = {
+        sens_cst.INPUT_EDGES_MASK: None,
+        sens_cst.INPUT_EDGES_DEPTH_MAP: None,
+        sens_cst.INPUT_EDGES_NORMALS: None,
+        sens_cst.INPUT_EDGES_TILE_ID: None,
+    }
+    # check the files exist before returning them
+    for key, val in default_files.items():
+        if os.path.isfile(val):
+            actual_files[key] = val
+
+    return actual_files
+
+
+def add_edge_detection_inputs(
+    inputs_conf, edge_detection_out_dir, right_image_edge_detection=False
+):
+    """
+    Inject edge detection plugin outputs into the sensor inputs configuration.
+    """
+
+    for sensor_key in get_edge_detection_sensor_keys(
+        inputs_conf,
+        right_image_edge_detection=right_image_edge_detection,
+    ):
+        if sensor_key in inputs_conf[sens_cst.SENSORS]:
+            inputs_conf[sens_cst.SENSORS][sensor_key][sens_cst.INPUT_EDGES] = (
+                get_edge_detection_inputs(edge_detection_out_dir, sensor_key)
+            )
 
 
 def overide_pipeline_conf(conf, overiding_conf, append_classification=False):
