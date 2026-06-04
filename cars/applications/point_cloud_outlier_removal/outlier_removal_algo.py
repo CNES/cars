@@ -329,15 +329,30 @@ def epipolar_small_components(
     if clusters_distance_threshold is None:
         clusters_distance_threshold = np.nan
 
-    outlier_filter.epipolar_small_component_outlier_filtering(
-        cloud[cst.X],
-        cloud[cst.Y],
-        cloud[cst.Z],
-        min_cluster_size,
-        radius,
-        half_window_size,
-        clusters_distance_threshold,
+    index_elt_to_remove = (
+        outlier_filter.epipolar_small_component_outlier_filtering(
+            cloud[cst.X],
+            cloud[cst.Y],
+            cloud[cst.Z],
+            min_cluster_size,
+            radius,
+            half_window_size,
+            clusters_distance_threshold,
+        )
     )
+
+    if len(index_elt_to_remove) > 0:
+        index_elt_to_remove = np.array(index_elt_to_remove)
+
+        rows = index_elt_to_remove[:, 0]
+        cols = index_elt_to_remove[:, 1]
+
+        mask = cloud[cst.EPI_INVALIDITY_MASK].values[0, rows, cols] == 0
+        rows_arr = np.array(rows)
+        cols_arr = np.array(cols)
+        cloud[cst.EPI_INVALIDITY_MASK].values[
+            1, rows_arr[mask], cols_arr[mask]
+        ] = 1
 
     projection.point_cloud_conversion_dataset(cloud, 4326)
 
@@ -374,18 +389,34 @@ def epipolar_statistical_filtering(
     """
 
     if not np.all(np.isnan(epipolar_ds[cst.Z])):
-
-        outlier_filter.epipolar_statistical_outlier_filtering(
-            epipolar_ds[cst.X],
-            epipolar_ds[cst.Y],
-            epipolar_ds[cst.Z],
-            k,
-            half_window_size,
-            filtering_constant,
-            mean_factor,
-            dev_factor,
-            use_median,
+        index_elt_to_remove = (
+            outlier_filter.epipolar_statistical_outlier_filtering(
+                epipolar_ds[cst.X],
+                epipolar_ds[cst.Y],
+                epipolar_ds[cst.Z],
+                k,
+                half_window_size,
+                filtering_constant,
+                mean_factor,
+                dev_factor,
+                use_median,
+            )
         )
+
+        if len(index_elt_to_remove) > 0:
+            index_elt_to_remove = np.array(index_elt_to_remove)
+
+            rows = index_elt_to_remove[:, 0]
+            cols = index_elt_to_remove[:, 1]
+
+            mask = (
+                epipolar_ds[cst.EPI_INVALIDITY_MASK].values[0, rows, cols] == 0
+            )
+            rows_arr = np.array(rows)
+            cols_arr = np.array(cols)
+            epipolar_ds[cst.EPI_INVALIDITY_MASK].values[
+                1, rows_arr[mask], cols_arr[mask]
+            ] = 1
 
     projection.point_cloud_conversion_dataset(epipolar_ds, 4326)
 

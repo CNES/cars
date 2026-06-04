@@ -738,11 +738,16 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         filling_classif_values = []
         for _, classif_values in inputs[sens_cst.FILLING].items():
+            values_to_add = []
             # Add new value to filling bands
             if classif_values is not None:
                 if isinstance(classif_values, str):
-                    classif_values = [classif_values]
-                filling_classif_values += classif_values
+                    values_to_add = [classif_values]
+                else:
+                    for elem in classif_values:
+                        if elem not in ("mismatch", "occlusion"):
+                            values_to_add.append(elem)
+                filling_classif_values += values_to_add
 
         simplified_list = list(OrderedDict.fromkeys(filling_classif_values))
         res_as_string_list = [str(value) for value in simplified_list]
@@ -766,18 +771,23 @@ class SurfaceModelingPipeline(PipelineTemplate):
         for application_key in application_conf:
             if application_conf[application_key] is None:
                 continue
-            if "classification" in application_conf[application_key]:
+            if "fill_classification" in application_conf[application_key]:
                 for item in inputs_conf["sensors"]:
-                    if "classification" in inputs_conf["sensors"][item].keys():
-                        if inputs_conf["sensors"][item]["classification"]:
+                    if (
+                        "fill_classification"
+                        in inputs_conf["sensors"][item].keys()
+                    ):
+                        if inputs_conf["sensors"][item]["fill_classification"]:
                             descriptions = get_descriptions_bands(
-                                inputs_conf["sensors"][item]["classification"]
+                                inputs_conf["sensors"][item][
+                                    "fill_classification"
+                                ]
                             )
                             if application_conf[application_key][
-                                "classification"
+                                "fill_classification"
                             ] and not set(
                                 application_conf[application_key][
-                                    "classification"
+                                    "fill_classification"
                                 ]
                             ).issubset(
                                 set(descriptions) | {"nodata"}
@@ -785,7 +795,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                                 raise RuntimeError(
                                     "The {} bands description {} ".format(
                                         inputs_conf["sensors"][item][
-                                            "classification"
+                                            "fill_classification"
                                         ],
                                         list(descriptions),
                                     )
@@ -794,7 +804,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                                     )
                                     + "consistent: {}".format(
                                         application_conf[application_key][
-                                            "classification"
+                                            "fill_classification"
                                         ]
                                     )
                                 )
@@ -1920,6 +1930,11 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 dsm_file_name,
             )
 
+        self.merge_invalidity_mask_bands(
+            os.path.join(os.path.dirname(dsm_file_name), "invalidity_mask.tif"),
+            dsm_file_name,
+        )
+
         return False
 
     @cars_profile(name="merge filling bands", interval=0.5)
@@ -2082,6 +2097,44 @@ class SurfaceModelingPipeline(PipelineTemplate):
         profile.update(count=1, dtype=classif_mono_band.dtype)
         with rasterio.open(classif_path, "w", **profile) as src:
             src.write(classif_mono_band, 1)
+
+        return True
+
+    @cars_profile(name="merge invalidity mask bands", interval=0.5)
+    def merge_invalidity_mask_bands(self, invalidity_mask_path, dsm_file):
+        """
+        Merge invalidity mask bands to get mono band in output
+        """
+        with rasterio.open(dsm_file) as in_dsm:
+            dsm_msk = in_dsm.read_masks(1)
+
+        with rasterio.open(invalidity_mask_path) as src:
+            nb_bands = src.count
+
+            if nb_bands == 1:
+                return False
+
+            mask_multi_bands = src.read()
+            mask_mono_band = np.zeros(mask_multi_bands.shape[1:3])
+            profile = src.profile
+            mask = src.read_masks(1)
+            mask_mono_band[mask == 0] = 0
+
+            # To get the right footprint
+            mask_mono_band = np.logical_or(dsm_msk, mask).astype(np.uint8)
+
+            # to keep the previous classif convention
+            mask_mono_band[mask_mono_band == 0] = src.nodata
+            mask_mono_band[mask_mono_band == 1] = 0
+
+            for num_band in range(0, nb_bands):
+                mask_1 = mask_mono_band == 0
+                mask_2 = mask_multi_bands[num_band, :, :] == 1
+                mask_mono_band[mask_1 & mask_2] = num_band + 1
+
+        profile.update(count=1, dtype=mask_mono_band.dtype)
+        with rasterio.open(invalidity_mask_path, "w", **profile) as src:
+            src.write(mask_mono_band, 1)
 
         return True
 

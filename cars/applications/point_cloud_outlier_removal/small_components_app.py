@@ -33,6 +33,7 @@ import os
 import numpy as np
 from json_checker import And, Checker, Or
 from pyproj import CRS
+from rasterio.fill import fillnodata
 
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
@@ -456,6 +457,31 @@ def epipolar_small_component_removal_wrapper(
         radius=connection_distance,
         half_window_size=half_epipolar_size,
         clusters_distance_threshold=clusters_distance_threshold,
+    )
+
+    mask_valid = np.all(
+        filtered_cloud[cst.EPI_INVALIDITY_MASK].values != 1, axis=0
+    )
+
+    fillnodata(
+        filtered_cloud[cst.X],
+        mask=mask_valid,
+        max_search_distance=100,
+        smoothing_iterations=0,
+    )
+
+    fillnodata(
+        filtered_cloud[cst.Y],
+        mask=mask_valid,
+        max_search_distance=100,
+        smoothing_iterations=0,
+    )
+
+    fillnodata(
+        filtered_cloud[cst.Z],
+        mask=mask_valid,
+        max_search_distance=100,
+        smoothing_iterations=0,
     )
 
     # Fill with attributes

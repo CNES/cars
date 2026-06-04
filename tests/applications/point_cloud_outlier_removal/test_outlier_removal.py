@@ -307,17 +307,28 @@ def test_outlier_removal_epipolar_statistical(use_median):
     y_utm_flat = np.copy(y_utm).reshape(input_shape[0] * input_shape[1])
     z_flat = np.copy(z_values).reshape(input_shape[0] * input_shape[1])
 
-    outlier_array = outlier_filter.epipolar_statistical_outlier_filtering(
-        x_utm,
-        y_utm,
-        z_values,
-        k,
-        half_window_size,
-        filtering_constant,
-        mean_factor,
-        dev_factor,
-        use_median,
+    list_index_to_remove = (
+        outlier_filter.epipolar_statistical_outlier_filtering(
+            x_utm,
+            y_utm,
+            z_values,
+            k,
+            half_window_size,
+            filtering_constant,
+            mean_factor,
+            dev_factor,
+            use_median,
+        )
     )
+
+    outlier_array = np.zeros(input_shape, dtype=bool)
+
+    if len(list_index_to_remove) > 0:
+        index_array = np.asarray(list_index_to_remove, dtype=np.int64)
+        rows = index_array[:, 0]
+        cols = index_array[:, 1]
+
+        outlier_array[rows, cols] = True
 
     # filter NaNs
     nan_pos = np.isnan(x_utm_flat)
@@ -398,15 +409,26 @@ def test_outlier_removal_epipolar_small_components(
     y_utm_flat = np.copy(y_utm).reshape(input_shape[0] * input_shape[1])
     z_flat = np.copy(z_values).reshape(input_shape[0] * input_shape[1])
 
-    outlier_array = outlier_filter.epipolar_small_component_outlier_filtering(
-        x_utm,
-        y_utm,
-        z_values,
-        min_cluster_size,
-        radius,
-        half_window_size,
-        clusters_distance_threshold,
+    list_index_to_remove = (
+        outlier_filter.epipolar_small_component_outlier_filtering(
+            x_utm,
+            y_utm,
+            z_values,
+            min_cluster_size,
+            radius,
+            half_window_size,
+            clusters_distance_threshold,
+        )
     )
+
+    outlier_array = np.zeros(input_shape, dtype=bool)
+
+    if len(list_index_to_remove) > 0:
+        index_array = np.asarray(list_index_to_remove, dtype=np.int64)
+        rows = index_array[:, 0]
+        cols = index_array[:, 1]
+
+        outlier_array[rows, cols] = True
 
     # Test with KDTree
 

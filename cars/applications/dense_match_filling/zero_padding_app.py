@@ -63,10 +63,9 @@ class ZerosPadding(
         """
 
         super().__init__(conf=conf)
-
         # get conf
         self.used_method = self.used_config["method"]
-        self.classification = self.used_config["classification"]
+        self.fill_classification = self.used_config["fill_classification"]
         self.fill_valid_pixels = self.used_config["fill_valid_pixels"]
 
         # Saving files
@@ -93,10 +92,12 @@ class ZerosPadding(
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "zero_padding")
 
-        overloaded_conf["classification"] = conf.get("classification", None)
-        if isinstance(overloaded_conf["classification"], str):
-            overloaded_conf["classification"] = [
-                overloaded_conf["classification"]
+        overloaded_conf["fill_classification"] = conf.get(
+            "fill_classification", None
+        )
+        if isinstance(overloaded_conf["fill_classification"], str):
+            overloaded_conf["fill_classification"] = [
+                overloaded_conf["fill_classification"]
             ]
         overloaded_conf["fill_valid_pixels"] = conf.get(
             "fill_valid_pixels", True
@@ -105,11 +106,10 @@ class ZerosPadding(
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
-
         application_schema = {
             "method": str,
             "save_intermediate_data": bool,
-            "classification": Or(None, [str]),
+            "fill_classification": Or(None, [str]),
             "fill_valid_pixels": bool,
         }
 
@@ -163,7 +163,7 @@ class ZerosPadding(
         """
         res = None
 
-        if not self.classification:
+        if not self.fill_classification:
             logging.info("Disparity holes filling was not activated")
             res = epipolar_disparity_map
 
@@ -238,7 +238,7 @@ class ZerosPadding(
                                 epipolar_disparity_map[row, col],
                                 window,
                                 overlap,
-                                classif=self.classification,
+                                classif=self.fill_classification,
                                 fill_valid_pixels=self.fill_valid_pixels,
                                 saving_info=full_saving_info,
                             )

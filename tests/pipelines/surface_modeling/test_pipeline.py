@@ -1398,7 +1398,7 @@ def test_ventoux_filling():
                     },
                     "dense_match_filling": {
                         "method": "zero_padding",
-                        "classification": ["3"],
+                        "fill_classification": ["3"],
                     },
                     "point_cloud_outlier_removal": None,
                 }

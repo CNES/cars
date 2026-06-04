@@ -190,7 +190,10 @@ def test_end2end_ventoux_meta_pipeline():
                     "all": {
                         "dense_matching": {
                             "filter_incomplete_disparity_range": False,
-                        }
+                        },
+                        "point_cloud_rasterization": {
+                            "fill_nodata": False,
+                        },
                     }
                 }
             },

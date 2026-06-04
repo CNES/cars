@@ -396,6 +396,7 @@ def test_simple_rasterization_dataset_2():
     cloud = xr.open_dataset(
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
+
     cloud.attrs[cst.ROI_WITH_MARGINS] = cloud.attrs[cst.ROI]
     cloud.attrs[cst.EPI_MARGINS] = [0, 0, 0, 0]
     color = xr.open_dataset(
@@ -411,13 +412,20 @@ def test_simple_rasterization_dataset_2():
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
 
+    z = cloud["z"]
+
+    low = z.quantile(0.01)
+    high = z.quantile(0.99)
+
+    cloud_clean = cloud.where((z >= low) & (z <= high))
+
     epsg = 32630
     sigma = 0.3
     radius = 3
 
     # TODO test from here -> dump cloud as test data input
     # transform to dataframe
-    cloud, _ = pc_transform.depth_map_dataset_to_dataframe(cloud, epsg)
+    cloud, _ = pc_transform.depth_map_dataset_to_dataframe(cloud_clean, epsg)
     # update attributes
     attributes = {"number_of_pc": 1}
     cloud.attrs = {}
@@ -437,8 +445,10 @@ def test_simple_rasterization_dataset_2():
 
     # Uncomment to update references
     # raster.to_netcdf(
-    #     absolute_data_path('ref_output_application/rasterization'
-    #     '/rasterization_res_ref_2.nc'),
+    #    absolute_data_path(
+    #        "ref_output_application/rasterization"
+    #        "/rasterization_res_ref_2.nc"
+    #    ),
     # )
 
     raster_ref = xr.open_dataset(
@@ -581,6 +591,8 @@ def test_mask_interp_case1(
         __,
         __,
         res,
+        __,
+        __,
         __,
         __,
         __,

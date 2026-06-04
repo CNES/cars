@@ -61,7 +61,7 @@ dependencies = [
     "pandora[sgm]==1.8.0",
     "cars-rasterize==0.2.*",
     "cars-resample==0.1.*",
-    "cars-filter==0.2.*",
+    "cars-filter==0.3.*",
     "vlsift==0.1.*",
     "shareloc==0.2.12",
     "bulldozer-dtm==1.3.*",

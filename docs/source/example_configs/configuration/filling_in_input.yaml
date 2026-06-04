@@ -20,5 +20,6 @@ sensors:
 filling:
   fill_with_geoid: 1
   interpolate_from_borders: 2
-  fill_with_endogenous_dem: 3
+  fill_with_endogenous_dem: [3, "occlusion"]
   fill_with_exogenous_dem: 4
+  interpolation: "mismatch"

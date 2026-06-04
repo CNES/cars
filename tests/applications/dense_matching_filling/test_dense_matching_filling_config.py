@@ -36,7 +36,7 @@ def test_check_full_conf_zero_padding():
     """
     conf = {
         "method": "zero_padding",
-        "classification": ["water", "building"],
+        "fill_classification": ["water", "building"],
         "save_intermediate_data": False,
     }
     _ = ZerosPadding(conf)

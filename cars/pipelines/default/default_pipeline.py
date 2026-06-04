@@ -871,10 +871,15 @@ class DefaultPipeline(PipelineTemplate):
                 for aux_output, val in final_conf[OUTPUT][
                     out_cst.AUXILIARY
                 ].items():
-                    if val:
+                    if val and aux_output != "filling":
                         self.filling_conf[INPUT][pipeline_cst.DSM_TO_FILL][
                             aux_output
                         ] = os.path.join(aux_path, aux_output + ".tif")
+
+                self.filling_conf[INPUT][pipeline_cst.DSM_TO_FILL][
+                    "invalidity_mask"
+                ] = os.path.join(aux_path + "invalidity_mask.tif")
+
             initial_elevation = final_conf[INPUT][
                 sens_cst.INITIAL_ELEVATION
             ].get("dem", None)
@@ -1161,18 +1166,27 @@ def generate_filling_applications_for_surface_modeling(inputs_conf):
     filling_applications = {}
 
     # Generate applications configuration
-    for _, classif_values in inputs_conf[sens_cst.FILLING].items():
+    for _, values in inputs_conf[sens_cst.FILLING].items():
         # No filling
-        if classif_values is None:
+        if values is None:
             continue
 
-        classif_values = list(map(str, classif_values))
+        if isinstance(values, str):
+            values = [values]
+
+        classif_values = []
+        for elem in values:
+            if isinstance(elem, int):
+                classif_values.append(str(elem))
+
+        if not classif_values:
+            classif_values = None
 
         # Update application configuration
         new_filling_conf = {
             "dense_match_filling": {
                 "method": "zero_padding",
-                "classification": classif_values,
+                "fill_classification": classif_values,
             }
         }
 

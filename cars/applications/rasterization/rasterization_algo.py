@@ -262,7 +262,14 @@ def compute_vector_raster_and_stats(
     values_bands.extend(filling_indexes)
     split_indexes.append(len(filling_indexes))
 
-    # 8. Performance map from risk and intervals
+    # 8. invalidity_mask
+    invalidity_mask_indexes = rast_wrap.find_indexes_in_point_cloud(
+        cloud, cst.POINT_CLOUD_INVALIDITY_MASK_KEY_ROOT, list_computed_layers
+    )
+    values_bands.extend(invalidity_mask_indexes)
+    split_indexes.append(len(invalidity_mask_indexes))
+
+    # 9. Performance map from risk and intervals
     performance_map_indexes = rast_wrap.find_indexes_in_point_cloud(
         cloud, cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT, list_computed_layers
     )
@@ -298,6 +305,7 @@ def compute_vector_raster_and_stats(
         classif,
         source_pc,
         filling,
+        invalidity_mask,
         performance_map,
     ) = np.split(out, np.cumsum(split_indexes), axis=-1)
 
@@ -329,6 +337,22 @@ def compute_vector_raster_and_stats(
     if len(filling_indexes) > 0:
         filling_out = np.ceil(filling)
 
+    invalidity_mask_out = None
+    if len(invalidity_mask_indexes) > 0:
+        b0 = invalidity_mask[..., 0]
+        b1 = invalidity_mask[..., 1]
+
+        both_nan = np.isnan(b0) & np.isnan(b1)
+        both_zero = (b0 == 0) & (b1 == 0)
+
+        out0 = (b0 > b1).astype(float)
+        out1 = (b1 > b0).astype(float)
+
+        invalidity_mask_out = np.stack([out0, out1], axis=-1)
+
+        invalidity_mask_out[both_zero] = 0
+        invalidity_mask_out[both_nan] = np.nan
+
     if len(performance_map_indexes) == 0:
         performance_map = None
 
@@ -352,6 +376,8 @@ def compute_vector_raster_and_stats(
         filling_indexes,
         performance_map,
         performance_map_indexes,
+        invalidity_mask_out,
+        invalidity_mask_indexes,
     )
 
 
@@ -433,6 +459,8 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
         filling_indexes,
         performance_map_raw,
         performance_map_raw_indexes,
+        invalidity_mask,
+        invalididy_mask_indexes,
     ) = compute_vector_raster_and_stats(
         cloud,
         x_start,
@@ -462,6 +490,10 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
     if classif is not None:
         classif = classif.reshape(shape_out + (-1,))
         classif = np.moveaxis(classif, 2, 0)
+
+    if invalidity_mask is not None:
+        invalidity_mask = invalidity_mask.reshape(shape_out + (-1,))
+        invalidity_mask = np.moveaxis(invalidity_mask, 2, 0)
 
     if msk is not None:
         msk = msk.reshape(shape_out)
@@ -532,6 +564,8 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
         performance_map_classified,
         performance_map_classified_indexes,
         performance_map_raw_indexes,
+        invalidity_mask,
+        invalididy_mask_indexes,
     )
 
     return raster_out

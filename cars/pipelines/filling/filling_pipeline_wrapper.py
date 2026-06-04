@@ -45,7 +45,6 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
     """
     Merge filling bands to get mono band in output
     """
-
     # swap the keys and values of aux_filling
     inverse_aux_filling = {}
     for k, v in aux_filling.items():
@@ -78,8 +77,10 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
             return False
 
         filling_multi_bands = src.read(window=rasterio_window)
+        # remove the first band
+        filling_multi_bands = filling_multi_bands[1:, :, :]
         filling_mono_bands = np.zeros(filling_multi_bands.shape[1:3])
-        descriptions = src.descriptions
+        descriptions = src.descriptions[1:]
         dict_temp = {name: i for i, name in enumerate(descriptions)}
         profile = src.profile
 
@@ -117,9 +118,7 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
             if isinstance(value, list):
                 for elem in value:
                     if elem == "no_edition":
-                        mask_1 = np.all(
-                            filling_multi_bands[1:, :, :] == 0, axis=0
-                        )
+                        mask_1 = np.all(filling_multi_bands == 0, axis=0)
                         mask_2 = filling_mono_bands == 0
                         filling_mono_bands[mask_1 & mask_2] = key
                         continue
@@ -128,7 +127,6 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
                         continue
 
                     filling_method = filling_bands_list[elem]
-
                     if all(method in descriptions for method in filling_method):
 
                         indices_true = [dict_temp[m] for m in filling_method]
@@ -153,7 +151,7 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
 
                         filling_mono_bands[mask] = key
 
-        mask_1 = np.any(filling_multi_bands[1:, :, :], axis=0)
+        mask_1 = np.any(filling_multi_bands, axis=0)
         mask_2 = filling_mono_bands == 0
 
         filling_mono_bands[mask_1 & mask_2] = (

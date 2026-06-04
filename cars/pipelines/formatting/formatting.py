@@ -165,6 +165,10 @@ class FormattingPipeline(PipelineTemplate):
             if element.name in ["dsm", "depth_map", "point_cloud"]:
                 dest = destination_dir / element.name
 
+                file_to_delete = element / "invalidity_mask.tif"
+                if file_to_delete.exists():
+                    file_to_delete.unlink()
+
                 if dest.exists():
                     if dest.is_dir():
                         shutil.rmtree(dest)

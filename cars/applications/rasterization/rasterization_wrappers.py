@@ -149,7 +149,7 @@ def find_indexes_in_point_cloud(
         list_computed_layers, tag
     ):
         for key in cloud.columns:
-            if tag in key:
+            if key.startswith(tag):
                 indexes.append(key)
     return indexes
 
@@ -187,6 +187,8 @@ def create_raster_dataset(  # noqa: C901
     performance_map_classified: np.ndarray = None,
     performance_map_classified_index: list = None,
     band_performance_map: List[str] = None,
+    invalidity_mask: np.ndarray = None,
+    band_invalidity_mask: List[str] = None,
 ) -> xr.Dataset:
     """
     Create final raster xarray dataset
@@ -480,6 +482,27 @@ def create_raster_dataset(  # noqa: C901
         raster_out.attrs[cst.RIO_TAG_PERFORMANCE_MAP_CLASSES] = (
             performance_map_classified_index
         )
+
+    if invalidity_mask is not None:
+        invalidity_mask = np.nan_to_num(invalidity_mask, nan=msk_no_data)
+        for idx, band_name in enumerate(band_invalidity_mask):
+            band_invalidity_mask[idx] = band_name.replace(
+                cst.POINT_CLOUD_FILLING_KEY_ROOT + "_", ""
+            )
+            invalidity_mask_out = xr.Dataset(
+                {
+                    cst.RASTER_INVALIDITY_MASK: (
+                        [cst.BAND_INVALIDITY_MASK, cst.Y, cst.X],
+                        invalidity_mask,
+                    )
+                },
+                coords={
+                    **raster_coords,
+                    cst.BAND_INVALIDITY_MASK: band_invalidity_mask,
+                },
+            )
+        # update raster output with invalidity_mask information
+        raster_out = xr.merge((raster_out, invalidity_mask_out))
 
     return raster_out
 

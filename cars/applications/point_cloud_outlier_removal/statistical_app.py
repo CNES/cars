@@ -34,6 +34,7 @@ import numpy as np
 # Third party imports
 from json_checker import And, Checker, Or
 from pyproj import CRS
+from rasterio.fill import fillnodata
 
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
@@ -464,6 +465,31 @@ def epipolar_statistical_removal_wrapper(
         dev_factor=std_dev_factor,
         use_median=use_median,
         half_window_size=half_epipolar_size,
+    )
+
+    mask_valid = np.all(
+        filtered_cloud[cst.EPI_INVALIDITY_MASK].values != 1, axis=0
+    )
+
+    fillnodata(
+        filtered_cloud[cst.X],
+        mask=mask_valid,
+        max_search_distance=100,
+        smoothing_iterations=0,
+    )
+
+    fillnodata(
+        filtered_cloud[cst.Y],
+        mask=mask_valid,
+        max_search_distance=100,
+        smoothing_iterations=0,
+    )
+
+    fillnodata(
+        filtered_cloud[cst.Z],
+        mask=mask_valid,
+        max_search_distance=100,
+        smoothing_iterations=0,
     )
 
     # Fill with attributes

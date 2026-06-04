@@ -99,6 +99,7 @@ class SimpleGaussian(
         self.texture_no_data = self.used_config["texture_no_data"]
         self.color_dtype = self.used_config["texture_dtype"]
         self.msk_no_data = self.used_config["msk_no_data"]
+        self.fill_nodata = self.used_config["fill_nodata"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -137,7 +138,7 @@ class SimpleGaussian(
         overloaded_conf["texture_no_data"] = conf.get("texture_no_data", None)
         overloaded_conf["texture_dtype"] = conf.get("texture_dtype", None)
         overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 255)
-
+        overloaded_conf["fill_nodata"] = conf.get("fill_nodata", True)
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -152,6 +153,7 @@ class SimpleGaussian(
             "texture_no_data": Or(None, int),
             "texture_dtype": Or(None, str),
             "save_intermediate_data": bool,
+            "fill_nodata": bool,
         }
 
         # Check conf
@@ -671,6 +673,39 @@ class SimpleGaussian(
             )
             paths_data[cst.RASTER_FILLING] = out_filling
 
+        out_invalidity_mask = os.path.join(
+            os.path.dirname(dsm_file_name), "invalidity_mask.tif"
+        )
+        if out_invalidity_mask:
+            list_computed_layers += ["invalidity_mask"]
+            self.orchestrator.add_to_save_lists(
+                out_invalidity_mask,
+                cst.RASTER_INVALIDITY_MASK,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="invalidity_mask",
+                optional_data=True,
+            )
+            paths_data[cst.RASTER_FILLING] = out_filling
+
+        if save_intermediate_data:
+            # File is not part of the official product, write it in dump_dir
+            out_invalidity_mask = os.path.join(
+                out_dump_dir, "invalidity_mask.tif"
+            )
+            list_computed_layers += ["invalidity_mask"]
+            self.orchestrator.add_to_save_lists(
+                out_invalidity_mask,
+                cst.RASTER_INVALIDITY_MASK,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="invalidity_mask",
+                optional_data=True,
+            )
+            paths_data[cst.RASTER_FILLING] = out_filling
+
         # TODO Check that intervals indeed exist!
         if save_intermediate_data:
             list_computed_layers += [cst.POINT_CLOUD_LAYER_SUP_OR_INF_ROOT]
@@ -879,6 +914,7 @@ class SimpleGaussian(
                             msk_no_data=self.msk_no_data,
                             source_pc_names=source_pc_names,
                             performance_map_classes=performance_map_classes,
+                            fill_nodata=self.fill_nodata,
                         )
                     ind_tile += 1
 
@@ -906,6 +942,7 @@ def rasterization_wrapper(  # noqa: C901
     msk_no_data: int = 255,
     source_pc_names=None,
     performance_map_classes=None,
+    fill_nodata: bool = True,
 ):
     """
     Wrapper for rasterization step :
@@ -952,6 +989,17 @@ def rasterization_wrapper(  # noqa: C901
         del attributes["attributes"]
     if "saving_info" in attributes:
         del attributes["saving_info"]
+
+    if not fill_nodata:
+        cloud[cst.X].values[
+            np.any(cloud[cst.RASTER_INVALIDITY_MASK].values == 1, axis=0)
+        ] = np.nan
+        cloud[cst.Y].values[
+            np.any(cloud[cst.RASTER_INVALIDITY_MASK].values == 1, axis=0)
+        ] = np.nan
+        cloud[cst.Z].values[
+            np.any(cloud[cst.RASTER_INVALIDITY_MASK].values == 1, axis=0)
+        ] = np.nan
 
     # convert back to correct epsg
     # If the point cloud is not in the right epsg referential, it is converted
@@ -1079,6 +1127,7 @@ def rasterization_wrapper(  # noqa: C901
         "color_type": color_dtype,
         cst.CROPPED_DISPARITY_RANGE: (ocht.get_disparity_range_cropped(cloud)),
     }
+
     if raster is not None:
         cars_dataset.fill_dataset(
             raster,
@@ -1126,6 +1175,7 @@ def raster_final_function(orchestrator, future_object):
                 cst.RASTER_FILLING,
                 cst.RASTER_CLASSIF,
                 cst.RASTER_SOURCE_PC,
+                cst.RASTER_INVALIDITY_MASK,
             ]:
                 method = "bool"
             else:
@@ -1148,5 +1198,9 @@ def raster_final_function(orchestrator, future_object):
                 ),
                 current_data.shape,
             )
+
+            if tag == cst.RASTER_INVALIDITY_MASK:
+                mask = np.all(future_object[tag].values == 1, axis=0)
+                future_object[tag].values[1, mask] = 0
 
     return future_object

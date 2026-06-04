@@ -536,6 +536,24 @@ def create_disp_dataset(  # noqa: C901
         for key, val in pandora_masks.items():
             disp_ds[key] = xr.DataArray(np.copy(val), dims=[cst.ROW, cst.COL])
 
+    # mask for occlusions and mismatch
+    invalidity_mask = np.zeros(
+        (2, disp.validity_mask.shape[0], disp.validity_mask.shape[1]),
+        dtype=np.uint8,
+    )
+
+    invalidity_mask[0][
+        (disp.validity_mask & p_cst.PANDORA_MSK_PIXEL_OCCLUSION) != 0
+    ] = 1
+    invalidity_mask[1][
+        (disp.validity_mask & p_cst.PANDORA_MSK_PIXEL_MISMATCH) != 0
+    ] = 1
+
+    disp_ds.coords[cst.BAND_INVALIDITY_MASK] = ["occlusion", "mismatch"]
+    disp_ds["invalidity_mask"] = xr.DataArray(
+        invalidity_mask, dims=[cst.BAND_INVALIDITY_MASK, cst.ROW, cst.COL]
+    )
+
     disp_ds.attrs[cst.ROI] = ref_dataset.attrs[cst.ROI]
     disp_ds.attrs[cst.ROI_WITH_MARGINS] = new_roi
     disp_ds.attrs[cst.EPI_MARGINS] = new_margin

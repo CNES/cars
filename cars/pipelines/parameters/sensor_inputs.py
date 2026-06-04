@@ -355,12 +355,14 @@ def check_filling(conf, classif_loader):
         "interpolate_from_borders": None,
         "fill_with_endogenous_dem": None,
         "fill_with_exogenous_dem": None,
+        "interpolation": None,
     }
     slurp_filling = {
         "fill_with_geoid": [7],
         "interpolate_from_borders": [8],
-        "fill_with_endogenous_dem": [9],
+        "fill_with_endogenous_dem": [9, "occlusion"],
         "fill_with_exogenous_dem": [5],
+        "interpolation": "mismatch",
     }
     filling_from_loader = {}
     filling_from_loader["basic"] = basic_filling
@@ -379,10 +381,11 @@ def check_filling(conf, classif_loader):
 
     # Validate loaders
     loaders_schema = {
-        "fill_with_geoid": Or(None, [int]),
-        "interpolate_from_borders": Or(None, [int]),
-        "fill_with_endogenous_dem": Or(None, [int]),
-        "fill_with_exogenous_dem": Or(None, [int]),
+        "fill_with_geoid": Or(None, [Or(int, str)]),
+        "interpolate_from_borders": Or(None, [Or(int, str)]),
+        "fill_with_endogenous_dem": Or(None, [Or(int, str)]),
+        "fill_with_exogenous_dem": Or(None, [Or(int, str)]),
+        "interpolation": Or(None, [Or(int, str)]),
     }
 
     checker_loaders = Checker(loaders_schema)
@@ -854,29 +857,36 @@ def check_classification_values(sensors, sensor_type, key1, key2, filling):
         classif2[sens_cst.INPUT_VALUES] = all_values
         for filling_method in filling:
             filling_values = filling[filling_method]
-            if filling_values is not None and not all(
-                isinstance(val, int) for val in filling_values
-            ):
-                raise TypeError(
-                    "Not all values defined for "
-                    "filling {} are int : {}".format(
-                        filling_method,
-                        filling_values,
-                    )
-                )
             if filling_values is not None:
                 for filling_value in filling_values:
-                    if filling_value not in all_values:
-                        logging.warning(
-                            "Value {} on which filling {} must be applied does"
-                            " not exist on classifications {} and {}".format(
-                                filling_value,
+                    if isinstance(filling_value, str) and filling_value not in (
+                        "mismatch",
+                        "occlusion",
+                    ):
+                        raise RuntimeError(
+                            "The values defined for "
+                            "filling {} should be integer or in ('mismatch', "
+                            "'occlusion') : {}".format(
                                 filling_method,
-                                classif1[sens_cst.INPUT_PATH],
-                                classif2[sens_cst.INPUT_PATH],
+                                filling_values,
                             )
                         )
-                        filling[filling_method].remove(filling_value)
+            if filling_values is not None:
+                for filling_value in filling_values:
+                    if isinstance(filling_value, int):
+                        if filling_value not in all_values:
+                            logging.warning(
+                                "Value {} on which filling {} "
+                                "must be applied does"
+                                " not exist on"
+                                " classifications {} and {}".format(
+                                    filling_value,
+                                    filling_method,
+                                    classif1[sens_cst.INPUT_PATH],
+                                    classif2[sens_cst.INPUT_PATH],
+                                )
+                            )
+                            filling[filling_method].remove(filling_value)
     return filling
 
 
