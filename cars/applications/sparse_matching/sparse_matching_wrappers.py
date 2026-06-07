@@ -105,6 +105,24 @@ def compute_disparity_range(matches, percent=0.1):
     return mindisp, maxdisp
 
 
+def get_max_disp_from_tile_memory(
+    current_memory_mb: float,
+    used_disparity_range: int,
+    max_ram_per_worker: float,
+    margin: float = 0.0,
+):
+    """
+    Calculate the max_disp_range
+    """
+    usable_memory = max_ram_per_worker * (1.0 - margin / 100.0)
+
+    ratio = usable_memory / current_memory_mb
+
+    max_disp = used_disparity_range * ratio
+
+    return max(1, int(max_disp))
+
+
 def compute_disp_min_disp_max(
     pd_cloud,
     orchestrator,
@@ -197,9 +215,7 @@ def transform_triangulated_matches_to_dataframe(triangulated_matches):
     return triangulated_matches_df
 
 
-def get_margins(
-    margin_left, margin_right_up, margin_right_down, disp_min, disp_max
-):
+def get_margins(margin, disp_min, disp_max):
     """
     Get margins for the dense matching steps
 
@@ -214,28 +230,32 @@ def get_margins(
     col = np.arange(4)
 
     left_margins = [
-        0,  # no left/right margins for the left img
-        margin_left,
-        0,  # no left/right margins for the left img
-        margin_left,
+        margin["left"] + disp_max,
+        margin["up"],
+        margin["right"] - disp_min,
+        margin["down"],
     ]
     right_margins = [
-        margin_left - disp_min,
-        margin_right_up,
-        margin_left + disp_max,
-        margin_right_down,
+        margin["left"] - disp_min,
+        margin["up"],
+        margin["right"] + disp_max,
+        margin["down"],
+    ]
+    same_margins = [
+        max(left, right)
+        for left, right in zip(left_margins, right_margins)  # noqa: B905
     ]
 
     margins = xr.Dataset(
         {
             "left_margin": (
                 ["col"],
-                left_margins,
+                same_margins,
             )
         },
         coords={"col": col},
     )
-    margins["right_margin"] = xr.DataArray(right_margins, dims=["col"])
+    margins["right_margin"] = xr.DataArray(same_margins, dims=["col"])
 
     margins.attrs["disp_min"] = disp_min
     margins.attrs["disp_max"] = disp_max

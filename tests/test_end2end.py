@@ -155,6 +155,105 @@ def test_end2end_gizeh_meta_pipeline():
 
 
 @pytest.mark.end2end_tests
+def test_end2end_gizeh_meta_pipeline_pandora2d():
+    """
+    End to end processing with color
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+            "tie_points": {
+                "applications": {
+                    "all": {
+                        "sparse_matching": {
+                            "method": "pandora2d",
+                            "step": [10, 10],
+                            "elevation_delta_lower_bound": -1000,
+                            "elevation_delta_upper_bound": 3000,
+                        }
+                    }
+                }
+            },
+        }
+        out_dir = conf["output"]["directory"]
+        meta_pipeline = default.DefaultPipeline(conf)
+        meta_pipeline.run()
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_gizeh_meta_pipeline_pandora2d.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_gizeh_meta_pipeline_pandora2d.tif",
+                )
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_gizeh_meta_pipeline_pandora2d.tif",
+                )
+            ),
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_gizeh_meta_pipeline_pandora2d.tif",
+                )
+            ),
+            atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
+        )
+
+        # Check metadata file
+        metadata_path = os.path.join(out_dir, "metadata.yaml")
+        assert os.path.isfile(metadata_path)
+
+
+@pytest.mark.end2end_tests
 def test_end2end_ventoux_meta_pipeline():
     """
     End to end processing with color

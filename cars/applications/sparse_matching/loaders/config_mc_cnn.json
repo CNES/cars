@@ -1,0 +1,18 @@
+{
+  "input": {},
+  "pipeline": {
+    "matching_cost": {
+      "matching_cost_method": "mc_cnn",
+      "window_size": 11
+    },
+    "disparity": {
+      "disparity_method": "wta",
+      "invalid_disparity": -999
+    },
+    "refinement": {
+      "refinement_method": "dichotomy",
+      "iterations": 5,
+      "filter": {"method": "bicubic"}
+    }
+  }
+}

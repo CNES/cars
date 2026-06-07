@@ -48,9 +48,11 @@ def _check_tie_points_output(outdir, expected):
     epipolar_filtered = np.abs(filtered_matches[:, 3] - filtered_matches[:, 1])
 
     assert len(raw_matches) == expected["raw_count"]
+
     assert np.mean(disparity_raw) == pytest.approx(
         expected["raw_disp"], abs=expected["disp_tol"]
     )
+
     assert np.mean(epipolar_raw) == pytest.approx(
         expected["raw_epi"], abs=expected["epi_tol"]
     )
@@ -124,11 +126,11 @@ def test_pipeline_ventoux():
         }
 
         expected = {
-            "raw_count": 96,
-            "filtered_count": 93,
-            "raw_disp": -330,
-            "filtered_disp": -342,
-            "raw_epi": 6,
+            "raw_count": 538,
+            "filtered_count": 532,
+            "raw_disp": -333,
+            "filtered_disp": -337,
+            "raw_epi": 5,
             "filtered_epi": 4.75,
             "disp_tol": 2,
             "epi_tol": 0.5,
@@ -172,11 +174,11 @@ def test_pipeline_ventoux_with_dem():
         }
 
         expected = {
-            "raw_count": 117,
-            "filtered_count": 111,
-            "raw_disp": 11,
-            "filtered_disp": 4,
-            "raw_epi": 8,
+            "raw_count": 613,
+            "filtered_count": 602,
+            "raw_disp": -3.35,
+            "filtered_disp": -5,
+            "raw_epi": 6,
             "filtered_epi": 4.75,
             "disp_tol": 0.5,
             "epi_tol": 0.5,
@@ -223,11 +225,11 @@ def test_pipeline_ventoux_with_mask():
         }
 
         expected = {
-            "raw_count": 96,
-            "filtered_count": 93,
-            "raw_disp": -330,
-            "filtered_disp": -342,
-            "raw_epi": 6,
+            "raw_count": 537,
+            "filtered_count": 531,
+            "raw_disp": -333,
+            "filtered_disp": -337,
+            "raw_epi": 5,
             "filtered_epi": 4.75,
             "disp_tol": 2,
             "epi_tol": 0.5,

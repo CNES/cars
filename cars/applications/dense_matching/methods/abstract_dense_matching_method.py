@@ -48,6 +48,9 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
         :return: a method_to_use object
         """
 
+        if cls is not AbstractDenseMatchingMethod:
+            return super(AbstractDenseMatchingMethod, cls).__new__(cls)
+
         matching_method = cls.default_method
         if bool(conf) is False or "method" not in conf:
             logging.info(

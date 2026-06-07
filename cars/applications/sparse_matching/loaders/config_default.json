@@ -1,0 +1,14 @@
+{
+  "input": {},
+  "pipeline": {
+    "matching_cost": {
+      "matching_cost_method": "zncc",
+      "window_size": 5,
+      "float_precision": "f8"
+    },
+    "disparity": {
+      "disparity_method": "wta",
+      "invalid_disparity": -999
+    }
+  }
+}

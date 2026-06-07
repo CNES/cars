@@ -59,6 +59,7 @@ dependencies = [
     "urllib3",
     "laspy[laszip]",
     "pandora[sgm]==1.8.0",
+    "pandora2d",
     "cars-rasterize==0.2.*",
     "cars-resample==0.1.*",
     "cars-filter==0.3.*",

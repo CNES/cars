@@ -1,0 +1,18 @@
+{
+  "input": {},
+  "pipeline": {
+    "matching_cost": {
+      "matching_cost_method": "zncc-optim-2",
+      "window_size": 5
+    },
+    "disparity": {
+      "disparity_method": "wta",
+      "invalid_disparity": -999
+    },
+    "refinement": {
+      "refinement_method": "dichotomy",
+      "iterations": 5,
+      "filter": {"method": "bicubic"}
+    }
+  }
+}

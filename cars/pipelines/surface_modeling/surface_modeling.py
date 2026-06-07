@@ -810,7 +810,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                                 )
         for key1, key2 in inputs_conf["pairing"]:
             corr_cfg = self.dense_matching_app.loader.get_conf()
-            nodata_left = inputs_conf["sensors"][key2]["image"]["no_data"]
+            nodata_left = inputs_conf["sensors"][key1]["image"]["no_data"]
             nodata_right = inputs_conf["sensors"][key2]["image"]["no_data"]
             bands_left = list(
                 inputs_conf["sensors"][key1]["image"]["bands"].keys()

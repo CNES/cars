@@ -50,6 +50,9 @@ class AbstractSparseMatchingMethod(metaclass=ABCMeta):
         :return: a method_to_use object
         """
 
+        if cls is not AbstractSparseMatchingMethod:
+            return super(AbstractSparseMatchingMethod, cls).__new__(cls)
+
         matching_method = cls.default_method
         if bool(conf) is False or "method" not in conf:
             logging.info(
@@ -101,6 +104,12 @@ class AbstractSparseMatchingMethod(metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def add_margin_wrapper(self, margins_fun, method_margins):
+        """
+        Add specific margins
+        """
+
+    @abstractmethod
     def run(
         self,
         left_image_object: xr.Dataset,
@@ -109,6 +118,7 @@ class AbstractSparseMatchingMethod(metaclass=ABCMeta):
         disp_lower_bound=None,
         disp_upper_bound=None,
         classif_bands_to_mask=None,
+        **kwargs,
     ):  # pylint: disable=R0917
         """
         Run sparse matching on a pair of epipolar tiles.
