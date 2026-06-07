@@ -117,8 +117,6 @@ class TiePointsPipeline(PipelineTemplate):
             output_dem_dir=output_dem_dir,
         )
         self.used_conf[PIPELINE][ADVANCED] = advanced
-        self.resampling_tile_width = advanced["resampling_tile_width"]
-        self.resampling_tile_height = advanced["resampling_tile_height"]
         self.epipolar_roi_margin_factor = advanced["epipolar_roi_margin_factor"]
 
         # Check conf output
@@ -136,7 +134,7 @@ class TiePointsPipeline(PipelineTemplate):
         application_conf = self.check_applications(
             pipeline_conf.get(APPLICATIONS, {})
         )
-
+        self.cars_orchestrator = None
         # Check conf application vs inputs application
         application_conf = self.check_applications_with_inputs(
             self.used_conf[INPUT], application_conf
@@ -245,6 +243,23 @@ class TiePointsPipeline(PipelineTemplate):
             self.sparse_matching_app.get_conf()
         )
 
+        sparse_method = self.sparse_matching_app.sparse_matching_method
+
+        self.method_margins = None
+        if type(sparse_method).__name__ == "Pandora2DSparseMethod":
+            for key1, key2 in inputs_conf["pairing"]:
+                corr_cfg = sparse_method.loader.get_conf()
+                nodata_left = inputs_conf["sensors"][key1]["image"]["no_data"]
+                nodata_right = inputs_conf["sensors"][key2]["image"]["no_data"]
+
+                cfg, method_margins = sparse_method.loader.check_conf(
+                    corr_cfg,
+                    nodata_left,
+                    nodata_right,
+                )
+                sparse_method.corr_config = cfg
+                self.method_margins = method_margins
+
         return application_conf
 
     @staticmethod
@@ -263,13 +278,6 @@ class TiePointsPipeline(PipelineTemplate):
         """
 
         overloaded_conf = conf.copy()
-
-        overloaded_conf["resampling_tile_width"] = conf.get(
-            "resampling_tile_width", 5000
-        )
-        overloaded_conf["resampling_tile_height"] = conf.get(
-            "resampling_tile_height", 60
-        )
 
         overloaded_conf["epipolar_roi_margin_factor"] = conf.get(
             "epipolar_roi_margin_factor", 0.2
@@ -297,8 +305,6 @@ class TiePointsPipeline(PipelineTemplate):
         schema = {
             adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
             adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
-            "resampling_tile_width": int,
-            "resampling_tile_height": int,
             "epipolar_roi_margin_factor": float,
         }
 
@@ -447,6 +453,8 @@ class TiePointsPipeline(PipelineTemplate):
         if log_dir is None:
             log_dir = os.path.join(self.out_dir, "logs")
 
+        sparse_method = self.sparse_matching_app.sparse_matching_method
+
         # Load geomodels directly on conf object
         sensor_inputs.load_geomodels(
             self.used_conf[INPUT], self.geom_plugin_without_dem_and_geoid
@@ -466,6 +474,7 @@ class TiePointsPipeline(PipelineTemplate):
             )
             inherent_orchestrator = True
 
+        self.cars_orchestrator = cars_orchestrator
         # Run applications
         if epipolar_roi is not None:
             roi_tools.expand_roi(
@@ -488,6 +497,14 @@ class TiePointsPipeline(PipelineTemplate):
             if previous_dir is not None:
                 self.update_via_metadata_file(
                     previous_dir, pair_key, res_factor
+                )
+
+            method_sparse = self.sparse_matching_app.sparse_matching_method
+            if hasattr(method_sparse, "corr_config"):
+                method_sparse.corr_config["segment_mode"]["memory_per_work"] = (
+                    cars_orchestrator.cluster.checked_conf_cluster[
+                        "max_ram_per_worker"
+                    ]
                 )
 
             if self.used_conf[INPUT][sens_cst.RECTIFICATION_GRIDS] is None:
@@ -520,11 +537,14 @@ class TiePointsPipeline(PipelineTemplate):
             # Get required bands of resampling
             required_bands = self.sparse_matching_app.get_required_bands()
 
-            tile_width = self.resampling_tile_width
-            tile_height = self.resampling_tile_height
+            tile_width = sparse_method.tile_width
+            tile_height = sparse_method.tile_height
             if disp_range_grid is not None:
-                margins_fun = self.sparse_matching_app.get_margins_tile_fun(
-                    grid_left, disp_range_grid
+                margins_fun_resam = (
+                    self.sparse_matching_app.get_margins_tile_fun(
+                        grid_left,
+                        disp_range_grid,
+                    )
                 )
 
                 disp_min = disp_range_grid["global_min"]
@@ -542,9 +562,17 @@ class TiePointsPipeline(PipelineTemplate):
                     -disp_min * disp_to_alt_ratio
                 )
 
-            else:
-                margins_fun = self.sparse_matching_app.get_margins_strip_fun()
+                margins_fun = sparse_method.add_margin_wrapper(
+                    margins_fun_resam, self.method_margins
+                )
 
+            else:
+                margins_fun_resam = (
+                    self.sparse_matching_app.get_margins_strip_fun()
+                )
+                margins_fun = sparse_method.add_margin_wrapper(
+                    margins_fun_resam, self.method_margins
+                )
             (
                 epipolar_image_left,
                 epipolar_image_right,
@@ -581,6 +609,7 @@ class TiePointsPipeline(PipelineTemplate):
                     pair_key,
                 ),
                 pair_key=pair_key,
+                disp_range_grid=disp_range_grid,
             )
 
             cars_orchestrator.breakpoint()

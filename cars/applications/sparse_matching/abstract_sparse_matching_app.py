@@ -120,9 +120,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_margins_strip_fun(
-        self, disp_min=None, disp_max=None, method="sift"
-    ):
+    def get_margins_strip_fun(self, disp_min=None, disp_max=None):
         """
         Get margins function to use in resampling
 
@@ -136,7 +134,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_margins_tile_fun(self, grid_left, disp_range_grid, method="sift"):
+    def get_margins_tile_fun(self, grid_left, disp_range_grid):
         """
         Get Margins function that generates margins needed by
         matching method, to use during resampling
@@ -191,6 +189,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_image_left,
         epipolar_image_right,
         disp_to_alt_ratio,
+        disp_range_grid=None,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",

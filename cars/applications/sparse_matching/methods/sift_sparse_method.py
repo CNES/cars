@@ -55,6 +55,8 @@ class SiftSparseMethod(AbstractSparseMatchingMethod, short_name=["sift"]):
     Implementation of SIFT as a sparse matching method.
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     def __init__(self, conf):
         super().__init__(conf=conf)
 
@@ -69,6 +71,8 @@ class SiftSparseMethod(AbstractSparseMatchingMethod, short_name=["sift"]):
             "sift_window_size": And(int, is_positive),
             "sift_back_matching": bool,
             "used_band": str,
+            "tile_width": int,
+            "tile_height": int,
         }
 
         self.used_config = self.check_conf(conf)
@@ -86,7 +90,8 @@ class SiftSparseMethod(AbstractSparseMatchingMethod, short_name=["sift"]):
         self.sift_magnification = self.used_config["sift_magnification"]
         self.sift_window_size = self.used_config["sift_window_size"]
         self.sift_back_matching = self.used_config["sift_back_matching"]
-
+        self.tile_width = self.used_config["tile_width"]
+        self.tile_height = self.used_config["tile_height"]
         self.used_band = self.used_config["used_band"]
 
     def check_conf(self, conf):
@@ -109,6 +114,8 @@ class SiftSparseMethod(AbstractSparseMatchingMethod, short_name=["sift"]):
             "sift_window_size": 2,
             "sift_back_matching": True,
             "used_band": "b0",
+            "tile_width": 5000,
+            "tile_height": 60,
         }
 
         used_conf = default_conf.copy()
@@ -121,6 +128,21 @@ class SiftSparseMethod(AbstractSparseMatchingMethod, short_name=["sift"]):
         checker.validate(conf_to_check)
 
         return conf_to_check
+
+    def add_margin_wrapper(self, margins_fun, method_margins):
+        """
+        Add sift margins
+        """
+
+        def wrapped(row_min, row_max, col_min, col_max):
+            """
+            wrappers
+            """
+            margins_dataset = margins_fun(row_min, row_max, col_min, col_max)
+
+            return margins_dataset
+
+        return wrapped
 
     def get_required_bands(self):
         """
@@ -146,7 +168,6 @@ class SiftSparseMethod(AbstractSparseMatchingMethod, short_name=["sift"]):
         """
         Compute and filter sparse matches for one pair of epipolar tiles.
         """
-
         # TODO: remove overwriting of EPI_MSK
         saved_left_mask = np.copy(left_image_object[cst.EPI_MSK].values)
         saved_right_mask = np.copy(right_image_object[cst.EPI_MSK].values)

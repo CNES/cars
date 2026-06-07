@@ -24,6 +24,8 @@ this module contains the basic sparse matching application class.
 
 # pylint: disable= C0302
 
+import inspect
+
 # Standard imports
 import logging
 import math
@@ -48,6 +50,7 @@ from cars.core import constants as cst
 from cars.core import inputs, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
+from cars.data_structures.cars_dict import CarsDict
 
 
 class BasicSparseMatchingApplication(
@@ -225,9 +228,7 @@ class BasicSparseMatchingApplication(
         """
         return self.sparse_matching_method.get_required_bands()
 
-    def get_margins_strip_fun(
-        self, disp_min=None, disp_max=None, method="sift"
-    ):
+    def get_margins_strip_fun(self, disp_min=None, disp_max=None):
         """
         Get margins function to use in resampling
 
@@ -249,20 +250,17 @@ class BasicSparseMatchingApplication(
         )
         margins["right_margin"] = xr.DataArray(data, dims=["col"])
 
-        left_margin = self.tile_margin
-        if method == "sift":
-            right_margin = (
-                self.tile_margin
-                + int(
-                    math.floor(
-                        self.epipolar_error_upper_bound
-                        + self.epipolar_error_maximum_bias
-                    )
+        right_margin = (
+            self.tile_margin
+            + int(
+                math.floor(
+                    self.epipolar_error_upper_bound
+                    + self.epipolar_error_maximum_bias
                 )
-                + self.epipolar_error_estimation
             )
-        else:
-            right_margin = left_margin
+            + self.epipolar_error_estimation
+        )
+        left_margin = right_margin
 
         margins["left_margin"].data = [0, left_margin, 0, left_margin]
         margins["right_margin"].data = [0, right_margin, 0, right_margin]
@@ -293,7 +291,7 @@ class BasicSparseMatchingApplication(
 
         return margins_wrapper
 
-    def get_margins_tile_fun(self, grid_left, disp_range_grid, method="sift"):
+    def get_margins_tile_fun(self, grid_left, disp_range_grid):
         """
         Get Margins function that generates margins needed by
         matching method, to use during resampling
@@ -306,20 +304,15 @@ class BasicSparseMatchingApplication(
         """
         self.default_value_for_epipolar_error()
 
-        if method == "sift":
-            right_margin = self.tile_margin + int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
-                )
+        margin_right = self.tile_margin + int(
+            math.floor(
+                self.epipolar_error_upper_bound
+                + self.epipolar_error_maximum_bias
             )
+        )
 
-            right_margin_up = right_margin + self.epipolar_error_estimation
-            right_margin_down = right_margin - self.epipolar_error_estimation
-
-        else:
-            right_margin_up = self.tile_margin
-            right_margin_down = self.tile_margin
+        margin_up = margin_right + self.epipolar_error_estimation
+        margin_down = margin_right - self.epipolar_error_estimation
 
         disp_min_grid_arr, _ = inputs.rasterio_read_as_array(
             disp_range_grid["grid_min_path"]
@@ -348,6 +341,13 @@ class BasicSparseMatchingApplication(
             )
         )
 
+        margin = {
+            "left": self.tile_margin,
+            "up": margin_up,
+            "right": self.tile_margin,
+            "down": margin_down,
+        }
+
         def margins_wrapper(row_min, row_max, col_min, col_max):
             """
             Generates margins Dataset used in resampling
@@ -367,9 +367,7 @@ class BasicSparseMatchingApplication(
             )
 
             margins = sm_wrapper.get_margins(
-                self.tile_margin,
-                right_margin_up,
-                right_margin_down,
+                margin,
                 disp_min,
                 disp_max,
             )
@@ -476,9 +474,7 @@ class BasicSparseMatchingApplication(
         epipolar_median_shift = np.median(matches[:, 3] - matches[:, 1])
 
         if np.abs(epipolar_median_shift) > epipolar_error_maximum_bias:
-            epipolar_median_shift = epipolar_error_maximum_bias * np.sign(
-                epipolar_median_shift
-            )
+            epipolar_median_shift = 0
 
         # pylint: disable=invalid-unary-operand-type
         matches = matches[
@@ -595,10 +591,12 @@ class BasicSparseMatchingApplication(
         epipolar_image_left,
         epipolar_image_right,
         disp_to_alt_ratio,
+        disp_range_grid=None,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
         classif_bands_to_mask=None,
+        max_ram_per_worker=500,
     ):
         """
         Run Matching application.
@@ -651,6 +649,9 @@ class BasicSparseMatchingApplication(
 
         :rtype: Tuple(CarsDataset, CarsDataset)
         """
+
+        # pylint: disable=invalid-unary-operand-type
+
         # Default orchestrator
         if orchestrator is None:
             # Create default sequential orchestrator for current application
@@ -750,6 +751,23 @@ class BasicSparseMatchingApplication(
             elif total_nb_band_sift == 3:
                 step = 2
 
+            broadcasted_disp_range_grid = self.orchestrator.cluster.scatter(
+                CarsDict(disp_range_grid)
+            )
+
+            row_disp = [
+                np.floor(
+                    -(
+                        self.epipolar_error_upper_bound
+                        + self.epipolar_error_maximum_bias
+                    )
+                ),
+                np.ceil(
+                    self.epipolar_error_upper_bound
+                    + self.epipolar_error_maximum_bias
+                ),
+            ]
+
             for row in range(0, total_nb_band_sift, step):
                 for col in range(len(epipolar_image_left[row])):
                     # initialize list of matches
@@ -771,8 +789,11 @@ class BasicSparseMatchingApplication(
                             epipolar_image_right[row, col],
                             disp_lower_bound=disp_lower_bound,
                             disp_upper_bound=disp_upper_bound,
+                            disp_range_grid=broadcasted_disp_range_grid,
                             saving_info_left=full_saving_info_left,
+                            row_disp=row_disp,
                             classif_bands_to_mask=classif_bands_to_mask,
+                            max_ram_per_worker=max_ram_per_worker,
                         )
 
         else:
@@ -790,8 +811,11 @@ def compute_matches_wrapper(  # pylint: disable=too-many-positional-arguments
     right_image_object,
     disp_lower_bound=None,
     disp_upper_bound=None,
+    disp_range_grid=None,
     saving_info_left=None,
+    row_disp=None,
     classif_bands_to_mask=None,
+    max_ram_per_worker=None,
 ):
     """
     Compute matches from image objects.
@@ -823,11 +847,20 @@ def compute_matches_wrapper(  # pylint: disable=too-many-positional-arguments
             - TODO
     """
 
+    kwargs = {
+        "saving_info_left": saving_info_left,
+        "disp_lower_bound": disp_lower_bound,
+        "disp_upper_bound": disp_upper_bound,
+        "classif_bands_to_mask": classif_bands_to_mask,
+        "disp_range_grid": disp_range_grid,
+        "row_disp": row_disp,
+        "max_ram_per_worker": max_ram_per_worker,
+    }
+
+    params = inspect.signature(sparse_matching_method.run).parameters
+
+    kwargs = {k: v for k, v in kwargs.items() if k in params}
+
     return sparse_matching_method.run(
-        left_image_object,
-        right_image_object,
-        saving_info_left=saving_info_left,
-        disp_lower_bound=disp_lower_bound,
-        disp_upper_bound=disp_upper_bound,
-        classif_bands_to_mask=classif_bands_to_mask,
+        left_image_object, right_image_object, **kwargs
     )

@@ -24,5 +24,6 @@ Methods module init file
 
 from . import (  # noqa: F401
     abstract_sparse_matching_method,
+    pandora2d_sparse_method,
     sift_sparse_method,
 )
