@@ -273,23 +273,6 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
                 axis=0,
             ),
         )
-    if (
-        cst.EPI_CLASSIFICATION in right_dataset
-        and classif_bands_to_mask not in (None, [])
-    ):
-        classif_values = (
-            right_dataset[cst.EPI_CLASSIFICATION]
-            .sel(band_classif=classif_bands_to_mask)
-            .values
-        )
-        right_dataset[cst.EPI_MSK] = np.logical_or(
-            right_dataset[cst.EPI_MSK],
-            np.repeat(
-                np.any(classif_values != 0, axis=0)[np.newaxis, ...],
-                right_dataset.sizes["band_im"],
-                axis=0,
-            ),
-        )
 
     if used_band is not None:
 
