@@ -844,6 +844,7 @@ class SimpleGaussian(
                 "width": xsize,
                 "driver": "GTiff",
                 "dtype": "float32",
+                "interleave": "band",
                 "transform": transform,
                 "crs": output_crs.to_wkt(),
                 "tiled": True,
