@@ -2,6 +2,7 @@
 loaders:
   image: PHR
 sensors:
-  image:
-    PAN: img1.tif
-    PXS: color1.tif
+  my_name_for_this_sensor:
+    image:
+      PAN: img1.tif
+      PXS: color1.tif

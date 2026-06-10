@@ -2,5 +2,6 @@
 loaders:
   image: CO3D
 sensors:
-  image:
-    RGB: color1.tif
+  my_name_for_this_sensor:
+    image:
+      RGB: color1.tif
