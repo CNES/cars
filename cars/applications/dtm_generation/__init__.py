@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of CARS
 # (see https://github.com/CNES/cars).
@@ -19,25 +19,12 @@
 # limitations under the License.
 #
 """
-this module contains the constants used for all pipelines
+CARS dtm generation init file
 """
+# flake8: noqa: F401
 
-# Sensor input
+from cars.applications.dtm_generation.abstract_dtm_generation_app import (
+    DtmGeneration,
+)
 
-INPUT = "input"
-OUTPUT = "output"
-APPLICATIONS = "applications"
-ADVANCED = "advanced"
-ORCHESTRATOR = "orchestrator"
-FILLING = "filling"
-PIPELINE = "pipeline"
-SUBSAMPLING = "subsampling"
-TIE_POINTS = "tie_points"
-MERGING = "merging"
-SURFACE_MODELING = "surface_modeling"
-FORMATTING = "formatting"
-EDGE_DETECTION = "edge_detection"
-
-# Input keys
-DSM_TO_FILL = "dsm_to_fill"
-INPUT_DTM = "input_dtm"
+from . import bulldozer_app

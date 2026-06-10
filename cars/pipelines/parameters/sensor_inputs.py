@@ -88,6 +88,10 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         conf.get(sens_cst.FILLING, {}), classif_loader
     )
 
+    overloaded_conf[pipeline_cst.INPUT_DTM] = overloaded_conf.get(
+        pipeline_cst.INPUT_DTM, None
+    )
+
     # Validate inputs
     inputs_schema = {
         sens_cst.SENSORS: dict,
@@ -99,6 +103,7 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         sens_cst.LOADERS: dict,
         sens_cst.FILLING: dict,
         pipeline_cst.DSM_TO_FILL: Or(str, dict, None),
+        pipeline_cst.INPUT_DTM: Or(str, None),
     }
 
     checker_inputs = Checker(inputs_schema)

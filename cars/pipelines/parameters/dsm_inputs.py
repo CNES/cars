@@ -102,6 +102,7 @@ def check_dsm_inputs(conf, config_dir=None):
         cst.DSM_SOURCE_PC: Or(str, None),
         cst.DSM_FILLING: Or(str, None),
         cst.DSM_COLOR: Or(str, None),
+        cst.DTM: Or(str, None),
     }
 
     checker_pc = Checker(dsm_schema)
@@ -165,6 +166,9 @@ def check_dsm_inputs(conf, config_dir=None):
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_FILLING] = conf[
             dsm_cst.DSMS
         ][dsm_key].get("merging_filling", None)
+        overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DTM] = conf[dsm_cst.DSMS][
+            dsm_key
+        ].get("dtm", None)
 
         # validate
         checker_pc.validate(overloaded_conf[dsm_cst.DSMS][dsm_key])

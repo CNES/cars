@@ -444,7 +444,11 @@ def test_end2end_ventoux_with_filling():
                 "nb_workers": 4,
                 "max_ram_per_worker": 1000,
             },
-            "output": {"directory": directory, "auxiliary": {"filling": True}},
+            "output": {
+                "directory": directory,
+                "auxiliary": {"filling": True},
+                "product_level": ["dtm"],
+            },
         }
         out_dir = conf["output"]["directory"]
         meta_pipeline = default.DefaultPipeline(conf)

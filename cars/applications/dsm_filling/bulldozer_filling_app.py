@@ -124,6 +124,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         orchestrator=None,
         dsm_dir=None,
         tile_size=10000,
+        dtm_file_name=None,
     ):
         """
         Run dsm filling using initial elevation and the current dsm
@@ -147,8 +148,9 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             os.makedirs(dump_dir)
 
         # create the config for the bulldozer execution
+        parent_dir = os.path.dirname(os.path.dirname(__file__))
         bull_conf_path = os.path.join(
-            os.path.dirname(__file__), "bulldozer_config/base_config.yaml"
+            parent_dir, "dtm_generation/bulldozer_config/base_config.yaml"
         )
         with open(bull_conf_path, "r", encoding="utf8") as bull_conf_file:
             bull_conf = yaml.safe_load(bull_conf_file)
@@ -169,57 +171,63 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         with open(bull_conf_path, "w", encoding="utf8") as bull_conf_file:
             yaml.dump(bull_conf, bull_conf_file)
 
-        dtm_path = os.path.join(bull_conf["output_dir"], "dtm.tif")
+        if dtm_file_name is None:
+            dtm_path = os.path.join(bull_conf["output_dir"], "dtm.tif")
+        else:
+            dtm_path = dtm_file_name
 
-        # Modify DSM for dtm to be used
-        with rio.open(dsm_file) as in_dsm:
-            dsm_tr = in_dsm.transform
-            dsm_crs = in_dsm.crs
-            dsm_bounds = in_dsm.bounds
+        if dtm_file_name is None:
+            # Modify DSM for dtm to be used
+            with rio.open(dsm_file) as in_dsm:
+                dsm_tr = in_dsm.transform
+                dsm_crs = in_dsm.crs
+                dsm_bounds = in_dsm.bounds
 
-        saved_transform = None
-        if dsm_crs.is_geographic:
-            xmin = dsm_bounds.left
-            ymin = dsm_bounds.bottom
-            utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
-            conversion_factor = preprocessing.get_conversion_factor(
-                dsm_bounds, utm_epsg, dsm_crs.to_epsg()
-            )
-            resolution = dsm_tr.a * conversion_factor
-            saved_transform = edit_transform(dsm_file, resolution=resolution)
-
-        # Launch Bulldozer
-        try:
-            try:
-                # suppress prints in bulldozer by redirecting stdout&stderr
-                with open(os.devnull, "w", encoding="utf8") as devnull:
-                    with (
-                        contextlib.redirect_stdout(devnull),
-                        contextlib.redirect_stderr(devnull),
-                    ):
-                        dsm_to_dtm(bull_conf_path)
-            except Exception:
-                logging.info(
-                    "Bulldozer failed on its first execution. Retrying"
+            saved_transform = None
+            if dsm_crs.is_geographic:
+                xmin = dsm_bounds.left
+                ymin = dsm_bounds.bottom
+                utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+                conversion_factor = preprocessing.get_conversion_factor(
+                    dsm_bounds, utm_epsg, dsm_crs.to_epsg()
                 )
-                # suppress prints in bulldozer by redirecting stdout&stderr
-                with open(os.devnull, "w", encoding="utf8") as devnull:
-                    with (
-                        contextlib.redirect_stdout(devnull),
-                        contextlib.redirect_stderr(devnull),
-                    ):
-                        dsm_to_dtm(bull_conf_path)
-        except Exception:
-            logging.warning(
-                "Bulldozer failed on its second execution."
-                + " The DSM could not be filled."
-            )
-            return None
+                resolution = dsm_tr.a * conversion_factor
+                saved_transform = edit_transform(
+                    dsm_file, resolution=resolution
+                )
 
-        # Change back dsm and dtm to previous ref
-        if saved_transform is not None:
-            edit_transform(dtm_path, transform=saved_transform)
-            edit_transform(dsm_file, transform=saved_transform)
+            # Launch Bulldozer
+            try:
+                try:
+                    # suppress prints in bulldozer by redirecting stdout&stderr
+                    with open(os.devnull, "w", encoding="utf8") as devnull:
+                        with (
+                            contextlib.redirect_stdout(devnull),
+                            contextlib.redirect_stderr(devnull),
+                        ):
+                            dsm_to_dtm(bull_conf_path)
+                except Exception:
+                    logging.info(
+                        "Bulldozer failed on its first execution. Retrying"
+                    )
+                    # suppress prints in bulldozer by redirecting stdout&stderr
+                    with open(os.devnull, "w", encoding="utf8") as devnull:
+                        with (
+                            contextlib.redirect_stdout(devnull),
+                            contextlib.redirect_stderr(devnull),
+                        ):
+                            dsm_to_dtm(bull_conf_path)
+            except Exception:
+                logging.warning(
+                    "Bulldozer failed on its second execution."
+                    + " The DSM could not be filled."
+                )
+                return None
+
+            # Change back dsm and dtm to previous ref
+            if saved_transform is not None:
+                edit_transform(dtm_path, transform=saved_transform)
+                edit_transform(dsm_file, transform=saved_transform)
 
         # Generate filled dsm cars dataset
 

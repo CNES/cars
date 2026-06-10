@@ -419,6 +419,16 @@ class MergingPipeline(PipelineTemplate):
                 else None
             )
 
+            dtm_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "dtm.tif",
+                )
+                if "dtm" in dict_path
+                else None
+            )
+
             # Get ROI
             epsg = rasterio_get_epsg(dict_path["dsm"][0])
             (
@@ -444,4 +454,5 @@ class MergingPipeline(PipelineTemplate):
                 performance_map_file_name,
                 ambiguity_file_name,
                 contributing_all_pair_file_name,
+                dtm_file_name,
             )

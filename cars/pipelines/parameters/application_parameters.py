@@ -24,7 +24,11 @@ General application configuration module
 
 
 def get_needed_apps(
-    sensors_in_inputs, save_output_dsm, save_output_point_cloud, conf
+    sensors_in_inputs,
+    save_output_dsm,
+    save_output_point_cloud,
+    save_output_dtm,
+    conf,
 ):
     """
     This function returns the apps needed by the CARS pipeline,
@@ -61,5 +65,10 @@ def get_needed_apps(
             needed_applications += [
                 "point_cloud_rasterization",
             ]
+
+    if save_output_dtm:
+        needed_applications += [
+            "dtm_generation",
+        ]
 
     return needed_applications
