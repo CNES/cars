@@ -987,6 +987,12 @@ class DefaultPipeline(PipelineTemplate):
                     "invalidity_mask"
                 ] = os.path.join(aux_path + "invalidity_mask.tif")
 
+                dtm_path = os.path.join(aux_path + "dtm.tif")
+                if os.path.isfile(dtm_path):
+                    self.filling_conf[INPUT][pipeline_cst.INPUT_DTM] = (
+                        os.path.join(aux_path + "dtm.tif")
+                    )
+
             initial_elevation = final_conf[INPUT][
                 sens_cst.INITIAL_ELEVATION
             ].get("dem", None)

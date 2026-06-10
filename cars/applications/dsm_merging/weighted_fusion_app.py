@@ -108,6 +108,7 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
         performance_map_file_name=None,
         ambiguity_file_name=None,
         contributing_pair_file_name=None,
+        dtm_file_name=None,
     ):
         """
         Merge all the dsms
@@ -279,6 +280,8 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
                 and contributing_pair_file_name is not None
             ):
                 out_file_name = contributing_pair_file_name
+            elif key == cst.DTM and dtm_file_name is not None:
+                out_file_name = dtm_file_name
             else:
                 out_file_name = os.path.join(out_dump_dir, key + ".tif")
 

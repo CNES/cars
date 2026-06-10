@@ -677,6 +677,8 @@ class FillingPipeline(PipelineTemplate):
             else None
         )
 
+        dtm_file_name = self.used_conf[INPUT][pipeline_cst.INPUT_DTM]
+
         invalidity_mask_file_name = (
             self.dsm_to_fill["invalidity_mask"]
             if "invalidity_mask"
@@ -821,7 +823,6 @@ class FillingPipeline(PipelineTemplate):
             else:
                 self.list_intersection_poly = None
 
-        dtm_file_name = None
         for app_key, app in self.dsm_filling_apps.items():
 
             app_dump_dir = os.path.join(
@@ -870,6 +871,7 @@ class FillingPipeline(PipelineTemplate):
                     orchestrator=self.cars_orchestrator,
                     dsm_dir=dsm_filled_dir,
                     tile_size=self.filling_tile_size,
+                    dtm_file_name=dtm_file_name,
                 )
             elif app.get_conf()["method"] == "border_interpolation":
                 _ = app.run(

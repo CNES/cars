@@ -25,7 +25,9 @@ Output configuration
 
     .. tab:: Product level
 
-        The `product_level` attribute defines which product should be produced by CARS. There are three available product type: `depth_map`, `point_cloud` and `dsm`.
+        The `product_level` attribute defines which product should be produced by CARS. There are four available product type: `depth_map`, `point_cloud`, `dsm` and `dtm`.
+
+        If `dtm` is requested in `product_level`, the DSM will also be computed.
 
         A single product can be requested by setting the parameter as string or several products can be requested by providing a list.
 

@@ -84,8 +84,14 @@ def check_output_parameters(  # noqa: C901 : too complex
             overloaded_conf[output_constants.PRODUCT_LEVEL]
         ]
     for level in overloaded_conf[output_constants.PRODUCT_LEVEL]:
-        if level not in ["dsm", "depth_map", "point_cloud"]:
+        if level not in ["dtm", "dsm", "depth_map", "point_cloud"]:
             raise RuntimeError("Unknown product level {}".format(level))
+
+    if (
+        "dtm" in overloaded_conf[output_constants.PRODUCT_LEVEL]
+        and "dsm" not in overloaded_conf[output_constants.PRODUCT_LEVEL]
+    ):
+        overloaded_conf[output_constants.PRODUCT_LEVEL].append("dsm")
 
     overloaded_conf[output_constants.OUT_GEOID] = overloaded_conf.get(
         output_constants.OUT_GEOID, True
@@ -461,7 +467,7 @@ def intialize_product_index(orchestrator, product_levels, input_pairs):
             cst.INDEX_DSM_PERFORMANCE_MAP: None,
             cst.INDEX_DSM_CONTRIBUTING_PAIR: None,
             cst.INDEX_DSM_WEIGHTS: None,
-            "invalidity_mask": None,
+            cst.INDEX_DSM_INVALIDITY_MASK: None,
         }
 
     if "point_cloud" in product_levels:
@@ -481,7 +487,7 @@ def intialize_product_index(orchestrator, product_levels, input_pairs):
                 cst.INDEX_DEPTH_MAP_CLASSIFICATION: None,
                 cst.INDEX_DEPTH_MAP_PERFORMANCE_MAP: None,
                 cst.INDEX_DEPTH_MAP_EPSG: None,
-                "invalidity_mask": None,
+                cst.INDEX_DSM_INVALIDITY_MASK: None,
             }
 
     if orchestrator is not None:

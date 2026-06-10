@@ -295,11 +295,16 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.save_output_dsm = "dsm" in prod_level
         self.save_output_depth_map = "depth_map" in prod_level
         self.save_output_point_cloud = "point_cloud" in prod_level
+        self.save_output_dtm = "dtm" in prod_level
+
+        if self.save_output_dtm and not self.save_output_dsm:
+            self.output_dsm = True
 
         self.output_level_none = not (
             self.save_output_dsm
             or self.save_output_depth_map
             or self.save_output_point_cloud
+            or self.save_output_dtm
         )
 
         # Used classification values, for filling -> will be masked
@@ -509,6 +514,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             True,
             self.save_output_dsm,
             self.save_output_point_cloud,
+            self.save_output_dtm,
             conf,
         )
 
@@ -715,6 +721,16 @@ class SurfaceModelingPipeline(PipelineTemplate):
             )
             used_conf["point_cloud_rasterization"] = (
                 self.rasterization_application.get_conf()
+            )
+
+        if self.save_output_dtm:
+            # dtm generation
+            self.dtm_generation_application = Application(
+                "dtm_generation",
+                cfg=used_conf.get("dtm_generation", {}),
+            )
+            used_conf["dtm_generation"] = (
+                self.dtm_generation_application.get_conf()
             )
 
         return used_conf
@@ -1934,6 +1950,21 @@ class SurfaceModelingPipeline(PipelineTemplate):
             os.path.join(os.path.dirname(dsm_file_name), "invalidity_mask.tif"),
             dsm_file_name,
         )
+
+        self.dtm_generation_dump_dir = os.path.join(
+            self.dump_dir, "dtm_generation"
+        )
+
+        if self.save_output_dtm and self.which_resolution in (
+            "single",
+            "final",
+        ):
+            _ = self.dtm_generation_application.run(
+                dsm_file_name,
+                self.dtm_generation_dump_dir,
+                self.cars_orchestrator,
+                os.path.join(self.out_dir, "dsm"),
+            )
 
         return False
 
