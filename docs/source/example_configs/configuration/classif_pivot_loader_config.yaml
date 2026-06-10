@@ -1,6 +1,6 @@
 ---
 loaders:
-  image: pivot
+  classification: pivot
 sensors:
   my_name_for_this_sensor:
     classification:
