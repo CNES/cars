@@ -86,19 +86,65 @@ class FillingPipeline(PipelineTemplate):
 
         :param parent_pipeline_id: Optional parent pipeline ID
         :type parent_pipeline_id: int or None
-        :return: Task ID to pass to orchestrator via set_target_task()
-        :rtype: int
+        :return: None
         """
         progress_tree = ProgressTree()
-        self.pipeline_progress_id = progress_tree.begin_pipeline(
-            "filling", parent_id=parent_pipeline_id
+        if parent_pipeline_id is None:
+            self.pipeline_progress_id = progress_tree.begin_pipeline("Filling")
+        else:
+            self.pipeline_progress_id = parent_pipeline_id
+
+        self.task_ids = {}
+
+        has_initial_dem = (
+            self.used_conf[INPUT][sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+            is not None
         )
-        self.task_progress_id = progress_tree.register_task(
-            self.pipeline_progress_id,
-            "filling",
-            weight=1.0,
+        dsm_to_fill_input = self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]
+        has_input_filling = isinstance(dsm_to_fill_input, dict) and (
+            "filling" in dsm_to_fill_input
         )
-        return self.task_progress_id
+        output_filling_bands = self.used_conf[OUTPUT][out_cst.AUXILIARY][
+            out_cst.AUX_FILLING
+        ]
+        has_merge_filling_phase = has_input_filling and bool(
+            output_filling_bands
+        )
+        auxiliary_conf = self.used_conf[APPLICATIONS].get(
+            "auxiliary_filling", {}
+        )
+        auxiliary_activated = auxiliary_conf.get("activated", True)
+
+        if not has_initial_dem:
+            self.task_ids["dem_generation"] = progress_tree.register_task(
+                self.pipeline_progress_id,
+                "dem_generation",
+                weight=10,
+            )
+
+        if len(self.dsm_filling_apps) > 0:
+            app_weight = 60 / len(self.dsm_filling_apps)
+            for app_key, app in self.dsm_filling_apps.items():
+                task_name = "dsm_filling_{}".format(app.get_conf()["method"])
+                self.task_ids[app_key] = progress_tree.register_task(
+                    self.pipeline_progress_id,
+                    task_name,
+                    weight=app_weight,
+                )
+
+        if auxiliary_activated:
+            self.task_ids["auxiliary_filling"] = progress_tree.register_task(
+                self.pipeline_progress_id,
+                "auxiliary_filling",
+                weight=20,
+            )
+
+        if has_merge_filling_phase:
+            self.task_ids["merge_filling_bands"] = progress_tree.register_task(
+                self.pipeline_progress_id,
+                "merge_filling_bands",
+                weight=10,
+            )
 
     def __init__(self, conf, config_dir=None, pre_check=False):  # noqa: C901
         """
@@ -711,6 +757,11 @@ class FillingPipeline(PipelineTemplate):
         )
 
         if inputs_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] is None:
+            # dem_generation does not use workers
+            # drive progress manually
+            dem_gen_task_id = self.task_ids.get("dem_generation")
+            if dem_gen_task_id is not None:
+                ProgressTree().notify(dem_gen_task_id, "started", total=1)
             dems = {}
 
             dem_generation_output_dir = os.path.join(
@@ -734,6 +785,10 @@ class FillingPipeline(PipelineTemplate):
                 default_alt=self.geom_plugin_with_dem_and_geoid.default_alt,
                 cars_orchestrator=self.cars_orchestrator,
             )
+
+            if dem_gen_task_id is not None:
+                ProgressTree().notify(dem_gen_task_id, "progressed", value=1)
+                ProgressTree().notify(dem_gen_task_id, "completed")
 
             dem_median = paths["dem_median"]
             dem_min = paths["dem_min"]
@@ -839,6 +894,7 @@ class FillingPipeline(PipelineTemplate):
                 self.list_intersection_poly = None
 
         for app_key, app in self.dsm_filling_apps.items():
+            self.cars_orchestrator.set_target_task(self.task_ids.get(app_key))
 
             app_dump_dir = os.path.join(
                 self.dump_dir, app_key.replace(".", "_")
@@ -908,6 +964,9 @@ class FillingPipeline(PipelineTemplate):
 
             self.cars_orchestrator.breakpoint()
 
+        self.cars_orchestrator.set_target_task(
+            self.task_ids.get("auxiliary_filling")
+        )
         _ = self.auxiliary_filling_application.run(
             dsm_file=os.path.join(dsm_filled_dir, "dsm.tif"),
             color_file=color_file_name,
@@ -924,6 +983,9 @@ class FillingPipeline(PipelineTemplate):
         self.cars_orchestrator.breakpoint()
 
         if self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]:
+            self.cars_orchestrator.set_target_task(
+                self.task_ids.get("merge_filling_bands")
+            )
             out_filling_file_name = os.path.join(dsm_filled_dir, "filling.tif")
             _ = self.merge_filling_bands(
                 out_filling_file_name,
@@ -936,7 +998,9 @@ class FillingPipeline(PipelineTemplate):
         return True
 
     @cars_profile(name="Run_filling_pipeline", interval=0.5)
-    def run(self, args=None, log_dir=None):  # noqa C901 # pylint: disable=W0613
+    def run(
+        self, args=None, log_dir=None, parent_pipeline_id=None
+    ):  # noqa C901 # pylint: disable=W0613
         """
         Run pipeline
         """
@@ -961,4 +1025,5 @@ class FillingPipeline(PipelineTemplate):
                 out_cst.INFO_FILENAME,
             ),
         ) as self.cars_orchestrator:
+            self.setup_progress_tracking(parent_pipeline_id)
             self.filling()

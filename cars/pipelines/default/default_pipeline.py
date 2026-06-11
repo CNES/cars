@@ -157,13 +157,9 @@ class DefaultPipeline(PipelineTemplate):
                 weight=100,
             )
 
+        filling_pid = None
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             filling_pid = progress_tree.begin_pipeline("Filling")
-            progress_tasks["filling"] = progress_tree.register_task(
-                filling_pid,
-                "Filling",
-                weight=100,
-            )
 
         if self.pipeline_to_use[pipeline_cst.FORMATTING]:
             formatting_pid = progress_tree.begin_pipeline("Formatting")
@@ -178,6 +174,7 @@ class DefaultPipeline(PipelineTemplate):
         self.subsampling_pid = subsampling_pid
         self.sm_pids = sm_pids
         self.sm_tie_points_pids = sm_tie_points_pids
+        self.filling_pid = filling_pid
 
         # Show the progress panel immediately after tree initialization.
         self.progress_tree.draw()
@@ -786,6 +783,7 @@ class DefaultPipeline(PipelineTemplate):
         self.subsampling_pid = None
         self.sm_pids = {}
         self.sm_tie_points_pids = {}
+        self.filling_pid = None
         if logtype == "human":
             self.setup_progress_tracking()
 
@@ -1048,12 +1046,6 @@ class DefaultPipeline(PipelineTemplate):
         formatting_input_dir = final_conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
-            if self.progress_tree is not None:
-                self.progress_tree.notify(
-                    self.progress_tasks["filling"],
-                    "started",
-                    total=1,
-                )
             current_log_dir = os.path.join(self.out_dir, "logs", "filling")
             cars_logging.setup_logging(
                 loglevel,
@@ -1113,6 +1105,7 @@ class DefaultPipeline(PipelineTemplate):
             )
             filling_pipeline.run(
                 log_dir=current_log_dir,
+                parent_pipeline_id=self.filling_pid,
             )
 
             # Update metadata
@@ -1129,10 +1122,6 @@ class DefaultPipeline(PipelineTemplate):
                 filling_pipeline.used_conf[OUTPUT][out_cst.OUT_DIRECTORY],
                 pipeline_cst.FILLING,
             )
-            if self.progress_tree is not None:
-                self.progress_tree.notify(
-                    self.progress_tasks["filling"], "completed"
-                )
 
         if self.pipeline_to_use[pipeline_cst.FORMATTING]:
             if self.progress_tree is not None:
