@@ -1,8 +1,9 @@
 ---
 loaders:
-  image: pivot
+  classification: pivot
 sensors:
-  classification:
-    path: classif.tif
-    values: [3, 4, 6, 8, 9, 10]
+  my_name_for_this_sensor:
+    classification:
+      path: classif.tif
+      values: [3, 4, 6, 8, 9, 10]
 
