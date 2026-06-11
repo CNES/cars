@@ -26,6 +26,7 @@ class UINode:
     pipeline_id: int | None = None
     progress: float = 0.0  # 0.0 to 1.0
     retries: int = 0
+    failed: int = 0
     state: str = "pending"  # pending, running, completed
     children: list[UINode] = field(default_factory=list)
 
@@ -72,12 +73,17 @@ class PipelineTreeUI:
             self.tree[node_id].state = state
 
     def update_progress(
-        self, node_id: int, progress: float, retries: int = 0
+        self,
+        node_id: int,
+        progress: float,
+        retries: int = 0,
+        failed: int = 0,
     ) -> None:
         """Update node progress (0.0 to 1.0) and retry count."""
         if node_id in self.tree:
             self.tree[node_id].progress = max(0.0, min(1.0, progress))
             self.tree[node_id].retries = retries
+            self.tree[node_id].failed = failed
 
     def _node_label(self, node: UINode, depth: int) -> str:
         """Build a node label including indentation and status icon."""
@@ -123,9 +129,14 @@ class PipelineTreeUI:
 
         progress = max(0.0, min(1.0, node.progress))
         progress_bar = ProgressBar(total=1.0, completed=progress, width=20)
-        retry_suffix = f" (retries={node.retries})" if node.retries > 0 else ""
+        suffix_parts = []
+        if node.retries > 0:
+            suffix_parts.append(f"retries={node.retries}")
+        if node.failed > 0:
+            suffix_parts.append(f"failed={node.failed}")
+        status_suffix = f" ({', '.join(suffix_parts)})" if suffix_parts else ""
         progress_label = Text(
-            f"{progress * 100:.0f}%{retry_suffix}", no_wrap=True
+            f"{progress * 100:.0f}%{status_suffix}", no_wrap=True
         )
 
         row.add_row(Text(line), progress_bar, progress_label)

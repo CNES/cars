@@ -7,11 +7,12 @@ progress contributes to the pipeline bar accordingly.
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from itertools import count
 
 from rich.console import Console
+
+from cars.core.cars_logging import add_progress_message
 
 from .ui import PipelineTreeUI
 
@@ -29,6 +30,10 @@ class TaskState:
     progress_in_run: float = 0.0
     total: int = 0
     last_logged_percent: int = 0  # for logging progress at intervals
+    progressed_tiles: int = 0
+    retries: int = 0
+    failed: int = 0
+    pending_retry_pass: bool = False
 
 
 @dataclass
@@ -41,6 +46,7 @@ class PipelineState:
     total_weight: float = 0.0
     weighted_progress: float = 0.0
     retries: int = 0
+    failed: int = 0
 
 
 class ProgressTree:
@@ -133,7 +139,7 @@ class ProgressTree:
         self._task_to_pipeline[task_id] = pipeline_id
         self._pipelines[pipeline_id].total_weight += weight
 
-        logging.info(
+        add_progress_message(
             "Registered task '{}' under pipeline '{}' with weight {}".format(
                 task_name, self._pipelines[pipeline_id].name, weight
             )
@@ -145,49 +151,169 @@ class ProgressTree:
         Update Rich UI display for one pipeline
         from weighted progress and retry metadata.
         """
-        total_progress, total_weight, total_retries = (
-            self._aggregate_pipeline_metrics(pipeline.pipeline_id)
+        total_progress, total_weight = self._aggregate_pipeline_progress(
+            pipeline.pipeline_id
         )
         progress_fraction = (
             total_progress / total_weight if total_weight > 0 else 0.0
         )
-        pipeline.retries = total_retries
         if not self._ui_enabled:
             return
         self._ui.update_progress(
             pipeline.pipeline_id,
             progress_fraction,
             retries=pipeline.retries,
+            failed=pipeline.failed,
         )
         self._ui.display()
 
-    def _aggregate_pipeline_metrics(
+    def _aggregate_pipeline_progress(
         self, pipeline_id: int
-    ) -> tuple[float, float, int]:
+    ) -> tuple[float, float]:
         """
-        Aggregate progress/weight/retries recursively over a pipeline subtree.
+        Aggregate progress/weight recursively over a pipeline subtree.
+
+        Retries and failed counters are intentionally not aggregated.
         """
         pipeline = self._pipelines[pipeline_id]
         total_progress = pipeline.weighted_progress
         total_weight = pipeline.total_weight
-        total_retries = pipeline.retries
 
         for child_id in self._pipeline_children.get(pipeline_id, []):
-            child_progress, child_weight, child_retries = (
-                self._aggregate_pipeline_metrics(child_id)
+            child_progress, child_weight = self._aggregate_pipeline_progress(
+                child_id
             )
             total_progress += child_progress
             total_weight += child_weight
-            total_retries += child_retries
 
-        return total_progress, total_weight, total_retries
+        return total_progress, total_weight
 
     def _refresh_pipeline_and_ancestors(self, pipeline_id: int) -> None:
-        """Refresh one pipeline and all its ancestors."""
+        """Refresh one pipeline and all its ancestors for progress roll-up."""
         current = pipeline_id
         while current is not None:
             self._refresh_pipeline_bar(self._pipelines[current])
             current = self._pipeline_parent.get(current)
+
+    def _handle_started(
+        self,
+        task: TaskState,
+        pipeline: PipelineState,
+        total: int | None,
+    ) -> None:
+        if total is None:
+            raise ValueError("total is required for 'started' event")
+        task.started_runs += 1
+
+        # keep progress/total so retried tiles can rebuild rolled-back
+        # progress.
+        is_retry_pass = task.pending_retry_pass
+        task.pending_retry_pass = False
+        if not is_retry_pass:
+            task.total = total
+            # Reset per-run counters so logging percentage stays within
+            # 0-100 for each nominal run.
+            task.progress_in_run = 0.0
+            task.last_logged_percent = 0
+            task.progressed_tiles = 0
+            task.retries = 0
+            task.failed = 0
+
+        if self._ui_enabled and pipeline.weighted_progress == 0.0:
+            self._ui.update_state(pipeline.pipeline_id, "running")
+        self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
+        add_progress_message(
+            "Started task '{}' in pipeline '{}', total: {}".format(
+                task.name, pipeline.name, total
+            )
+        )
+
+    def _handle_progressed(
+        self,
+        task: TaskState,
+        pipeline: PipelineState,
+        value: int,
+    ) -> None:
+        if task.total <= 0:
+            return
+        run_share = task.weight / task.expected_runs
+        increment = run_share * (float(value) / float(task.total))
+        task.progress_in_run += increment
+        pipeline.weighted_progress += increment
+        task.progressed_tiles += int(value)
+
+        # Log progress at 10% intervals
+        current_count = max(0, task.progressed_tiles - task.retries)
+        current_percent = (
+            int((current_count / task.total) * 100) if task.total > 0 else 0
+        )
+
+        if current_percent >= task.last_logged_percent + 10:
+            task.last_logged_percent = (current_percent // 10) * 10
+            add_progress_message(
+                f"Data list to process: {task.last_logged_percent}% "
+                f"complete ({current_count}/{task.total} tiles) "
+                f"[run {task.started_runs}/{task.expected_runs}]"
+            )
+
+        self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
+
+    def _handle_retries(
+        self,
+        task: TaskState,
+        pipeline: PipelineState,
+        value: int,
+    ) -> None:
+        retries_count = int(value)
+        task.retries += retries_count
+        pipeline.retries += retries_count
+        if retries_count > 0:
+            task.pending_retry_pass = True
+
+        # Push progress back by the share represented by retried tiles.
+        if task.total > 0:
+            run_share = task.weight / task.expected_runs
+            rollback = run_share * (float(retries_count) / float(task.total))
+            rollback = min(rollback, task.progress_in_run)
+            task.progress_in_run -= rollback
+            pipeline.weighted_progress = max(
+                0.0, pipeline.weighted_progress - rollback
+            )
+
+        self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
+
+    def _handle_failed(
+        self,
+        task: TaskState,
+        pipeline: PipelineState,
+        value: int,
+    ) -> None:
+        task.failed += int(value)
+        pipeline.failed += int(value)
+        self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
+
+    def _handle_completed(
+        self,
+        task: TaskState,
+        pipeline: PipelineState,
+    ) -> None:
+        if task.total > 0:
+            run_share = task.weight / task.expected_runs
+            if task.progress_in_run < run_share:
+                missing = run_share - task.progress_in_run
+                task.progress_in_run += missing
+                pipeline.weighted_progress += missing
+        total_expected = sum(
+            self._tasks[tid].weight
+            for tid in self._tasks
+            if self._task_to_pipeline[tid] == pipeline.pipeline_id
+        )
+        all_tasks_done = pipeline.weighted_progress >= total_expected - 1e-9
+        if all_tasks_done:
+            pipeline.weighted_progress = total_expected
+            if self._ui_enabled:
+                self._ui.update_state(pipeline.pipeline_id, "completed")
+        self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
 
     def notify(
         self,
@@ -207,76 +333,23 @@ class ProgressTree:
         pipeline = self._pipelines[task.pipeline_id]
 
         if event == "started":
-            if total is None:
-                raise ValueError("total is required for 'started' event")
-            task.total = total
-            task.started_runs += 1
-            # Reset per-run counters so logging percentage stays within 0-100
-            # for each new run of the same task.
-            task.progress_in_run = 0.0
-            task.last_logged_percent = 0
-            if self._ui_enabled and pipeline.weighted_progress == 0.0:
-                self._ui.update_state(pipeline.pipeline_id, "running")
-            self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
-            logging.info(
-                "Started task '{}' in pipeline '{}', total: {}".format(
-                    task.name, pipeline.name, total
-                )
-            )
+            self._handle_started(task, pipeline, total)
             return
 
         if event == "progressed":
-            if task.total <= 0:
-                return
-            run_share = task.weight / task.expected_runs
-            increment = run_share * (float(value) / float(task.total))
-            task.progress_in_run += increment
-            pipeline.weighted_progress += increment
-
-            # Log progress at 10% intervals
-            current_count = (
-                int((task.progress_in_run / run_share) * task.total)
-                if run_share > 0
-                else 0
-            )
-            current_percent = (
-                int((current_count / task.total) * 100) if task.total > 0 else 0
-            )
-
-            if current_percent >= task.last_logged_percent + 10:
-                task.last_logged_percent = (current_percent // 10) * 10
-                logging.info(
-                    f"Data list to process: {task.last_logged_percent}% "
-                    f"complete ({current_count}/{task.total} tiles) "
-                    f"[run {task.started_runs}/{task.expected_runs}]"
-                )
-
-            self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
+            self._handle_progressed(task, pipeline, value)
             return
 
         if event == "retries":
-            pipeline.retries += int(value)
-            self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
+            self._handle_retries(task, pipeline, value)
+            return
+
+        if event == "failed":
+            self._handle_failed(task, pipeline, value)
             return
 
         if event == "completed":
-            if task.total > 0:
-                run_share = task.weight / task.expected_runs
-                if task.progress_in_run < run_share:
-                    missing = run_share - task.progress_in_run
-                    task.progress_in_run += missing
-                    pipeline.weighted_progress += missing
-            total_expected = sum(
-                self._tasks[tid].weight
-                for tid in self._tasks
-                if self._task_to_pipeline[tid] == pipeline.pipeline_id
-            )
-            all_tasks_done = pipeline.weighted_progress >= total_expected - 1e-9
-            if all_tasks_done:
-                pipeline.weighted_progress = total_expected
-                if self._ui_enabled:
-                    self._ui.update_state(pipeline.pipeline_id, "completed")
-            self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
+            self._handle_completed(task, pipeline)
             return
 
         raise ValueError(f"Unknown task event: {event}")

@@ -525,16 +525,14 @@ class Orchestrator:
 
             remaining_tiles = self.achievement_tracker.get_remaining_tiles()
 
-            # Report retries and completion to ProgressTree if available
+            # Report retry count for this pass
             if progress_tree is not None and self.target_task_id is not None:
-                if len(remaining_tiles) > 0:
-                    # Report retries (failed tiles)
+                if len(remaining_tiles) > 0 and only_remaining_delayed is None:
                     progress_tree.notify(
                         self.target_task_id,
                         "retries",
                         value=len(remaining_tiles),
                     )
-                progress_tree.notify(self.target_task_id, "completed")
 
             if len(remaining_tiles) > 0:
                 # Some tiles have not been computed
@@ -551,10 +549,23 @@ class Orchestrator:
                 else:
                     # Second try
                     logging.error("Pipeline will pursue without failed tiles")
+                    if (
+                        progress_tree is not None
+                        and self.target_task_id is not None
+                    ):
+                        progress_tree.notify(
+                            self.target_task_id,
+                            "failed",
+                            value=len(remaining_tiles),
+                        )
                     self.cars_ds_replacer_registry.replace_lasting_jobs(
                         self.cluster.get_delayed_type()
                     )
                     self.reset_registries()
+
+            # Mark current task run complete after retry/failure accounting.
+            if progress_tree is not None and self.target_task_id is not None:
+                progress_tree.notify(self.target_task_id, "completed")
 
             if nb_tiles_computed == 0:
                 logging.warning(
