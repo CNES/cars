@@ -67,8 +67,16 @@ class ProgressTree:
         self._pipeline_children: dict[int, list[int]] = {}
         self._SCALE = 1000
         self._ui = PipelineTreeUI(console=Console())
+        self._ui_enabled = True
         self._pipeline_order: list[int] = []
         self._initialized = True
+
+    def set_ui_enabled(self, enabled: bool) -> None:
+        """Enable/disable Rich UI rendering for progress updates."""
+        self._ui_enabled = bool(enabled)
+        if not self._ui_enabled and self._ui.live is not None:
+            self._ui.live.stop()
+            self._ui.live = None
 
     def begin_pipeline(
         self, pipeline_name: str, parent_id: int | None = None
@@ -79,10 +87,14 @@ class ProgressTree:
         if parent_id is None:
             self._pipeline_order.append(pipeline_id)
         indent = 0 if parent_id is None else 1
-        self._ui.add_node(
-            pipeline_id, pipeline_name, indent=indent, parent_id=parent_id
-        )
-        self._ui.update_state(pipeline_id, "pending")
+        if self._ui_enabled:
+            self._ui.add_node(
+                pipeline_id,
+                pipeline_name,
+                indent=indent,
+                parent_id=parent_id,
+            )
+            self._ui.update_state(pipeline_id, "pending")
         self._pipelines[pipeline_id] = PipelineState(
             pipeline_id=pipeline_id,
             name=pipeline_name,
@@ -140,6 +152,8 @@ class ProgressTree:
             total_progress / total_weight if total_weight > 0 else 0.0
         )
         pipeline.retries = total_retries
+        if not self._ui_enabled:
+            return
         self._ui.update_progress(
             pipeline.pipeline_id,
             progress_fraction,
@@ -201,7 +215,7 @@ class ProgressTree:
             # for each new run of the same task.
             task.progress_in_run = 0.0
             task.last_logged_percent = 0
-            if pipeline.weighted_progress == 0.0:
+            if self._ui_enabled and pipeline.weighted_progress == 0.0:
                 self._ui.update_state(pipeline.pipeline_id, "running")
             self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
             logging.info(
@@ -260,7 +274,8 @@ class ProgressTree:
             all_tasks_done = pipeline.weighted_progress >= total_expected - 1e-9
             if all_tasks_done:
                 pipeline.weighted_progress = total_expected
-                self._ui.update_state(pipeline.pipeline_id, "completed")
+                if self._ui_enabled:
+                    self._ui.update_state(pipeline.pipeline_id, "completed")
             self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
             return
 
@@ -273,4 +288,5 @@ class ProgressTree:
 
     def draw(self) -> None:
         """Render the current tree state immediately."""
-        self._ui.display()
+        if self._ui_enabled:
+            self._ui.display()

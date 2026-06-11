@@ -150,6 +150,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
         logtype = getattr(args, "logtype", "human").lower()
+        ProgressTree().set_ui_enabled(logtype == "human")
         out_dir = config["output"]["directory"]
 
         log_dir = os.path.join(out_dir, "logs")
