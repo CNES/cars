@@ -7,6 +7,7 @@ progress contributes to the pipeline bar accordingly.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from itertools import count
 
@@ -34,6 +35,8 @@ class TaskState:
     retries: int = 0
     failed: int = 0
     pending_retry_pass: bool = False
+    current_pass_is_retry: bool = False
+    completed_nominal_runs: int = 0
 
 
 @dataclass
@@ -129,6 +132,12 @@ class ProgressTree:
         task_id = next(self._task_id_gen)
         weight = float(weight)
         expected_runs = max(1, int(expected_runs))
+        if weight <= 0:
+            logging.warning(
+                "ProgressTree warning: task '%s' has non-positive weight %s",
+                task_name,
+                weight,
+            )
         self._tasks[task_id] = TaskState(
             task_id=task_id,
             name=task_name,
@@ -209,7 +218,25 @@ class ProgressTree:
         # progress.
         is_retry_pass = task.pending_retry_pass
         task.pending_retry_pass = False
+        task.current_pass_is_retry = is_retry_pass
         if not is_retry_pass:
+            if task.started_runs > task.expected_runs:
+                logging.warning(
+                    "ProgressTree warning: task '%s' in pipeline '%s' "
+                    "started more times than expected (%s > %s)",
+                    task.name,
+                    pipeline.name,
+                    task.started_runs,
+                    task.expected_runs,
+                )
+            if total <= 0:
+                logging.warning(
+                    "ProgressTree warning: task '%s' in pipeline '%s' "
+                    "started with non-positive total=%s",
+                    task.name,
+                    pipeline.name,
+                    total,
+                )
             task.total = total
             # Reset per-run counters so logging percentage stays within
             # 0-100 for each nominal run.
@@ -235,6 +262,22 @@ class ProgressTree:
         value: int,
     ) -> None:
         if task.total <= 0:
+            logging.warning(
+                "ProgressTree warning: task '%s' in pipeline '%s' received "
+                "'progressed' before a valid 'started' (total=%s)",
+                task.name,
+                pipeline.name,
+                task.total,
+            )
+            return
+        if value <= 0:
+            logging.warning(
+                "ProgressTree warning: task '%s' in pipeline '%s' received "
+                "non-positive progressed value=%s",
+                task.name,
+                pipeline.name,
+                value,
+            )
             return
         run_share = task.weight / task.expected_runs
         increment = run_share * (float(value) / float(task.total))
@@ -244,6 +287,15 @@ class ProgressTree:
 
         # Log progress at 10% intervals
         current_count = max(0, task.progressed_tiles - task.retries)
+        if current_count > task.total:
+            logging.warning(
+                "ProgressTree warning: task '%s' in pipeline '%s' "
+                "effective progressed tiles exceed total (%s > %s)",
+                task.name,
+                pipeline.name,
+                current_count,
+                task.total,
+            )
         current_percent = (
             int((current_count / task.total) * 100) if task.total > 0 else 0
         )
@@ -265,10 +317,28 @@ class ProgressTree:
         value: int,
     ) -> None:
         retries_count = int(value)
+        if retries_count < 0:
+            logging.warning(
+                "ProgressTree warning: task '%s' in pipeline '%s' received "
+                "negative retries=%s",
+                task.name,
+                pipeline.name,
+                retries_count,
+            )
+            return
         task.retries += retries_count
         pipeline.retries += retries_count
         if retries_count > 0:
             task.pending_retry_pass = True
+        if task.total > 0 and retries_count > task.total:
+            logging.warning(
+                "ProgressTree warning: task '%s' in pipeline '%s' received "
+                "retries greater than total (%s > %s)",
+                task.name,
+                pipeline.name,
+                retries_count,
+                task.total,
+            )
 
         # Push progress back by the share represented by retried tiles.
         if task.total > 0:
@@ -288,8 +358,18 @@ class ProgressTree:
         pipeline: PipelineState,
         value: int,
     ) -> None:
-        task.failed += int(value)
-        pipeline.failed += int(value)
+        failed_count = int(value)
+        if failed_count < 0:
+            logging.warning(
+                "ProgressTree warning: task '%s' in pipeline '%s' received "
+                "negative failed=%s",
+                task.name,
+                pipeline.name,
+                failed_count,
+            )
+            return
+        task.failed += failed_count
+        pipeline.failed += failed_count
         self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
 
     def _handle_completed(
@@ -297,18 +377,51 @@ class ProgressTree:
         task: TaskState,
         pipeline: PipelineState,
     ) -> None:
+        if task.started_runs == 0:
+            logging.warning(
+                "ProgressTree warning: task '%s' in pipeline '%s' "
+                "completed without any start",
+                task.name,
+                pipeline.name,
+            )
+        if (
+            task.started_runs < task.expected_runs
+            and not task.pending_retry_pass
+        ):
+            logging.warning(
+                "ProgressTree warning: task '%s' in pipeline '%s' "
+                "completed before expected runs (%s < %s)",
+                task.name,
+                pipeline.name,
+                task.started_runs,
+                task.expected_runs,
+            )
         if task.total > 0:
             run_share = task.weight / task.expected_runs
             if task.progress_in_run < run_share:
                 missing = run_share - task.progress_in_run
                 task.progress_in_run += missing
                 pipeline.weighted_progress += missing
-        total_expected = sum(
-            self._tasks[tid].weight
+
+        # Count only nominal task runs toward expected_runs completion.
+        if not task.current_pass_is_retry:
+            task.completed_nominal_runs += 1
+        task.current_pass_is_retry = False
+
+        pipeline_task_ids = [
+            tid
             for tid in self._tasks
             if self._task_to_pipeline[tid] == pipeline.pipeline_id
+        ]
+        all_tasks_done = all(
+            self._tasks[tid].completed_nominal_runs
+            >= self._tasks[tid].expected_runs
+            for tid in pipeline_task_ids
         )
-        all_tasks_done = pipeline.weighted_progress >= total_expected - 1e-9
+        total_expected = sum(
+            self._tasks[tid].weight for tid in pipeline_task_ids
+        )
+
         if all_tasks_done:
             pipeline.weighted_progress = total_expected
             if self._ui_enabled:
