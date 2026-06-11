@@ -38,6 +38,7 @@ import yaml
 # CARS imports
 from cars import __version__
 from cars.core import cars_logging
+from cars.core.progress.progress import ProgressTree
 from cars.orchestrator.cluster import log_wrapper
 
 
@@ -70,6 +71,14 @@ def cars_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Check configuration and generate a report of"
         " what to expect from full run",
+    )
+
+    parser.add_argument(
+        "--logtype",
+        default="human",
+        choices=("human", "plain"),
+        help="Log output type (default: human). 'human' enables the rich "
+        "progress UI and 'plain' keeps classic logs only.",
     )
 
     # General arguments at first level
@@ -140,14 +149,19 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
+        logtype = getattr(args, "logtype", "human").lower()
         out_dir = config["output"]["directory"]
 
         log_dir = os.path.join(out_dir, "logs")
+
+        # When using human, suppress stdout
+        use_stdout = logtype != "human"
 
         cars_logging.setup_logging(
             loglevel,
             out_dir=log_dir,
             pipeline=pipeline_name,
+            use_stdout=use_stdout,
         )
 
         logging.debug("Show argparse arguments: {}".format(args))
@@ -180,6 +194,13 @@ def main_cli(args, dry_run=False):  # noqa: C901
             "CARS terminated with following error: {}".format(exc)
         )
         sys.exit(1)
+    finally:
+        # stop the rich ui if running
+        if getattr(args, "logtype", "human").lower() == "human":
+            try:
+                ProgressTree().finalize()
+            except Exception:
+                pass
 
 
 def main():

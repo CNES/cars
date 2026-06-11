@@ -43,6 +43,7 @@ import cars.orchestrator.orchestrator as ocht
 from cars.applications.application import Application
 from cars.core import cars_logging, inputs, projection, tiling
 from cars.core.inputs import read_vector
+from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -78,6 +79,26 @@ class FillingPipeline(PipelineTemplate):
     """
 
     # pylint: disable=too-many-instance-attributes
+
+    def setup_progress_tracking(self, parent_pipeline_id=None):
+        """
+        Setup progress tracking for filling.
+
+        :param parent_pipeline_id: Optional parent pipeline ID
+        :type parent_pipeline_id: int or None
+        :return: Task ID to pass to orchestrator via set_target_task()
+        :rtype: int
+        """
+        progress_tree = ProgressTree()
+        self.pipeline_progress_id = progress_tree.begin_pipeline(
+            "filling", parent_id=parent_pipeline_id
+        )
+        self.task_progress_id = progress_tree.register_task(
+            self.pipeline_progress_id,
+            "filling",
+            weight=1.0,
+        )
+        return self.task_progress_id
 
     def __init__(self, conf, config_dir=None, pre_check=False):  # noqa: C901
         """

@@ -41,6 +41,7 @@ from json_checker import Checker, OptionalKey, Or
 
 from cars.applications.application import Application
 from cars.core import cars_logging
+from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -70,6 +71,32 @@ class SubsamplingPipeline(PipelineTemplate):
     """
 
     # pylint: disable=too-many-instance-attributes
+
+    def setup_progress_tracking(self, parent_pipeline_id=None):
+        """
+        Setup progress tracking for subsampling.
+
+        :param parent_pipeline_id: Parent pipeline ID
+        :type parent_pipeline_id: int or None
+        :return: Task ID to pass to orchestrator via set_target_task()
+        :rtype: int
+        """
+        progress_tree = ProgressTree()
+
+        if parent_pipeline_id is None:
+            self.pipeline_progress_id = progress_tree.begin_pipeline(
+                "Subsampling"
+            )
+        else:
+            self.pipeline_progress_id = parent_pipeline_id
+
+        self.task_progress_id = progress_tree.register_task(
+            self.pipeline_progress_id,
+            "subsampling",
+            weight=1.0,
+        )
+
+        return self.task_progress_id
 
     def __init__(self, conf, config_dir=None):  # noqa: C901
         """
@@ -327,9 +354,15 @@ class SubsamplingPipeline(PipelineTemplate):
             band_info["path"] = replace_path(band_info["path"])
 
     @cars_profile(name="Run_subsampling_pipeline", interval=0.5)
-    def run(self, args=None, log_dir=None):  # noqa C901 # pylint: disable=W0613
+    def run(
+        self, args=None, log_dir=None, parent_pipeline_id=None
+    ):  # noqa C901 # pylint: disable=W0613
         """
         Run pipeline
+
+        :param args: Optional arguments
+        :param log_dir: Optional log directory
+        :param parent_pipeline_id: Optional parent pipeline ID if nested
         """
         cars_logging.add_progress_message("Starting subsampling pipeline")
         inputs = copy.deepcopy(self.used_conf[INPUT])
@@ -350,6 +383,11 @@ class SubsamplingPipeline(PipelineTemplate):
         ) as self.cars_orchestrator:
             # link metadata
             self.metadata = self.cars_orchestrator.out_yaml
+
+            # Register subsampling task with progress tracking
+            task_id = self.setup_progress_tracking(parent_pipeline_id)
+            self.cars_orchestrator.set_target_task(task_id)
+
             for res in self.resolutions:
                 if res != 1:
                     conf_to_save = copy.deepcopy(self.used_conf)

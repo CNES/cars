@@ -108,6 +108,19 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         """
 
     @abstractmethod
+    def setup_progress_tracking(self, parent_pipeline_id=None):
+        """
+        Setup progress tracking for this pipeline.
+
+        Concrete pipelines define their own task structure and registration.
+
+        :param parent_pipeline_id: Optional parent pipeline ID
+        :type parent_pipeline_id: int or None
+        :return: Task ID to pass to orchestrator via set_target_task()
+        :rtype: int
+        """
+
+    @abstractmethod
     def run(self):
         """
         Run pipeline

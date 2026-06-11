@@ -53,6 +53,7 @@ from cars.applications.dem_generation import (
 from cars.core import preprocessing, projection, roi_tools, tiling
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands
+from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -90,6 +91,84 @@ class SurfaceModelingPipeline(PipelineTemplate):
     """
     SurfaceModelingPipeline
     """
+
+    def setup_progress_tracking(
+        self,
+        parent_pipeline_id=None,
+        tie_points_pipeline_id=None,
+    ):
+        """
+        Setup progress tracking for surface modeling.
+
+        :param parent_pipeline_id: Optional parent pipeline ID
+        :type parent_pipeline_id: int or None
+        :param tie_points_pipeline_id: Optional tie_points pipeline ID
+            pre-created by default pipeline
+        :type tie_points_pipeline_id: int or None
+        :return: Task ID to pass to orchestrator via set_target_task()
+        :rtype: int
+        """
+        progress_tree = ProgressTree()
+
+        # Create pipeline if standalone, otherwise use parent
+        if parent_pipeline_id is None:
+            self.pipeline_progress_id = progress_tree.begin_pipeline(
+                "surface_modeling"
+            )
+        else:
+            self.pipeline_progress_id = parent_pipeline_id
+
+        # Calculate number of sensor image pairs
+        num_sensor_pairs = len(self.used_conf[INPUT][sens_cst.PAIRING])
+
+        # Register tasks for surface modeling workflow
+        use_global_disp_range = self.dense_matching_app.use_global_disp_range
+        has_tie_points_prep_disp_run = (
+            self.tie_points_pipelines is not None
+            and self.used_conf[INPUT][sens_cst.LOW_RES_DSM] is not None
+        )
+
+        # Base: 1 run per pair (main disparity generation pass)
+        # +1 per pair if use_global_disp_range
+        # +1 per pair if disparity grids for tie points
+        expected_runs = num_sensor_pairs * (
+            1 + (1 if use_global_disp_range else 0)
+        )
+        if has_tie_points_prep_disp_run:
+            expected_runs += num_sensor_pairs
+
+        self.task_ids = {}
+        self.task_ids["generate_disparity_grids"] = progress_tree.register_task(
+            self.pipeline_progress_id,
+            "generate_disparity_grids",
+            weight=10,
+            expected_runs=expected_runs,
+        )
+
+        if tie_points_pipeline_id is not None:
+            self.task_ids["tie_points"] = progress_tree.register_task(
+                tie_points_pipeline_id,
+                "tie_points",
+                weight=40,
+                expected_runs=num_sensor_pairs,
+            )
+        elif self.tie_points_pipelines is not None:
+            self.task_ids["tie_points"] = progress_tree.register_task(
+                self.pipeline_progress_id,
+                "tie_points",
+                weight=40,
+                expected_runs=num_sensor_pairs,
+            )
+
+        # rasterize_point_cloud - final phase
+        self.task_ids["rasterize_point_cloud"] = progress_tree.register_task(
+            self.pipeline_progress_id,
+            "rasterize_point_cloud",
+            weight=60,
+        )
+
+        # Return first task ID for orchestrator to track
+        return self.task_ids["generate_disparity_grids"]
 
     # pylint: disable=too-many-instance-attributes
 
@@ -1160,6 +1239,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     cars_orchestrator=self.cars_orchestrator,
                     previous_dir=self.previous_out_dir,
                     res_factor=self.res_factor,
+                    parent_pipeline_id=self.pipeline_progress_id,
+                    task_progress_id=self.task_ids.get("tie_points"),
                 )
                 self.pairs[pair_key]["matches_array"] = np.load(
                     os.path.join(
@@ -1167,6 +1248,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     )
                 )
 
+                self.cars_orchestrator.set_target_task(
+                    self.task_ids["generate_disparity_grids"]
+                )
                 minimum_nb_matches = (
                     self.grid_correction_app.get_minimum_nb_matches()
                 )
@@ -2390,10 +2474,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
         res_factor=None,
         log_dir=None,
         previous_out_dir=None,
+        parent_pipeline_id=None,
+        tie_points_pipeline_id=None,
     ):  # noqa C901
         """
         Run pipeline
 
+        :param parent_pipeline_id: Optional parent pipeline ID if nested
         """
         if log_dir is not None:
             self.log_dir = log_dir
@@ -2431,6 +2518,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
             # initialize out_json
             self.cars_orchestrator.update_out_info({"version": __version__})
 
+            # Register surface modeling tasks with progress tracking
+            task_id = self.setup_progress_tracking(
+                parent_pipeline_id,
+                tie_points_pipeline_id=tie_points_pipeline_id,
+            )
+            self.cars_orchestrator.set_target_task(task_id)
+
             if self.compute_depth_map:
                 stop = self.sensor_to_disparity()
                 if not stop:
@@ -2440,6 +2534,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 self.preprocess_depth_maps()
 
                 if self.save_output_dsm:
+                    if (
+                        hasattr(self, "task_ids")
+                        and "rasterize_point_cloud" in self.task_ids
+                    ):
+                        self.cars_orchestrator.set_target_task(
+                            self.task_ids["rasterize_point_cloud"]
+                        )
                     self.rasterize_point_cloud()
 
             self.final_cleanup()

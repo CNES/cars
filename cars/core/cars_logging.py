@@ -148,11 +148,13 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
     pipeline="",
     in_worker=False,
     global_log_file=None,
+    use_stdout=True,
 ):
     """
     Setup the CARS logging configuration
 
     :param loglevel: log level default WARNING
+    :param use_stdout: whether to add stdout handler (default: True)
     """
     # logging
     if loglevel == "PROGRESS":
@@ -272,14 +274,17 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
         add_handler_name(logging_config, handler_main_profiling)
 
     if not in_worker:
-        add_handler_name(logging_config, "stdout")
+        if use_stdout:
+            add_handler_name(logging_config, "stdout")
+        else:
+            del logging_config["handlers"]["stdout"]
     else:
         # remove stdout as handler
         del logging_config["handlers"]["stdout"]
 
         # add file handlers
 
-        # change level of root logger in workerss
+        # change level of root logger in workers
         handler_workers = "file_workers"
         handler_workers_profiling = "file_workers_profiling"
         logging_config["loggers"]["profiling_logger"] = {
