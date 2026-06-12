@@ -152,12 +152,17 @@ def check_output_parameters(  # noqa: C901 : too complex
         )
     )
 
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_FILLING
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_FILLING, True
+    )
+
     for key in [
         output_constants.AUX_WEIGHTS,
         output_constants.AUX_CLASSIFICATION,
         output_constants.AUX_PERFORMANCE_MAP,
         output_constants.AUX_CONTRIBUTING_PAIR,
-        output_constants.AUX_FILLING,
         output_constants.AUX_AMBIGUITY,
         output_constants.AUX_EDGES,
     ]:

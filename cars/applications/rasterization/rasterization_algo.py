@@ -349,7 +349,6 @@ def compute_vector_raster_and_stats(
         out1 = (b1 > b0).astype(float)
 
         invalidity_mask_out = np.stack([out0, out1], axis=-1)
-
         invalidity_mask_out[both_zero] = 0
         invalidity_mask_out[both_nan] = np.nan
 
