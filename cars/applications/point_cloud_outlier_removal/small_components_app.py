@@ -235,8 +235,8 @@ class SmallComponents(
         self,
         merged_point_cloud,
         orchestrator=None,
-        depth_map_dir=None,
         point_cloud_dir=None,
+        point_cloud_format="laz",
         dump_dir=None,
         epsg=None,
     ):
@@ -296,6 +296,9 @@ class SmallComponents(
         else:
             self.orchestrator = orchestrator
 
+        if isinstance(point_cloud_format, str):
+            point_cloud_format = [point_cloud_format]
+
         if dump_dir is None:
             dump_dir = self.generate_unknown_dump_dir(self.orchestrator)
 
@@ -304,11 +307,13 @@ class SmallComponents(
                 "Only arrays is supported in small components removal"
             )
         prefix = os.path.basename(dump_dir)
+
         # Save as depth map
         filtered_point_cloud, saving_info_epipolar = (
             self.__register_epipolar_dataset__(
                 merged_point_cloud,
-                depth_map_dir,
+                point_cloud_dir,
+                point_cloud_format,
                 dump_dir,
                 app_name="small_components",
                 pair_key=prefix,
@@ -324,6 +329,7 @@ class SmallComponents(
         ) = self.__register_pc_dataset__(
             merged_point_cloud,
             point_cloud_dir,
+            point_cloud_format,
             dump_dir,
             app_name="small_components",
         )

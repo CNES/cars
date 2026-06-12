@@ -95,7 +95,7 @@ def test_end2end_gizeh_meta_pipeline():
                 "nb_workers": 4,
                 "max_ram_per_worker": 1000,
             },
-            "output": {"directory": directory},
+            "output": {"directory": directory, "product_level": ["dtm"]},
         }
         out_dir = conf["output"]["directory"]
         meta_pipeline = default.DefaultPipeline(conf)
@@ -117,6 +117,15 @@ def test_end2end_gizeh_meta_pipeline():
                 os.path.join(
                     intermediate_output_dir,
                     "image_test_gizeh_meta_pipeline.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "dtm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dtm_test_gizeh_meta_pipeline.tif",
                 )
             ),
         )
@@ -144,6 +153,20 @@ def test_end2end_gizeh_meta_pipeline():
             ),
             atol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL_GITHUB if CARS_GITHUB_ACTIONS else 1e-6,
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+            ),
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dtm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dtm_test_gizeh_meta_pipeline.tif",
+                )
+            ),
+            1,
+            1,
             nb_outliers_allowed=(
                 NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
             ),

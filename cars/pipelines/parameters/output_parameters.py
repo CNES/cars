@@ -79,12 +79,16 @@ def check_output_parameters(  # noqa: C901 : too complex
     overloaded_conf[output_constants.PRODUCT_LEVEL] = overloaded_conf.get(
         output_constants.PRODUCT_LEVEL, "dsm"
     )
+    overloaded_conf[output_constants.PRODUCT_FORMAT] = overloaded_conf.get(
+        output_constants.PRODUCT_FORMAT, {"point_cloud": "laz"}
+    )
+
     if isinstance(overloaded_conf[output_constants.PRODUCT_LEVEL], str):
         overloaded_conf[output_constants.PRODUCT_LEVEL] = [
             overloaded_conf[output_constants.PRODUCT_LEVEL]
         ]
     for level in overloaded_conf[output_constants.PRODUCT_LEVEL]:
-        if level not in ["dtm", "dsm", "depth_map", "point_cloud"]:
+        if level not in ["dtm", "dsm", "point_cloud"]:
             raise RuntimeError("Unknown product level {}".format(level))
 
     if (
@@ -169,6 +173,7 @@ def check_output_parameters(  # noqa: C901 : too complex
     output_schema = {
         output_constants.OUT_DIRECTORY: str,
         output_constants.PRODUCT_LEVEL: list,
+        output_constants.PRODUCT_FORMAT: dict,
         output_constants.OUT_GEOID: Or(bool, str),
         output_constants.EPSG: And(Or(int, str, None), is_valid_epsg),
         output_constants.RESOLUTION: Or(int, float, None),
@@ -202,6 +207,8 @@ def check_output_parameters(  # noqa: C901 : too complex
     # Check and overload filling parameter
     check_filling_parameter(overloaded_conf)
 
+    check_product_format(overloaded_conf)
+
     checker_auxiliary = Checker(auxiliary_schema)
     checker_auxiliary.validate(overloaded_conf[output_constants.AUXILIARY])
 
@@ -217,6 +224,29 @@ def check_output_parameters(  # noqa: C901 : too complex
                     )
 
     return overloaded_conf, overloaded_scaling_coeff
+
+
+def check_product_format(overloaded_conf):
+    """
+    Check the product format
+    """
+
+    product_format = overloaded_conf[output_constants.PRODUCT_FORMAT]
+
+    for key, value in product_format.items():
+        if key != "point_cloud":
+            raise RuntimeError(
+                "The key of the product format dictionary should be point_cloud"
+            )
+        if isinstance(value, str):
+            value = [value]
+            overloaded_conf[output_constants.PRODUCT_FORMAT][
+                "point_cloud"
+            ] = value
+
+        for elem in value:
+            if elem not in ("tif", "laz"):
+                raise RuntimeError("The supported format are tif or laz")
 
 
 def check_filling_parameter(overloaded_conf):

@@ -1,23 +1,25 @@
 Output configuration
 --------------------
 
-+-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
-| Name                    | Description                                                 | Type               | Default value         | Required |
-+=========================+=============================================================+====================+=======================+==========+
-| *directory*             | Output folder where results are stored                      | string             | No                    | Yes      |
-+-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
-| *product_level*         | Output requested products (dsm, point_cloud, depth_map)     | list or string     | "dsm"                 | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
-| *resolution* [#scaled]_ | Output DSM grid step (only for dsm product level)           | float              | None [#scaled]_       | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
-| *auxiliary*             | Selection of additional files in products                   | dict               | See below             | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
-| *epsg*                  | EPSG code                                                   | int, string        | None                  | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
-| *geoid*                 | Output geoid                                                | bool or string     | True                  | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
-| *save_by_pair*          | Save output point clouds by pair                            | bool               | False                 | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+-----------------------+----------+
++-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
+| Name                    | Description                                                 | Type               | Default value          | Required |
++=========================+=============================================================+====================+========================+==========+
+| *directory*             | Output folder where results are stored                      | string             | No                     | Yes      |
++-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
+| *product_level*         | Output requested products (dsm, point_cloud, dtm)           | list or string     | "dsm"                  | No       |
++-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
+| *product_format*        | Format of the point cloud (tif, laz)                        | dict               | {"point_cloud": "laz"} | No       |
++-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
+| *resolution* [#scaled]_ | Output DSM grid step (only for dsm product level)           | float              | None [#scaled]_        | No       |
++-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
+| *auxiliary*             | Selection of additional files in products                   | dict               | See below              | No       |
++-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
+| *epsg*                  | EPSG code                                                   | int, string        | None                   | No       |
++-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
+| *geoid*                 | Output geoid                                                | bool or string     | True                   | No       |
++-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
+| *save_by_pair*          | Save output point clouds by pair                            | bool               | False                  | No       |
++-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
 
 .. include-cars-config:: ../../example_configs/configuration/output_1
 
@@ -25,7 +27,9 @@ Output configuration
 
     .. tab:: Product level
 
-        The `product_level` attribute defines which product should be produced by CARS. There are four available product type: `depth_map`, `point_cloud`, `dsm` and `dtm`.
+        The `product_level` attribute defines which product should be produced by CARS. There are two available product type: `point_cloud` and `dsm`.
+
+        The point cloud output format can be specified using the product_format variable. Two options are available: tif and laz.
 
         If `dtm` is requested in `product_level`, the DSM will also be computed.
 
@@ -41,20 +45,23 @@ Output configuration
 
                 .. include-cars-config:: ../../example_configs/configuration/output_n_pairs_1_dsm
 
-            .. tab:: Depth Maps
+            .. tab:: Point clouds
 
-                Depth maps are a way to represent point clouds as three images X Y and Z, each one representing the position of a pixel on its axis.
-                They are an official product of CARS.
+                The point_cloud product can be generated in two formats depending on the value of product_format["point_cloud"].
 
-                The ``product_level`` key in ``output`` can contain any combination of the values `dsm`, `depth_map`, and `point_cloud`.
+                **GeoTIFF format ("tif")**
 
-                Depth maps (one for each sensor pair) will be saved if `depth_map` is present in ``product_level`` :
+                When the format is set to "tif", CARS exports the point cloud as a set of raster layers organized on the epipolar grid. The 3D coordinates of each point are stored as raster images (X, Y and Z), preserving the geometry and dimensions of the epipolar pair from which they were generated.
+
+                To generate these rasterized point clouds, add point_cloud to product_level and set product_format["point_cloud"] to "tif".
 
                 .. include-cars-config:: ../../example_configs/configuration/output_n_pairs_n_depth_maps
 
-            .. tab:: Point clouds
+                **LAZ format ("laz")**
 
-                Just like depth maps, the point cloud is an official product of CARS. As such, all that's needed is to add `point_cloud` to ``product_level`` in order for it to be generated.
+                When the format is set to "laz", CARS exports the point cloud as a standard point cloud file. Each point is stored directly as a 3D point and is no longer organized on the epipolar grid.
+
+                To generate LAZ point clouds, add ``point_cloud`` to product_level and set product_format["point_cloud"] to "laz".
 
                 .. include-cars-config:: ../../example_configs/configuration/output_n_pairs_n_point_clouds
 

@@ -165,6 +165,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
         self,
         epipolar_point_cloud,
         depth_map_dir=None,
+        point_cloud_format="laz",
         dump_dir=None,
         app_name="",
         pair_key="PAIR_0",
@@ -193,6 +194,9 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
 
         """
 
+        if isinstance(point_cloud_format, str):
+            point_cloud_format = [point_cloud_format]
+
         # Create epipolar point cloud CarsDataset
         filtered_point_cloud = cars_dataset.CarsDataset(
             epipolar_point_cloud.dataset_type, name=app_name
@@ -203,13 +207,18 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
         # Update attributes to get epipolar info
         filtered_point_cloud.attributes.update(epipolar_point_cloud.attributes)
 
-        if depth_map_dir or self.used_config.get(
-            application_constants.SAVE_INTERMEDIATE_DATA
-        ):
+        if (
+            depth_map_dir
+            or self.used_config.get(
+                application_constants.SAVE_INTERMEDIATE_DATA
+            )
+        ) and "tif" in point_cloud_format:
             filtered_dir = (
                 depth_map_dir if depth_map_dir is not None else dump_dir
             )
+            filtered_dir = os.path.join(filtered_dir, "tif")
             safe_makedirs(filtered_dir)
+
             self.orchestrator.add_to_save_lists(
                 os.path.join(filtered_dir, "X.tif"),
                 cst.X,
@@ -242,13 +251,13 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
             )
 
         # update depth map index if required
-        if depth_map_dir:
+        if depth_map_dir and "tif" in point_cloud_format:
             index = {
                 cst.INDEX_DEPTH_MAP_X: os.path.join(pair_key, "X.tif"),
                 cst.INDEX_DEPTH_MAP_Y: os.path.join(pair_key, "Y.tif"),
                 cst.INDEX_DEPTH_MAP_Z: os.path.join(pair_key, "Z.tif"),
             }
-            self.orchestrator.update_index({"depth_map": {pair_key: index}})
+            self.orchestrator.update_index({"point_cloud": {pair_key: index}})
 
         # Get saving infos in order to save tiles when they are computed
         [saving_info] = self.orchestrator.get_saving_infos(
@@ -269,6 +278,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
         self,
         merged_point_cloud=None,
         point_cloud_dir=None,
+        point_cloud_format="laz",
         dump_dir=None,
         app_name=None,
     ):
@@ -294,6 +304,10 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
         :rtype: CarsDataset
 
         """
+
+        if isinstance(point_cloud_format, str):
+            point_cloud_format = [point_cloud_format]
+
         if app_name is None:
             app_name = ""
 
@@ -319,9 +333,10 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
         filtered_point_cloud.attributes = merged_point_cloud.attributes.copy()
 
         laz_pc_dir_name = None
-        if save_point_cloud_as_laz:
+        if save_point_cloud_as_laz and "laz" in point_cloud_format:
             if point_cloud_dir is not None:
-                laz_pc_dir_name = point_cloud_dir
+                laz_pc_dir_name = os.path.join(point_cloud_dir, "laz")
+                os.makedirs(laz_pc_dir_name, exist_ok=True)
             else:
                 laz_pc_dir_name = os.path.join(dump_dir, "laz")
             safe_makedirs(laz_pc_dir_name)
@@ -330,7 +345,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
                 cars_ds_name="filtered_point_cloud_laz_" + app_name,
             )
         csv_pc_dir_name = None
-        if save_point_cloud_as_csv:
+        if save_point_cloud_as_csv and "laz" in point_cloud_format:
             csv_pc_dir_name = os.path.join(dump_dir, "csv")
             safe_makedirs(csv_pc_dir_name)
             self.orchestrator.add_to_compute_lists(

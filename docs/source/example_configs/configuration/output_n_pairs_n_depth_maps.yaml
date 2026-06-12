@@ -5,4 +5,6 @@ input:
     two: img2.tif
 output:
   directory: out
-  product_level: depth_map
+  product_level: point_cloud
+  product_format:
+    point_cloud: tif

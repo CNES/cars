@@ -231,8 +231,8 @@ class Statistical(
         self,
         merged_point_cloud,
         orchestrator=None,
-        depth_map_dir=None,
         point_cloud_dir=None,
+        point_cloud_format="laz",
         dump_dir=None,
         epsg=None,
     ):
@@ -300,11 +300,13 @@ class Statistical(
             )
 
         prefix = os.path.basename(dump_dir)
+
         # Save as depth map
         filtered_point_cloud, saving_info_epipolar = (
             self.__register_epipolar_dataset__(
                 merged_point_cloud,
-                depth_map_dir,
+                point_cloud_dir,
+                point_cloud_format,
                 dump_dir,
                 app_name="statistical",
                 pair_key=prefix,
@@ -320,6 +322,7 @@ class Statistical(
         ) = self.__register_pc_dataset__(
             merged_point_cloud,
             point_cloud_dir,
+            point_cloud_format,
             dump_dir,
             app_name="statistical",
         )

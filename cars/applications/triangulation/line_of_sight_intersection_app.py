@@ -197,6 +197,7 @@ class LineOfSightIntersection(
         """
 
         if dump_dir:
+            dump_dir = os.path.join(dump_dir, "tif")
             safe_makedirs(dump_dir)
 
         # Propagate color type in output file
@@ -206,6 +207,10 @@ class LineOfSightIntersection(
 
         if output_dir is None:
             output_dir = dump_dir
+
+        if output_dir is not None:
+            output_dir = os.path.join(output_dir, "tif")
+            os.makedirs(output_dir)
 
         if save_output_coordinates or dump_dir:
             coords_output_dir = (
@@ -469,7 +474,7 @@ class LineOfSightIntersection(
         if index:
             # Add epsg code (always lon/lat in triangulation)
             index[cst.INDEX_DEPTH_MAP_EPSG] = 4326
-            self.orchestrator.update_index({"depth_map": {pair_key: index}})
+            self.orchestrator.update_index({"point_cloud": {pair_key: index}})
 
     def create_point_cloud_directories(
         self, pair_dump_dir, point_cloud_dir, point_cloud
@@ -496,7 +501,8 @@ class LineOfSightIntersection(
         laz_pc_dir_name = None
         if self.save_intermediate_data or point_cloud_dir is not None:
             if point_cloud_dir is not None:
-                laz_pc_dir_name = point_cloud_dir
+                laz_pc_dir_name = os.path.join(point_cloud_dir, "laz")
+                os.makedirs(laz_pc_dir_name)
             else:
                 laz_pc_dir_name = os.path.join(pair_dump_dir, "laz")
             safe_makedirs(laz_pc_dir_name)
@@ -525,7 +531,7 @@ class LineOfSightIntersection(
         geoid_path=None,
         cloud_id=None,
         performance_maps_param=None,
-        depth_map_dir=None,
+        point_cloud_format="laz",
         point_cloud_dir=None,
         save_output_coordinates=False,
         save_output_color=False,
@@ -655,6 +661,9 @@ class LineOfSightIntersection(
                 "Triangulation application doesn't support this input "
                 "data format"
             )
+
+        if isinstance(point_cloud_format, str):
+            point_cloud_format = [point_cloud_format]
 
         # Interpolate grid
         interpolated_grid_left = RectificationGrid(
@@ -818,7 +827,7 @@ class LineOfSightIntersection(
             self.save_triangulation_output(
                 epipolar_point_cloud,
                 sensor_image_left,
-                depth_map_dir,
+                point_cloud_dir,
                 pair_dump_dir if self.save_intermediate_data else None,
                 performance_maps_to_generate,
                 save_output_coordinates,
@@ -847,11 +856,14 @@ class LineOfSightIntersection(
             point_cloud.create_empty_copy(epipolar_point_cloud)
             point_cloud.attributes = epipolar_point_cloud.attributes
 
-            csv_pc_dir_name, laz_pc_dir_name = (
-                self.create_point_cloud_directories(
-                    pair_dump_dir, point_cloud_dir, point_cloud
+            csv_pc_dir_name = None
+            laz_pc_dir_name = None
+            if "laz" in point_cloud_format:
+                csv_pc_dir_name, laz_pc_dir_name = (
+                    self.create_point_cloud_directories(
+                        pair_dump_dir, point_cloud_dir, point_cloud
+                    )
                 )
-            )
 
             # Get saving infos in order to save tiles when they are computed
             [saving_info_epipolar] = self.orchestrator.get_saving_infos(
@@ -1249,6 +1261,7 @@ def triangulation_wrapper(  # noqa: C901 function is too complex
             saving_info=saving_info_flatten,
             attributes=attributes,
         )
+
     # Save point cloud in worker
     if point_cloud_csv_file_name:
         cars_dataset.run_save_points(

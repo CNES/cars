@@ -6,3 +6,5 @@ input:
 output:
   directory: out
   product_level: point_cloud
+  product_format:
+    point_cloud: laz
