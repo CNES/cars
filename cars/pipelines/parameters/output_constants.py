@@ -26,6 +26,7 @@ This module contains the output  constants
 # Pipeline output keys
 OUT_DIRECTORY = "directory"
 PRODUCT_LEVEL = "product_level"
+PRODUCT_FORMAT = "product_format"
 INFO_FILENAME = "metadata.yaml"
 OUT_GEOID = "geoid"
 EPSG = "epsg"

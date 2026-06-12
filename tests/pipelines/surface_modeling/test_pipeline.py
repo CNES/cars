@@ -486,16 +486,34 @@ def test_ventoux_depth_maps_point_clouds():
             },
             "output": {
                 "directory": directory,
-                "product_level": ["depth_map", "point_cloud", "dsm"],
+                "product_level": ["point_cloud", "dsm"],
             },
         }
+
         out_dir = conf["output"]["directory"]
+
+        new_conf = copy.deepcopy(conf)
+
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
+
+        assert os.path.exists(
+            os.path.join(
+                out_dir, "point_cloud", "image1_image2", "laz", "2_1.laz"
+            )
+        )
+
+        new_conf["output"]["product_format"] = {}
+        new_conf["output"]["product_format"]["point_cloud"] = "tif"
+        surface_modeling_pipeline = SurfaceModelingPipeline(new_conf)
+        surface_modeling_pipeline.run()
+
         copy2(
-            os.path.join(out_dir, "depth_map", "image1_image2", "Z.tif"),
+            os.path.join(
+                out_dir, "point_cloud", "image1_image2", "tif", "Z.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
@@ -504,7 +522,9 @@ def test_ventoux_depth_maps_point_clouds():
             ),
         )
         assert_same_images(
-            os.path.join(out_dir, "depth_map", "image1_image2", "Z.tif"),
+            os.path.join(
+                out_dir, "point_cloud", "image1_image2", "tif", "Z.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -513,9 +533,6 @@ def test_ventoux_depth_maps_point_clouds():
             ),
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert os.path.exists(
-            os.path.join(out_dir, "point_cloud", "image1_image2", "2_1.laz")
         )
 
 

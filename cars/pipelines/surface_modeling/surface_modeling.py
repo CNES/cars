@@ -105,7 +105,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
             generate_terrain_products
             debug_with_roi
             save_output_dsm
-            save_output_depth_map
             save_output_point_clouds
             geom_plugin_without_dem_and_geoid
             geom_plugin_with_dem_and_geoid
@@ -293,8 +292,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         prod_level = output[out_cst.PRODUCT_LEVEL]
 
+        self.product_format = output[out_cst.PRODUCT_FORMAT]
+
         self.save_output_dsm = "dsm" in prod_level
-        self.save_output_depth_map = "depth_map" in prod_level
         self.save_output_point_cloud = "point_cloud" in prod_level
         self.save_output_dtm = "dtm" in prod_level
 
@@ -303,7 +303,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         self.output_level_none = not (
             self.save_output_dsm
-            or self.save_output_depth_map
             or self.save_output_point_cloud
             or self.save_output_dtm
         )
@@ -1665,13 +1664,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 # default case : stay on the ellipsoid
                 output_geoid_path = None
 
-            depth_map_dir = None
-            if self.save_output_depth_map:
-                depth_map_dir = os.path.join(
-                    self.out_dir, "depth_map", pair_key
-                )
-                safe_makedirs(depth_map_dir)
-
             point_cloud_dir = None
             if self.save_output_point_cloud:
                 point_cloud_dir = os.path.join(
@@ -1681,7 +1673,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
             triangulation_point_cloud_dir = (
                 point_cloud_dir
-                if (point_cloud_dir and len(self.pc_outlier_removal_apps) == 0)
+                if (
+                    point_cloud_dir
+                    and (
+                        len(self.pc_outlier_removal_apps) == 0
+                        or "tif" in self.product_format["point_cloud"]
+                    )
+                )
                 else None
             )
 
@@ -1708,24 +1706,29 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 performance_maps_param=(
                     self.dense_matching_app.get_performance_map_parameters()
                 ),
-                depth_map_dir=depth_map_dir,
+                point_cloud_format=self.product_format["point_cloud"],
                 point_cloud_dir=triangulation_point_cloud_dir,
                 save_output_coordinates=(len(self.pc_outlier_removal_apps) == 0)
-                and (
-                    self.save_output_depth_map or self.save_output_point_cloud
-                ),
-                save_output_color=bool(depth_map_dir)
-                and self.auxiliary[out_cst.AUX_IMAGE],
-                save_output_classification=bool(depth_map_dir)
-                and self.auxiliary[out_cst.AUX_CLASSIFICATION],
-                save_output_filling=bool(depth_map_dir)
-                and self.auxiliary[out_cst.AUX_FILLING],
-                save_output_performance_map=bool(depth_map_dir)
-                and self.auxiliary[out_cst.AUX_PERFORMANCE_MAP],
-                save_output_ambiguity=bool(depth_map_dir)
-                and self.auxiliary[out_cst.AUX_AMBIGUITY],
-                save_output_edges=bool(depth_map_dir)
-                and self.auxiliary[out_cst.AUX_EDGES],
+                and self.save_output_point_cloud
+                and "tif" in self.product_format["point_cloud"],
+                save_output_color=bool(point_cloud_dir)
+                and self.auxiliary[out_cst.AUX_IMAGE]
+                and "tif" in self.product_format["point_cloud"],
+                save_output_classification=bool(point_cloud_dir)
+                and self.auxiliary[out_cst.AUX_CLASSIFICATION]
+                and "tif" in self.product_format["point_cloud"],
+                save_output_filling=bool(point_cloud_dir)
+                and self.auxiliary[out_cst.AUX_FILLING]
+                and "tif" in self.product_format["point_cloud"],
+                save_output_performance_map=bool(point_cloud_dir)
+                and self.auxiliary[out_cst.AUX_PERFORMANCE_MAP]
+                and "tif" in self.product_format["point_cloud"],
+                save_output_ambiguity=bool(point_cloud_dir)
+                and self.auxiliary[out_cst.AUX_AMBIGUITY]
+                and "tif" in self.product_format["point_cloud"],
+                save_output_edges=bool(point_cloud_dir)
+                and self.auxiliary[out_cst.AUX_EDGES]
+                and "tif" in self.product_format["point_cloud"],
             )
 
             if self.quit_on_app("triangulation"):
@@ -1737,17 +1740,14 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 app_key_is_last = (
                     app_key == list(self.pc_outlier_removal_apps)[-1]
                 )
-                filtering_depth_map_dir = (
-                    depth_map_dir if app_key_is_last else None
-                )
                 filtering_point_cloud_dir = (
                     point_cloud_dir if app_key_is_last else None
                 )
 
                 filtered_epipolar_point_cloud = app.run(
                     filtered_epipolar_point_cloud,
-                    depth_map_dir=filtering_depth_map_dir,
                     point_cloud_dir=filtering_point_cloud_dir,
+                    point_cloud_format=self.product_format["point_cloud"],
                     dump_dir=os.path.join(
                         self.dump_dir,
                         (  # pylint: disable=inconsistent-quotes
