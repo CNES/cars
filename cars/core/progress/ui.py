@@ -8,11 +8,14 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from urllib.parse import quote
 
 from rich.console import Console, Group, RenderableType
 from rich.live import Live
 from rich.panel import Panel
 from rich.progress_bar import ProgressBar
+from rich.rule import Rule
+from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
 
@@ -48,6 +51,28 @@ class PipelineTreeUI:
         self.tree: dict[int, UINode] = {}
         self._order: list[int] = []
         self.live: Live | None = None
+        self.warning_count: int = 0
+        self.log_file_path: str | None = None
+
+    def update_warning_count(self, warning_count: int) -> None:
+        """Update total warning counter displayed in the panel footer."""
+        self.warning_count = max(0, int(warning_count))
+
+    def update_log_file_path(self, log_file_path: str | None) -> None:
+        """Update log file path used by the footer log link button."""
+        self.log_file_path = log_file_path
+
+    def _render_log_button(self) -> Text:
+        """Render a clickable footer button linking to the current log file."""
+        if self.log_file_path:
+            uri = "file://{}".format(quote(self.log_file_path, safe="/:"))
+            label = Text()
+            label.append(
+                "Open log file",
+                style="grey50 underline link {}".format(uri),
+            )
+            return label
+        return Text("", style="dim")
 
     def add_node(
         self,
@@ -86,13 +111,38 @@ class PipelineTreeUI:
             self.tree[node_id].failed = failed
 
     def _node_label(self, node: UINode, depth: int) -> str:
-        """Build a node label including indentation and status icon."""
+        """Build a plain node label used for width calculation."""
         indent_str = "  " * depth
-        icon = node.status_icon()
         display_name = node.name
         if re.match(r"^surface_modeling_res\d+$", node.name.lower()):
             display_name = "Surface Modeling"
-        return f"{indent_str}{icon} {display_name}"
+        return f"{indent_str}{node.status_icon()} {display_name}"
+
+    def _label_renderable(self, node: UINode, depth: int) -> RenderableType:
+        """Render label with tabs first, then status icon/spinner and name."""
+        display_name = node.name
+        if re.match(r"^surface_modeling_res\d+$", node.name.lower()):
+            display_name = "Surface Modeling"
+
+        row = Table.grid(expand=False, padding=(0, 0))
+        if depth > 0:
+            row.add_column(no_wrap=True, width=depth * 2)  # for indentation
+        row.add_column(no_wrap=True)  # for label and status
+
+        if node.state == "running":
+            # add spinner with label text after it
+            status_and_name = Group(
+                Spinner("dots", text=display_name, style="green"),
+            )
+        else:
+            status_and_name = Text(f"{node.status_icon()} {display_name}")
+
+        if depth > 0:
+            row.add_row("", status_and_name)
+        else:
+            row.add_row(status_and_name)
+
+        return row
 
     def _compute_label_width(self) -> int:
         """Compute a shared width so all bars start at the same column."""
@@ -119,10 +169,10 @@ class PipelineTreeUI:
         Render a single node and its children as a list of Rich renderables.
         """
         lines: list[RenderableType] = []
-        line = self._node_label(node, depth)
+        label = self._label_renderable(node, depth)
 
         # Build a compact left-aligned row: name | bar | percent/retries
-        row = Table.grid(expand=False, padding=(0, 1))
+        row = Table.grid(expand=False, padding=(0, 0))
         row.add_column(no_wrap=True, width=label_width)
         row.add_column(no_wrap=True)
         row.add_column(no_wrap=True)
@@ -136,10 +186,10 @@ class PipelineTreeUI:
             suffix_parts.append(f"failed={node.failed}")
         status_suffix = f" ({', '.join(suffix_parts)})" if suffix_parts else ""
         progress_label = Text(
-            f"{progress * 100:.0f}%{status_suffix}", no_wrap=True
+            f" {progress * 100:.0f}%{status_suffix}", no_wrap=True
         )
 
-        row.add_row(Text(line), progress_bar, progress_label)
+        row.add_row(label, progress_bar, progress_label)
         lines.append(row)
 
         # Recursively render children with increased depth
@@ -182,7 +232,14 @@ class PipelineTreeUI:
         if not lines:
             content = Text("No pipelines yet")
         else:
-            content = Group(*lines)
+            footer_row = Table.grid(expand=True)
+            footer_row.add_column(justify="left")
+            footer_row.add_column(justify="right")
+            footer_row.add_row(
+                Text(f"Warnings: {self.warning_count}"),
+                self._render_log_button(),
+            )
+            content = Group(*lines, Rule(style="grey50"), footer_row)
 
         return Panel(content, title="[bold]CARS Progress[/bold]", expand=False)
 

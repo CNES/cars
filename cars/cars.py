@@ -158,12 +158,13 @@ def main_cli(args, dry_run=False):  # noqa: C901
         # When using human, suppress stdout
         use_stdout = logtype != "human"
 
-        cars_logging.setup_logging(
+        log_file = cars_logging.setup_logging(
             loglevel,
             out_dir=log_dir,
             pipeline=pipeline_name,
             use_stdout=use_stdout,
         )
+        ProgressTree().update_log_file_path(log_file)
 
         logging.debug("Show argparse arguments: {}".format(args))
 

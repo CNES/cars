@@ -13,7 +13,10 @@ from itertools import count
 
 from rich.console import Console
 
-from cars.core.cars_logging import add_progress_message
+from cars.core.cars_logging import (
+    add_progress_message,
+    get_warning_count,
+)
 
 from .ui import PipelineTreeUI
 
@@ -87,6 +90,10 @@ class ProgressTree:
             self._ui.live.stop()
             self._ui.live = None
 
+    def update_log_file_path(self, log_file_path: str | None) -> None:
+        """Update log file path used by the footer log link button."""
+        self._ui.update_log_file_path(log_file_path)
+
     def begin_pipeline(
         self, pipeline_name: str, parent_id: int | None = None
     ) -> int:
@@ -104,6 +111,7 @@ class ProgressTree:
                 parent_id=parent_id,
             )
             self._ui.update_state(pipeline_id, "pending")
+            self._ui.update_warning_count(get_warning_count())
         self._pipelines[pipeline_id] = PipelineState(
             pipeline_id=pipeline_id,
             name=pipeline_name,
@@ -168,6 +176,7 @@ class ProgressTree:
         )
         if not self._ui_enabled:
             return
+        self._ui.update_warning_count(get_warning_count())
         self._ui.update_progress(
             pipeline.pipeline_id,
             progress_fraction,
@@ -202,6 +211,15 @@ class ProgressTree:
         current = pipeline_id
         while current is not None:
             self._refresh_pipeline_bar(self._pipelines[current])
+            current = self._pipeline_parent.get(current)
+
+    def _set_running_state_for_lineage(self, pipeline_id: int) -> None:
+        """Mark a pipeline and all its ancestors as running in the UI."""
+        if not self._ui_enabled:
+            return
+        current = pipeline_id
+        while current is not None:
+            self._ui.update_state(current, "running")
             current = self._pipeline_parent.get(current)
 
     def _handle_started(
@@ -246,8 +264,7 @@ class ProgressTree:
             task.retries = 0
             task.failed = 0
 
-        if self._ui_enabled and pipeline.weighted_progress == 0.0:
-            self._ui.update_state(pipeline.pipeline_id, "running")
+        self._set_running_state_for_lineage(pipeline.pipeline_id)
         self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
         add_progress_message(
             "Started task '{}' in pipeline '{}', total: {}".format(
@@ -384,18 +401,26 @@ class ProgressTree:
                 task.name,
                 pipeline.name,
             )
-        if (
-            task.started_runs < task.expected_runs
-            and not task.pending_retry_pass
-        ):
-            logging.warning(
-                "ProgressTree warning: task '%s' in pipeline '%s' "
-                "completed before expected runs (%s < %s)",
-                task.name,
-                pipeline.name,
-                task.started_runs,
-                task.expected_runs,
-            )
+        if not task.current_pass_is_retry:
+            next_nominal_runs = task.completed_nominal_runs + 1
+            if next_nominal_runs > task.expected_runs:
+                logging.warning(
+                    "ProgressTree warning: task '%s' in pipeline '%s' "
+                    "completed more times than expected (%s > %s)",
+                    task.name,
+                    pipeline.name,
+                    next_nominal_runs,
+                    task.expected_runs,
+                )
+            if task.started_runs < next_nominal_runs:
+                logging.warning(
+                    "ProgressTree warning: task '%s' in pipeline '%s' "
+                    "completed without matching starts (%s < %s)",
+                    task.name,
+                    pipeline.name,
+                    task.started_runs,
+                    next_nominal_runs,
+                )
         if task.total > 0:
             run_share = task.weight / task.expected_runs
             if task.progress_in_run < run_share:
@@ -475,4 +500,5 @@ class ProgressTree:
     def draw(self) -> None:
         """Render the current tree state immediately."""
         if self._ui_enabled:
+            self._ui.update_warning_count(get_warning_count())
             self._ui.display()
