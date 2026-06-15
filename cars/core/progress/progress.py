@@ -77,7 +77,6 @@ class ProgressTree:
         self._task_to_pipeline: dict[int, int] = {}
         self._pipeline_parent: dict[int, int | None] = {}
         self._pipeline_children: dict[int, list[int]] = {}
-        self._SCALE = 1000
         self._ui = PipelineTreeUI(console=Console())
         self._ui_enabled = True
         self._pipeline_order: list[int] = []
@@ -502,3 +501,10 @@ class ProgressTree:
         if self._ui_enabled:
             self._ui.update_warning_count(get_warning_count())
             self._ui.display()
+
+    def notify_crash(self, exception: BaseException) -> None:
+        """Notify progress UI that a crash occurred and render details."""
+        if self._ui_enabled:
+            self._ui.update_warning_count(get_warning_count())
+            self._ui.update_crash(exception)
+            self._ui.display_final()

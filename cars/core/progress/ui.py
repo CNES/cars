@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from urllib.parse import quote
 
 from rich.console import Console, Group, RenderableType
@@ -18,6 +19,7 @@ from rich.rule import Rule
 from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
+from rich.traceback import Traceback
 
 
 @dataclass
@@ -37,10 +39,10 @@ class UINode:
         """Return an icon for the current state."""
         if self.state == "completed":
             return "✓"
-        elif self.state == "running":
+        if self.state == "running":
             return "⟳"
-        else:  # pending
-            return "○"
+        # pending
+        return "○"
 
 
 class PipelineTreeUI:
@@ -53,6 +55,7 @@ class PipelineTreeUI:
         self.live: Live | None = None
         self.warning_count: int = 0
         self.log_file_path: str | None = None
+        self.crash_exception: BaseException | None = None
 
     def update_warning_count(self, warning_count: int) -> None:
         """Update total warning counter displayed in the panel footer."""
@@ -62,15 +65,27 @@ class PipelineTreeUI:
         """Update log file path used by the footer log link button."""
         self.log_file_path = log_file_path
 
+    def update_crash(self, exception: BaseException) -> None:
+        """Store crash exception for rich crash rendering."""
+        self.crash_exception = exception
+
     def _render_log_button(self) -> Text:
         """Render a clickable footer button linking to the current log file."""
         if self.log_file_path:
-            uri = "file://{}".format(quote(self.log_file_path, safe="/:"))
+            try:
+                uri = Path(self.log_file_path).resolve().as_uri()
+            except ValueError:
+                uri = "file://{}".format(quote(self.log_file_path, safe="/:"))
             label = Text()
             label.append(
                 "Open log file",
                 style="grey50 underline link {}".format(uri),
             )
+            # Visible URI fallback improves Ctrl+Click behavior in terminals
+            # that do not fully support OSC 8 hyperlinks.
+            # label.append(" (")
+            # label.append(uri, style="underline")
+            # label.append(")")
             return label
         return Text("", style="dim")
 
@@ -228,9 +243,9 @@ class PipelineTreeUI:
             )
             lines.extend(node_lines)
 
-        # Combine all lines into a panel
+        # Main tree section
         if not lines:
-            content = Text("No pipelines yet")
+            content: RenderableType = Text("No pipelines yet")
         else:
             footer_row = Table.grid(expand=True)
             footer_row.add_column(justify="left")
@@ -241,7 +256,34 @@ class PipelineTreeUI:
             )
             content = Group(*lines, Rule(style="grey50"), footer_row)
 
-        return Panel(content, title="[bold]CARS Progress[/bold]", expand=False)
+        main_panel = Panel(
+            content, title="[bold]CARS Progress[/bold]", expand=False
+        )
+
+        # Crash section (if any)
+        if self.crash_exception is not None:
+            crash_summary = Text(
+                "{}: {}".format(
+                    type(self.crash_exception).__name__,
+                    self.crash_exception,
+                ),
+                style="bold red",
+            )
+            crash_traceback = Traceback.from_exception(
+                type(self.crash_exception),
+                self.crash_exception,
+                self.crash_exception.__traceback__,
+                show_locals=False,
+            )
+            crash_panel = Panel(
+                Group(crash_summary, crash_traceback),
+                title="[bold red]Crash[/bold red]",
+                border_style="red",
+                expand=False,
+            )
+            return Group(main_panel, crash_panel)
+
+        return main_panel
 
     def display(self) -> None:
         """Render the full tree to console using Live display."""
@@ -252,3 +294,15 @@ class PipelineTreeUI:
             self.live.start()
         else:
             self.live.update(panel)
+
+    def display_final(self) -> None:
+        """Stop Live display and display the final rendered view once."""
+        panel = self._render_full_tree()
+        if self.live is not None:
+            # update one last time to show final state before stopping live
+            self.live.update(panel)
+            self.live.stop()
+            self.live = None
+        else:
+            # print the panel if live never started
+            self.console.print(panel)

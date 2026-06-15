@@ -195,6 +195,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
         logging.exception(
             "CARS terminated with following error: {}".format(exc)
         )
+        ProgressTree().notify_crash(exc)
         sys.exit(1)
     finally:
         # stop the rich ui if running

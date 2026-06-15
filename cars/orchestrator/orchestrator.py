@@ -36,7 +36,6 @@ import shutil
 import tempfile
 import threading
 import time
-import traceback
 
 import pandas
 import xarray
@@ -648,7 +647,7 @@ class Orchestrator:
         except Exception as exc:
             # reset registries
             self.reset_registries()
-            raise RuntimeError(traceback.format_exc()) from exc
+            raise exc
 
         # reset registries
         self.reset_registries()

@@ -31,6 +31,7 @@ import logging
 import os
 import shutil
 import time
+from contextlib import suppress
 from multiprocessing import Pipe
 from threading import Thread
 
@@ -645,43 +646,50 @@ def cars_profile(name=None, interval=0.1):
             thread_monitoring = CarsMemProf(
                 os.getpid(), child_pipe, interval=interval
             )
+            thread_monitoring.daemon = True
             thread_monitoring.start()
             if parent_pipe.poll(THREAD_TIMEOUT):
                 parent_pipe.recv()
 
-            res = func(*args, **kwargs)
-            total_time = time.time() - start_time
+            try:
+                res = func(*args, **kwargs)
 
-            # end memprofiling monitoring
-            parent_pipe.send(0)
-            max_memory = None
-            max_cpu = None
-            if parent_pipe.poll(THREAD_TIMEOUT):
-                max_memory = parent_pipe.recv()
-            if parent_pipe.poll(THREAD_TIMEOUT):
-                max_cpu = parent_pipe.recv()
-            memory_end = get_current_memory()
+                return res
+            finally:
+                total_time = time.time() - start_time
 
-            func_name = name
-            if name is None:
-                func_name = func.__name__.capitalize()
+                max_memory = None
+                max_cpu = None
 
-            message = (
-                "CarsProfiling# %{}%: %{:.4f}% s Max ram : %{}% MiB"
-                " Start Ram: %{}% MiB, End Ram: %{}% MiB, "
-                " Max CPU usage: %{}%".format(
-                    func_name,
-                    total_time,
-                    max_memory,
-                    memory_start,
-                    memory_end,
-                    max_cpu,
+                # end memprofiling monitoring
+                # (suppression of broken pipe error if thread crashed)
+                with suppress(BrokenPipeError, EOFError, OSError):
+                    parent_pipe.send(0)
+                    if parent_pipe.poll(THREAD_TIMEOUT):
+                        max_memory = parent_pipe.recv()
+                    if parent_pipe.poll(THREAD_TIMEOUT):
+                        max_cpu = parent_pipe.recv()
+
+                memory_end = get_current_memory()
+
+                func_name = name
+                if name is None:
+                    func_name = func.__name__.capitalize()
+
+                message = (
+                    "CarsProfiling# %{}%: %{:.4f}% s Max ram : %{}% MiB"
+                    " Start Ram: %{}% MiB, End Ram: %{}% MiB, "
+                    " Max CPU usage: %{}%".format(
+                        func_name,
+                        total_time,
+                        max_memory,
+                        memory_start,
+                        memory_end,
+                        max_cpu,
+                    )
                 )
-            )
 
-            cars_logging.add_profiling_message(message)
-
-            return res
+                cars_logging.add_profiling_message(message)
 
         return wrapper_cars_profile
 
