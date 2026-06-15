@@ -190,6 +190,8 @@ def main_cli(args, dry_run=False):  # noqa: C901
             "CARS has successfully completed the pipeline."
         )
 
+        ProgressTree().notify_success(out_dir)
+
     except BaseException as exc:
         # Catch all exceptions, show debug traceback and exit
         logging.exception(

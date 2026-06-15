@@ -20,6 +20,7 @@ from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
 from rich.traceback import Traceback
+from rich.tree import Tree
 
 
 @dataclass
@@ -56,6 +57,7 @@ class PipelineTreeUI:
         self.warning_count: int = 0
         self.log_file_path: str | None = None
         self.crash_exception: BaseException | None = None
+        self.success_output_dir: str | None = None
 
     def update_warning_count(self, warning_count: int) -> None:
         """Update total warning counter displayed in the panel footer."""
@@ -69,13 +71,21 @@ class PipelineTreeUI:
         """Store crash exception for rich crash rendering."""
         self.crash_exception = exception
 
+    def update_success(self, output_dir: str | None) -> None:
+        """Store successful output directory for final success rendering."""
+        self.success_output_dir = output_dir
+
+    def _path_to_uri(self, path_str: str) -> str:
+        """Convert path string to clickable file URI."""
+        try:
+            return Path(path_str).resolve().as_uri()
+        except ValueError:
+            return "file://{}".format(quote(path_str, safe="/:"))
+
     def _render_log_button(self) -> Text:
         """Render a clickable footer button linking to the current log file."""
         if self.log_file_path:
-            try:
-                uri = Path(self.log_file_path).resolve().as_uri()
-            except ValueError:
-                uri = "file://{}".format(quote(self.log_file_path, safe="/:"))
+            uri = self._path_to_uri(self.log_file_path)
             label = Text()
             label.append(
                 "Open log file",
@@ -88,6 +98,75 @@ class PipelineTreeUI:
             # label.append(")")
             return label
         return Text("", style="dim")
+
+    def _render_success_panel(self) -> Panel | None:
+        """Render final success panel with output links using Tree."""
+        if not self.success_output_dir:
+            return None
+
+        output_path = Path(self.success_output_dir)
+        output_uri = self._path_to_uri(self.success_output_dir)
+        output_label = "📁 " + str(output_path) + "/"
+
+        # Root tree node for output folder
+        root = Tree(
+            Text(
+                output_label,
+                style="underline link {}".format(output_uri),
+            )
+        )
+
+        for entry_name in (
+            "dsm",
+            "depth_map",
+            "point_cloud",
+            "intermediate_data",
+        ):
+            entry_path = output_path / entry_name
+            if entry_path.exists():
+                entry_uri = self._path_to_uri(str(entry_path))
+                entry_label = "📁 " + entry_name + "/"
+                folder_node = root.add(
+                    Text(
+                        entry_label,
+                        style="underline link {}".format(entry_uri),
+                    )
+                )
+
+                # Show top-level files with links for main products.
+                if entry_name in {"dsm", "depth_map", "point_cloud"}:
+                    children = sorted(
+                        entry_path.iterdir(),
+                        key=lambda path_obj: path_obj.name.lower(),
+                    )
+                    for child_path in children:
+                        child_uri = self._path_to_uri(str(child_path))
+                        child_name = child_path.name
+                        if child_path.is_dir():
+                            child_label = "📁 " + child_name + "/"
+                        else:
+                            if child_path.suffix.lower() in {".tif", ".tiff"}:
+                                child_label = "🖼  " + child_name
+                            else:
+                                child_label = "📄 " + child_name
+                        folder_node.add(
+                            Text(
+                                child_label,
+                                style="underline link {}".format(child_uri),
+                            )
+                        )
+        # Put text above the tree to indicate success
+        success_text = Text(
+            "Output directory:",
+            style="bold",
+        )
+
+        return Panel(
+            Group(success_text, root),
+            title="[bold green]Pipeline successful![/bold green]",
+            border_style="green",
+            expand=False,
+        )
 
     def add_node(
         self,
@@ -281,7 +360,11 @@ class PipelineTreeUI:
                 border_style="red",
                 expand=False,
             )
-            return Group(main_panel, crash_panel)
+            return Group(main_panel, Text(), crash_panel)
+
+        success_panel = self._render_success_panel()
+        if success_panel is not None:
+            return Group(main_panel, Text(), success_panel)
 
         return main_panel
 

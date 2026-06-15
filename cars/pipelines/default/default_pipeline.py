@@ -169,7 +169,6 @@ class DefaultPipeline(PipelineTemplate):
                 weight=100,
             )
 
-        self.progress_tree = progress_tree
         self.progress_tasks = progress_tasks
         self.subsampling_pid = subsampling_pid
         self.sm_pids = sm_pids
@@ -177,7 +176,7 @@ class DefaultPipeline(PipelineTemplate):
         self.filling_pid = filling_pid
 
         # Show the progress panel immediately after tree initialization.
-        self.progress_tree.draw()
+        ProgressTree().draw()
 
     def __init__(self, conf, config_dir=None):  # noqa: C901
         """
@@ -778,7 +777,8 @@ class DefaultPipeline(PipelineTemplate):
             ),
         )
 
-        self.progress_tree = None
+        ProgressTree().update_log_file_path(global_log_file)
+
         self.progress_tasks = {}
         self.subsampling_pid = None
         self.sm_pids = {}
@@ -1003,12 +1003,11 @@ class DefaultPipeline(PipelineTemplate):
 
         final_conf = None
         if self.pipeline_to_use[pipeline_cst.MERGING]:
-            if self.progress_tree is not None:
-                self.progress_tree.notify(
-                    self.progress_tasks["merging"],
-                    "started",
-                    total=1,
-                )
+            ProgressTree().notify(
+                self.progress_tasks["merging"],
+                "started",
+                total=1,
+            )
             current_log_dir = os.path.join(self.out_dir, "logs", "merging")
             cars_logging.setup_logging(
                 loglevel,
@@ -1032,10 +1031,7 @@ class DefaultPipeline(PipelineTemplate):
             )
 
             final_conf = merging_pipeline.used_conf
-            if self.progress_tree is not None:
-                self.progress_tree.notify(
-                    self.progress_tasks["merging"], "completed"
-                )
+            ProgressTree().notify(self.progress_tasks["merging"], "completed")
 
         if updated_conf and final_conf is None:
             last_key = list(updated_conf.keys())[-1]
@@ -1124,12 +1120,11 @@ class DefaultPipeline(PipelineTemplate):
             )
 
         if self.pipeline_to_use[pipeline_cst.FORMATTING]:
-            if self.progress_tree is not None:
-                self.progress_tree.notify(
-                    self.progress_tasks["formatting"],
-                    "started",
-                    total=1,
-                )
+            ProgressTree().notify(
+                self.progress_tasks["formatting"],
+                "started",
+                total=1,
+            )
             current_log_dir = os.path.join(self.out_dir, "logs", "formatting")
             cars_logging.setup_logging(
                 loglevel,
@@ -1160,10 +1155,9 @@ class DefaultPipeline(PipelineTemplate):
                 formatting_pipeline.used_conf,
                 pipeline_cst.FORMATTING,
             )
-            if self.progress_tree is not None:
-                self.progress_tree.notify(
-                    self.progress_tasks["formatting"], "completed"
-                )
+            ProgressTree().notify(
+                self.progress_tasks["formatting"], "completed"
+            )
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             full_used_conf[pipeline_cst.FILLING] = {

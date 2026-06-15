@@ -495,6 +495,7 @@ class ProgressTree:
         """Clean up UI resources (call after pipelines are done)."""
         if self._ui.live is not None:
             self._ui.live.stop()
+            self._ui.live = None
 
     def draw(self) -> None:
         """Render the current tree state immediately."""
@@ -507,4 +508,11 @@ class ProgressTree:
         if self._ui_enabled:
             self._ui.update_warning_count(get_warning_count())
             self._ui.update_crash(exception)
+            self._ui.display_final()
+
+    def notify_success(self, output_dir: str | None) -> None:
+        """Notify progress UI that pipeline completed successfully."""
+        if self._ui_enabled:
+            self._ui.update_warning_count(get_warning_count())
+            self._ui.update_success(output_dir)
             self._ui.display_final()
