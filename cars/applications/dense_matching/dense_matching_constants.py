@@ -21,7 +21,7 @@
 """
 this module contains the constants of dense_matching.
 """
-from pandora import constants as pandora_cst
+from pandora.constants import Criteria
 
 from cars.core import constants_disparity as disp_cst
 
@@ -59,31 +59,31 @@ MISMATCH = "MISMATCH"
 INCOMPLETE_VARIABLE_DISPARITY_RANGE = "INCOMPLETE_VARIABLE_DISPARITY_RANGE"
 
 
-def get_cst(key):
+def get_criteria(key):
     """
-    get pandora constant from abridged key
+    get pandora criteria name from abridged key
 
-    :param key: abridged key of pandora mask
+    :param key: abridged key of pandora criteria
 
     Returns:
-        _type_: pandora mask constant
+        _type_: pandora criteria
     """
-    return pandora_cst.__dict__.get("PANDORA_MSK_PIXEL_" + key)
+    return Criteria.__dict__.get("PANDORA_MSK_PIXEL_" + key)
 
 
 # CORRESPONDING MSK TABLE PANDORA CARS
 MASK_HASH_TABLE = {
-    disp_cst.MASKED_REF: get_cst(IN_VALIDITY_MASK_LEFT),
-    disp_cst.MASKED_SEC: get_cst(IN_VALIDITY_MASK_RIGHT),
-    disp_cst.INCOMPLETE_DISP: get_cst(RIGHT_INCOMPLETE_DISPARITY_RANGE),
-    disp_cst.STOPPED_INTERP: get_cst(STOPPED_INTERPOLATION),
-    disp_cst.FILLED_OCCLUSION: get_cst(FILLED_OCCLUSION),
-    disp_cst.FILLED_FALSE_MATCH: get_cst(FILLED_MISMATCH),
-    disp_cst.INVALID_REF: get_cst(LEFT_NODATA_OR_BORDER),
-    disp_cst.INVALID_SEC: get_cst(RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING),
-    disp_cst.OCCLUSION: get_cst(OCCLUSION),
-    disp_cst.FALSE_MATCH: get_cst(MISMATCH),
-    disp_cst.INCOMPLETE_VARIABLE_DISP: get_cst(
+    disp_cst.MASKED_REF: get_criteria(IN_VALIDITY_MASK_LEFT),
+    disp_cst.MASKED_SEC: get_criteria(IN_VALIDITY_MASK_RIGHT),
+    disp_cst.INCOMPLETE_DISP: get_criteria(RIGHT_INCOMPLETE_DISPARITY_RANGE),
+    disp_cst.STOPPED_INTERP: get_criteria(STOPPED_INTERPOLATION),
+    disp_cst.FILLED_OCCLUSION: get_criteria(FILLED_OCCLUSION),
+    disp_cst.FILLED_FALSE_MATCH: get_criteria(FILLED_MISMATCH),
+    disp_cst.INVALID_REF: get_criteria(LEFT_NODATA_OR_BORDER),
+    disp_cst.INVALID_SEC: get_criteria(RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING),
+    disp_cst.OCCLUSION: get_criteria(OCCLUSION),
+    disp_cst.FALSE_MATCH: get_criteria(MISMATCH),
+    disp_cst.INCOMPLETE_VARIABLE_DISP: get_criteria(
         INCOMPLETE_VARIABLE_DISPARITY_RANGE
     ),
 }
