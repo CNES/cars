@@ -17,12 +17,11 @@ from cars.core.cars_logging import (
     add_progress_message,
     get_warning_count,
 )
-
-from .ui import PipelineTreeUI
+from cars.core.progress.ui import PipelineTreeUI
 
 
 @dataclass
-class TaskState:
+class TaskState:  # pylint: disable=too-many-instance-attributes
     """Internal state for one tracked task."""
 
     task_id: int
@@ -59,6 +58,7 @@ class ProgressTree:
     """Singleton registry with pipeline-level weighted progress bars."""
 
     _instance: ProgressTree | None = None
+    _initialized: bool = False
 
     def __new__(cls) -> ProgressTree:
         if cls._instance is None:
@@ -92,6 +92,12 @@ class ProgressTree:
     def update_log_file_path(self, log_file_path: str | None) -> None:
         """Update log file path used by the footer log link button."""
         self._ui.update_log_file_path(log_file_path)
+
+    def update_empty_status_text(self, status_text: str) -> None:
+        """Update startup status, shown before any pipeline is registered."""
+        self._ui.update_empty_status_text(status_text)
+        if self._ui_enabled:
+            self.draw()
 
     def begin_pipeline(
         self, pipeline_name: str, parent_id: int | None = None
@@ -141,9 +147,8 @@ class ProgressTree:
         expected_runs = max(1, int(expected_runs))
         if weight <= 0:
             logging.warning(
-                "ProgressTree warning: task '%s' has non-positive weight %s",
-                task_name,
-                weight,
+                f"ProgressTree warning: task {task_name} has "
+                f"non-positive weight {weight}"
             )
         self._tasks[task_id] = TaskState(
             task_id=task_id,
@@ -156,7 +161,7 @@ class ProgressTree:
         self._pipelines[pipeline_id].total_weight += weight
 
         add_progress_message(
-            "Registered task '{}' under pipeline '{}' with weight {}".format(
+            "Registered task {} under pipeline {} with weight {}".format(
                 task_name, self._pipelines[pipeline_id].name, weight
             )
         )
@@ -228,7 +233,7 @@ class ProgressTree:
         total: int | None,
     ) -> None:
         if total is None:
-            raise ValueError("total is required for 'started' event")
+            raise ValueError("total is required for started event")
         task.started_runs += 1
 
         # keep progress/total so retried tiles can rebuild rolled-back
@@ -239,20 +244,15 @@ class ProgressTree:
         if not is_retry_pass:
             if task.started_runs > task.expected_runs:
                 logging.warning(
-                    "ProgressTree warning: task '%s' in pipeline '%s' "
-                    "started more times than expected (%s > %s)",
-                    task.name,
-                    pipeline.name,
-                    task.started_runs,
-                    task.expected_runs,
+                    f"ProgressTree warning: task {task.name} in "
+                    f"pipeline {pipeline.name} started more times than "
+                    f"expected ({task.started_runs} > {task.expected_runs})"
                 )
             if total <= 0:
                 logging.warning(
-                    "ProgressTree warning: task '%s' in pipeline '%s' "
-                    "started with non-positive total=%s",
-                    task.name,
-                    pipeline.name,
-                    total,
+                    f"ProgressTree warning: task {task.name} in "
+                    f"pipeline {pipeline.name} started with "
+                    f"non-positive total={total}"
                 )
             task.total = total
             # Reset per-run counters so logging percentage stays within
@@ -266,9 +266,8 @@ class ProgressTree:
         self._set_running_state_for_lineage(pipeline.pipeline_id)
         self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
         add_progress_message(
-            "Started task '{}' in pipeline '{}', total: {}".format(
-                task.name, pipeline.name, total
-            )
+            f"Started task {task.name} in "
+            f"pipeline {pipeline.name}, total: {total}"
         )
 
     def _handle_progressed(
@@ -279,20 +278,16 @@ class ProgressTree:
     ) -> None:
         if task.total <= 0:
             logging.warning(
-                "ProgressTree warning: task '%s' in pipeline '%s' received "
-                "'progressed' before a valid 'started' (total=%s)",
-                task.name,
-                pipeline.name,
-                task.total,
+                f"ProgressTree warning: task {task.name} in "
+                f"pipeline {pipeline.name} received 'progressed' before "
+                f"a valid 'started' (total={task.total})"
             )
             return
         if value <= 0:
             logging.warning(
-                "ProgressTree warning: task '%s' in pipeline '%s' received "
-                "non-positive progressed value=%s",
-                task.name,
-                pipeline.name,
-                value,
+                f"ProgressTree warning: task {task.name} in "
+                f"pipeline {pipeline.name} received "
+                f"non-positive progressed value={value}"
             )
             return
         run_share = task.weight / task.expected_runs
@@ -305,12 +300,9 @@ class ProgressTree:
         current_count = max(0, task.progressed_tiles - task.retries)
         if current_count > task.total:
             logging.warning(
-                "ProgressTree warning: task '%s' in pipeline '%s' "
-                "effective progressed tiles exceed total (%s > %s)",
-                task.name,
-                pipeline.name,
-                current_count,
-                task.total,
+                f"ProgressTree warning: task {task.name} in "
+                f"pipeline {pipeline.name} effective progressed tiles "
+                f"exceed total ({current_count} > {task.total})"
             )
         current_percent = (
             int((current_count / task.total) * 100) if task.total > 0 else 0
@@ -335,11 +327,9 @@ class ProgressTree:
         retries_count = int(value)
         if retries_count < 0:
             logging.warning(
-                "ProgressTree warning: task '%s' in pipeline '%s' received "
-                "negative retries=%s",
-                task.name,
-                pipeline.name,
-                retries_count,
+                f"ProgressTree warning: task {task.name} in "
+                f"pipeline {pipeline.name} received "
+                f"negative retries={retries_count}"
             )
             return
         task.retries += retries_count
@@ -348,12 +338,9 @@ class ProgressTree:
             task.pending_retry_pass = True
         if task.total > 0 and retries_count > task.total:
             logging.warning(
-                "ProgressTree warning: task '%s' in pipeline '%s' received "
-                "retries greater than total (%s > %s)",
-                task.name,
-                pipeline.name,
-                retries_count,
-                task.total,
+                f"ProgressTree warning: task {task.name} in "
+                f"pipeline {pipeline.name} received "
+                f"retries greater than total ({retries_count} > {task.total})"
             )
 
         # Push progress back by the share represented by retried tiles.
@@ -377,11 +364,9 @@ class ProgressTree:
         failed_count = int(value)
         if failed_count < 0:
             logging.warning(
-                "ProgressTree warning: task '%s' in pipeline '%s' received "
-                "negative failed=%s",
-                task.name,
-                pipeline.name,
-                failed_count,
+                f"ProgressTree warning: task {task.name} in "
+                f"pipeline {pipeline.name} received "
+                f"negative failed={failed_count}"
             )
             return
         task.failed += failed_count
@@ -395,30 +380,22 @@ class ProgressTree:
     ) -> None:
         if task.started_runs == 0:
             logging.warning(
-                "ProgressTree warning: task '%s' in pipeline '%s' "
-                "completed without any start",
-                task.name,
-                pipeline.name,
+                f"ProgressTree warning: task {task.name} in "
+                f"pipeline {pipeline.name} completed without any start"
             )
         if not task.current_pass_is_retry:
             next_nominal_runs = task.completed_nominal_runs + 1
             if next_nominal_runs > task.expected_runs:
                 logging.warning(
-                    "ProgressTree warning: task '%s' in pipeline '%s' "
-                    "completed more times than expected (%s > %s)",
-                    task.name,
-                    pipeline.name,
-                    next_nominal_runs,
-                    task.expected_runs,
+                    f"ProgressTree warning: task {task.name} in "
+                    f"pipeline {pipeline.name} completed more times than "
+                    f"expected ({next_nominal_runs} > {task.expected_runs})"
                 )
             if task.started_runs < next_nominal_runs:
                 logging.warning(
-                    "ProgressTree warning: task '%s' in pipeline '%s' "
-                    "completed without matching starts (%s < %s)",
-                    task.name,
-                    pipeline.name,
-                    task.started_runs,
-                    next_nominal_runs,
+                    f"ProgressTree warning: task {task.name} in "
+                    f"pipeline {pipeline.name} completed without matching "
+                    f"starts ({task.started_runs} < {next_nominal_runs})"
                 )
         if task.total > 0:
             run_share = task.weight / task.expected_runs

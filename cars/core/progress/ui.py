@@ -54,10 +54,16 @@ class PipelineTreeUI:
         self.tree: dict[int, UINode] = {}
         self._order: list[int] = []
         self.live: Live | None = None
+        self.empty_status_text: str = "Loading configuration file"
         self.warning_count: int = 0
         self.log_file_path: str | None = None
         self.crash_exception: BaseException | None = None
         self.success_output_dir: str | None = None
+
+    def update_empty_status_text(self, status_text: str) -> None:
+        """Update startup status, shown before any pipeline is registered."""
+        if status_text:
+            self.empty_status_text = str(status_text)
 
     def update_warning_count(self, warning_count: int) -> None:
         """Update total warning counter displayed in the panel footer."""
@@ -324,7 +330,9 @@ class PipelineTreeUI:
 
         # Main tree section
         if not lines:
-            content: RenderableType = Text("No pipelines yet")
+            content = Group(
+                Spinner("dots", text=self.empty_status_text, style="green"),
+            )
         else:
             footer_row = Table.grid(expand=True)
             footer_row.add_column(justify="left")

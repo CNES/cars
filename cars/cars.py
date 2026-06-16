@@ -105,6 +105,12 @@ def main_cli(args, dry_run=False):  # noqa: C901
     # Main try/except to catch all program exceptions
     from cars.pipelines.pipeline import Pipeline
 
+    logtype = getattr(args, "logtype", "human").lower()
+
+    ProgressTree().set_ui_enabled(logtype == "human")
+    if logtype == "human":
+        ProgressTree().draw()
+
     try:
         # Check file extension and load configuration
         config_path = args.conf
@@ -117,6 +123,8 @@ def main_cli(args, dry_run=False):  # noqa: C901
                 config = yaml.safe_load(fstream)
         else:
             raise ValueError("Configuration file must be .json or .yaml/.yml")
+
+        ProgressTree().update_empty_status_text("Checking configuration")
 
         # Cars 0.9.0 API change, check if the configfile seems to use the old
         # API by looking for the deprecated out_dir key
@@ -149,8 +157,6 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
-        logtype = getattr(args, "logtype", "human").lower()
-        ProgressTree().set_ui_enabled(logtype == "human")
         out_dir = config["output"]["directory"]
 
         log_dir = os.path.join(out_dir, "logs")
@@ -171,6 +177,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
         # Generate pipeline and check conf
         cars_logging.add_progress_message("Check configuration...")
         used_pipeline = Pipeline(pipeline_name, config, config_dir)
+        ProgressTree().update_empty_status_text("Starting pipeline")
         cars_logging.add_progress_message("CARS pipeline is started.")
         if not dry_run:
             # run pipeline
@@ -201,7 +208,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
         sys.exit(1)
     finally:
         # stop the rich ui if running
-        if getattr(args, "logtype", "human").lower() == "human":
+        if logtype == "human":
             try:
                 ProgressTree().finalize()
             except Exception:
