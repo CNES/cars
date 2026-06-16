@@ -33,7 +33,7 @@ import numpy as np
 import xarray as xr
 
 # Third party imports
-from pandora import constants as p_cst
+from pandora.constants import Criteria
 from scipy.ndimage import generic_filter
 
 from cars.applications.dense_match_filling import fill_disp_wrappers
@@ -126,10 +126,10 @@ def get_masks_from_pandora(
     validity_mask_cropped = disp.validity_mask.values
     # Mask initialization to false (all is invalid)
     masks[cst_disp.VALID] = np.full(validity_mask_cropped.shape, False)
-    invalid_value = p_cst.PANDORA_MSK_PIXEL_INVALID
+    invalid_value = Criteria.PANDORA_MSK_PIXEL_INVALID
     if filter_incomplete_disparity_range:
         invalid_value |= (
-            p_cst.PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE
+            Criteria.PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE
         )
 
     # Identify valid points
@@ -543,10 +543,10 @@ def create_disp_dataset(  # noqa: C901
     )
 
     invalidity_mask[0][
-        (disp.validity_mask & p_cst.PANDORA_MSK_PIXEL_OCCLUSION) != 0
+        (disp.validity_mask & Criteria.PANDORA_MSK_PIXEL_OCCLUSION) != 0
     ] = 1
     invalidity_mask[1][
-        (disp.validity_mask & p_cst.PANDORA_MSK_PIXEL_MISMATCH) != 0
+        (disp.validity_mask & Criteria.PANDORA_MSK_PIXEL_MISMATCH) != 0
     ] = 1
 
     disp_ds.coords[cst.BAND_INVALIDITY_MASK] = ["occlusion", "mismatch"]
