@@ -41,3 +41,4 @@ EDGE_DETECTION = "edge_detection"
 # Input keys
 DSM_TO_FILL = "dsm_to_fill"
 INPUT_DTM = "input_dtm"
+SCALING_COEFF = "scaling_coeff"

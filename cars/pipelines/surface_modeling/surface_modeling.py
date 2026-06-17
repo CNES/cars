@@ -251,6 +251,10 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         self.refined_conf["pipeline"] = "surface_modeling"
 
+        if sens_cst.SCALING_COEFF in conf[INPUT]:
+            if conf[INPUT][sens_cst.SCALING_COEFF] is not None:
+                self.scaling_coeff = conf[INPUT][sens_cst.SCALING_COEFF]
+
         # Check conf output
         (
             output,
@@ -1967,10 +1971,14 @@ class SurfaceModelingPipeline(PipelineTemplate):
             )
             self.cars_orchestrator.breakpoint()
 
-        self.merge_invalidity_mask_bands(
-            os.path.join(os.path.dirname(dsm_file_name), "invalidity_mask.tif"),
-            dsm_file_name,
+        invalidity_mask_file = os.path.join(
+            os.path.dirname(dsm_file_name), "invalidity_mask.tif"
         )
+        if os.path.exists(invalidity_mask_file):
+            self.merge_invalidity_mask_bands(
+                invalidity_mask_file,
+                dsm_file_name,
+            )
 
         self.dtm_generation_dump_dir = os.path.join(
             self.dump_dir, "dtm_generation"
