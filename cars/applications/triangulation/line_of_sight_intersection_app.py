@@ -210,7 +210,7 @@ class LineOfSightIntersection(
 
         if output_dir is not None:
             output_dir = os.path.join(output_dir, "tif")
-            os.makedirs(output_dir)
+            os.makedirs(output_dir, exist_ok=True)
 
         if save_output_coordinates or dump_dir:
             coords_output_dir = (

@@ -35,6 +35,7 @@ import copy
 import logging
 import os
 from collections import OrderedDict
+from pathlib import Path
 
 import numpy as np
 import rasterio
@@ -1735,6 +1736,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 continue  # keep iterating over pairs, but don't go further
 
             filtered_epipolar_point_cloud = epipolar_point_cloud
+            filtering_point_cloud_dir = None
             for app_key, app in self.pc_outlier_removal_apps.items():
 
                 app_key_is_last = (
@@ -1766,6 +1768,50 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 filtered_epipolar_point_cloud
             )
 
+            self.cars_orchestrator.breakpoint()
+
+            dir_to_check = [
+                d
+                for d in (
+                    triangulation_point_cloud_dir,
+                    filtering_point_cloud_dir,
+                )
+                if d is not None
+            ]
+
+            if len(dir_to_check) != 0:
+                for folder in dir_to_check:
+                    if "tif" in self.product_format["point_cloud"]:
+                        true_path = os.path.join(folder, "tif")
+                        true_path = Path(true_path)
+                        for file in true_path.iterdir():
+                            if (
+                                not os.path.exists(file)
+                                or os.path.getsize(file) == 0
+                            ):
+                                raise RuntimeError(
+                                    "The file {} generated at resolution "
+                                    "{} is empty".format(file, self.working_res)
+                                )
+
+                            with rasterio.open(file) as src:
+                                is_full_nan = True
+                                for _, window in src.block_windows(1):
+                                    data = src.read(1, window=window)
+                                    is_full_nan = np.isnan(data).all()
+
+                                    if not is_full_nan:
+                                        break
+
+                                if is_full_nan:
+                                    raise RuntimeError(
+                                        "The file {} generated at "
+                                        "resolution"
+                                        "{} is full of nan".format(
+                                            file, self.working_res
+                                        )
+                                    )
+
         # quit if any app in the loop over the pairs was the last one
         # pylint:disable=too-many-boolean-expressions
         if (
@@ -1775,6 +1821,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             or self.quit_on_app("point_cloud_outlier_removal.1")
             or self.quit_on_app("point_cloud_outlier_removal.2")
         ):
+
             return True
 
         return False
@@ -1919,6 +1966,16 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         # dsm needs to be saved before filling
         self.cars_orchestrator.breakpoint()
+
+        if (
+            not os.path.exists(dsm_file_name)
+            or os.path.getsize(dsm_file_name) == 0
+        ):
+            raise RuntimeError(
+                "The DSM generated at resolution {} is empty".format(
+                    self.working_res
+                )
+            )
 
         # saved used configuration
         self.save_configurations()
