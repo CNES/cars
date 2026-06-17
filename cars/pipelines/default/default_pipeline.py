@@ -151,11 +151,7 @@ class DefaultPipeline(PipelineTemplate):
 
         if self.pipeline_to_use[pipeline_cst.MERGING]:
             merging_pid = progress_tree.begin_pipeline("Merging")
-            progress_tasks["merging"] = progress_tree.register_task(
-                merging_pid,
-                "Merging",
-                weight=100,
-            )
+            self.merging_pid = merging_pid
 
         filling_pid = None
         if self.pipeline_to_use[pipeline_cst.FILLING]:
@@ -784,8 +780,7 @@ class DefaultPipeline(PipelineTemplate):
         self.sm_pids = {}
         self.sm_tie_points_pids = {}
         self.filling_pid = None
-        if logtype == "human":
-            self.setup_progress_tracking()
+        self.setup_progress_tracking()
 
         previous_out_dir = None
         previous_res = None
@@ -1003,11 +998,6 @@ class DefaultPipeline(PipelineTemplate):
 
         final_conf = None
         if self.pipeline_to_use[pipeline_cst.MERGING]:
-            ProgressTree().notify(
-                self.progress_tasks["merging"],
-                "started",
-                total=1,
-            )
             current_log_dir = os.path.join(self.out_dir, "logs", "merging")
             cars_logging.setup_logging(
                 loglevel,
@@ -1018,7 +1008,7 @@ class DefaultPipeline(PipelineTemplate):
             )
             merging_conf = self.construct_merging_conf(self.used_conf)
             merging_pipeline = MergingPipeline(merging_conf, self.config_dir)
-            merging_pipeline.run()
+            merging_pipeline.run(parent_pipeline_id=self.merging_pid)
 
             # Update metadata
             self.metadata[pipeline_cst.MERGING] = merging_pipeline.metadata
@@ -1031,7 +1021,6 @@ class DefaultPipeline(PipelineTemplate):
             )
 
             final_conf = merging_pipeline.used_conf
-            ProgressTree().notify(self.progress_tasks["merging"], "completed")
 
         if updated_conf and final_conf is None:
             last_key = list(updated_conf.keys())[-1]

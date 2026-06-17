@@ -68,9 +68,10 @@ class MergingPipeline(PipelineTemplate):
         :rtype: int
         """
         progress_tree = ProgressTree()
-        self.pipeline_progress_id = progress_tree.begin_pipeline(
-            "merging", parent_id=parent_pipeline_id
-        )
+        if parent_pipeline_id is None:
+            self.pipeline_progress_id = progress_tree.begin_pipeline("Merging")
+        else:
+            self.pipeline_progress_id = parent_pipeline_id
         self.task_progress_id = progress_tree.register_task(
             self.pipeline_progress_id,
             "merging",
@@ -336,11 +337,15 @@ class MergingPipeline(PipelineTemplate):
 
         return used_conf
 
-    def run(self, args=None, log_dir=None):  # pylint: disable=W0613
+    def run(
+        self, args=None, log_dir=None, parent_pipeline_id=None
+    ):  # pylint: disable=W0613
         """
         Run pipeline
 
         """
+        self.setup_progress_tracking(parent_pipeline_id)
+
         if log_dir is None:
             log_dir = os.path.join(self.out_dir, "logs")
 
@@ -467,6 +472,7 @@ class MergingPipeline(PipelineTemplate):
             )
 
             # Launch merging
+            cars_orchestrator.set_target_task(self.task_progress_id)
             _ = self.dsm_merging_application.run(
                 dict_path,
                 cars_orchestrator,
