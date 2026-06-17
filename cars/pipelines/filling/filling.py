@@ -121,6 +121,10 @@ class FillingPipeline(PipelineTemplate):
         # check output
         conf[OUTPUT] = self.check_output(conf)
 
+        if sens_cst.SCALING_COEFF in conf[INPUT]:
+            if conf[INPUT][sens_cst.SCALING_COEFF] is not None:
+                self.scaling_coeff = conf[INPUT][sens_cst.SCALING_COEFF]
+
         self.used_conf = {}
 
         # Check conf orchestrator

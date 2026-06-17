@@ -54,5 +54,6 @@ INPUT_NODATA = "no_data"
 INPUT_PATH = "path"
 INPUT_VALUES = "values"
 SENSOR_TYPE = "sensor_type"
+SCALING_COEFF = "scaling_coeff"
 
 CARS_DEFAULT_ALT = 0  # Default altitude used in cars pipelines

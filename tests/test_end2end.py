@@ -305,6 +305,7 @@ def test_end2end_ventoux_meta_pipeline():
                 "initial_elevation": absolute_data_path(
                     "input/phr_ventoux/srtm/N44E005.hgt"
                 ),
+                "scaling_coeff": 1.0,
             },
             "tie_points": {
                 "applications": {

@@ -277,7 +277,9 @@ class SubsamplingPipeline(PipelineTemplate):
 
         return used_conf
 
-    def formatting(self, key, out_dir, conf_to_save):
+    def formatting(
+        self, key, out_dir, conf_to_save, res, first_key
+    ):  # pylint: disable=too-many-positional-arguments
         """
         Format the input.yaml with new inputs
         """
@@ -296,6 +298,12 @@ class SubsamplingPipeline(PipelineTemplate):
         sensor[sens_cst.INPUT_IMG]["bands"]["b0"]["path"] = replace_path(
             sensor[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
         )
+
+        if sens_cst.SCALING_COEFF in inputs:
+            if first_key and inputs[sens_cst.SCALING_COEFF] is not None:
+                inputs[sens_cst.SCALING_COEFF] = (
+                    inputs[sens_cst.SCALING_COEFF] * res
+                )
 
         if (
             sens_cst.INPUT_CLASSIFICATION in sensor
@@ -345,6 +353,7 @@ class SubsamplingPipeline(PipelineTemplate):
             for res in self.resolutions:
                 if res != 1:
                     conf_to_save = copy.deepcopy(self.used_conf)
+                    first_key = True
                     for key, val in inputs[sens_cst.SENSORS].items():
                         # Define the output directory
                         out_directory = os.path.join(
@@ -361,8 +370,14 @@ class SubsamplingPipeline(PipelineTemplate):
                         )
 
                         self.formatting(
-                            key, os.path.abspath(out_directory), conf_to_save
+                            key,
+                            os.path.abspath(out_directory),
+                            conf_to_save,
+                            res,
+                            first_key,
                         )
+
+                        first_key = False
 
                     out_yaml = os.path.abspath(
                         os.path.join(out_directory, "input.yaml")
