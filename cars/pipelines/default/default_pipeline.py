@@ -126,6 +126,13 @@ class DefaultPipeline(PipelineTemplate):
         progress_tree = ProgressTree()
         progress_tasks = {}
 
+        edge_detection_pid = None
+        if self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]:
+            edge_detection_pid = progress_tree.begin_pipeline(
+                "Edge Detection", parent_id=parent_pipeline_id
+            )
+            self.edge_detection_pid = edge_detection_pid
+
         subsampling_pid = None
         if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
             subsampling_pid = progress_tree.begin_pipeline(
@@ -166,6 +173,7 @@ class DefaultPipeline(PipelineTemplate):
             )
 
         self.progress_tasks = progress_tasks
+        self.edge_detection_pid = edge_detection_pid
         self.subsampling_pid = subsampling_pid
         self.sm_pids = sm_pids
         self.sm_tie_points_pids = sm_tie_points_pids
@@ -776,6 +784,7 @@ class DefaultPipeline(PipelineTemplate):
         ProgressTree().update_log_file_path(global_log_file)
 
         self.progress_tasks = {}
+        self.edge_detection_pid = None
         self.subsampling_pid = None
         self.sm_pids = {}
         self.sm_tie_points_pids = {}
@@ -795,6 +804,7 @@ class DefaultPipeline(PipelineTemplate):
                 out_dir=current_log_dir,
                 pipeline=EDGE_DETECTION,
                 global_log_file=global_log_file,
+                use_stdout=use_stdout,
             )
 
             edge_detection_pipeline = Pipeline(
@@ -804,7 +814,9 @@ class DefaultPipeline(PipelineTemplate):
                 ),
                 self.config_dir,
             )
-            edge_detection_pipeline.run()
+            edge_detection_pipeline.run(
+                parent_pipeline_id=self.edge_detection_pid
+            )
             self.edge_detection_used_conf = edge_detection_pipeline.used_conf
 
             log_wrapper.generate_summary(
