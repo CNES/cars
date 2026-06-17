@@ -260,7 +260,8 @@ def main():
         "-il",
         type=str,
         nargs="*",
-        help="Image products",
+        help="Image products. Can be a list of images or "
+        " pairs of (image, rpc_file)",
         required=True,
     )
 
@@ -309,15 +310,35 @@ def main():
     if args.rpc_dem is not None:
         rpc_options["rpc_dem"] = args.rpc_dem
 
+    # parse list
+    input_pairs = []
+    i = 0
+    while i < len(args.il):
+        image_path = args.il[i]
+        if i + 1 < len(args.il) and args.il[i + 1].lower().endswith(
+            (".xml", ".rpc", ".rpb", ".txt")
+        ):
+            rpc_path = args.il[i + 1]
+            i += 2
+        else:
+            rpc_path = None
+            i += 1
+        input_pairs.append((image_path, rpc_path))
+
     # check first input in list to determine pipeline
-    for idx, image_path in enumerate(args.il):
+    for idx, (image_path, specific_rpc_file) in enumerate(input_pairs):
         output_image_path = os.path.join(args.out, "ext_%03d.tif" % idx)
         rpb_file_path = None
         if args.generate_rpb:
             rpb_file_path = os.path.splitext(output_image_path)[0] + ".RPB"
 
         process_image_file(
-            args.bbx, image_path, output_image_path, rpb_file_path, rpc_options
+            args.bbx,
+            image_path,
+            output_image_path,
+            rpb_file_path,
+            rpc_options,
+            external_rpc_file=specific_rpc_file,
         )
 
 
