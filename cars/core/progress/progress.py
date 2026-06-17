@@ -30,6 +30,7 @@ class TaskState:  # pylint: disable=too-many-instance-attributes
     weight: float
     expected_runs: int = 1
     started_runs: int = 0
+    nominal_started_runs: int = 0
     progress_in_run: float = 0.0
     total: int = 0
     last_logged_percent: int = 0  # for logging progress at intervals
@@ -81,6 +82,7 @@ class ProgressTree:
         self._ui_enabled = True
         self._pipeline_order: list[int] = []
         self._initialized = True
+        self._finished_successfully = False
 
     def set_ui_enabled(self, enabled: bool) -> None:
         """Enable/disable Rich UI rendering for progress updates."""
@@ -242,11 +244,14 @@ class ProgressTree:
         task.pending_retry_pass = False
         task.current_pass_is_retry = is_retry_pass
         if not is_retry_pass:
-            if task.started_runs > task.expected_runs:
+            # Use a nominal-only counter so retry passes do not incorrectly
+            # trigger warnings about exceeding expected_runs
+            task.nominal_started_runs += 1
+            if task.nominal_started_runs > task.expected_runs:
                 logging.warning(
-                    f"ProgressTree warning: task {task.name} in "
-                    f"pipeline {pipeline.name} started more times than "
-                    f"expected ({task.started_runs} > {task.expected_runs})"
+                    f"ProgressTree warning: task {task.name} in pipeline "
+                    f"{pipeline.name} started more times than expected "
+                    f"({task.nominal_started_runs} > {task.expected_runs})"
                 )
             if total <= 0:
                 logging.warning(
@@ -470,6 +475,18 @@ class ProgressTree:
 
     def finalize(self) -> None:
         """Clean up UI resources (call after pipelines are done)."""
+        # check task completion when the pipeline finished normally
+        if getattr(self, "_finished_successfully", False):
+            for task in self._tasks.values():
+                pipeline = self._pipelines[task.pipeline_id]
+                if task.completed_nominal_runs < task.expected_runs:
+                    logging.warning(
+                        f"ProgressTree warning: task {task.name} in "
+                        f"pipeline {pipeline.name} finished with only "
+                        f"{task.completed_nominal_runs}/{task.expected_runs} "
+                        f"completed runs"
+                    )
+
         if self._ui.live is not None:
             self._ui.live.stop()
             self._ui.live = None
@@ -482,6 +499,7 @@ class ProgressTree:
 
     def notify_crash(self, exception: BaseException) -> None:
         """Notify progress UI that a crash occurred and render details."""
+        self._finished_successfully = False
         if self._ui_enabled:
             self._ui.update_warning_count(get_warning_count())
             self._ui.update_crash(exception)
@@ -489,6 +507,7 @@ class ProgressTree:
 
     def notify_success(self, output_dir: str | None) -> None:
         """Notify progress UI that pipeline completed successfully."""
+        self._finished_successfully = True
         if self._ui_enabled:
             self._ui.update_warning_count(get_warning_count())
             self._ui.update_success(output_dir)

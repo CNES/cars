@@ -88,9 +88,8 @@ class FillingPipeline(PipelineTemplate):
         :type parent_pipeline_id: int or None
         :return: None
         """
-        progress_tree = ProgressTree()
         if parent_pipeline_id is None:
-            self.pipeline_progress_id = progress_tree.begin_pipeline("Filling")
+            self.pipeline_progress_id = ProgressTree().begin_pipeline("Filling")
         else:
             self.pipeline_progress_id = parent_pipeline_id
 
@@ -116,7 +115,7 @@ class FillingPipeline(PipelineTemplate):
         auxiliary_activated = auxiliary_conf.get("activated", True)
 
         if not has_initial_dem:
-            self.task_ids["dem_generation"] = progress_tree.register_task(
+            self.task_ids["dem_generation"] = ProgressTree().register_task(
                 self.pipeline_progress_id,
                 "dem_generation",
                 weight=10,
@@ -126,21 +125,21 @@ class FillingPipeline(PipelineTemplate):
             app_weight = 60 / len(self.dsm_filling_apps)
             for app_key, app in self.dsm_filling_apps.items():
                 task_name = "dsm_filling_{}".format(app.get_conf()["method"])
-                self.task_ids[app_key] = progress_tree.register_task(
+                self.task_ids[app_key] = ProgressTree().register_task(
                     self.pipeline_progress_id,
                     task_name,
                     weight=app_weight,
                 )
 
         if auxiliary_activated:
-            self.task_ids["auxiliary_filling"] = progress_tree.register_task(
+            self.task_ids["auxiliary_filling"] = ProgressTree().register_task(
                 self.pipeline_progress_id,
                 "auxiliary_filling",
                 weight=20,
             )
 
         if has_merge_filling_phase:
-            self.task_ids["merge_filling_bands"] = progress_tree.register_task(
+            self.task_ids["merge_filling_bands"] = ProgressTree().register_task(
                 self.pipeline_progress_id,
                 "merge_filling_bands",
                 weight=10,

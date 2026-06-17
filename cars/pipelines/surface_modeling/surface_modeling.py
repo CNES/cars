@@ -108,11 +108,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
         :return: Task ID to pass to orchestrator via set_target_task()
         :rtype: int
         """
-        progress_tree = ProgressTree()
-
         # Create pipeline if standalone, otherwise use parent
         if parent_pipeline_id is None:
-            self.pipeline_progress_id = progress_tree.begin_pipeline(
+            self.pipeline_progress_id = ProgressTree().begin_pipeline(
                 "surface_modeling"
             )
         else:
@@ -123,48 +121,114 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         # Register tasks for surface modeling workflow
         use_global_disp_range = self.dense_matching_app.use_global_disp_range
-        has_tie_points_prep_disp_run = (
-            self.tie_points_pipelines is not None
-            and self.used_conf[INPUT][sens_cst.LOW_RES_DSM] is not None
+        has_tie_points_pipeline = self.tie_points_pipelines is not None
+        has_low_res_dsm = (
+            self.used_conf[INPUT][sens_cst.LOW_RES_DSM] is not None
+        )
+        is_first_or_single = self.which_resolution in ("first", "single")
+        has_aux_filling = (
+            self.save_output_dsm
+            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]
         )
 
-        # Base: 1 run per pair (main disparity generation pass)
-        # +1 per pair if use_global_disp_range
-        # +1 per pair if disparity grids for tie points
-        expected_runs = num_sensor_pairs * (
-            1 + (1 if use_global_disp_range else 0)
+        # Early stops configured through output_level_none/application setup
+        quit_after_grid_or_resampling = self.quit_on_app(
+            "grid_generation"
+        ) or self.quit_on_app("resampling")
+        quit_after_rasterization = self.quit_on_app("point_cloud_rasterization")
+
+        def _expected_generate_disparity_grids_runs():
+            expected_runs = 0
+
+            if not quit_after_grid_or_resampling:
+                # One preparation run per pair only when tie points are enabled
+                # and a low resolution DSM is provided.
+                expected_runs += (
+                    num_sensor_pairs
+                    if has_tie_points_pipeline and has_low_res_dsm
+                    else 0
+                )
+
+                # Main disparity grids generation:
+                # one run per pair, plus an optional second run per pair when
+                # global disparity range is enabled in the DEM-based branch.
+                main_runs_per_pair = 1
+                if ((not is_first_or_single) or has_low_res_dsm) and (
+                    use_global_disp_range
+                ):
+                    main_runs_per_pair += 1
+                expected_runs += num_sensor_pairs * main_runs_per_pair
+
+            # When the rasterize phase is not run (save_output_dsm=False),
+            # the orchestrator __exit__ is the final compute pass and will
+            # process any tasks still pending from the sensor-to-depth-maps
+            # phase (resampling, dense matching, etc.).
+            if not self.save_output_dsm:
+                expected_runs += 1
+
+            return expected_runs
+
+        def _expected_tie_points_runs():
+            if not has_tie_points_pipeline or quit_after_grid_or_resampling:
+                return 0
+            return num_sensor_pairs
+
+        def _expected_rasterize_point_cloud_runs():
+            if not self.save_output_dsm:
+                return 0
+
+            expected_runs = 0
+            if not quit_after_rasterization:
+                # One compute pass to flush rasterization outputs.
+                expected_runs += 1
+                # Optional second pass when auxiliary filling merge is enabled.
+                if has_aux_filling:
+                    expected_runs += 1
+            return expected_runs
+
+        generate_disparity_grids_runs = (
+            _expected_generate_disparity_grids_runs()
         )
-        if has_tie_points_prep_disp_run:
-            expected_runs += num_sensor_pairs
+        tie_points_runs = _expected_tie_points_runs()
+        rasterize_point_cloud_runs = _expected_rasterize_point_cloud_runs()
+
+        # clamp expected_runs to >= 1
+        generate_disparity_grids_runs = max(1, generate_disparity_grids_runs)
+        tie_points_runs = max(1, tie_points_runs)
+        rasterize_point_cloud_runs = max(1, rasterize_point_cloud_runs)
 
         self.task_ids = {}
-        self.task_ids["generate_disparity_grids"] = progress_tree.register_task(
+        self.task_ids[
+            "generate_disparity_grids"
+        ] = ProgressTree().register_task(
             self.pipeline_progress_id,
             "generate_disparity_grids",
             weight=10,
-            expected_runs=expected_runs,
+            expected_runs=generate_disparity_grids_runs,
         )
 
-        if tie_points_pipeline_id is not None:
-            self.task_ids["tie_points"] = progress_tree.register_task(
-                tie_points_pipeline_id,
-                "tie_points",
-                weight=40,
-                expected_runs=num_sensor_pairs,
-            )
-        elif self.tie_points_pipelines is not None:
-            self.task_ids["tie_points"] = progress_tree.register_task(
-                self.pipeline_progress_id,
-                "tie_points",
-                weight=40,
-                expected_runs=num_sensor_pairs,
-            )
+        tie_points_task_pipeline_id = (
+            tie_points_pipeline_id
+            if tie_points_pipeline_id is not None
+            else self.pipeline_progress_id
+        )
+        self.task_ids["tie_points"] = ProgressTree().register_task(
+            tie_points_task_pipeline_id,
+            "tie_points",
+            weight=40,
+            expected_runs=tie_points_runs,
+        )
 
         # rasterize_point_cloud - final phase
-        self.task_ids["rasterize_point_cloud"] = progress_tree.register_task(
+        # Additional compute passes can run under the same target task:
+        # - mono-band filling merge when auxiliary filling output is enabled
+        # - a final orchestrator compute pass (standalone auxiliary filling)
+        # - dtm generation when DTM output is requested (on single/final run)
+        self.task_ids["rasterize_point_cloud"] = ProgressTree().register_task(
             self.pipeline_progress_id,
             "rasterize_point_cloud",
             weight=60,
+            expected_runs=rasterize_point_cloud_runs,
         )
 
         # Return first task ID for orchestrator to track
