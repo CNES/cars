@@ -11,7 +11,7 @@ How to launch CARS
 
     cars -h
 
-    usage: cars [-h] [--loglevel {DEBUG,INFO,PROGRESS,WARNING,ERROR,CRITICAL}] [--version] conf
+    usage: cars [-h] [--loglevel {DEBUG,INFO,PROGRESS,WARNING,ERROR,CRITICAL}] [--logtype {human,plain}] [--version] conf
 
     CARS: CNES Algorithms to Reconstruct Surface
 
@@ -22,6 +22,10 @@ How to launch CARS
       -h, --help            show this help message and exit
       --loglevel {DEBUG,INFO,PROGRESS,WARNING,ERROR,CRITICAL}
                             Logger level (default: PROGRESS. Should be one of (DEBUG, INFO, PROGRESS, WARNING, ERROR, CRITICAL)
+      --logtype {human,plain}
+                            Log output type (default: human).
+                            'human' enables the interactive progress UI
+                            'plain' disables the progress UI and writes all logs to stdout (level configured by --loglevel)
       --version, -v         show program's version number and exit
 
 CARS cli takes only one ``.json`` or ``.yaml`` (or ``.yml``) file as command line argument:
