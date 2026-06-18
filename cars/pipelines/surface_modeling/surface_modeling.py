@@ -203,7 +203,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         ] = ProgressTree().register_task(
             self.pipeline_progress_id,
             "generate_disparity_grids",
-            weight=10,
+            weight=2,
             expected_runs=generate_disparity_grids_runs,
         )
 
@@ -215,7 +215,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.task_ids["tie_points"] = ProgressTree().register_task(
             tie_points_task_pipeline_id,
             "tie_points",
-            weight=40,
+            weight=20,
             expected_runs=tie_points_runs,
         )
 
@@ -227,7 +227,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.task_ids["rasterize_point_cloud"] = ProgressTree().register_task(
             self.pipeline_progress_id,
             "rasterize_point_cloud",
-            weight=60,
+            weight=78,
             expected_runs=rasterize_point_cloud_runs,
         )
 
