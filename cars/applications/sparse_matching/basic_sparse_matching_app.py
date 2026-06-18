@@ -471,18 +471,30 @@ class BasicSparseMatchingApplication(
             )
             np.save(raw_matches_array_path, matches)
 
-        epipolar_median_shift = np.median(matches[:, 3] - matches[:, 1])
+        epipolar_median_shift = np.median(matches[:, 1] - matches[:, 3])
 
-        if np.abs(epipolar_median_shift) > epipolar_error_maximum_bias:
-            epipolar_median_shift = 0
+        if (
+            np.abs(epipolar_median_shift - self.epipolar_error_estimation)
+            > epipolar_error_maximum_bias
+        ):
+            logging.warning(
+                "epipolar_median_shift is greater than "
+                "epipolar_maximum_bias {} > {}".format(
+                    np.abs(
+                        epipolar_median_shift - self.epipolar_error_estimation
+                    ),
+                    epipolar_error_maximum_bias,
+                )
+            )
+            epipolar_median_shift = self.epipolar_error_estimation
 
         # pylint: disable=invalid-unary-operand-type
         matches = matches[
-            ((matches[:, 3] - matches[:, 1]) - epipolar_median_shift)
+            ((matches[:, 1] - matches[:, 3]) - epipolar_median_shift)
             >= -epipolar_error_upper_bound
         ]
         matches = matches[
-            ((matches[:, 3] - matches[:, 1]) - epipolar_median_shift)
+            ((matches[:, 1] - matches[:, 3]) - epipolar_median_shift)
             <= epipolar_error_upper_bound
         ]
 
