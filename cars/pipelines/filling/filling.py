@@ -501,6 +501,7 @@ class FillingPipeline(PipelineTemplate):
         """
         result = copy.deepcopy(conf)
 
+        # pylint: disable=too-many-boolean-expressions
         def merge_recursive(base_dict, override_dict):
             """
             Main recursive function
@@ -517,7 +518,7 @@ class FillingPipeline(PipelineTemplate):
                     and key in base_dict
                     and isinstance(base_dict[key], list)
                     and isinstance(value, list)
-                    and key == "classification"
+                    and key in ("fill_classification", "fill_nodata")
                 ):
                     # extend list, avoiding duplicates
                     base_dict[key] = list(
@@ -557,8 +558,11 @@ class FillingPipeline(PipelineTemplate):
         for app_key in app_conf:
             if app_conf[app_key] is None:
                 continue
-            if "classification" in app_conf[app_key]:
-                filling_classif_values += app_conf[app_key]["classification"]
+            if "fill_classification" in app_conf[app_key]:
+                if app_conf[app_key]["fill_classification"] is not None:
+                    filling_classif_values += app_conf[app_key][
+                        "fill_classification"
+                    ]
 
         simplified_list = list(OrderedDict.fromkeys(filling_classif_values))
         res_as_string_list = [

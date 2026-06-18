@@ -1432,7 +1432,7 @@ def overide_pipeline_conf(conf, overiding_conf, append_classification=False):
                 and key in base_dict
                 and isinstance(base_dict[key], list)
                 and isinstance(value, list)
-                and key == "classification"
+                and key == "fill_classification"
             ):
                 # extend list, avoiding duplicates
                 base_dict[key] = list(
