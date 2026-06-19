@@ -75,7 +75,7 @@ class PipelineState:
     failed: int = 0
 
 
-class ProgressTree:
+class ProgressTree:  # pylint: disable=R0902
     """Singleton registry with pipeline-level weighted progress bars."""
 
     _instance: ProgressTree | None = None

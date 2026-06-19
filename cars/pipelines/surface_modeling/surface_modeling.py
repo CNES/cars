@@ -25,6 +25,7 @@
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=too-many-nested-blocks
 # pylint: disable=C0302
+# pylint: disable=design
 """
 CARS surface modeling pipeline class file
 """
@@ -138,6 +139,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
         quit_after_rasterization = self.quit_on_app("point_cloud_rasterization")
 
         def _expected_generate_disparity_grids_runs():
+            """
+            Calculate the expected number of runs for generate_disparity_grids
+            """
             expected_runs = 0
 
             if not quit_after_grid_or_resampling:
@@ -169,11 +173,17 @@ class SurfaceModelingPipeline(PipelineTemplate):
             return expected_runs
 
         def _expected_tie_points_runs():
+            """
+            Calculate the expected number of runs for tie_points
+            """
             if not has_tie_points_pipeline or quit_after_grid_or_resampling:
                 return 0
             return num_sensor_pairs
 
         def _expected_rasterize_point_cloud_runs():
+            """
+            Calculate the expected number of runs for rasterize_point_cloud
+            """
             if not self.save_output_dsm:
                 return 0
 
@@ -233,8 +243,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         # Return first task ID for orchestrator to track
         return self.task_ids["generate_disparity_grids"]
-
-    # pylint: disable=too-many-instance-attributes
 
     def __init__(
         self,

@@ -53,7 +53,7 @@ PIPELINE = "tie_points"
 @Pipeline.register(
     PIPELINE,
 )
-class TiePointsPipeline(PipelineTemplate):
+class TiePointsPipeline(PipelineTemplate):  # pylint: disable=R0902
     """
     Tie points pipeline
     """
@@ -77,8 +77,6 @@ class TiePointsPipeline(PipelineTemplate):
             weight=1,
         )
         return self.task_progress_id
-
-    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, conf, config_dir=None):
         """

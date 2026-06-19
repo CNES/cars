@@ -269,6 +269,7 @@ class PipelineTreeUI:
         max_width = 0
 
         def walk(current: UINode, depth: int) -> None:
+            """Recursively walk the tree to compute the maximum label width"""
             nonlocal max_width
             max_width = max(max_width, len(self._node_label(current, depth)))
             for child in current.children:
