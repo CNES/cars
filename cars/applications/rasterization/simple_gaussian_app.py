@@ -347,6 +347,7 @@ class SimpleGaussian(
             self.color_dtype = color_dtype
 
         if self.texture_no_data is None:
+            # pylint: disable=no-member
             if self.color_dtype is not None:
                 if "float" in self.color_dtype:
                     self.texture_no_data = np.finfo(self.color_dtype).max
@@ -982,6 +983,7 @@ def rasterization_wrapper(  # noqa: C901
     :return: digital surface model + projected colors
     :rtype: xr.Dataset
     """
+
     # update attributes
     attributes = copy.deepcopy(cloud.attrs)
     attributes.update(attributes.get("attributes", {}))

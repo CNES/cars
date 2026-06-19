@@ -132,6 +132,110 @@ def test_gizeh_with_low_res_dsm():
 
 
 @pytest.mark.end2end_tests
+def test_gizeh_sensor_depthmap():
+    """
+    End to end pipeline processing
+    """
+
+    atol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001
+    rtol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+                "low_res_dsm": absolute_data_path(
+                    "input/phr_gizeh/low_res_dsm.tif"
+                ),
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "output": {"directory": directory},
+            "surface_modeling": {
+                "advanced": {"use_sensor_disp": True},
+                "applications": {
+                    "triangulation": {"save_intermediate_data": True}
+                },
+            },
+        }
+
+        intermediate_dir = absolute_data_path("intermediate_data")
+        ref_output_dir = absolute_data_path("ref_output")
+
+        # api run
+        api_pipeline = SurfaceModelingPipeline(conf)
+        api_pipeline.run()
+
+        # output products
+        products = {
+            "dsm.tif": "dsm_test_surface_modeling_n_los.tif",
+        }
+
+        dsm_dir = os.path.join(directory, "dsm")
+
+        for filename, ref_name in products.items():
+            output_path = os.path.join(dsm_dir, filename)
+
+            # Save intermediate result
+            copy2(
+                output_path,
+                os.path.join(intermediate_dir, ref_name),
+            )
+
+            # Compare with reference
+            assert_same_images(
+                output_path,
+                os.path.join(ref_output_dir, ref_name),
+                atol=atol,
+                rtol=rtol,
+            )
+
+        intersection_path = (
+            "intersections_residues_test_surface_modeling_n_los.tif"
+        )
+        products = {
+            "Z.tif": "Z_test_surface_modeling_n_los.tif",
+            "intersections_residues.tif": intersection_path,
+        }
+        depth_map_dir = os.path.join(
+            directory, "dump_dir", "triangulation", "common_sensor", "tif"
+        )
+
+        for filename, ref_name in products.items():
+            output_path = os.path.join(depth_map_dir, filename)
+
+            # Save intermediate result
+            copy2(
+                output_path,
+                os.path.join(intermediate_dir, ref_name),
+            )
+
+            # Compare with reference
+            assert_same_images(
+                output_path,
+                os.path.join(ref_output_dir, ref_name),
+                atol=atol,
+                rtol=rtol,
+            )
+
+
+@pytest.mark.end2end_tests
 def test_ventoux_full():
     """
     End to end pipeline processing

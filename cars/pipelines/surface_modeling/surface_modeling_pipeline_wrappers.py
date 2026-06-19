@@ -23,6 +23,7 @@ CARS surface modeling pipeline class file
 
 from __future__ import print_function
 
+import os
 import warnings
 
 import numpy as np
@@ -61,8 +62,9 @@ def merge_filling_bands_wrapper(
     with rasterio.open(dsm_file) as in_dsm:
         dsm_msk = in_dsm.read_masks(1, window=rasterio_window)
 
-    with rasterio.open(invalidity_file) as src:
-        invalidity_mask = src.read(window=rasterio_window)
+    if os.path.exists(invalidity_file):
+        with rasterio.open(invalidity_file) as src:
+            invalidity_mask = src.read(window=rasterio_window)
 
     with rasterio.open(filling_path) as src:
         filling_multi_bands = src.read(window=rasterio_window)
@@ -99,13 +101,14 @@ def merge_filling_bands_wrapper(
                 continue
 
             if key == "interpolation":
-                filling_val = next(
-                    k for k, v in aux_filling.items() if v == key
-                )
-                filling_mono_bands[np.any(invalidity_mask == 1, axis=0)] = (
-                    filling_val
-                )
-                continue
+                if os.path.exists(invalidity_file):
+                    filling_val = next(
+                        k for k, v in aux_filling.items() if v == key
+                    )
+                    filling_mono_bands[np.any(invalidity_mask == 1, axis=0)] = (
+                        filling_val
+                    )
+                    continue
 
             if "zeros_padding" in dict_temp:
                 filling_val = next(

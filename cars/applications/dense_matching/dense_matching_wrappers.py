@@ -402,9 +402,11 @@ def create_disp_dataset(  # noqa: C901
             image_type = image_type[0]
     # Cast image
     if np.issubdtype(image_type, np.floating):
+        # pylint: disable=no-member
         min_value_clr = np.finfo(image_type).min
         max_value_clr = np.finfo(image_type).max
     else:
+        # pylint: disable=no-member
         min_value_clr = np.iinfo(image_type).min
         max_value_clr = np.iinfo(image_type).max
     epi_image = np.clip(epi_image, min_value_clr, max_value_clr).astype(

@@ -85,6 +85,10 @@ Advanced Parameters
       - A JSON file that maps each class of the global classification map to a corresponding Pandora configuration
       - str
       - "config_mapping.json"
+    * - use_sensor_disp
+      - A flag to indicate whether to use sensor disparity with n lines of sight triangulation
+      - bool
+      - False
 
 
 

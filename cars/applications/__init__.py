@@ -30,6 +30,7 @@ from . import dense_matching  # noqa: F401
 from . import dsm_filling  # noqa: F401
 from . import dsm_merging  # noqa: F401
 from . import dtm_generation  # noqa: F401
+from . import epipolar_to_sensor_matching  # noqa: F401
 from . import grid_correction  # noqa: F401
 from . import grid_generation  # noqa: F401
 from . import ground_truth_reprojection  # noqa: F401

@@ -465,30 +465,31 @@ def epipolar_small_component_removal_wrapper(
         clusters_distance_threshold=clusters_distance_threshold,
     )
 
-    mask_valid = np.all(
-        filtered_cloud[cst.EPI_INVALIDITY_MASK].values != 1, axis=0
-    )
+    if cst.EPI_INVALIDITY_MASK in filtered_cloud:
+        mask_valid = np.all(
+            filtered_cloud[cst.EPI_INVALIDITY_MASK].values != 1, axis=0
+        )
 
-    fillnodata(
-        filtered_cloud[cst.X],
-        mask=mask_valid,
-        max_search_distance=100,
-        smoothing_iterations=0,
-    )
+        fillnodata(
+            filtered_cloud[cst.X],
+            mask=mask_valid,
+            max_search_distance=100,
+            smoothing_iterations=0,
+        )
 
-    fillnodata(
-        filtered_cloud[cst.Y],
-        mask=mask_valid,
-        max_search_distance=100,
-        smoothing_iterations=0,
-    )
+        fillnodata(
+            filtered_cloud[cst.Y],
+            mask=mask_valid,
+            max_search_distance=100,
+            smoothing_iterations=0,
+        )
 
-    fillnodata(
-        filtered_cloud[cst.Z],
-        mask=mask_valid,
-        max_search_distance=100,
-        smoothing_iterations=0,
-    )
+        fillnodata(
+            filtered_cloud[cst.Z],
+            mask=mask_valid,
+            max_search_distance=100,
+            smoothing_iterations=0,
+        )
 
     # Fill with attributes
     cars_dataset.fill_dataset(

@@ -470,30 +470,31 @@ def epipolar_statistical_removal_wrapper(
         half_window_size=half_epipolar_size,
     )
 
-    mask_valid = np.all(
-        filtered_cloud[cst.EPI_INVALIDITY_MASK].values != 1, axis=0
-    )
+    if cst.EPI_INVALIDITY_MASK in filtered_cloud:
+        mask_valid = np.all(
+            filtered_cloud[cst.EPI_INVALIDITY_MASK].values != 1, axis=0
+        )
 
-    fillnodata(
-        filtered_cloud[cst.X],
-        mask=mask_valid,
-        max_search_distance=100,
-        smoothing_iterations=0,
-    )
+        fillnodata(
+            filtered_cloud[cst.X],
+            mask=mask_valid,
+            max_search_distance=100,
+            smoothing_iterations=0,
+        )
 
-    fillnodata(
-        filtered_cloud[cst.Y],
-        mask=mask_valid,
-        max_search_distance=100,
-        smoothing_iterations=0,
-    )
+        fillnodata(
+            filtered_cloud[cst.Y],
+            mask=mask_valid,
+            max_search_distance=100,
+            smoothing_iterations=0,
+        )
 
-    fillnodata(
-        filtered_cloud[cst.Z],
-        mask=mask_valid,
-        max_search_distance=100,
-        smoothing_iterations=0,
-    )
+        fillnodata(
+            filtered_cloud[cst.Z],
+            mask=mask_valid,
+            max_search_distance=100,
+            smoothing_iterations=0,
+        )
 
     # Fill with attributes
     cars_dataset.fill_dataset(

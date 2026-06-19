@@ -46,6 +46,7 @@ from shareloc import proj_utils
 from shareloc.geofunctions.rectification_grid import RectificationGrid
 
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 from cars.core import inputs, outputs, projection
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -454,6 +455,25 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
         """
+
+    def triangulate_n_los(  # pylint: disable=too-many-positional-arguments
+        self, geomodel1, geomodels2, sensor_matches
+    ) -> np.ndarray:
+        """
+        Performs triangulation from cars disparity or matches dataset
+
+        :param sensor1: path to left sensor image
+        :param sensors2: path to right sensor image
+        :param geomodel1: path and attributes for left geomodel
+        :param geomodels2: path and attributes for right geomodel
+        :param sensor_matches: list of matches for each sensor pair
+
+        :return: the long/lat/height numpy array in output of the triangulation
+        """
+
+        raise NotImplementedError(
+            "Triangulate n LOS not implemented for this geometry plugin"
+        )
 
     @staticmethod
     @abstractmethod
@@ -1160,3 +1180,36 @@ def min_max_to_index_min_max(xmin, xmax, ymin, ymax, transform):
         np.min(rows_pos),
         np.max(rows_pos),
     )
+
+
+def get_matches_to_sensor_coords_params(
+    matches: Union[xr.Dataset, np.ndarray],
+    mode: str,
+    roi_key: Union[None, str] = None,
+):
+    """
+    Returns parameters to use with AbstractGeometry.matches_to_sensor_coords
+
+    This function returns parameters to use with
+    AbstractGeometry.matches_to_sensor_coords according to
+    the mode (aka matches_type).
+
+    :param matches: cars disparity dataset or matches as numpy array
+    :param mode: triangulation mode
+        (cst.DISP_MODE or cst.MATCHES)
+    :param roi_key: dataset roi to use
+    :return: a tuple whose sequence is the
+        AbstractGeometry.matches_to_sensor_coords one.
+    """
+    ul_matches_shift = None
+    if mode is cst.DISP_MODE:
+        matches_disp = matches[cst_disp.MAP].values
+        matches_msk = matches[cst_disp.VALID].values
+        if roi_key is not None:
+            xmin, ymin, __, __ = matches.attrs[roi_key]
+            ul_matches_shift = (xmin, ymin)
+    else:
+        matches_disp = matches
+        matches_msk = matches
+
+    return matches_disp, mode, matches_msk, ul_matches_shift

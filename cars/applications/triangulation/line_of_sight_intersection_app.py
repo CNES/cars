@@ -30,7 +30,6 @@ from typing import Dict, Tuple
 
 # Third party imports
 import numpy as np
-import pandas
 import xarray as xr
 from json_checker import Checker
 from shareloc.geofunctions.rectification_grid import RectificationGrid
@@ -142,7 +141,7 @@ class LineOfSightIntersection(
     @cars_profile(name="Save triangulation output", interval=0.5)
     def save_triangulation_output(  # noqa: C901 function is too complex
         self,
-        epipolar_point_cloud,
+        epi_or_sens_point_cloud,
         sensor_image_left,
         output_dir,
         dump_dir=None,
@@ -154,6 +153,7 @@ class LineOfSightIntersection(
         save_output_performance_map=False,
         save_output_ambiguity=False,
         save_output_edges=False,
+        save_residues=False,
     ):
         """
         Save the triangulation output. The different TIFs composing the depth
@@ -219,7 +219,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(coords_output_dir, "X.tif"),
                 cst.X,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_x",
                 dtype=np.float64,
             )
@@ -227,7 +227,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(coords_output_dir, "Y.tif"),
                 cst.Y,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_y",
                 dtype=np.float64,
             )
@@ -235,8 +235,18 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(coords_output_dir, "Z.tif"),
                 cst.Z,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_z",
+                dtype=np.float64,
+            )
+
+        if save_residues or dump_dir:
+            residues_output_dir = output_dir if save_residues else dump_dir
+            self.orchestrator.add_to_save_lists(
+                os.path.join(residues_output_dir, "intersections_residues.tif"),
+                cst.INDEX_DEPTH_MAP_INTERSECTIONS_RESIDUES,
+                epi_or_sens_point_cloud,
+                cars_ds_name="depth_map_intersections_residues",
                 dtype=np.float64,
             )
 
@@ -245,7 +255,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(color_output_dir, "image.tif"),
                 cst.EPI_TEXTURE,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_color",
                 dtype=color_type,
             )
@@ -262,7 +272,7 @@ class LineOfSightIntersection(
                 self.orchestrator.add_to_save_lists(
                     os.path.join(map_output_dir, tail_path),
                     cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_INTERVALS,
-                    epipolar_point_cloud,
+                    epi_or_sens_point_cloud,
                     cars_ds_name="depth_map_performance_map_from_intervals",
                     optional_data=True,
                     dtype=np.float64,
@@ -275,7 +285,7 @@ class LineOfSightIntersection(
                 self.orchestrator.add_to_save_lists(
                     os.path.join(map_output_dir, tail_path),
                     cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_RISK,
-                    epipolar_point_cloud,
+                    epi_or_sens_point_cloud,
                     cars_ds_name="depth_map_performance_map_from_risk",
                     optional_data=True,
                     dtype=np.float64,
@@ -286,7 +296,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(map_output_dir, "ambiguity.tif"),
                 cst.EPI_AMBIGUITY,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_ambiguity",
                 optional_data=True,
                 dtype=np.float64,
@@ -299,7 +309,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(classif_output_dir, "classification.tif"),
                 cst.EPI_CLASSIFICATION,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_classification",
                 optional_data=True,
                 dtype=np.uint8,
@@ -310,7 +320,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(filling_output_dir, "filling.tif"),
                 cst.EPI_FILLING,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_filling",
                 optional_data=True,
                 dtype=np.uint8,
@@ -322,7 +332,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(edges_output_dir, "edges_mask.tif"),
                 cst.EPI_EDGES_MASK,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_edges_mask",
                 dtype=np.uint8,
                 optional_data=True,
@@ -330,7 +340,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(edges_output_dir, "edges_depth_map.tif"),
                 cst.EPI_EDGES_DEPTH_MAP,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_edges_depth_map",
                 dtype=np.float32,
                 optional_data=True,
@@ -338,7 +348,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(edges_output_dir, "edges_normals.tif"),
                 cst.EPI_EDGES_NORMALS,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_edges_normals",
                 dtype=np.float32,
                 optional_data=True,
@@ -346,7 +356,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(edges_output_dir, "edges_tile_id.tif"),
                 cst.EPI_EDGES_TILE_ID,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_edges_tile_id",
                 dtype=np.uint8,
                 optional_data=True,
@@ -357,13 +367,13 @@ class LineOfSightIntersection(
                 self.orchestrator.add_to_save_lists(
                     os.path.join(dump_dir, "Z_inf_from_intervals.tif"),
                     cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS,
-                    epipolar_point_cloud,
+                    epi_or_sens_point_cloud,
                     cars_ds_name="depth_map_z_inf_from_intervals",
                 )
                 self.orchestrator.add_to_save_lists(
                     os.path.join(dump_dir, "Z_sup_from_intervals.tif"),
                     cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS,
-                    epipolar_point_cloud,
+                    epi_or_sens_point_cloud,
                     cars_ds_name="depth_map_z_sup_from_intervals",
                 )
 
@@ -371,13 +381,13 @@ class LineOfSightIntersection(
                 self.orchestrator.add_to_save_lists(
                     os.path.join(dump_dir, "Z_inf_from_risk.tif"),
                     cst.POINT_CLOUD_LAYER_INF_FROM_RISK,
-                    epipolar_point_cloud,
+                    epi_or_sens_point_cloud,
                     cars_ds_name="depth_map_z_inf_from_risk",
                 )
                 self.orchestrator.add_to_save_lists(
                     os.path.join(dump_dir, "Z_sup_from_risk.tif"),
                     cst.POINT_CLOUD_LAYER_SUP_FROM_RISK,
-                    epipolar_point_cloud,
+                    epi_or_sens_point_cloud,
                     cars_ds_name="depth_map_z_sup_from_risk",
                 )
 
@@ -385,7 +395,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(dump_dir, "corr_mask.tif"),
                 cst.POINT_CLOUD_CORR_MSK,
-                epipolar_point_cloud,
+                epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_corr_msk",
                 optional_data=True,
             )
@@ -400,6 +410,7 @@ class LineOfSightIntersection(
         save_output_performance_map=False,
         save_output_ambiguity=False,
         save_output_edges=False,
+        save_residues=False,
         pair_key="PAIR_0",
     ):
         """
@@ -434,6 +445,11 @@ class LineOfSightIntersection(
         if save_output_color:
             index[cst.INDEX_DEPTH_MAP_COLOR] = os.path.join(
                 pair_key, "image.tif"
+            )
+
+        if save_residues:
+            index[cst.INDEX_DEPTH_MAP_INTERSECTIONS_RESIDUES] = os.path.join(
+                pair_key, "intersections_residues.tif"
             )
 
         if save_output_performance_map:
@@ -502,7 +518,7 @@ class LineOfSightIntersection(
         if self.save_intermediate_data or point_cloud_dir is not None:
             if point_cloud_dir is not None:
                 laz_pc_dir_name = os.path.join(point_cloud_dir, "laz")
-                os.makedirs(laz_pc_dir_name)
+                os.makedirs(laz_pc_dir_name, exist_ok=True)
             else:
                 laz_pc_dir_name = os.path.join(pair_dump_dir, "laz")
             safe_makedirs(laz_pc_dir_name)
@@ -515,12 +531,13 @@ class LineOfSightIntersection(
     def run(  # pylint: disable=too-many-positional-arguments  # noqa: C901
         self,
         sensor_image_left,
-        sensor_image_right,
-        grid_left,
-        grid_right,
-        epipolar_disparity_map,
+        sensor_images_right,
         geometry_plugin,
-        epipolar_image,
+        sensor_matches=None,
+        grid_left=None,
+        grid_right=None,
+        epipolar_disparity_map=None,
+        epipolar_image=None,
         epsg=None,
         denoising_overload_fun=None,
         source_pc_names=None,
@@ -540,6 +557,7 @@ class LineOfSightIntersection(
         save_output_performance_map=False,
         save_output_ambiguity=False,
         save_output_edges=False,
+        save_residues=False,
     ):
         """
         Run Triangulation application.
@@ -551,10 +569,10 @@ class LineOfSightIntersection(
             Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_left: CarsDataset
-        :param sensor_image_right: tiled sensor right image
+        :param sensor_images_right: tiled sensor right image
             Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolutes
-        :type sensor_image_right: CarsDataset
+        :type sensor_images_right: CarsDataset
         :param grid_left: left epipolar grid. Grid dict contains :
             - "grid_spacing", "grid_origin",\
                 "epipolar_size_x", epipolar_size_y", "epipolar_origin_x",\
@@ -630,6 +648,8 @@ class LineOfSightIntersection(
         :param save_output_edges: Save edges in
                 depth_map_dir
         :type save_output_edges: bool
+        :param save_residues: Save intersections residues in depth_map_dir
+        :type save_residues: bool
 
         :return: point cloud \
                 The CarsDataset contains:
@@ -645,6 +665,44 @@ class LineOfSightIntersection(
 
         :rtype: Tuple(CarsDataset, CarsDataset)
         """
+
+        if not isinstance(sensor_images_right, list):
+            sensor_images_right = [sensor_images_right]
+
+        # Check parameters, to diferentiate sensor or epipolar triangulation
+        epi_parameters = [
+            epipolar_disparity_map,
+            epipolar_image,
+            grid_left,
+            grid_right,
+            uncorrected_grid_right,
+        ]
+        sensor_parameters = [sensor_matches]
+        check_epi = all(x is None for x in epi_parameters) or all(
+            x is not None for x in epi_parameters
+        )
+        check_sensor = all(x is None for x in sensor_parameters) or all(
+            x is not None for x in sensor_parameters
+        )
+
+        is_epipolar = check_epi and sensor_matches is None
+
+        if is_epipolar:
+            matches_cars_dss = [epipolar_disparity_map]
+        else:
+            matches_cars_dss = sensor_matches
+
+        if not check_epi or not check_sensor:
+            raise RuntimeError(
+                "For triangulation on epipolar geometry, all these parameters "
+                "must be provided: epipolar_disparity_map, epipolar_image,"
+                "uncorrected_grid_right "
+                "grid_left and grid_right. \n"
+                "For triangulation on sensor geometry N views, all "
+                "these parameters "
+                "must be provided: sensor matches"
+            )
+
         # Default orchestrator
         if orchestrator is None:
             # Create default sequential orchestrator for current application
@@ -656,7 +714,7 @@ class LineOfSightIntersection(
         else:
             self.orchestrator = orchestrator
 
-        if epipolar_disparity_map.dataset_type not in ("arrays", "points"):
+        if matches_cars_dss[0].dataset_type not in ("arrays", "points"):
             raise RuntimeError(
                 "Triangulation application doesn't support this input "
                 "data format"
@@ -665,81 +723,32 @@ class LineOfSightIntersection(
         if isinstance(point_cloud_format, str):
             point_cloud_format = [point_cloud_format]
 
-        # Interpolate grid
-        interpolated_grid_left = RectificationGrid(
-            grid_left["path"],
-            interpolator=geometry_plugin.interpolator,
-        )
-        interpolated_grid_right = RectificationGrid(
-            grid_right["path"],
-            interpolator=geometry_plugin.interpolator,
-        )
-
-        broadcasted_interpolated_grid_left = self.orchestrator.cluster.scatter(
-            interpolated_grid_left
-        )
-        broadcasted_interpolated_grid_right = self.orchestrator.cluster.scatter(
-            interpolated_grid_right
-        )
-
         sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
-        sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+        sensors2 = [sens[sens_cst.INPUT_IMG] for sens in sensor_images_right]
         geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
-        geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
+        geomodels2 = [
+            sens[sens_cst.INPUT_GEO_MODEL] for sens in sensor_images_right
+        ]
 
-        disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
+        if is_epipolar:
+            # Interpolate grid
+            interpolated_grid_left = RectificationGrid(
+                grid_left["path"],
+                interpolator=geometry_plugin.interpolator,
+            )
+            interpolated_grid_right = RectificationGrid(
+                grid_right["path"],
+                interpolator=geometry_plugin.interpolator,
+            )
 
-        if epipolar_disparity_map.dataset_type != "points":
-            if source_pc_names is None:
-                source_pc_names = ["PAIR_0"]
+            broadcasted_interpolated_grid_left = (
+                self.orchestrator.cluster.scatter(interpolated_grid_left)
+            )
+            broadcasted_interpolated_grid_right = (
+                self.orchestrator.cluster.scatter(interpolated_grid_right)
+            )
 
-            if pair_dump_dir is None:
-                pair_dump_dir = os.path.join(self.orchestrator.out_dir, "tmp")
-
-            # Get local conf left image for this in_json iteration
-            conf_left_img = sensor_image_left[sens_cst.INPUT_IMG]
-            # Check left image and raise a warning
-            # if different left images are used along with snap_to_img1 mode
-            if self.ref_left_img is None:
-                self.ref_left_img = conf_left_img
-            else:
-                if self.snap_to_img1 and self.ref_left_img != conf_left_img:
-                    logging.warning(
-                        "snap_to_left_image mode is used but inputs "
-                        "have different images as their "
-                        "left image in pair. This may result in "
-                        "increasing registration discrepancies between pairs"
-                    )
-
-            # Add log about geoid
-            if geoid_path is not None:
-                alt_reference = "geoid"
-            else:
-                alt_reference = "ellipsoid"
-
-            # Add infos to orchestrator.out_json
-            updating_dict = {
-                application_constants.APPLICATION_TAG: {
-                    triangulation_constants.TRIANGULATION_RUN_TAG: {
-                        pair_key: {
-                            triangulation_constants.ALT_REFERENCE_TAG: (
-                                alt_reference
-                            )
-                        },
-                    }
-                }
-            }
-            self.orchestrator.update_out_info(updating_dict)
-
-            if self.snap_to_img1:
-                grid_right = uncorrected_grid_right
-                if grid_right is None:
-                    logging.error(
-                        "Uncorrected grid was not given in order "
-                        "to snap it to img1"
-                    )
-
-            # Compute disp_min and disp_max location for epipolar grid
+            disp_to_alt_ratio = grid_left["disp_to_alt_ratio"]
 
             # Transform
             disp_min_tiling = epipolar_disparity_map.attributes[
@@ -765,246 +774,287 @@ class LineOfSightIntersection(
                     epipolar_image.tiling_grid
                 ),
                 sensor1,
-                sensor2,
+                sensors2[0],
                 geomodel1,
-                geomodel2,
+                geomodels2[0],
                 grid_left,
                 grid_right,
                 epsg,
                 disp_min_tiling,
                 disp_max_tiling,
             )
-            # update attributes for corresponding tiles in cloud fusion
-            # TODO remove with refactoring
-            pc_attributes = {
-                "used_epsg_for_terrain_grid": epsg,
-                "epipolar_grid_min": epipolar_grid_min,
-                "epipolar_grid_max": epipolar_grid_max,
-                "largest_epipolar_region": epipolar_image.attributes[
-                    "largest_epipolar_region"
-                ],
-                "source_pc_names": source_pc_names,
-                "source_pc_name": pair_key,
-                "color_type": epipolar_image.attributes["image_type"],
-                "opt_epipolar_tile_size": epipolar_image.attributes[
-                    "tile_width"
-                ],
-            }
 
-            if geoid_path:
-                pc_attributes["geoid"] = (geoid_path,)
-
-            if epipolar_disparity_map.dataset_type not in ("arrays", "points"):
-                raise RuntimeError(
-                    "Triangulation application doesn't support this input "
-                    "data format"
-                )
-
-            # Check performance_maps_parameters
-            performance_maps_to_generate = None
-            if performance_maps_param is not None:
-                if "performance_map_method" not in performance_maps_param:
-                    raise RuntimeError("No performance_map_method specified")
-                performance_maps_to_generate = performance_maps_param[
-                    "performance_map_method"
-                ]
-                if "perf_ambiguity_threshold" not in performance_maps_param:
-                    raise RuntimeError("No perf_ambiguity_threshold specified")
-
-            # Create CarsDataset
-            # Epipolar_point_cloud
-            epipolar_point_cloud = cars_dataset.CarsDataset(
-                epipolar_disparity_map.dataset_type,
-                name="triangulation_" + pair_key,
-            )
-            epipolar_point_cloud.create_empty_copy(epipolar_disparity_map)
-
-            # Update attributes to get epipolar info
-            epipolar_point_cloud.attributes.update(pc_attributes)
-
-            # Save objects
-            # Save as depth map
-            self.save_triangulation_output(
-                epipolar_point_cloud,
-                sensor_image_left,
-                point_cloud_dir,
-                pair_dump_dir if self.save_intermediate_data else None,
-                performance_maps_to_generate,
-                save_output_coordinates,
-                save_output_color,
-                save_output_classification,
-                save_output_filling,
-                save_output_performance_map,
-                save_output_ambiguity,
-                save_output_edges,
-            )
-            self.fill_index(
-                save_output_coordinates,
-                save_output_color,
-                save_output_classification,
-                save_output_filling,
-                save_output_performance_map,
-                save_output_ambiguity,
-                save_output_edges,
-                pair_key,
-            )
-            # Save as point cloud
-            point_cloud = cars_dataset.CarsDataset(
-                "points",
-                name="triangulation_flatten_" + pair_key,
-            )
-            point_cloud.create_empty_copy(epipolar_point_cloud)
-            point_cloud.attributes = epipolar_point_cloud.attributes
-
-            csv_pc_dir_name = None
-            laz_pc_dir_name = None
-            if "laz" in point_cloud_format:
-                csv_pc_dir_name, laz_pc_dir_name = (
-                    self.create_point_cloud_directories(
-                        pair_dump_dir, point_cloud_dir, point_cloud
-                    )
-                )
-
-            # Get saving infos in order to save tiles when they are computed
-            [saving_info_epipolar] = self.orchestrator.get_saving_infos(
-                [epipolar_point_cloud]
-            )
-            saving_info_flatten = None
-            if self.save_intermediate_data or point_cloud_dir is not None:
-                [saving_info_flatten] = self.orchestrator.get_saving_infos(
-                    [point_cloud]
-                )
-
-            # Generate Point clouds
-
-            # initialize empty index file for point cloud product if official
-            # product is requested
-            pc_index = None
-            if point_cloud_dir:
-                pc_index = {}
-
-            for col in range(epipolar_disparity_map.shape[1]):
-                for row in range(epipolar_disparity_map.shape[0]):
-                    if epipolar_disparity_map[row, col] is not None:
-                        # update saving infos  for potential replacement
-                        full_saving_info_epipolar = ocht.update_saving_infos(
-                            saving_info_epipolar, row=row, col=col
-                        )
-                        full_saving_info_flatten = None
-                        if saving_info_flatten is not None:
-                            full_saving_info_flatten = ocht.update_saving_infos(
-                                saving_info_flatten, row=row, col=col
-                            )
-
-                        csv_pc_file_name, laz_pc_file_name = (
-                            triangulation_wrap.generate_point_cloud_file_names(
-                                csv_pc_dir_name,
-                                laz_pc_dir_name,
-                                row,
-                                col,
-                                pc_index,
-                                pair_key,
-                            )
-                        )
-
-                        # Compute points
-                        (
-                            epipolar_point_cloud[row][col],
-                            point_cloud[row][col],
-                        ) = self.orchestrator.cluster.create_task(
-                            triangulation_wrapper, nout=2
-                        )(
-                            epipolar_disparity_map[row, col],
-                            sensor1,
-                            sensor2,
-                            geomodel1,
-                            geomodel2,
-                            broadcasted_interpolated_grid_left,
-                            broadcasted_interpolated_grid_right,
-                            geometry_plugin,
-                            epsg,
-                            self.z_inf_sup_bh_approximation,
-                            disp_to_alt_ratio,
-                            geoid_path=geoid_path,
-                            denoising_overload_fun=denoising_overload_fun,
-                            cloud_id=cloud_id,
-                            performance_maps_to_generate=(
-                                performance_maps_to_generate
-                            ),
-                            performance_maps_parameters=performance_maps_param,
-                            point_cloud_csv_file_name=csv_pc_file_name,
-                            point_cloud_laz_file_name=laz_pc_file_name,
-                            saving_info_epipolar=full_saving_info_epipolar,
-                            saving_info_flatten=full_saving_info_flatten,
-                        )
-
-            # update point cloud index
-            if point_cloud_dir:
-                self.orchestrator.update_index(pc_index)
-
+            largest_epipolar_region = epipolar_image.attributes[
+                "largest_epipolar_region"
+            ]
+            color_type = epipolar_image.attributes["image_type"]
+            opt_epipolar_tile_size = epipolar_image.attributes["tile_width"]
         else:
-            epipolar_point_cloud = cars_dataset.CarsDataset(
-                "points", name="pandora_sparse_matching_" + pair_key
-            )
-            epipolar_point_cloud.create_empty_copy(epipolar_disparity_map)
+            broadcasted_interpolated_grid_left = None
+            broadcasted_interpolated_grid_right = None
 
-            # Update attributes to get epipolar info
-            epipolar_point_cloud.attributes.update(epipolar_image.attributes)
+            disp_to_alt_ratio = (
+                None  # TODO evolve for performance map generation
+            )
+            epipolar_grid_min = None
+            epipolar_grid_max = None
+            largest_epipolar_region = None
+            color_type = None
+            opt_epipolar_tile_size = None
 
-            # Add to replace list so tiles will be readable at the same time
-            self.orchestrator.add_to_replace_lists(
-                epipolar_point_cloud,
-                cars_ds_name="triangulated_matches",
+        if source_pc_names is None:
+            source_pc_names = ["PAIR_0"]
+
+        if pair_dump_dir is None:
+            pair_dump_dir = os.path.join(self.orchestrator.out_dir, "tmp")
+
+        # Get local conf left image for this in_json iteration
+        conf_left_img = sensor_image_left[sens_cst.INPUT_IMG]
+        # Check left image and raise a warning
+        # if different left images are used along with snap_to_img1 mode
+        if self.ref_left_img is None:
+            self.ref_left_img = conf_left_img
+        else:
+            if self.snap_to_img1 and self.ref_left_img != conf_left_img:
+                logging.warning(
+                    "snap_to_left_image mode is used but inputs "
+                    "have different images as their "
+                    "left image in pair. This may result in "
+                    "increasing registration discrepancies between pairs"
+                )
+
+        # Add log about geoid
+        if geoid_path is not None:
+            alt_reference = "geoid"
+        else:
+            alt_reference = "ellipsoid"
+
+        # Add infos to orchestrator.out_json
+        updating_dict = {
+            application_constants.APPLICATION_TAG: {
+                triangulation_constants.TRIANGULATION_RUN_TAG: {
+                    pair_key: {
+                        triangulation_constants.ALT_REFERENCE_TAG: (
+                            alt_reference
+                        )
+                    },
+                }
+            }
+        }
+        self.orchestrator.update_out_info(updating_dict)
+
+        if self.snap_to_img1:
+            grid_right = uncorrected_grid_right
+            if grid_right is None:
+                logging.error(
+                    "Uncorrected grid was not given in order "
+                    "to snap it to img1"
+                )
+
+        # Compute disp_min and disp_max location for epipolar grid
+
+        # update attributes for corresponding tiles in cloud fusion
+        # TODO remove with refactoring
+        pc_attributes = {
+            "used_epsg_for_terrain_grid": epsg,
+            "epipolar_grid_min": epipolar_grid_min,
+            "epipolar_grid_max": epipolar_grid_max,
+            "largest_epipolar_region": largest_epipolar_region,
+            "source_pc_names": source_pc_names,
+            "source_pc_name": pair_key,
+            "color_type": color_type,
+            "opt_epipolar_tile_size": opt_epipolar_tile_size,
+        }
+
+        if geoid_path:
+            pc_attributes["geoid"] = (geoid_path,)
+
+        if matches_cars_dss[0].dataset_type != "arrays":
+            raise RuntimeError(
+                "Triangulation application doesn't support this input "
+                "data format"
             )
 
-            # Get saving infos in order to save tiles when they are computed
-            [saving_info_matches] = self.orchestrator.get_saving_infos(
-                [epipolar_point_cloud]
+        # Check performance_maps_parameters
+        performance_maps_to_generate = None
+        if performance_maps_param is not None:
+            if "performance_map_method" not in performance_maps_param:
+                raise RuntimeError("No performance_map_method specified")
+            performance_maps_to_generate = performance_maps_param[
+                "performance_map_method"
+            ]
+            if "perf_ambiguity_threshold" not in performance_maps_param:
+                raise RuntimeError("No perf_ambiguity_threshold specified")
+
+        # Create CarsDataset
+        # Epipolar_point_cloud or sensor depth map
+        sens_or_epi_depth_map = cars_dataset.CarsDataset(
+            matches_cars_dss[0].dataset_type,
+            name="triangulation_" + pair_key,
+        )
+        sens_or_epi_depth_map.create_empty_copy(matches_cars_dss[0])
+
+        # Update attributes to get epipolar info
+        sens_or_epi_depth_map.attributes.update(pc_attributes)
+
+        # Save objects
+        # Save as depth map
+        self.save_triangulation_output(
+            sens_or_epi_depth_map,
+            sensor_image_left,
+            point_cloud_dir,
+            pair_dump_dir if self.save_intermediate_data else None,
+            performance_maps_to_generate,
+            save_output_coordinates,
+            save_output_color,
+            save_output_classification,
+            save_output_filling,
+            save_output_performance_map,
+            save_output_ambiguity,
+            save_output_edges,
+            save_residues,
+        )
+        self.fill_index(
+            save_output_coordinates,
+            save_output_color,
+            save_output_classification,
+            save_output_filling,
+            save_output_performance_map,
+            save_output_ambiguity,
+            save_output_edges,
+            save_residues,
+            pair_key,
+        )
+        # Save as point cloud
+        point_cloud = cars_dataset.CarsDataset(
+            "points",
+            name="triangulation_flatten_" + pair_key,
+        )
+        point_cloud.create_empty_copy(sens_or_epi_depth_map)
+        point_cloud.attributes = sens_or_epi_depth_map.attributes
+
+        csv_pc_dir_name = None
+        laz_pc_dir_name = None
+        if "laz" in point_cloud_format:
+            csv_pc_dir_name, laz_pc_dir_name = (
+                self.create_point_cloud_directories(
+                    pair_dump_dir, point_cloud_dir, point_cloud
+                )
             )
-            for col in range(epipolar_disparity_map.shape[1]):
-                for row in range(epipolar_disparity_map.shape[0]):
-                    if epipolar_disparity_map[row, col] is not None:
-                        # initialize list of matches
-                        full_saving_info_matches = ocht.update_saving_infos(
-                            saving_info_matches, row=row, col=col
+
+        # Get saving infos in order to save tiles when they are computed
+        [saving_info_point_cloud] = self.orchestrator.get_saving_infos(
+            [sens_or_epi_depth_map]
+        )
+        saving_info_flatten = None
+        if self.save_intermediate_data or point_cloud_dir is not None:
+            [saving_info_flatten] = self.orchestrator.get_saving_infos(
+                [point_cloud]
+            )
+
+        # Generate Point clouds
+
+        # initialize empty index file for point cloud product if official
+        # product is requested
+        pc_index = None
+        if point_cloud_dir:
+            pc_index = {}
+
+        for col in range(sens_or_epi_depth_map.shape[1]):
+            for row in range(sens_or_epi_depth_map.shape[0]):
+                if matches_cars_dss[0][row, col] is not None:
+                    # update saving infos  for potential replacement
+                    full_saving_info_epipolar = ocht.update_saving_infos(
+                        saving_info_point_cloud, row=row, col=col
+                    )
+                    full_saving_info_flatten = None
+                    if saving_info_flatten is not None:
+                        full_saving_info_flatten = ocht.update_saving_infos(
+                            saving_info_flatten, row=row, col=col
                         )
 
-                        # Compute points
-                        (
-                            epipolar_point_cloud[row][col]
-                        ) = self.orchestrator.cluster.create_task(
-                            triangulation_wrapper_matches, nout=1
-                        )(
-                            epipolar_disparity_map[row, col],
-                            sensor1,
-                            sensor2,
-                            geomodel1,
-                            geomodel2,
-                            broadcasted_interpolated_grid_left,
-                            broadcasted_interpolated_grid_right,
-                            geometry_plugin,
-                            full_saving_info_matches,
-                            epsg,
-                            self.z_inf_sup_bh_approximation,
-                            disp_to_alt_ratio,
+                    csv_pc_file_name, laz_pc_file_name = (
+                        triangulation_wrap.generate_point_cloud_file_names(
+                            csv_pc_dir_name,
+                            laz_pc_dir_name,
+                            row,
+                            col,
+                            pc_index,
+                            pair_key,
                         )
+                    )
 
-        return epipolar_point_cloud
+                    if is_epipolar:
+                        wrapper_kwargs = {
+                            "grid1": broadcasted_interpolated_grid_left,
+                            "grid2": broadcasted_interpolated_grid_right,
+                            "disparity_object": epipolar_disparity_map[
+                                row, col
+                            ],
+                            "disp_to_alt_ratio": disp_to_alt_ratio,
+                        }
+
+                    else:
+                        sensor_matches = [
+                            cars_ds[row, col] for cars_ds in matches_cars_dss
+                        ]
+                        wrapper_kwargs = {
+                            "sensor_matches": sensor_matches,
+                        }
+
+                    # Compute points
+                    (
+                        sens_or_epi_depth_map[row][col],
+                        point_cloud[row][col],
+                    ) = self.orchestrator.cluster.create_task(
+                        triangulation_wrapper, nout=2
+                    )(
+                        is_epipolar,
+                        sensor1,
+                        sensors2,
+                        geomodel1,
+                        geomodels2,
+                        geometry_plugin,
+                        epsg,
+                        z_inf_sup_bh_approximation=(
+                            self.z_inf_sup_bh_approximation
+                        ),
+                        geoid_path=geoid_path,
+                        denoising_overload_fun=denoising_overload_fun,
+                        cloud_id=cloud_id,
+                        performance_maps_to_generate=(
+                            performance_maps_to_generate
+                        ),
+                        performance_maps_parameters=performance_maps_param,
+                        point_cloud_csv_file_name=csv_pc_file_name,
+                        point_cloud_laz_file_name=laz_pc_file_name,
+                        saving_info_epipolar=full_saving_info_epipolar,
+                        saving_info_flatten=full_saving_info_flatten,
+                        **wrapper_kwargs,
+                    )
+
+        # update point cloud index
+        if point_cloud_dir:
+            self.orchestrator.update_index(pc_index)
+
+        return sens_or_epi_depth_map
 
 
 def triangulation_wrapper(  # noqa: C901 function is too complex
     # pylint: disable=too-many-positional-arguments
-    disparity_object: xr.Dataset,
+    is_epipolar,
     sensor1,
-    sensor2,
+    sensors2,
     geomodel1,
-    geomodel2,
-    grid1,
-    grid2,
+    geomodels2,
     geometry_plugin,
     epsg,
-    z_inf_sup_bh_approximation,
-    disp_to_alt_ratio,
+    grid1=None,
+    grid2=None,
+    disparity_object=None,
+    sensor_matches=None,
+    z_inf_sup_bh_approximation=True,
+    disp_to_alt_ratio=None,
     geoid_path=None,
     denoising_overload_fun=None,
     cloud_id=None,
@@ -1060,142 +1110,136 @@ def triangulation_wrapper(  # noqa: C901 function is too complex
             - cst.Z_SUP (optional)
     """
 
-    # Get disparity maps
-    disp_ref = disparity_object
+    if is_epipolar:
+        # Get disparity maps
+        matches_dataset = disparity_object
 
-    # Triangulate
-    if isinstance(disp_ref, xr.Dataset):
+        # Triangulate
+        if not isinstance(matches_dataset, xr.Dataset):
+            logging.error("Disp ref not xarray Dataset")
+            raise TypeError("Disp ref not xarray Dataset")
+
         # Triangulate epipolar dense disparities
         points = triangulation_algo.triangulate(
             geometry_plugin,
             sensor1,
-            sensor2,
+            sensors2,
             geomodel1,
-            geomodel2,
-            grid1,
-            grid2,
-            disp_ref,
-        )
-
-        if performance_maps_to_generate is not None:
-            for perf_method in performance_maps_to_generate:
-                # Generate keys to use
-                if perf_method == "risk":
-                    # From pandora loader overload
-                    disp_keys = [
-                        "confidence_from_disp_inf_from_risk.cars_2",
-                        "confidence_from_disp_sup_from_risk.cars_2",
-                    ]
-                    cars_inf_key = cst.POINT_CLOUD_LAYER_SUP_FROM_RISK
-                    cars_sup_key = cst.POINT_CLOUD_LAYER_INF_FROM_RISK
-                    cars_perf_key = cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_RISK
-                    use_ambiguity = True
-                else:
-                    # From pandora loader overload
-                    disp_keys = [
-                        "confidence_from_interval_bounds_inf.cars_3",
-                        "confidence_from_interval_bounds_sup.cars_3",
-                    ]
-                    cars_inf_key = cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS
-                    cars_sup_key = cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS
-                    cars_perf_key = (
-                        cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_INTERVALS
-                    )
-                    use_ambiguity = False
-
-                ambiguity_map = None
-                perf_ambiguity_threshold = None
-                if use_ambiguity:
-                    ambiguity_map = disp_ref["ambiguity"]
-                    perf_ambiguity_threshold = performance_maps_parameters[
-                        "perf_ambiguity_threshold"
-                    ]
-
-                if z_inf_sup_bh_approximation:
-                    z_points = points[cst.STEREO_REF][cst.Z]
-                    disp_min = disp_ref[disp_keys[0]]
-                    disp_max = disp_ref[disp_keys[1]]
-
-                    points_inf = (
-                        -disp_to_alt_ratio * (disp_min - disp_ref["disp"])
-                        + z_points.values
-                    )
-
-                    points_sup = (
-                        -disp_to_alt_ratio * (disp_max - disp_ref["disp"])
-                        + z_points.values
-                    )
-
-                    points[cst.STEREO_REF][cars_inf_key] = (
-                        ("row", "col"),
-                        points_inf.data,
-                    )
-                    points[cst.STEREO_REF][cars_sup_key] = (
-                        ("row", "col"),
-                        points_sup.data,
-                    )
-                else:
-                    # triangulate disp inf and supp
-                    points_inf = triangulation_algo.triangulate(
-                        geometry_plugin,
-                        sensor1,
-                        sensor2,
-                        geomodel1,
-                        geomodel2,
-                        grid1,
-                        grid2,
-                        disp_ref,
-                        disp_key=disp_keys[0],
-                    )
-
-                    points_sup = triangulation_algo.triangulate(
-                        geometry_plugin,
-                        sensor1,
-                        sensor2,
-                        geomodel1,
-                        geomodel2,
-                        grid1,
-                        grid2,
-                        disp_ref,
-                        disp_key=disp_keys[1],
-                    )
-
-                    points[cst.STEREO_REF][cars_inf_key] = points_inf[
-                        cst.STEREO_REF
-                    ][cst.Z]
-                    points[cst.STEREO_REF][cars_sup_key] = points_sup[
-                        cst.STEREO_REF
-                    ][cst.Z]
-
-                # Generate performance map
-                points[cst.STEREO_REF][cars_perf_key] = (
-                    triangulation_wrap.compute_performance_map(
-                        points[cst.STEREO_REF][cst.Z],
-                        points[cst.STEREO_REF][cars_inf_key],
-                        points[cst.STEREO_REF][cars_sup_key],
-                        ambiguity_map=ambiguity_map,
-                        perf_ambiguity_threshold=perf_ambiguity_threshold,
-                    )
-                )
-
-    elif isinstance(disp_ref, pandas.DataFrame):
-        # Triangulate epipolar sparse matches
-        points = {}
-        points[cst.STEREO_REF] = triangulation_algo.triangulate_matches(
-            geometry_plugin,
-            sensor1,
-            sensor2,
-            geomodel1,
-            geomodel2,
-            grid1,
-            grid2,
-            disp_ref.to_numpy(),
+            geomodels2,
+            grid1=grid1,
+            grid2=grid2,
+            disp_ref=matches_dataset,
         )
     else:
-        logging.error("Disp ref is neither xarray Dataset nor pandas DataFrame")
-        raise TypeError(
-            "Disp ref is neither xarray Dataset nor pandas DataFrame"
+        matches_dataset = sensor_matches[0]
+        # Triangulate sensor dense matches
+        points = triangulation_algo.triangulate(
+            geometry_plugin,
+            sensor1,
+            sensors2,
+            geomodel1,
+            geomodels2,
+            sensor_matches=sensor_matches,
         )
+
+    if performance_maps_to_generate is not None and is_epipolar:
+        for perf_method in performance_maps_to_generate:
+            # Generate keys to use
+            if perf_method == "risk":
+                # From pandora loader overload
+                disp_keys = [
+                    "confidence_from_disp_inf_from_risk.cars_2",
+                    "confidence_from_disp_sup_from_risk.cars_2",
+                ]
+                cars_inf_key = cst.POINT_CLOUD_LAYER_SUP_FROM_RISK
+                cars_sup_key = cst.POINT_CLOUD_LAYER_INF_FROM_RISK
+                cars_perf_key = cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_RISK
+                use_ambiguity = True
+            else:
+                # From pandora loader overload
+                disp_keys = [
+                    "confidence_from_interval_bounds_inf.cars_3",
+                    "confidence_from_interval_bounds_sup.cars_3",
+                ]
+                cars_inf_key = cst.POINT_CLOUD_LAYER_SUP_FROM_INTERVALS
+                cars_sup_key = cst.POINT_CLOUD_LAYER_INF_FROM_INTERVALS
+                cars_perf_key = cst.POINT_CLOUD_PERFORMANCE_MAP_FROM_INTERVALS
+                use_ambiguity = False
+
+            ambiguity_map = None
+            perf_ambiguity_threshold = None
+            if use_ambiguity:
+                ambiguity_map = matches_dataset["ambiguity"]
+                perf_ambiguity_threshold = performance_maps_parameters[
+                    "perf_ambiguity_threshold"
+                ]
+
+            if z_inf_sup_bh_approximation:
+                z_points = points[cst.STEREO_REF][cst.Z]
+                disp_min = matches_dataset[disp_keys[0]]
+                disp_max = matches_dataset[disp_keys[1]]
+
+                points_inf = (
+                    -disp_to_alt_ratio * (disp_min - matches_dataset["disp"])
+                    + z_points.values
+                )
+
+                points_sup = (
+                    -disp_to_alt_ratio * (disp_max - matches_dataset["disp"])
+                    + z_points.values
+                )
+
+                points[cst.STEREO_REF][cars_inf_key] = (
+                    ("row", "col"),
+                    points_inf.data,
+                )
+                points[cst.STEREO_REF][cars_sup_key] = (
+                    ("row", "col"),
+                    points_sup.data,
+                )
+            else:
+                # triangulate disp inf and supp
+                points_inf = triangulation_algo.triangulate(
+                    geometry_plugin,
+                    sensor1,
+                    sensors2,
+                    geomodel1,
+                    geomodels2,
+                    grid1,
+                    grid2,
+                    matches_dataset,
+                    disp_key=disp_keys[0],
+                )
+
+                points_sup = triangulation_algo.triangulate(
+                    geometry_plugin,
+                    sensor1,
+                    sensors2,
+                    geomodel1,
+                    geomodels2,
+                    grid1,
+                    grid2,
+                    matches_dataset,
+                    disp_key=disp_keys[1],
+                )
+
+                points[cst.STEREO_REF][cars_inf_key] = points_inf[
+                    cst.STEREO_REF
+                ][cst.Z]
+                points[cst.STEREO_REF][cars_sup_key] = points_sup[
+                    cst.STEREO_REF
+                ][cst.Z]
+
+            # Generate performance map
+            points[cst.STEREO_REF][cars_perf_key] = (
+                triangulation_wrap.compute_performance_map(
+                    points[cst.STEREO_REF][cst.Z],
+                    points[cst.STEREO_REF][cars_inf_key],
+                    points[cst.STEREO_REF][cars_sup_key],
+                    ambiguity_map=ambiguity_map,
+                    perf_ambiguity_threshold=perf_ambiguity_threshold,
+                )
+            )
 
     if geoid_path is not None:  # if user pass a geoid, use it as alt reference
         for key, point in points.items():
@@ -1211,29 +1255,29 @@ def triangulation_wrapper(  # noqa: C901 function is too complex
             denoising_overload_fun(
                 pc_dataset,
                 sensor1,
-                sensor2,
+                sensors2,
                 geomodel1,
-                geomodel2,
+                geomodels2,
                 grid1,
                 grid2,
                 geometry_plugin,
-                disp_ref,
+                matches_dataset,
             )
         else:
             raise RuntimeError("wrong pc type for denoising func")
 
     attributes = {
         cst.CROPPED_DISPARITY_RANGE: (
-            ocht.get_disparity_range_cropped(disparity_object)
+            ocht.get_disparity_range_cropped(matches_dataset)
         )
     }
     cars_dataset.fill_dataset(
         pc_dataset,
         saving_info=saving_info_epipolar,
-        window=cars_dataset.get_window_dataset(disparity_object),
-        profile=cars_dataset.get_profile_rasterio(disparity_object),
+        window=cars_dataset.get_window_dataset(matches_dataset),
+        profile=cars_dataset.get_profile_rasterio(matches_dataset),
         attributes=attributes,
-        overlaps=cars_dataset.get_overlaps_dataset(disparity_object),
+        overlaps=cars_dataset.get_overlaps_dataset(matches_dataset),
     )
 
     # Flatten point cloud to save it as LAZ

@@ -23,12 +23,13 @@ General application configuration module
 """
 
 
-def get_needed_apps(
+def get_needed_apps(  # pylint: disable=too-many-positional-arguments
     sensors_in_inputs,
     save_output_dsm,
     save_output_point_cloud,
     save_output_dtm,
     conf,
+    use_sensor_disp,
 ):
     """
     This function returns the apps needed by the CARS pipeline,
@@ -46,6 +47,11 @@ def get_needed_apps(
             "triangulation",
             "dem_generation",
         ]
+
+        if use_sensor_disp:
+            needed_applications += [
+                "epipolar_to_sensor_matching",
+            ]
 
         add_default_pc_outlier_removal = True
         for key in conf:

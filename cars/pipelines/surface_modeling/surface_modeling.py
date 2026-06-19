@@ -237,6 +237,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.land_cover_map,
             self.classification_to_config_mapping,
             bounds,
+            self.use_sensor_disp,
         ) = advanced_parameters.check_advanced_parameters(
             inputs,
             pipeline_conf.get(ADVANCED, {}),
@@ -521,6 +522,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.save_output_point_cloud,
             self.save_output_dtm,
             conf,
+            self.use_sensor_disp,
         )
 
         # Check if all specified applications are used
@@ -559,6 +561,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.rasterization_application = None
         self.pc_fusion_application = None
         self.grid_correction_app = None
+
+        self.epipolar_to_sensor_matching_app = None
+        self.triangulation_n_los_app = None
 
         # Epipolar grid generation
         self.epipolar_grid_generation_application = Application(
@@ -654,6 +659,16 @@ class SurfaceModelingPipeline(PipelineTemplate):
             scaling_coeff=scaling_coeff,
         )
         used_conf["dense_matching"] = self.dense_matching_app.get_conf()
+
+        # epipolar to sensor matching
+        if self.use_sensor_disp:
+            self.epipolar_to_sensor_matching_app = Application(
+                "epipolar_to_sensor_matching",
+                cfg=used_conf.get("epipolar_to_sensor_matching", {}),
+            )
+            used_conf["epipolar_to_sensor_matching"] = (
+                self.epipolar_to_sensor_matching_app.get_conf()
+            )
 
         # Triangulation
         self.triangulation_application = Application(
@@ -871,9 +886,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         return application_conf
 
-    def sensor_to_depth_maps(self):  # noqa: C901
+    def sensor_to_disparity(self):  # noqa: C901
         """
-        Creates the depth map from the sensor images given in the input,
+        Creates the disparity map from the sensor images given in the input,
         by following the CARS pipeline's steps.
         """
         # pylint:disable=too-many-return-statements
@@ -1013,6 +1028,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 self.geometry_plugin,
                 self.geom_plugin_without_dem_and_geoid,
                 self.geom_plugin_with_dem_and_geoid,
+                _,
                 _,
                 _,
                 _,
@@ -1385,7 +1401,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
             # end of for loop, to finish computing disparity range grids
 
-        for cloud_id, (pair_key, _, _) in enumerate(self.list_sensor_pairs):
+        for _, (pair_key, _, _) in enumerate(self.list_sensor_pairs):
 
             # Generate roi
             epipolar_roi = preprocessing.compute_epipolar_roi(
@@ -1440,8 +1456,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
             # Run third epipolar resampling
             (
-                new_epipolar_image_left,
-                new_epipolar_image_right,
+                self.pairs[pair_key]["new_epipolar_image_left"],
+                self.pairs[pair_key]["new_epipolar_image_right"],
             ) = self.resampling_application.run(
                 self.pairs[pair_key]["sensor_image_left"],
                 self.pairs[pair_key]["sensor_image_right"],
@@ -1532,7 +1548,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     preprocessing.compute_terrain_bbox(
                         self.pairs[pair_key]["sensor_image_left"],
                         self.pairs[pair_key]["sensor_image_right"],
-                        new_epipolar_image_left,
+                        self.pairs[pair_key]["new_epipolar_image_left"],
                         self.pairs[pair_key]["corrected_grid_left"],
                         self.pairs[pair_key]["corrected_grid_right"],
                         self.epsg,
@@ -1617,8 +1633,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
             # Run epipolar matching application
             epipolar_disparity_map = self.dense_matching_app.run(
-                new_epipolar_image_left,
-                new_epipolar_image_right,
+                self.pairs[pair_key]["new_epipolar_image_left"],
+                self.pairs[pair_key]["new_epipolar_image_right"],
                 local_tile_optimal_size_fun,
                 orchestrator=self.cars_orchestrator,
                 pair_folder=os.path.join(
@@ -1639,36 +1655,135 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 continue  # keep iterating over pairs, but don't go further
 
             # Fill with zeros
-            (filled_epipolar_disparity_map) = self.dense_match_filling.run(
-                epipolar_disparity_map,
-                orchestrator=self.cars_orchestrator,
-                pair_folder=os.path.join(
-                    self.dump_dir, "dense_match_filling", pair_key
-                ),
-                pair_key=pair_key,
+            (self.pairs[pair_key]["filled_epipolar_disparity_map"]) = (
+                self.dense_match_filling.run(
+                    epipolar_disparity_map,
+                    orchestrator=self.cars_orchestrator,
+                    pair_folder=os.path.join(
+                        self.dump_dir, "dense_match_filling", pair_key
+                    ),
+                    pair_key=pair_key,
+                )
             )
 
             if self.quit_on_app("dense_match_filling"):
                 continue  # keep iterating over pairs, but don't go further
 
-            if isinstance(output[sens_cst.GEOID], str):
-                output_geoid_path = output[sens_cst.GEOID]
-            elif (
-                isinstance(output[sens_cst.GEOID], bool)
-                and output[sens_cst.GEOID]
-            ):
-                package_path = os.path.dirname(__file__)
-                output_geoid_path = os.path.join(
-                    package_path,
-                    "..",
-                    "..",
-                    "conf",
-                    sensor_inputs.CARS_GEOID_PATH,
-                )
-            else:
-                # default case : stay on the ellipsoid
-                output_geoid_path = None
+        # quit if any app in the loop over the pairs was the last one
+        # pylint:disable=too-many-boolean-expressions
+        if self.quit_on_app("dense_matching") or self.quit_on_app(
+            "dense_match_filling"
+        ):
+            return True
 
+        return False
+
+    def disparity_to_depth_maps(self):  # noqa: C901
+        """
+        Creates the depth map from the disparity maps,
+        by following the CARS pipeline's steps.
+        """
+
+        output = self.used_conf[OUTPUT]
+
+        if isinstance(output[sens_cst.GEOID], str):
+            output_geoid_path = output[sens_cst.GEOID]
+        elif (
+            isinstance(output[sens_cst.GEOID], bool) and output[sens_cst.GEOID]
+        ):
+            package_path = os.path.dirname(__file__)
+            output_geoid_path = os.path.join(
+                package_path,
+                "..",
+                "..",
+                "conf",
+                sensor_inputs.CARS_GEOID_PATH,
+            )
+        else:
+            # default case : stay on the ellipsoid
+            output_geoid_path = None
+
+        if self.use_sensor_disp:
+
+            sensor_depth_maps_dir = os.path.join(
+                self.dump_dir, "sensor_dense_matching"
+            )
+            safe_makedirs(sensor_depth_maps_dir)
+
+            # TODO: add warning in checker if not always common image
+
+            sensor_matches = []
+            sensor_common_image = None
+            sensor_inputs_secondary = []
+            # Generate sensor matches
+            for _, (pair_key, _, _) in enumerate(self.list_sensor_pairs):
+                depth_map_pair_dir = os.path.join(
+                    sensor_depth_maps_dir, pair_key
+                )
+                if sensor_common_image is None:
+                    sensor_common_image = self.pairs[pair_key][
+                        "sensor_image_left"
+                    ]
+                else:
+                    if (
+                        self.pairs[pair_key]["sensor_image_left"]
+                        != sensor_common_image
+                    ):
+                        raise RuntimeError("No common reference image.")
+                safe_makedirs(depth_map_pair_dir)
+                self.pairs[pair_key]["sensor_dense_matches"] = (
+                    self.epipolar_to_sensor_matching_app.run(
+                        self.pairs[pair_key]["sensor_image_left"],
+                        self.pairs[pair_key]["corrected_grid_left"],
+                        self.pairs[pair_key]["corrected_grid_right"],
+                        self.pairs[pair_key]["filled_epipolar_disparity_map"],
+                        orchestrator=self.cars_orchestrator,
+                        pair_folder=depth_map_pair_dir,
+                        pair_key=pair_key,
+                    )
+                )
+                # Generate triangulation input
+                sensor_matches.append(
+                    self.pairs[pair_key]["sensor_dense_matches"]
+                )
+                sensor_inputs_secondary.append(
+                    self.pairs[pair_key]["sensor_image_right"]
+                )
+
+                if self.quit_on_app("sensor_matching"):
+                    continue
+
+            triangulation_kwargs = {"sensor_matches": sensor_matches}
+
+            cloud_id_mono = 0
+            pair_key = "common_sensor"
+            self.pairs[pair_key] = {
+                "sensor_image_left": sensor_common_image,
+                "sensor_image_right": sensor_inputs_secondary,
+            }
+
+            iter_list = [(cloud_id_mono, pair_key, triangulation_kwargs)]
+
+        else:
+            iter_list = []
+            for cloud_id, (pair_key, _, _) in enumerate(self.list_sensor_pairs):
+                triangulation_kwargs = {
+                    "grid_left": self.pairs[pair_key]["corrected_grid_left"],
+                    "grid_right": self.pairs[pair_key]["corrected_grid_right"],
+                    "epipolar_disparity_map": self.pairs[pair_key][
+                        "filled_epipolar_disparity_map"
+                    ],
+                    "epipolar_image": self.pairs[pair_key][
+                        "new_epipolar_image_left"
+                    ],
+                    "uncorrected_grid_right": self.pairs[pair_key][
+                        "grid_right"
+                    ],
+                }
+
+                iter_list.append((cloud_id, pair_key, triangulation_kwargs))
+
+        for cloud_id, pair_key, triangulation_kwargs in iter_list:
             point_cloud_dir = None
             if self.save_output_point_cloud:
                 point_cloud_dir = os.path.join(
@@ -1688,15 +1803,11 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 else None
             )
 
-            # Run epipolar triangulation application
-            epipolar_point_cloud = self.triangulation_application.run(
+            # Run triangulation application : sensor or epipolar
+            point_cloud = self.triangulation_application.run(
                 self.pairs[pair_key]["sensor_image_left"],
                 self.pairs[pair_key]["sensor_image_right"],
-                self.pairs[pair_key]["corrected_grid_left"],
-                self.pairs[pair_key]["corrected_grid_right"],
-                filled_epipolar_disparity_map,
                 self.geom_plugin_without_dem_and_geoid,
-                new_epipolar_image_left,
                 epsg=self.epsg,
                 denoising_overload_fun=None,
                 source_pc_names=self.pairs_names,
@@ -1705,7 +1816,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     self.dump_dir, "triangulation", pair_key
                 ),
                 pair_key=pair_key,
-                uncorrected_grid_right=self.pairs[pair_key]["grid_right"],
                 geoid_path=output_geoid_path,
                 cloud_id=cloud_id,
                 performance_maps_param=(
@@ -1734,15 +1844,16 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 save_output_edges=bool(point_cloud_dir)
                 and self.auxiliary[out_cst.AUX_EDGES]
                 and "tif" in self.product_format["point_cloud"],
+                save_residues=bool(point_cloud_dir) and self.use_sensor_disp,
+                **triangulation_kwargs,
             )
 
             if self.quit_on_app("triangulation"):
                 continue  # keep iterating over pairs, but don't go further
 
-            filtered_epipolar_point_cloud = epipolar_point_cloud
+            filtered_epipolar_point_cloud = point_cloud
             filtering_point_cloud_dir = None
             for app_key, app in self.pc_outlier_removal_apps.items():
-
                 app_key_is_last = (
                     app_key == list(self.pc_outlier_removal_apps)[-1]
                 )
@@ -1765,8 +1876,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     epsg=self.epsg,
                     orchestrator=self.cars_orchestrator,
                 )
-            if self.quit_on_app("point_cloud_outlier_removal"):
-                continue  # keep iterating over pairs, but don't go further
+                if self.quit_on_app("point_cloud_outlier_removal"):
+                    continue  # keep iterating over pairs, but don't go further
 
             self.list_epipolar_point_clouds.append(
                 filtered_epipolar_point_cloud
@@ -1783,45 +1894,42 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 if d is not None
             ]
 
-            if len(dir_to_check) != 0:
-                for folder in dir_to_check:
-                    if "tif" in self.product_format["point_cloud"]:
-                        true_path = os.path.join(folder, "tif")
-                        true_path = Path(true_path)
-                        for file in true_path.iterdir():
-                            if (
-                                not os.path.exists(file)
-                                or os.path.getsize(file) == 0
-                            ):
-                                raise RuntimeError(
-                                    "The file {} generated at resolution "
-                                    "{} is empty".format(file, self.working_res)
+            if len(dir_to_check) == 0:
+                continue
+            for folder in dir_to_check:
+                if "tif" not in self.product_format["point_cloud"]:
+                    continue
+                true_path = os.path.join(folder, "tif")
+                true_path = Path(true_path)
+                for file in true_path.iterdir():
+                    if not os.path.exists(file) or os.path.getsize(file) == 0:
+                        raise RuntimeError(
+                            "The file {} generated at resolution "
+                            "{} is empty".format(file, self.working_res)
+                        )
+
+                    with rasterio.open(file) as src:
+                        is_full_nan = True
+                        for _, window in src.block_windows(1):
+                            data = src.read(1, window=window)
+                            is_full_nan = np.isnan(data).all()
+
+                            if not is_full_nan:
+                                break
+
+                        if is_full_nan:
+                            raise RuntimeError(
+                                "The file {} generated at "
+                                "resolution"
+                                "{} is full of nan".format(
+                                    file, self.working_res
                                 )
-
-                            with rasterio.open(file) as src:
-                                is_full_nan = True
-                                for _, window in src.block_windows(1):
-                                    data = src.read(1, window=window)
-                                    is_full_nan = np.isnan(data).all()
-
-                                    if not is_full_nan:
-                                        break
-
-                                if is_full_nan:
-                                    raise RuntimeError(
-                                        "The file {} generated at "
-                                        "resolution"
-                                        "{} is full of nan".format(
-                                            file, self.working_res
-                                        )
-                                    )
+                            )
 
         # quit if any app in the loop over the pairs was the last one
         # pylint:disable=too-many-boolean-expressions
         if (
-            self.quit_on_app("dense_matching")
-            or self.quit_on_app("dense_match_filling")
-            or self.quit_on_app("triangulation")
+            self.quit_on_app("triangulation")
             or self.quit_on_app("point_cloud_outlier_removal.1")
             or self.quit_on_app("point_cloud_outlier_removal.2")
         ):
@@ -2190,6 +2298,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
         """
         Merge invalidity mask bands to get mono band in output
         """
+        if not os.path.exists(invalidity_mask_path):
+            logging.warning("no invalidity mask to merge")
+            return False
         with rasterio.open(dsm_file) as in_dsm:
             dsm_msk = in_dsm.read_masks(1)
 
@@ -2321,7 +2432,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.cars_orchestrator.update_out_info({"version": __version__})
 
             if self.compute_depth_map:
-                self.sensor_to_depth_maps()
+                stop = self.sensor_to_disparity()
+                if not stop:
+                    self.disparity_to_depth_maps()
 
             if self.save_output_dsm or self.save_output_point_cloud:
                 self.preprocess_depth_maps()

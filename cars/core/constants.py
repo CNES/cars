@@ -63,6 +63,15 @@ STEREO_SEC = "sec"
 
 CROPPED_DISPARITY_RANGE = "cropped_disparity_range"
 
+
+# Sensor dataset fields
+SENSOR_RIGHT_ROW = "sensor_right_row"
+SENSOR_RIGHT_COL = "sensor_right_col"
+SENSOR_LEFT_ROW = "sensor_left_row"
+SENSOR_LEFT_COL = "sensor_left_col"
+
+SENSOR = "sensor"
+
 # epipolar image dataset
 EPI_IMAGE = "im"  # has to be synchronized with the PANDORA input format
 EPI_MSK = "msk"  # has to be synchronized with the PANDORA input format
@@ -177,6 +186,7 @@ INDEX_DEPTH_MAP_COLOR = "image"
 INDEX_DEPTH_MAP_MASK = "mask"
 INDEX_DEPTH_MAP_CLASSIFICATION = "classification"
 INDEX_DEPTH_MAP_PERFORMANCE_MAP = "performance_map"
+INDEX_DEPTH_MAP_INTERSECTIONS_RESIDUES = "intersections_residues"
 INDEX_DEPTH_MAP_AMBIGUITY = "ambiguity"
 INDEX_DEPTH_MAP_FILLING = "filling"
 INDEX_DEPTH_MAP_INVALIDITY_MASK = "invalidity_mask"

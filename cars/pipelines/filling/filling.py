@@ -759,6 +759,7 @@ class FillingPipeline(PipelineTemplate):
                 _,
                 _,
                 _,
+                _,
             ) = advanced_parameters.check_advanced_parameters(
                 inputs_conf,
                 self.used_conf.get(ADVANCED, {}),
