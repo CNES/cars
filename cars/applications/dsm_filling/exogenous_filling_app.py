@@ -125,7 +125,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         self,
         dsm_file,
         classif_file,
-        filling_file,
         invalidity_mask_file,
         classif_values,
         dump_dir,
@@ -155,10 +154,10 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
         if dsm_dir is not None:
             dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
-            filling_path_out = os.path.join(dsm_dir, "filling.tif")
         else:
             dsm_path_out = dsm_file
-            filling_path_out = filling_file
+
+        filling_path_out = os.path.join(dump_dir, "filling.tif")
 
         if self.fill_classification is None:
             self.fill_classification = ["nodata"]
@@ -222,37 +221,25 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             cars_ds_name="exogenous_filled_dsm",
         )
 
-        if filling_file is not None:
-            with rio.open(filling_file, "r") as src:
-                filling_dtype = src.dtypes[0]
-                filling_nodata_value = src.nodata
-                # count will be count += 1
-                band_description = [
-                    (i + 1, src.descriptions[i]) for i in range(src.count)
-                ]
-                band_description.append(
-                    (len(band_description) + 1, "filling_exogenous")
-                )
+        band_description = [(1, "filling_exogenous")]
 
-            orchestrator.add_to_save_lists(
-                filling_path_out,
-                "exogenous_filled_filling",
-                filled_dsm_cars_ds,
-                dtype=filling_dtype,
-                nodata=filling_nodata_value,
-                optional_data=False,
-                cars_ds_name="exogenous_filled_filling",
-                rio_band_description=band_description,
-            )
+        orchestrator.add_to_save_lists(
+            filling_path_out,
+            "exogenous_filled_filling",
+            filled_dsm_cars_ds,
+            dtype=np.uint8,
+            nodata=255,
+            optional_data=False,
+            cars_ds_name="exogenous_filled_filling",
+            rio_band_description=band_description,
+        )
 
         old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
         new_dsm_path = os.path.join(dump_dir, "dsm_filled.tif")
-        old_filling_path = None
+
         # Save old dsm
         shutil.copy(dsm_file, old_dsm_path)
-        if filling_file is not None:
-            old_filling_path = os.path.join(dump_dir, "filling_not_filled.tif")
-            shutil.copy(filling_file, old_filling_path)
+
         if self.save_intermediate_data:
             # save new
             orchestrator.add_to_save_lists(
@@ -321,7 +308,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
                     exogenous_filling_wrapper, nout=1
                 )(
                     old_dsm_path,
-                    old_filling_path,
                     classif_file,
                     invalidity_mask_file,
                     classif_values,
@@ -344,7 +330,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
 
 def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     dsm_file,
-    filling_file,
     classif_file,
     invalidity_mask_file,
     classif_values,
@@ -551,20 +536,10 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
         "col": np.arange(dsm.shape[1]),
     }
 
-    if filling_file is not None:
-        # create combined filling
-        with rio.open(filling_file) as in_filling:
-            nb_bands_filling = in_filling.count + 1
-            filling = in_filling.read(window=rasterio_window)
-            # add layer combined_mask to filling
-            combined_mask = combined_mask[np.newaxis, :, :]
-            filling = np.concatenate((filling, combined_mask), axis=0)
-
-        data["exogenous_filled_filling"] = (
-            ["band_filling", "row", "col"],
-            filling,
-        )
-        coords["band_filling"] = np.arange(1, nb_bands_filling + 1)
+    data["exogenous_filled_filling"] = (
+        ["row", "col"],
+        combined_mask,
+    )
 
     if output_geoid_data is not None:
         data["reprojected_output_geoid"] = (["row", "col"], output_geoid_data)

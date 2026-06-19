@@ -118,7 +118,6 @@ def test_fill_dsm(method):
             kwargs = {
                 "dsm_file": input_dsm_noroi,
                 "classif_file": None,
-                "filling_file": None,
                 "invalidity_mask_file": None,
                 "classif_values": [],
                 "dump_dir": dump_dir,
