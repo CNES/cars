@@ -573,7 +573,6 @@ class FillingPipeline(PipelineTemplate):
     @cars_profile(name="merge filling bands", interval=0.5)
     def merge_filling_bands(  # pylint: disable=R0917
         self,
-        in_filling_path,
         out_filling_path,
         aux_filling,
         dsm_file,
@@ -583,26 +582,22 @@ class FillingPipeline(PipelineTemplate):
         """
         Merge filling bands to get mono band in output
         """
-
         if orchestrator is None:
             orchestrator = ocht.Orchestrator(
                 orchestrator_conf={"mode": "sequential"}
             )
 
-        with rasterio.open(in_filling_path) as src:
-            nb_bands = src.count
-
-            if nb_bands == 1:
-                return None
-
+        with rasterio.open(dsm_file) as src:
             profile = src.profile
             height = src.height
             width = src.width
-            filling_dtype = src.dtypes[0]
-            nodata_value = src.nodata
+            filling_dtype = "uint8"
+            nodata_value = 255
 
-        # Update to one band
-        profile.update(count=1, dtype=filling_dtype)
+            profile["crs"] = profile["crs"].to_wkt()
+
+            # Update to one band
+        profile.update(count=1, dtype=filling_dtype, crs=profile["crs"])
 
         filling_cars_ds = cars_dataset.CarsDataset(
             "arrays", name="Monoband Filling"
@@ -645,9 +640,9 @@ class FillingPipeline(PipelineTemplate):
                 (filling_cars_ds[row, col]) = orchestrator.cluster.create_task(
                     merge_filling_bands_wrapper, nout=1
                 )(
-                    in_filling_path,
                     aux_filling,
                     dsm_file,
+                    self.dump_dir,
                     window=window,
                     saving_info=full_saving_info,
                     profile=profile,
@@ -693,16 +688,6 @@ class FillingPipeline(PipelineTemplate):
             in self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]
             else None
         )
-
-        # create filling file
-        with rasterio.open(dsm_file_name) as src:
-            profile = src.profile
-
-        profile.update(dtype="uint8", nodata=255)
-
-        filling_file_name = os.path.join(dsm_filled_dir, "filling.tif")
-        with rasterio.open(filling_file_name, "w", **profile):
-            pass
 
         if inputs_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] is None:
             dems = {}
@@ -841,7 +826,6 @@ class FillingPipeline(PipelineTemplate):
                 _ = app.run(
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
-                    filling_file=filling_file_name,
                     invalidity_mask_file=invalidity_mask_file_name,
                     classif_values=classif_values,
                     dump_dir=app_dump_dir,
@@ -857,7 +841,6 @@ class FillingPipeline(PipelineTemplate):
                 _ = app.run(
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
-                    filling_file=filling_file_name,
                     invalidity_mask_file=invalidity_mask_file_name,
                     classif_values=classif_values,
                     dump_dir=app_dump_dir,
@@ -870,7 +853,6 @@ class FillingPipeline(PipelineTemplate):
                 _, dtm_file_name = app.run(
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
-                    filling_file=filling_file_name,
                     invalidity_mask_file=invalidity_mask_file_name,
                     classif_values=classif_values,
                     dump_dir=app_dump_dir,
@@ -885,7 +867,6 @@ class FillingPipeline(PipelineTemplate):
                 _ = app.run(
                     dsm_file=dsm_file_name,
                     classif_file=classif_file_name,
-                    filling_file=filling_file_name,
                     invalidity_mask_file=invalidity_mask_file_name,
                     classif_values=classif_values,
                     dtm_file=dtm_file_name,
@@ -902,12 +883,6 @@ class FillingPipeline(PipelineTemplate):
 
             if dsm_file_name == self.dsm_to_fill["dsm"]:
                 dsm_file_name = os.path.join(dsm_filled_dir, "dsm.tif")
-
-            if "filling" in self.used_conf[INPUT][pipeline_cst.DSM_TO_FILL]:
-                if filling_file_name == self.dsm_to_fill["filling"]:
-                    filling_file_name = os.path.join(
-                        dsm_filled_dir, "filling.tif"
-                    )
 
             self.cars_orchestrator.breakpoint()
 
@@ -926,28 +901,15 @@ class FillingPipeline(PipelineTemplate):
         )
         self.cars_orchestrator.breakpoint()
 
-        if (
-            filling_file_name is not None
-            and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]
-        ):
-            tmp_filling_file_name = os.path.join(
-                dsm_filled_dir, "tmp_filling.tif"
-            )
-
-            merged_filling = self.merge_filling_bands(
-                os.path.join(dsm_filled_dir, "filling.tif"),
-                tmp_filling_file_name,
+        if self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]:
+            out_filling_file_name = os.path.join(dsm_filled_dir, "filling.tif")
+            _ = self.merge_filling_bands(
+                out_filling_file_name,
                 self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING],
                 dsm_file_name,
                 orchestrator=self.cars_orchestrator,
             )
             self.cars_orchestrator.breakpoint()
-            # move tmp fillinf to final filling
-            if merged_filling is not None:
-                os.replace(
-                    tmp_filling_file_name,
-                    os.path.join(dsm_filled_dir, "filling.tif"),
-                )
 
         return True
 

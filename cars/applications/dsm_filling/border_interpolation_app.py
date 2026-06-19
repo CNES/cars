@@ -119,7 +119,6 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         self,
         dsm_file,
         classif_file,
-        filling_file,
         invalidity_mask_file,
         classif_values,
         dtm_file,
@@ -147,10 +146,10 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         if dsm_dir is not None:
             dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
-            filling_path_out = os.path.join(dsm_dir, "filling.tif")
         else:
             dsm_path_out = dsm_file
-            filling_path_out = filling_file
+
+        filling_path_out = os.path.join(dump_dir, "filling.tif")
 
         if self.fill_classification is None:
             self.fill_classification = ["nodata"]
@@ -200,38 +199,24 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             cars_ds_name="border_interp_filled_dsm",
         )
 
-        if filling_file is not None:
-            with rio.open(filling_file, "r") as src:
-                filling_dtype = src.dtypes[0]
-                filling_nodata_value = src.nodata
-                # count will be count += 1
-                band_description = [
-                    (i + 1, src.descriptions[i]) for i in range(src.count)
-                ]
-                band_description.append(
-                    (len(band_description) + 1, "border_interpolation")
-                )
+        band_description = [(1, "border_interpolation")]
 
-            orchestrator.add_to_save_lists(
-                filling_path_out,
-                "border_interp_filled_filling",
-                filled_dsm_cars_ds,
-                dtype=filling_dtype,
-                nodata=filling_nodata_value,
-                optional_data=False,
-                cars_ds_name="border_interp_filled_filling",
-                rio_band_description=band_description,
-            )
+        orchestrator.add_to_save_lists(
+            filling_path_out,
+            "border_interp_filled_filling",
+            filled_dsm_cars_ds,
+            dtype=np.uint8,
+            nodata=255,
+            optional_data=False,
+            cars_ds_name="border_interp_filled_filling",
+            rio_band_description=band_description,
+        )
 
         old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
         new_dsm_path = os.path.join(dump_dir, "dsm_filled.tif")
-        old_filling_path = None
         borders_file_path = os.path.join(dump_dir, "borders.tif")
         # Save old dsm
         shutil.copy(dsm_file, old_dsm_path)
-        if filling_file is not None:
-            old_filling_path = os.path.join(dump_dir, "filling_not_filled.tif")
-            shutil.copy(filling_file, old_filling_path)
 
         if self.save_intermediate_data:
             # save new
@@ -271,7 +256,6 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
                     border_interp_filled_dsm_filling_wrapper, nout=1
                 )(
                     old_dsm_path,
-                    filling_file,
                     classif_file,
                     invalidity_mask_file,
                     classif_values,
@@ -293,7 +277,6 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
 def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     dsm_file,
-    filling_file,
     classif_file,
     invalidity_mask_file,
     classif_values,
@@ -492,20 +475,10 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
         "col": np.arange(dsm.shape[1]),
     }
 
-    if filling_file is not None:
-        # create combined filling
-        with rio.open(filling_file) as in_filling:
-            nb_bands_filling = in_filling.count + 1
-            filling = in_filling.read(window=rasterio_window)
-            # add layer combined_mask to filling
-            combined_mask = combined_mask[np.newaxis, :, :]
-            filling = np.concatenate((filling, combined_mask), axis=0)
-
-        data["border_interp_filled_filling"] = (
-            ["band_filling", "row", "col"],
-            filling,
-        )
-        coords["band_filling"] = np.arange(1, nb_bands_filling + 1)
+    data["border_interp_filled_filling"] = (
+        ["row", "col"],
+        combined_mask,
+    )
 
     if stacked_labels is not None:
         data["features_boundaries"] = (

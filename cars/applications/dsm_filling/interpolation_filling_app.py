@@ -114,7 +114,6 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
         self,
         dsm_file,
         classif_file,
-        filling_file,
         invalidity_mask_file,
         classif_values,
         dump_dir,
@@ -141,10 +140,10 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
 
         if dsm_dir is not None:
             dsm_path_out = os.path.join(dsm_dir, "dsm.tif")
-            filling_path_out = os.path.join(dsm_dir, "filling.tif")
         else:
             dsm_path_out = dsm_file
-            filling_path_out = filling_file
+
+        filling_path_out = os.path.join(dump_dir, "filling.tif")
 
         if self.fill_classification is None:
             self.fill_classification = ["nodata"]
@@ -184,34 +183,21 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
             cars_ds_name="interpolation_filled_dsm",
         )
 
-        if filling_file is not None:
-            with rio.open(filling_file, "r") as src:
-                filling_dtype = src.dtypes[0]
-                filling_nodata_value = src.nodata
-                band_description = [
-                    (i + 1, src.descriptions[i]) for i in range(src.count)
-                ]
-                band_description.append(
-                    (len(band_description) + 1, "interpolation")
-                )
+        band_description = [(1, "interpolation")]
 
-            orchestrator.add_to_save_lists(
-                filling_path_out,
-                "interpolation_filled_filling",
-                filled_dsm_cars_ds,
-                dtype=filling_dtype,
-                nodata=filling_nodata_value,
-                optional_data=False,
-                cars_ds_name="interpolation_filled_filling",
-                rio_band_description=band_description,
-            )
+        orchestrator.add_to_save_lists(
+            filling_path_out,
+            "interpolation_filled_filling",
+            filled_dsm_cars_ds,
+            dtype=np.uint8,
+            nodata=255,
+            optional_data=False,
+            cars_ds_name="interpolation_filled_filling",
+            rio_band_description=band_description,
+        )
 
         old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
-        old_filling_path = None
         shutil.copy(dsm_file, old_dsm_path)
-        if filling_file is not None:
-            old_filling_path = os.path.join(dump_dir, "filling_not_filled.tif")
-            shutil.copy(filling_file, old_filling_path)
 
         if self.save_intermediate_data:
             new_dsm_path = os.path.join(dump_dir, "dsm_filled.tif")
@@ -244,7 +230,6 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
                     interpolation_filling_wrapper, nout=1
                 )(
                     old_dsm_path,
-                    old_filling_path,
                     classif_file,
                     invalidity_mask_file,
                     classif_values,
@@ -263,7 +248,6 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
 
 def interpolation_filling_wrapper(  # pylint: disable=R0917 # noqa: C901
     dsm_file,
-    filling_file,
     classif_file,
     invalidity_mask_file,
     classif_values,
@@ -403,20 +387,10 @@ def interpolation_filling_wrapper(  # pylint: disable=R0917 # noqa: C901
         "col": np.arange(dsm.shape[1]),
     }
 
-    if filling_file is not None:
-        with rio.open(filling_file) as in_filling:
-            nb_bands_filling = in_filling.count + 1
-            filling = in_filling.read(window=rasterio_window)
-            filling = np.concatenate(
-                (filling, combined_mask.astype(np.uint8)[np.newaxis, :, :]),
-                axis=0,
-            )
-
-        data["interpolation_filled_filling"] = (
-            ["band_filling", "row", "col"],
-            filling,
-        )
-        coords["band_filling"] = np.arange(1, nb_bands_filling + 1)
+    data["interpolation_filled_filling"] = (
+        ["row", "col"],
+        combined_mask,
+    )
 
     output_dataset = xr.Dataset(
         data_vars=data,

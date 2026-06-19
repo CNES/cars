@@ -344,7 +344,7 @@ def test_pipeline():
             },
             "advanced": {
                 "save_intermediate_data": True,
-                "filling_tile_size": 1000,  # temporary fix, set back to 150
+                "filling_tile_size": 150,
             },
         }
 

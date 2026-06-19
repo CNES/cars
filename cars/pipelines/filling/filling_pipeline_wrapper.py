@@ -23,21 +23,20 @@ CARS filling pipeline class file
 
 from __future__ import print_function
 
-import warnings
+from pathlib import Path
 
 import numpy as np
 import rasterio
 import xarray as xr
-from rasterio.errors import NodataShadowWarning
 from rasterio.windows import Window
 
 from cars.data_structures import cars_dataset
 
 
 def merge_filling_bands_wrapper(  # pylint: disable=R0917
-    in_filling_path,
     aux_filling,
     dsm_file,
+    dump_dir,
     window=None,
     saving_info=None,
     profile=None,
@@ -68,99 +67,98 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
 
     with rasterio.open(dsm_file) as in_dsm:
         dsm_msk = in_dsm.read_masks(1, window=rasterio_window)
-        profile = in_dsm.profile
 
-    with rasterio.open(in_filling_path) as src:
-        nb_bands = src.count
+    # construct multi_band_filling
+    filling_bands = []
+    description = []
 
-        if nb_bands == 1:
-            return False
+    dump_dir = Path(dump_dir)
+    nodata = 255
+    for folder in dump_dir.iterdir():
+        if folder.is_dir() and "dsm_filling" in folder.name:
+            for file in folder.iterdir():
+                if file.name == "filling.tif":
+                    with rasterio.open(file) as src:
+                        data_filling = src.read(1, window=rasterio_window)
 
-        filling_multi_bands = src.read(window=rasterio_window)
-        # remove the first band
-        filling_multi_bands = filling_multi_bands[1:, :, :]
-        filling_mono_bands = np.zeros(filling_multi_bands.shape[1:3])
-        descriptions = src.descriptions[1:]
-        dict_temp = {name: i for i, name in enumerate(descriptions)}
-        profile = src.profile
+                        filling_bands.append(data_filling)
+                        description.append(src.descriptions[0])
+                        nodata = src.nodata
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", NodataShadowWarning)
-            filling_mask = src.read_masks(1, window=rasterio_window)
+    filling_multi_bands = np.stack(filling_bands, axis=0)
 
-        filling_mono_bands[filling_mask == 0] = 0
+    filling_mono_bands = np.zeros(filling_multi_bands.shape[1:3])
+    dict_temp = {name: i for i, name in enumerate(description)}
 
-        filling_bands_list = {
-            "fill_with_geoid": ["filling_exogenous"],
-            "interpolation": ["interpolation"],
-            "interpolate_from_borders": [
-                "bulldozer",
-                "border_interpolation",
-            ],
-            "fill_with_endogenous_dem": ["bulldozer"],
-            "fill_with_exogenous_dem": ["filling_exogenous", "bulldozer"],
-            "no_edition": [],
-        }
+    filling_bands_list = {
+        "fill_with_geoid": ["filling_exogenous"],
+        "interpolation": ["interpolation"],
+        "interpolate_from_borders": [
+            "bulldozer",
+            "border_interpolation",
+        ],
+        "fill_with_endogenous_dem": ["bulldozer"],
+        "fill_with_exogenous_dem": ["filling_exogenous", "bulldozer"],
+        "no_edition": [],
+    }
 
-        # To get the right footprint
-        filling_mono_bands = np.logical_or(dsm_msk, filling_mask).astype(
-            np.uint8
-        )
+    # To get the right footprint
+    filling_mono_bands = np.logical_or(dsm_msk, filling_mono_bands).astype(
+        np.uint8
+    )
 
-        # to keep the previous classif convention
-        filling_mono_bands[filling_mono_bands == 0] = src.nodata
-        filling_mono_bands[filling_mono_bands == 1] = 0
+    # to keep the previous classif convention
+    filling_mono_bands[filling_mono_bands == 0] = nodata
+    filling_mono_bands[filling_mono_bands == 1] = 0
 
-        for key, value in aux_filling.items():
-            if isinstance(value, str):
-                value = [value]
+    for key, value in aux_filling.items():
+        if isinstance(value, str):
+            value = [value]
 
-            if isinstance(value, list):
-                for elem in value:
-                    if elem == "no_edition":
-                        mask_1 = np.all(filling_multi_bands == 0, axis=0)
-                        mask_2 = filling_mono_bands == 0
-                        filling_mono_bands[mask_1 & mask_2] = key
-                        continue
+        if isinstance(value, list):
+            for elem in value:
+                if elem == "no_edition":
+                    mask_1 = np.all(filling_multi_bands == 0, axis=0)
+                    mask_2 = filling_mono_bands == 0
+                    filling_mono_bands[mask_1 & mask_2] = key
+                    continue
 
-                    if elem == "other":
-                        continue
+                if elem == "other":
+                    continue
 
-                    filling_method = filling_bands_list[elem]
-                    if all(method in descriptions for method in filling_method):
+                filling_method = filling_bands_list[elem]
+                if all(method in description for method in filling_method):
 
-                        indices_true = [dict_temp[m] for m in filling_method]
+                    indices_true = [dict_temp[m] for m in filling_method]
 
-                        mask_true = np.all(
-                            filling_multi_bands[indices_true, :, :] == 1,
-                            axis=0,
-                        )
+                    mask_true = np.all(
+                        filling_multi_bands[indices_true, :, :] == 1,
+                        axis=0,
+                    )
 
-                        indices_false = [
-                            i
-                            for i in range(filling_multi_bands.shape[0])
-                            if i not in indices_true
-                        ]
+                    indices_false = [
+                        i
+                        for i in range(filling_multi_bands.shape[0])
+                        if i not in indices_true
+                    ]
 
-                        mask_false = np.all(
-                            filling_multi_bands[indices_false, :, :] == 0,
-                            axis=0,
-                        )
+                    mask_false = np.all(
+                        filling_multi_bands[indices_false, :, :] == 0,
+                        axis=0,
+                    )
 
-                        mask = mask_true & mask_false
+                    mask = mask_true & mask_false
 
-                        filling_mono_bands[mask] = key
+                    filling_mono_bands[mask] = key
 
-        mask_1 = np.any(filling_multi_bands, axis=0)
-        mask_2 = filling_mono_bands == 0
+    mask_1 = np.any(filling_multi_bands, axis=0)
+    mask_2 = filling_mono_bands == 0
 
-        filling_mono_bands[mask_1 & mask_2] = (
-            inverse_aux_filling["other"]
-            if "other" in inverse_aux_filling
-            else 7
-        )
+    filling_mono_bands[mask_1 & mask_2] = (
+        inverse_aux_filling["other"] if "other" in inverse_aux_filling else 7
+    )
 
-        filling_mono_bands[filling_mono_bands == src.nodata] = 0
+    filling_mono_bands[filling_mono_bands == nodata] = 0
 
     output_dataset = xr.Dataset(
         data_vars={
