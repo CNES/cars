@@ -97,12 +97,13 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
     def run(  # pylint: disable=too-many-positional-arguments  # noqa: C901
         self,
         sensor_image_left,
-        sensor_image_right,
-        grid_left,
-        grid_right,
-        epipolar_disparity_map,
+        sensor_images_right,
         geometry_plugin,
-        epipolar_image,
+        sensor_matches=None,
+        grid_left=None,
+        grid_right=None,
+        epipolar_disparity_map=None,
+        epipolar_image=None,
         epsg=None,
         denoising_overload_fun=None,
         source_pc_names=None,
@@ -122,6 +123,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         save_output_performance_map=False,
         save_output_ambiguity=False,
         save_output_edges=False,
+        save_residues=False,
     ):
         """
         Run Triangulation application.
@@ -133,28 +135,22 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
             Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_left: CarsDataset
-        :param sensor_image_right: tiled sensor right image
+        :param sensor_images_right: tiled sensor right image
             Dict Must contain keys : "image", "texture", "geomodel",
             "no_data", "mask". Paths must be absolutes
-        :type sensor_image_right: CarsDataset
-        :param grid_left: left epipolar grid. Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape \
-                array in xarray Dataset
-            - Attributes containing: "grid_spacing", "grid_origin",\
+        :type sensor_images_right: CarsDataset
+        :param grid_left: left epipolar grid. Grid dict contains :
+            - "grid_spacing", "grid_origin",\
                 "epipolar_size_x", epipolar_size_y", "epipolar_origin_x",\
                 "epipolar_origin_y","epipolar_spacing_x",\
-                "epipolar_spacing", "disp_to_alt_ratio",\
-        :type grid_left: CarsDataset
-        :param grid_right: right epipolar grid. Grid CarsDataset contains :
-
-            - A single tile stored in [0,0], containing a (N, M, 2) shape
-                array in xarray Dataset
-            - Attributes containing: "grid_spacing", "grid_origin",
-                "epipolar_size_x", epipolar_size_y", "epipolar_origin_x",
-                "epipolar_origin_y","epipolar_spacing_x",
-                "epipolar_spacing", "disp_to_alt_ratio",
-        :type grid_right: CarsDataset
+                "epipolar_spacing", "disp_to_alt_ratio", "path"
+        :type grid_left: dict
+        :param grid_right: right epipolar grid. Grid dict contains :
+            - "grid_spacing", "grid_origin",\
+                "epipolar_size_x", epipolar_size_y", "epipolar_origin_x",\
+                "epipolar_origin_y","epipolar_spacing_x",\
+                "epipolar_spacing", "disp_to_alt_ratio", "path"
+        :type grid_right: dict
         :param epipolar_disparity_map: tiled left disparity map or \
             sparse matches:
 
@@ -212,7 +208,10 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :param save_output_performance_map: Save performance map in
                 depth_map_dir
         :type save_output_performance_map: bool
-        :param save_output_edges: Save edges image(s) map in
+        :param save_output_ambiguity: Save ambiguity in
+                depth_map_dir
+        :type save_output_ambiguity: bool
+        :param save_output_edges: Save edges in
                 depth_map_dir
         :type save_output_edges: bool
 

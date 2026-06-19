@@ -18,6 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# pylint: disable=C0302
 """
 Shareloc geometry sub class : CARS geometry wrappers functions to shareloc ones
 """
@@ -36,13 +37,17 @@ from shareloc.dtm_reader import dtm_reader
 from shareloc.geofunctions import localization
 from shareloc.geofunctions.rectification_grid import RectificationGrid
 from shareloc.geofunctions.triangulation import (
+    distance_point_los,
     epipolar_triangulation,
+    n_view_triangulation,
     sensor_triangulation,
 )
 from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.grid import Grid
+from shareloc.geomodels.los import LOS
 from shareloc.geomodels.rpc import RPC
 from shareloc.image import Image
+from shareloc.proj_utils import coordinates_conversion
 
 from cars.core import constants as cst
 from cars.core import projection
@@ -512,6 +517,84 @@ class SharelocGeometry(AbstractGeometry):
         )
         return coords_wgs84[0, 2], residue[0, 0]
 
+    def triangulate_n_los(  # pylint: disable=too-many-positional-arguments
+        self, geomodel1, geomodels2, sensor_matches
+    ) -> np.ndarray:
+        """
+        Performs triangulation from cars disparity or matches dataset
+
+
+        :param geomodel1: path and attributes for left geomodel
+        :param geomodels2: path and attributes for right geomodel
+        :param sensor_matches: list of matches for each sensor pair
+
+        :return: the long/lat/height numpy array in output of the triangulation
+        """
+
+        # read geomodels using shareloc
+        shareloc_model1 = SharelocGeometry.load_geom_model(geomodel1)
+        shareloc_models2 = [
+            SharelocGeometry.load_geom_model(geomodel)
+            for geomodel in geomodels2
+        ]
+
+        shareloc_models = [shareloc_model1] + shareloc_models2
+
+        matches = []
+
+        def convert(rows, cols):
+            """
+            Transform 2D rows and 2D cols to 1D, and stack them in a 2D array
+                of shape (n_matches, 2)
+            """
+            rows_1d = rows.flatten()
+            cols_1d = cols.flatten()
+            return np.stack((rows_1d, cols_1d), axis=-1)
+
+        # add sensor 1 position
+        shape = sensor_matches[0]["sensor_left_row"].shape
+        matches.append(
+            convert(
+                sensor_matches[0]["sensor_left_row"].values,
+                sensor_matches[0]["sensor_left_col"].values,
+            )
+        )
+
+        # add all sensors 2 positions
+        for sens_match in sensor_matches:
+            matches.append(
+                convert(
+                    sens_match["sensor_right_row"].values,
+                    sens_match["sensor_right_col"].values,
+                )
+            )
+
+        __, point_wgs84, intersections_residues = sensor_n_los_triangulation(
+            shareloc_models,
+            matches,
+            min_max=None,
+            residues=True,
+            fill_nan=True,
+        )
+
+        llh = point_wgs84.reshape((shape[0], shape[1], 3))
+        intersections_residues = intersections_residues.reshape(
+            (len(matches), shape[0], shape[1])
+        )
+
+        # mask points where matches were nan, for pairs
+        mask = np.zeros(shape, dtype=bool)
+        for match in matches:
+            mask = (
+                mask
+                | np.isnan(match[:, 0].reshape(shape))
+                | np.isnan(match[:, 1].reshape(shape))
+            )
+
+        llh[mask, :] = np.nan
+
+        return llh, intersections_residues
+
     # pylint: disable=too-many-positional-arguments
     def generate_epipolar_grids(
         self,
@@ -700,3 +783,64 @@ class SharelocGeometry(AbstractGeometry):
         )
 
         return row, col, alti
+
+
+def sensor_n_los_triangulation(
+    geomodels,
+    matches,
+    min_max=None,
+    residues=True,
+    fill_nan=True,
+):
+    """
+    Perform n los triangulation.
+
+    :param geomodels: list of shareloc geomodels for each sensor
+    :param matches: list of matches for each sensor pair, with shape
+        (n_matches, 2)
+    :param min_max: list of min and max altitudes to consider for los
+    :param residues: whether to compute residues
+    :param fill_nan: whether to fill nan values for matches with
+         no intersection
+    :return: the long/lat/height numpy array in output of the triangulation,
+        the residues if computed, and the intersections in wgs84
+        as a numpy array
+    """
+
+    losses = []
+    for geomodel, match in zip(geomodels, matches, strict=True):
+        losses.append(LOS(match, geomodel, min_max, fill_nan))
+
+    vis = np.dstack([loss.viewing_vectors for loss in losses])
+    vis = np.swapaxes(vis, 1, 2)
+
+    sis = np.dstack([loss.starting_points for loss in losses])
+    sis = np.swapaxes(sis, 1, 2)
+
+    filtering = np.logical_not(
+        np.isnan(
+            np.sum(np.sum(sis, axis=1), axis=1)
+            + np.sum(np.sum(vis, axis=1), axis=1)
+        )
+    )
+    intersections_ecef = np.nan * np.ones((vis.shape[0], 3))
+    if np.any(filtering):
+        res = n_view_triangulation(sis[filtering, :, :], vis[filtering, :, :])
+        intersections_ecef[filtering, :] = res
+
+    in_crs = 4978
+    out_crs = 4326
+    intersections_wgs84 = coordinates_conversion(
+        intersections_ecef, in_crs, out_crs
+    )
+
+    # refine matches
+    intersections_residues = None
+    if residues is True:
+        intersections_residues = []
+        for loss in losses:
+            intersections_residues.append(
+                distance_point_los(loss, intersections_ecef)
+            )
+        intersections_residues = np.stack(intersections_residues, axis=0)
+    return intersections_ecef, intersections_wgs84, intersections_residues

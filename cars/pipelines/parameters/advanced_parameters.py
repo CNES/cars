@@ -70,6 +70,9 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
     overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
         adv_cst.SAVE_INTERMEDIATE_DATA, False
     )
+    overloaded_conf[adv_cst.USE_SENSOR_DISP] = conf.get(
+        adv_cst.USE_SENSOR_DISP, False
+    )
 
     overloaded_conf[adv_cst.LAND_COVER_MAP] = conf.get(
         adv_cst.LAND_COVER_MAP, "global_land_cover_map.tif"
@@ -156,6 +159,7 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
         adv_cst.KEEP_LOW_RES_DIR: bool,
         adv_cst.GROUND_TRUTH_DSM: Or(dict, str),
+        adv_cst.USE_SENSOR_DISP: bool,
         adv_cst.PHASING: Or(dict, None),
         adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
         adv_cst.PIPELINE: str,
@@ -179,6 +183,7 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         overloaded_conf[adv_cst.LAND_COVER_MAP],
         overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],
         bounds,
+        overloaded_conf[adv_cst.USE_SENSOR_DISP],
     )
 
 

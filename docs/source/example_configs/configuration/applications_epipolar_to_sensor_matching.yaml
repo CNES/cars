@@ -1,0 +1,4 @@
+---
+applications:
+  epipolar_to_sensor_matching:
+    tile_size: 600

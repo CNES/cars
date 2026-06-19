@@ -55,6 +55,7 @@ Application parameters
    applications/point_cloud_rasterization
    applications/dsm_filling
    applications/auxiliary_filling
+   applications/epipolar_to_sensor_matching
 
 
 The default configuration can be different for the first resolution, the intermediate resolution(s) and the last resolution. 

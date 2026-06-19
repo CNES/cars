@@ -45,10 +45,11 @@ def triangulate(  # pylint: disable=too-many-positional-arguments
     sensor2,
     geomodel1,
     geomodel2,
-    grid1,
-    grid2,
-    disp_ref: xr.Dataset,
+    grid1=None,
+    grid2=None,
+    disp_ref: xr.Dataset = None,
     disp_key: str = cst_disp.MAP,
+    sensor_matches=None,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will perform triangulation from a disparity map
@@ -86,6 +87,10 @@ def triangulate(  # pylint: disable=too-many-positional-arguments
         - 'sec' to retrieve the dataset built from the right to \
            left disparity map (if provided in input)
     """
+    if not isinstance(sensor2, list):
+        sensor2 = [sensor2]
+    if not isinstance(geomodel2, list):
+        geomodel2 = [geomodel2]
 
     if disp_key != cst_disp.MAP:
         # Switching the variable names so the desired disparity is named 'disp'
@@ -101,9 +106,10 @@ def triangulate(  # pylint: disable=too-many-positional-arguments
         sensor2,
         geomodel1,
         geomodel2,
-        grid1,
-        grid2,
-        disp_ref,
+        grid1=grid1,
+        grid2=grid2,
+        disp_data=disp_ref,
+        sensor_matches=sensor_matches,
         roi_key=cst.ROI_WITH_MARGINS,
     )
 
@@ -266,16 +272,17 @@ def triangulate_sparse_matches(  # pylint: disable=too-many-positional-arguments
     return pd_cloud
 
 
-def compute_point_cloud(  # pylint: disable=too-many-positional-arguments
+def compute_point_cloud(  # pylint: disable=R0917 # noqa:C901
     geometry_plugin,
     sensor1,
-    sensor2,
+    sensors2,
     geomodel1,
-    geomodel2,
-    grid1,
-    grid2,
-    data: xr.Dataset,
-    roi_key: str,
+    geomodels2,
+    grid1=None,
+    grid2=None,
+    disp_data: xr.Dataset = None,
+    sensor_matches=None,
+    roi_key: str = cst.ROI_WITH_MARGINS,
 ) -> xr.Dataset:
     # TODO detail a bit more what this method do
     """
@@ -295,23 +302,57 @@ def compute_point_cloud(  # pylint: disable=too-many-positional-arguments
     :return: the point cloud dataset
     """
     # Extract input paths from configuration
-    llh = geometry_plugin.triangulate(
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        cst.DISP_MODE,
-        data,
-        grid1,
-        grid2,
-        roi_key,
-    )
+    if disp_data is not None:
+        llh = geometry_plugin.triangulate(
+            sensor1,
+            sensors2[0],
+            geomodel1,
+            geomodels2[0],
+            cst.DISP_MODE,
+            disp_data,
+            grid1,
+            grid2,
+            roi_key,
+        )
+        row = np.array(
+            range(disp_data.attrs[roi_key][1], disp_data.attrs[roi_key][3])
+        )
+        col = np.array(
+            range(disp_data.attrs[roi_key][0], disp_data.attrs[roi_key][2])
+        )
+        validity_mask = disp_data[cst_disp.VALID].values
+        matches_dataset = disp_data
+        intersections_residues = None
+    else:
+        llh, intersections_residues = geometry_plugin.triangulate_n_los(
+            geomodel1,
+            geomodels2,
+            sensor_matches,
+        )
+        row = sensor_matches[0].coords[cst.ROW].values
+        col = sensor_matches[0].coords[cst.COL].values
 
-    row = np.array(range(data.attrs[roi_key][1], data.attrs[roi_key][3]))
-    col = np.array(range(data.attrs[roi_key][0], data.attrs[roi_key][2]))
+        matches_dataset = sensor_matches[0]
+
+        if cst_disp.VALID in sensor_matches[0]:
+            validity_mask = np.any(
+                np.stack(
+                    [
+                        np.where(sensor_matc[cst_disp.VALID].values == 0)
+                        for sensor_matc in sensor_matches
+                    ],
+                    axis=-1,
+                ),
+                axis=-1,
+            )
+
+        else:
+            validity_mask = np.full((len(row), len(col)), 255, dtype=np.uint8)
+
+    nodata_index = np.where(validity_mask == 0)
 
     # apply no_data to X,Y and Z point cloud
-    nodata_index = np.where(data[cst_disp.VALID].values == 0)
+
     llh[:, :, 0][nodata_index] = np.nan
     llh[:, :, 1][nodata_index] = np.nan
     llh[:, :, 2][nodata_index] = np.nan
@@ -322,88 +363,115 @@ def compute_point_cloud(  # pylint: disable=too-many-positional-arguments
         cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
         cst.POINT_CLOUD_CORR_MSK: (
             [cst.ROW, cst.COL],
-            data[cst_disp.VALID].values,
+            validity_mask,
         ),
     }
 
     # Copy all 2D attributes from disparity dataset to point cloud
     # except color and pandora validity mask (already copied in corr_msk)
-    for key, val in data.items():
+    for key, val in matches_dataset.items():
         if len(val.values.shape) == 2:
-            if key not in (cst.EPI_TEXTURE, cst_disp.VALID):
+            if (
+                key not in (cst.EPI_TEXTURE, cst_disp.VALID)
+                and "sensor_" not in key
+            ):
                 values[key] = ([cst.ROW, cst.COL], val.values)
 
     point_cloud = xr.Dataset(values, coords={cst.ROW: row, cst.COL: col})
 
+    # add residues if computes
+    if intersections_residues is not None:
+        if cst.SENSOR not in point_cloud.dims:
+            point_cloud.coords[cst.SENSOR] = np.arange(
+                intersections_residues.shape[0]
+            )
+        point_cloud[cst.INDEX_DEPTH_MAP_INTERSECTIONS_RESIDUES] = xr.DataArray(
+            intersections_residues,
+            dims=[cst.SENSOR, cst.ROW, cst.COL],
+        )
+
     # add color and data type of image
     color_type = None
-    if cst.EPI_TEXTURE in data:
-        triang_wrap.add_layer(data, cst.EPI_TEXTURE, cst.BAND_IM, point_cloud)
-        color_type = data[cst.EPI_TEXTURE].attrs["color_type"]
-    elif cst.EPI_IMAGE in data:
-        color_type = data[cst.EPI_IMAGE].attrs["color_type"]
+    if cst.EPI_TEXTURE in matches_dataset:
+        triang_wrap.add_layer(
+            matches_dataset, cst.EPI_TEXTURE, cst.BAND_IM, point_cloud
+        )
+        color_type = matches_dataset[cst.EPI_TEXTURE].attrs["color_type"]
+    elif cst.EPI_IMAGE in matches_dataset:
+        color_type = matches_dataset[cst.EPI_IMAGE].attrs["color_type"]
     if color_type:
         point_cloud.attrs["color_type"] = color_type
 
     # add classif
-    if cst.EPI_CLASSIFICATION in data:
+    if cst.EPI_CLASSIFICATION in matches_dataset:
         triang_wrap.add_layer(
-            data,
+            matches_dataset,
             cst.EPI_CLASSIFICATION,
             cst.BAND_CLASSIF,
             point_cloud,
         )
 
     # add filling in data:
-    if cst.EPI_FILLING in data:
+    if cst.EPI_FILLING in matches_dataset:
         triang_wrap.add_layer(
-            data,
+            matches_dataset,
             cst.EPI_FILLING,
             cst.BAND_FILLING,
             point_cloud,
         )
 
     # add edges in data
-    if cst.EPI_EDGES_DEPTH_MAP in data:
+    if cst.EPI_EDGES_DEPTH_MAP in matches_dataset:
         triang_wrap.add_layer(
-            data,
+            matches_dataset,
             cst.EPI_EDGES_DEPTH_MAP,
             cst.BAND_EDGES_DEPTH_MAP,
             point_cloud,
         )
-    if cst.EPI_EDGES_NORMALS in data:
+    if cst.EPI_EDGES_NORMALS in matches_dataset:
         triang_wrap.add_layer(
-            data,
+            matches_dataset,
             cst.EPI_EDGES_NORMALS,
             cst.BAND_EDGES_NORMALS,
             point_cloud,
         )
-    if cst.EPI_EDGES_MASK in data:
+    if cst.EPI_EDGES_MASK in matches_dataset:
         triang_wrap.add_layer(
-            data,
+            matches_dataset,
             cst.EPI_EDGES_MASK,
             cst.BAND_EDGES_MASK,
             point_cloud,
         )
-    if cst.EPI_EDGES_TILE_ID in data:
+    if cst.EPI_EDGES_TILE_ID in matches_dataset:
         triang_wrap.add_layer(
-            data,
+            matches_dataset,
             cst.EPI_EDGES_TILE_ID,
             cst.BAND_EDGES_TILE_ID,
             point_cloud,
         )
-    if cst.EPI_INVALIDITY_MASK in data:
+    if cst.EPI_INVALIDITY_MASK in matches_dataset:
         triang_wrap.add_layer(
-            data,
+            matches_dataset,
             cst.EPI_INVALIDITY_MASK,
             cst.BAND_INVALIDITY_MASK,
             point_cloud,
         )
 
-    point_cloud.attrs[cst.ROI] = data.attrs[cst.ROI]
-    point_cloud.attrs[cst.ROI_WITH_MARGINS] = data.attrs[cst.ROI_WITH_MARGINS]
-    point_cloud.attrs[cst.EPI_MARGINS] = data.attrs[cst.EPI_MARGINS]
-    point_cloud.attrs[cst.EPI_FULL_SIZE] = data.attrs[cst.EPI_FULL_SIZE]
+    if cst.ROI in matches_dataset.attrs:
+        point_cloud.attrs[cst.ROI] = matches_dataset.attrs[cst.ROI]
+    if cst.ROI_WITH_MARGINS in matches_dataset.attrs:
+        point_cloud.attrs[cst.ROI_WITH_MARGINS] = matches_dataset.attrs[
+            cst.ROI_WITH_MARGINS
+        ]
+    if cst.EPI_MARGINS in matches_dataset.attrs:
+        point_cloud.attrs[cst.EPI_MARGINS] = matches_dataset.attrs[
+            cst.EPI_MARGINS
+        ]
+    if cst.EPI_FULL_SIZE in matches_dataset.attrs:
+        point_cloud.attrs[cst.EPI_FULL_SIZE] = matches_dataset.attrs[
+            cst.EPI_FULL_SIZE
+        ]
+
     point_cloud.attrs[cst.EPSG] = int(4326)
 
     return point_cloud

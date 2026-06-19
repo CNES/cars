@@ -341,7 +341,7 @@ def epipolar_small_components(
         )
     )
 
-    if len(index_elt_to_remove) > 0:
+    if len(index_elt_to_remove) > 0 and cst.EPI_INVALIDITY_MASK in cloud:
         index_elt_to_remove = np.array(index_elt_to_remove)
 
         rows = index_elt_to_remove[:, 0]
@@ -403,7 +403,10 @@ def epipolar_statistical_filtering(
             )
         )
 
-        if len(index_elt_to_remove) > 0:
+        if (
+            len(index_elt_to_remove) > 0
+            and cst.EPI_INVALIDITY_MASK in epipolar_ds
+        ):
             index_elt_to_remove = np.array(index_elt_to_remove)
 
             rows = index_elt_to_remove[:, 0]

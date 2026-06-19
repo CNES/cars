@@ -47,6 +47,7 @@ from queue import Queue
 from json_checker import And, Checker, Or
 
 from cars.core import cars_logging
+from cars.data_structures.cars_dataset import CarsDataset
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
@@ -771,12 +772,12 @@ def compute_dependencies(args, kw_args):
 
         return job_id
 
-    def get_ids_rec(list_or_dict):
+    def get_ids_rec(list_or_dict_or_cars_ds):
         """
         Compute dependencies from list or dict or simple data
 
-        :param list_or_dict: arguments
-        :type list_or_dict: list or dict
+        :param list_or_dict_or_cars_ds: arguments
+        :type list_or_dict_or_cars_ds: list or dict or CarsDataset
 
         :return: dependencies
         :rtype: list
@@ -784,24 +785,28 @@ def compute_dependencies(args, kw_args):
 
         list_ids = []
 
-        if isinstance(list_or_dict, (list, tuple)):
-            for arg in list_or_dict:
+        if isinstance(list_or_dict_or_cars_ds, CarsDataset):
+            for row in range(list_or_dict_or_cars_ds.shape[0]):
+                for col in range(list_or_dict_or_cars_ds.shape[1]):
+                    list_ids += get_ids_rec(list_or_dict_or_cars_ds[row, col])
+        elif isinstance(list_or_dict_or_cars_ds, (list, tuple)):
+            for arg in list_or_dict_or_cars_ds:
                 list_ids += get_ids_rec(arg)
 
-        elif isinstance(list_or_dict, dict):
-            for key in list_or_dict:
-                list_ids += get_ids_rec(list_or_dict[key])
+        elif isinstance(list_or_dict_or_cars_ds, dict):
+            for key in list_or_dict_or_cars_ds:
+                list_ids += get_ids_rec(list_or_dict_or_cars_ds[key])
 
-        elif isinstance(list_or_dict, FactorizedObject):
-            facto_args = list_or_dict.get_args()
+        elif isinstance(list_or_dict_or_cars_ds, FactorizedObject):
+            facto_args = list_or_dict_or_cars_ds.get_args()
             for arg in facto_args:
                 list_ids += get_ids_rec(arg)
-            facto_kwargs = list_or_dict.get_kwargs()
+            facto_kwargs = list_or_dict_or_cars_ds.get_kwargs()
             for key in facto_kwargs:
                 list_ids += get_ids_rec(facto_kwargs[key])
 
         else:
-            current_id = get_job_id(list_or_dict)
+            current_id = get_job_id(list_or_dict_or_cars_ds)
             if current_id is not None:
                 list_ids.append(current_id)
 

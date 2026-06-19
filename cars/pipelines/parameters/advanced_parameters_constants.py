@@ -32,6 +32,7 @@ LAND_COVER_MAP = "land_cover_map"
 CLASSIFICATION_TO_CONFIGURATION_MAPPING = (
     "classification_to_configuration_mapping"
 )
+USE_SENSOR_DISP = "use_sensor_disp"
 
 RESOLUTION_A_PRIORI = "resolution_a_priori"
 GROUND_TRUTH_DSM = "ground_truth_dsm"

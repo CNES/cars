@@ -211,19 +211,18 @@ def test_epipolar_pipeline(  # pylint: disable=too-many-positional-arguments
     )
 
     epipolar_point_cloud, _ = triangulation_wrapper(
-        disp_map,
+        True,
         img1,
-        img2,
+        [img2],
         geomodel1,
-        geomodel2,
-        grid1,
-        grid2,
+        [geomodel2],
         get_geometry_plugin(
             conf={"plugin_name": "SharelocGeometry", "interpolator": "linear"}
         ),
         32636,
-        False,
-        None,
+        grid1=grid1,
+        grid2=grid2,
+        disparity_object=disp_map,
     )
 
     # Uncomment to update reference

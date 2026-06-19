@@ -21,6 +21,7 @@
 """
 Contains tools for multiprocessing
 """
+from cars.data_structures.cars_dataset import CarsDataset
 
 
 def replace_data(list_or_dict, func_to_apply, *func_args):
@@ -66,10 +67,17 @@ def replace_data_rec(list_or_dict, func_to_apply, *func_args):
     :rtype: list, tuple, dict
     """
 
-    if isinstance(list_or_dict, (list, tuple)):
+    if isinstance(list_or_dict, CarsDataset):
+        for row in range(list_or_dict.shape[0]):
+            for col in range(list_or_dict.shape[1]):
+                list_or_dict[row, col] = func_to_apply(
+                    list_or_dict[row, col], *func_args
+                )
+        res = list_or_dict
+    elif isinstance(list_or_dict, (list, tuple)):
         res = []
         for arg in list_or_dict:
-            if isinstance(arg, (list, tuple, dict)):
+            if isinstance(arg, (list, tuple, dict, CarsDataset)):
                 res.append(replace_data_rec(arg, func_to_apply, *func_args))
             else:
                 res.append(func_to_apply(arg, *func_args))
