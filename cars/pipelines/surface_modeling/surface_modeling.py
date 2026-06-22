@@ -133,9 +133,18 @@ class SurfaceModelingPipeline(PipelineTemplate):
         )
 
         # Early stops configured through output_level_none/application setup
+        quit_after_dem_generation = self.quit_on_app("dem_generation")
         quit_after_grid_or_resampling = self.quit_on_app(
             "grid_generation"
         ) or self.quit_on_app("resampling")
+        quit_after_dense_matching = self.quit_on_app(
+            "dense_matching"
+        ) or self.quit_on_app("dense_match_filling")
+        quit_after_triangulation = (
+            self.quit_on_app("triangulation")
+            or self.quit_on_app("point_cloud_outlier_removal.1")
+            or self.quit_on_app("point_cloud_outlier_removal.2")
+        )
         quit_after_rasterization = self.quit_on_app("point_cloud_rasterization")
 
         def _expected_generate_disparity_grids_runs():
@@ -163,11 +172,14 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     main_runs_per_pair += 1
                 expected_runs += num_sensor_pairs * main_runs_per_pair
 
-            # When the rasterize phase is not run (save_output_dsm=False),
-            # the orchestrator __exit__ is the final compute pass and will
-            # process any tasks still pending from the sensor-to-depth-maps
-            # phase (resampling, dense matching, etc.).
-            if not self.save_output_dsm:
+            # When DSM rasterization is disabled and disparity_to_depth_maps
+            # won't run, orchestrator.__exit__ is the final compute pass
+            if not self.save_output_dsm and (
+                (not self.compute_depth_map)
+                or quit_after_dem_generation
+                or quit_after_grid_or_resampling
+                or quit_after_dense_matching
+            ):
                 expected_runs += 1
 
             return expected_runs
@@ -179,6 +191,35 @@ class SurfaceModelingPipeline(PipelineTemplate):
             if not has_tie_points_pipeline or quit_after_grid_or_resampling:
                 return 0
             return num_sensor_pairs
+
+        def _expected_disparity_to_depth_maps_runs():
+            """
+            Calculate the expected number of runs for disparity_to_depth_maps
+            """
+            # disparity_to_depth_maps is entered only when sensor_to_disparity
+            # returns False in run()
+            if (
+                (not self.compute_depth_map)
+                or quit_after_dem_generation
+                or quit_after_grid_or_resampling
+                or quit_after_dense_matching
+            ):
+                return 0
+
+            expected_runs = 0
+
+            # There is one explicit breakpoint pass per iter item
+            # in disparity_to_depth_maps(), unless triangulation phase is
+            # configured as a stopping point
+            if not quit_after_triangulation:
+                expected_runs += 1 if self.use_sensor_disp else num_sensor_pairs
+
+            # If DSM rasterization is disabled, this task remains the active
+            # target until orchestrator __exit__, which adds a final pass
+            if not self.save_output_dsm:
+                expected_runs += 1
+
+            return expected_runs
 
         def _expected_rasterize_point_cloud_runs():
             """
@@ -200,11 +241,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
             _expected_generate_disparity_grids_runs()
         )
         tie_points_runs = _expected_tie_points_runs()
+        disparity_to_depth_maps_runs = _expected_disparity_to_depth_maps_runs()
         rasterize_point_cloud_runs = _expected_rasterize_point_cloud_runs()
 
         # clamp expected_runs to >= 1
         generate_disparity_grids_runs = max(1, generate_disparity_grids_runs)
         tie_points_runs = max(1, tie_points_runs)
+        disparity_to_depth_maps_runs = max(1, disparity_to_depth_maps_runs)
         rasterize_point_cloud_runs = max(1, rasterize_point_cloud_runs)
 
         self.task_ids = {}
@@ -229,6 +272,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
             expected_runs=tie_points_runs,
         )
 
+        self.task_ids["disparity_to_depth_maps"] = ProgressTree().register_task(
+            self.pipeline_progress_id,
+            "disparity_to_depth_maps",
+            weight=20,
+            expected_runs=disparity_to_depth_maps_runs,
+        )
+
         # rasterize_point_cloud - final phase
         # Additional compute passes can run under the same target task:
         # - mono-band filling merge when auxiliary filling output is enabled
@@ -237,7 +287,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.task_ids["rasterize_point_cloud"] = ProgressTree().register_task(
             self.pipeline_progress_id,
             "rasterize_point_cloud",
-            weight=78,
+            weight=58,
             expected_runs=rasterize_point_cloud_runs,
         )
 
@@ -1839,6 +1889,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
         Creates the depth map from the disparity maps,
         by following the CARS pipeline's steps.
         """
+        self.cars_orchestrator.set_target_task(
+            self.task_ids["disparity_to_depth_maps"]
+        )
 
         output = self.used_conf[OUTPUT]
 
