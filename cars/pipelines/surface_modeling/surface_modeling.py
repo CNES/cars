@@ -93,6 +93,118 @@ class SurfaceModelingPipeline(PipelineTemplate):
     SurfaceModelingPipeline
     """
 
+    @staticmethod
+    def _should_run_disparity_to_depth_maps(
+        compute_depth_map,
+        quit_after_dem_generation,
+        quit_after_grid_or_resampling,
+        quit_after_dense_matching,
+    ):
+        """Return whether disparity_to_depth_maps phase is expected to run."""
+        return not (
+            (not compute_depth_map)
+            or quit_after_dem_generation
+            or quit_after_grid_or_resampling
+            or quit_after_dense_matching
+        )
+
+    @staticmethod
+    def _compute_generate_disparity_grids_runs(
+        num_sensor_pairs,
+        has_tie_points_pipeline,
+        has_low_res_dsm,
+        is_first_or_single,
+        use_global_disp_range,
+        quit_after_grid_or_resampling,
+        save_output_dsm,
+        should_run_disparity_to_depth_maps,
+    ):
+        """Calculate expected runs for generate_disparity_grids."""
+        expected_runs = 0
+
+        if not quit_after_grid_or_resampling:
+            # One preparation run per pair only when tie points are enabled
+            # and a low resolution DSM is provided.
+            expected_runs += (
+                num_sensor_pairs
+                if has_tie_points_pipeline and has_low_res_dsm
+                else 0
+            )
+
+            # Main disparity grids generation:
+            # one run per pair, plus an optional second run per pair when
+            # global disparity range is enabled in the DEM-based branch.
+            main_runs_per_pair = 1
+            if (
+                (not is_first_or_single) or has_low_res_dsm
+            ) and use_global_disp_range:
+                main_runs_per_pair += 1
+            expected_runs += num_sensor_pairs * main_runs_per_pair
+
+        # When DSM rasterization is disabled and disparity_to_depth_maps
+        # won't run, orchestrator.__exit__ is the final compute pass
+        if not save_output_dsm and (not should_run_disparity_to_depth_maps):
+            expected_runs += 1
+
+        return expected_runs
+
+    @staticmethod
+    def _compute_tie_points_runs(
+        has_tie_points_pipeline,
+        quit_after_grid_or_resampling,
+        num_sensor_pairs,
+    ):
+        """Calculate expected runs for tie_points."""
+        if not has_tie_points_pipeline or quit_after_grid_or_resampling:
+            return 0
+        return num_sensor_pairs
+
+    @staticmethod
+    def _compute_disparity_to_depth_maps_runs(
+        should_run_disparity_to_depth_maps,
+        quit_after_triangulation,
+        use_sensor_disp,
+        num_sensor_pairs,
+        save_output_dsm,
+    ):
+        """Calculate expected runs for disparity_to_depth_maps."""
+        if not should_run_disparity_to_depth_maps:
+            return 0
+
+        expected_runs = 0
+
+        # There is one explicit breakpoint pass per iter item
+        # in disparity_to_depth_maps(), unless triangulation phase is
+        # configured as a stopping point
+        if not quit_after_triangulation:
+            expected_runs += 1 if use_sensor_disp else num_sensor_pairs
+
+        # If DSM rasterization is disabled, this task remains the active
+        # target until orchestrator __exit__, which adds a final pass
+        if not save_output_dsm:
+            expected_runs += 1
+
+        return expected_runs
+
+    @staticmethod
+    def _compute_rasterize_point_cloud_runs(
+        save_output_dsm,
+        quit_after_rasterization,
+        has_aux_filling,
+    ):
+        """Calculate expected runs for rasterize_point_cloud."""
+        if not save_output_dsm:
+            return 0
+
+        expected_runs = 0
+        if not quit_after_rasterization:
+            # One compute pass to flush rasterization outputs.
+            expected_runs += 1
+            # Optional second pass when auxiliary filling merge is enabled.
+            if has_aux_filling:
+                expected_runs += 1
+        return expected_runs
+
     def setup_progress_tracking(
         self,
         parent_pipeline_id=None,
@@ -147,102 +259,46 @@ class SurfaceModelingPipeline(PipelineTemplate):
         )
         quit_after_rasterization = self.quit_on_app("point_cloud_rasterization")
 
-        def _expected_generate_disparity_grids_runs():
-            """
-            Calculate the expected number of runs for generate_disparity_grids
-            """
-            expected_runs = 0
-
-            if not quit_after_grid_or_resampling:
-                # One preparation run per pair only when tie points are enabled
-                # and a low resolution DSM is provided.
-                expected_runs += (
-                    num_sensor_pairs
-                    if has_tie_points_pipeline and has_low_res_dsm
-                    else 0
-                )
-
-                # Main disparity grids generation:
-                # one run per pair, plus an optional second run per pair when
-                # global disparity range is enabled in the DEM-based branch.
-                main_runs_per_pair = 1
-                if ((not is_first_or_single) or has_low_res_dsm) and (
-                    use_global_disp_range
-                ):
-                    main_runs_per_pair += 1
-                expected_runs += num_sensor_pairs * main_runs_per_pair
-
-            # When DSM rasterization is disabled and disparity_to_depth_maps
-            # won't run, orchestrator.__exit__ is the final compute pass
-            if not self.save_output_dsm and (
-                (not self.compute_depth_map)
-                or quit_after_dem_generation
-                or quit_after_grid_or_resampling
-                or quit_after_dense_matching
-            ):
-                expected_runs += 1
-
-            return expected_runs
-
-        def _expected_tie_points_runs():
-            """
-            Calculate the expected number of runs for tie_points
-            """
-            if not has_tie_points_pipeline or quit_after_grid_or_resampling:
-                return 0
-            return num_sensor_pairs
-
-        def _expected_disparity_to_depth_maps_runs():
-            """
-            Calculate the expected number of runs for disparity_to_depth_maps
-            """
-            # disparity_to_depth_maps is entered only when sensor_to_disparity
-            # returns False in run()
-            if (
-                (not self.compute_depth_map)
-                or quit_after_dem_generation
-                or quit_after_grid_or_resampling
-                or quit_after_dense_matching
-            ):
-                return 0
-
-            expected_runs = 0
-
-            # There is one explicit breakpoint pass per iter item
-            # in disparity_to_depth_maps(), unless triangulation phase is
-            # configured as a stopping point
-            if not quit_after_triangulation:
-                expected_runs += 1 if self.use_sensor_disp else num_sensor_pairs
-
-            # If DSM rasterization is disabled, this task remains the active
-            # target until orchestrator __exit__, which adds a final pass
-            if not self.save_output_dsm:
-                expected_runs += 1
-
-            return expected_runs
-
-        def _expected_rasterize_point_cloud_runs():
-            """
-            Calculate the expected number of runs for rasterize_point_cloud
-            """
-            if not self.save_output_dsm:
-                return 0
-
-            expected_runs = 0
-            if not quit_after_rasterization:
-                # One compute pass to flush rasterization outputs.
-                expected_runs += 1
-                # Optional second pass when auxiliary filling merge is enabled.
-                if has_aux_filling:
-                    expected_runs += 1
-            return expected_runs
+        should_run_disparity_to_depth_maps = (
+            self._should_run_disparity_to_depth_maps(
+                self.compute_depth_map,
+                quit_after_dem_generation,
+                quit_after_grid_or_resampling,
+                quit_after_dense_matching,
+            )
+        )
 
         generate_disparity_grids_runs = (
-            _expected_generate_disparity_grids_runs()
+            self._compute_generate_disparity_grids_runs(
+                num_sensor_pairs,
+                has_tie_points_pipeline,
+                has_low_res_dsm,
+                is_first_or_single,
+                use_global_disp_range,
+                quit_after_grid_or_resampling,
+                self.save_output_dsm,
+                should_run_disparity_to_depth_maps,
+            )
         )
-        tie_points_runs = _expected_tie_points_runs()
-        disparity_to_depth_maps_runs = _expected_disparity_to_depth_maps_runs()
-        rasterize_point_cloud_runs = _expected_rasterize_point_cloud_runs()
+        tie_points_runs = self._compute_tie_points_runs(
+            has_tie_points_pipeline,
+            quit_after_grid_or_resampling,
+            num_sensor_pairs,
+        )
+        disparity_to_depth_maps_runs = (
+            self._compute_disparity_to_depth_maps_runs(
+                should_run_disparity_to_depth_maps,
+                quit_after_triangulation,
+                self.use_sensor_disp,
+                num_sensor_pairs,
+                self.save_output_dsm,
+            )
+        )
+        rasterize_point_cloud_runs = self._compute_rasterize_point_cloud_runs(
+            self.save_output_dsm,
+            quit_after_rasterization,
+            has_aux_filling,
+        )
 
         # clamp expected_runs to >= 1
         generate_disparity_grids_runs = max(1, generate_disparity_grids_runs)
