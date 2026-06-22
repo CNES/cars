@@ -1289,16 +1289,13 @@ def generate_filling_applications_for_surface_modeling(inputs_conf):
         if values is None:
             continue
 
-        if isinstance(values, str):
-            values = [values]
-
         classif_values = []
         for elem in values:
             if isinstance(elem, int):
                 classif_values.append(str(elem))
 
         if not classif_values:
-            classif_values = None
+            continue
 
         # Update application configuration
         new_filling_conf = {
