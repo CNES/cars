@@ -29,6 +29,7 @@ import logging
 import logging.config
 import os
 import platform
+import threading
 
 # Standard imports
 from datetime import datetime
@@ -66,6 +67,33 @@ PROFILING_LOG = 15
 logging.addLevelName(PROFILING_LOG, "PROFILING_LOG")
 
 profiling_logger = logging.getLogger("profiling_logger")
+
+
+_WARNING_COUNTER = 0
+_WARNING_LOCK = threading.Lock()  # for logs from workers
+
+
+def reset_warning_count() -> None:
+    """Reset global warning counting state for a fresh pipeline run."""
+    global _WARNING_COUNTER
+    with _WARNING_LOCK:
+        _WARNING_COUNTER = 0
+
+
+def get_warning_count() -> int:
+    """Get total warning count captured by WarningCounterHandler."""
+    with _WARNING_LOCK:
+        return _WARNING_COUNTER
+
+
+class WarningCounterHandler(logging.Handler):
+    """In-process warning counter handler."""
+
+    def emit(self, record):
+        if record.levelno >= logging.WARNING:
+            global _WARNING_COUNTER
+            with _WARNING_LOCK:
+                _WARNING_COUNTER += 1
 
 
 class ProfilingFilter(logging.Filter):  # pylint: disable=R0903
@@ -148,12 +176,15 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
     pipeline="",
     in_worker=False,
     global_log_file=None,
+    use_stdout=True,
 ):
     """
     Setup the CARS logging configuration
 
     :param loglevel: log level default WARNING
+    :param use_stdout: whether to add stdout handler (default: True)
     """
+
     # logging
     if loglevel == "PROGRESS":
         numeric_level = PROGRESS
@@ -198,7 +229,11 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
                 "class": "logging.StreamHandler",
                 "stream": "ext://sys.stdout",
                 "filters": ["no_profiling"],
-            }
+            },
+            "warning_counter": {
+                "level": "WARNING",
+                "class": "cars.core.cars_logging.WarningCounterHandler",
+            },
         },
         "filters": {"no_profiling": {"()": ProfilingFilter}},
         "loggers": {
@@ -272,14 +307,17 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
         add_handler_name(logging_config, handler_main_profiling)
 
     if not in_worker:
-        add_handler_name(logging_config, "stdout")
+        if use_stdout:
+            add_handler_name(logging_config, "stdout")
+        else:
+            del logging_config["handlers"]["stdout"]
     else:
         # remove stdout as handler
         del logging_config["handlers"]["stdout"]
 
         # add file handlers
 
-        # change level of root logger in workerss
+        # change level of root logger in workers
         handler_workers = "file_workers"
         handler_workers_profiling = "file_workers_profiling"
         logging_config["loggers"]["profiling_logger"] = {
@@ -317,8 +355,14 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
         }
         add_handler_name(logging_config, handler_workers_profiling)
 
+    add_handler_name(logging_config, "warning_counter")
+
     # Create config
     logging.config.dictConfig(logging_config)
+
+    if out_dir is not None:
+        return log_file
+    return None
 
 
 def add_progress_message(message):

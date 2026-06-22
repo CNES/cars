@@ -37,6 +37,7 @@ from pathlib import Path
 from json_checker import Checker
 
 from cars.core import cars_logging
+from cars.core.progress.progress import ProgressTree
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 # CARS imports
@@ -56,6 +57,26 @@ class FormattingPipeline(PipelineTemplate):
     """
     DefaultPipeline
     """
+
+    def setup_progress_tracking(self, parent_pipeline_id=None):
+        """
+        Setup progress tracking for formatting.
+
+        :param parent_pipeline_id: Optional parent pipeline ID
+        :type parent_pipeline_id: int or None
+        :return: Task ID to pass to orchestrator via set_target_task()
+        :rtype: int
+        """
+        progress_tree = ProgressTree()
+        self.pipeline_progress_id = progress_tree.begin_pipeline(
+            "formatting", parent_id=parent_pipeline_id
+        )
+        self.task_progress_id = progress_tree.register_task(
+            self.pipeline_progress_id,
+            "formatting",
+            weight=1.0,
+        )
+        return self.task_progress_id
 
     # pylint: disable=too-many-instance-attributes
 

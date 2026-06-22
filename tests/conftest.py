@@ -25,12 +25,27 @@ See info : https://docs.pytest.org/en/6.2.x/fixture.html
 
 # Standard imports
 import json
+import logging
 
 # Third party imports
 import pytest
 
 # CARS Tests imports
 from .helpers import absolute_data_path
+
+
+class _ProgressTreeWarningHandler(logging.Handler):
+    """Capture ProgressTree warnings emitted during a test."""
+
+    def __init__(self):
+        super().__init__(level=logging.WARNING)
+        self.messages = []
+
+    def emit(self, record):
+        message = record.getMessage()
+        if "ProgressTree warning:" in message:
+            self.messages.append(message)
+
 
 # Local testing function pytest fixtures (mainly stereo)
 # Ease following stereo tests readability
@@ -157,3 +172,25 @@ def disparities_conf():  # pylint: disable=redefined-outer-name
         configuration = json_dict["disparities"]
 
     return configuration
+
+
+@pytest.fixture(autouse=True)
+def fail_on_progresstree_warning(request):
+    """Fail end2end tests if ProgressTree emits any warning."""
+    if request.node.get_closest_marker("end2end_tests") is None:
+        yield
+        return
+
+    handler = _ProgressTreeWarningHandler()
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    try:
+        yield
+    finally:
+        root_logger.removeHandler(handler)
+
+    if handler.messages:
+        pytest.fail(
+            "ProgressTree warnings were emitted during this end2end test:\n"
+            + "\n".join(handler.messages)
+        )

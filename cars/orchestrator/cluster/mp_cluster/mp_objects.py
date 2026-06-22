@@ -342,7 +342,8 @@ class MpFutureIterator:
             for item in self.future_list:
                 if item.ready():
                     if not item.successful():
-                        raise RuntimeError("Failure in tasks")
+                        # raises the error returned by the worker
+                        item.get()
                     res = item
                     self.past_time = time.time()
                     break

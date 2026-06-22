@@ -35,6 +35,7 @@ from shapely.geometry import box, mapping
 from cars import extractroi
 from cars.core import projection
 from cars.core.geometry.abstract_geometry import AbstractGeometry
+from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.pipelines.analysis.report_tools import (
     generate_report_cars_output,
@@ -70,6 +71,32 @@ class AnalysisPipeline(PipelineTemplate):
     Analysis pipeline
     """
 
+    def setup_progress_tracking(self, parent_pipeline_id=None):
+        """
+        Setup progress tracking for analysis.
+
+        :param parent_pipeline_id: Optional parent pipeline ID
+        :type parent_pipeline_id: int or None
+        :return: Task ID to pass to orchestrator via set_target_task()
+        :rtype: int
+        """
+
+        # default progress: single task
+        progress_tree = ProgressTree()
+
+        if parent_pipeline_id is None:
+            self.pipeline_progress_id = progress_tree.begin_pipeline("Analysis")
+        else:
+            self.pipeline_progress_id = parent_pipeline_id
+
+        self.task_progress_id = progress_tree.register_task(
+            self.pipeline_progress_id,
+            "analysis",
+            weight=1.0,
+        )
+
+        return self.task_progress_id
+
     def __init__(self, conf, config_dir=None):
         """
         Creates pipeline
@@ -87,6 +114,10 @@ class AnalysisPipeline(PipelineTemplate):
 
         self.used_conf = {"input": conf["input"], "output": conf["output"]}
         self.config_dir = config_dir
+
+        # progress tracking attributes
+        self.pipeline_progress_id = None
+        self.task_progress_id = None
 
     @staticmethod
     def check_inputs(conf, config_dir=None):  # pylint: disable=unused-argument

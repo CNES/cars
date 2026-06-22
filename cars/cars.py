@@ -38,6 +38,7 @@ import yaml
 # CARS imports
 from cars import __version__
 from cars.core import cars_logging
+from cars.core.progress.progress import ProgressTree
 from cars.orchestrator.cluster import log_wrapper
 
 
@@ -72,6 +73,14 @@ def cars_parser() -> argparse.ArgumentParser:
         " what to expect from full run",
     )
 
+    parser.add_argument(
+        "--logtype",
+        default="human",
+        choices=("human", "plain"),
+        help="Log output type (default: human). 'human' enables the rich "
+        "progress UI and 'plain' keeps classic logs only.",
+    )
+
     # General arguments at first level
     parser.add_argument(
         "--version",
@@ -96,6 +105,12 @@ def main_cli(args, dry_run=False):  # noqa: C901
     # Main try/except to catch all program exceptions
     from cars.pipelines.pipeline import Pipeline
 
+    logtype = getattr(args, "logtype", "human").lower()
+
+    ProgressTree().set_ui_enabled(logtype == "human")
+    if logtype == "human":
+        ProgressTree().draw()
+
     try:
         # Check file extension and load configuration
         config_path = args.conf
@@ -108,6 +123,8 @@ def main_cli(args, dry_run=False):  # noqa: C901
                 config = yaml.safe_load(fstream)
         else:
             raise ValueError("Configuration file must be .json or .yaml/.yml")
+
+        ProgressTree().update_empty_status_text("Checking configuration")
 
         # Cars 0.9.0 API change, check if the configfile seems to use the old
         # API by looking for the deprecated out_dir key
@@ -144,17 +161,23 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
         log_dir = os.path.join(out_dir, "logs")
 
-        cars_logging.setup_logging(
+        # When using human, suppress stdout
+        use_stdout = logtype != "human"
+
+        log_file = cars_logging.setup_logging(
             loglevel,
             out_dir=log_dir,
             pipeline=pipeline_name,
+            use_stdout=use_stdout,
         )
+        ProgressTree().update_log_file_path(log_file)
 
         logging.debug("Show argparse arguments: {}".format(args))
 
         # Generate pipeline and check conf
         cars_logging.add_progress_message("Check configuration...")
         used_pipeline = Pipeline(pipeline_name, config, config_dir)
+        ProgressTree().update_empty_status_text("Starting pipeline")
         cars_logging.add_progress_message("CARS pipeline is started.")
         if not dry_run:
             # run pipeline
@@ -174,12 +197,22 @@ def main_cli(args, dry_run=False):  # noqa: C901
             "CARS has successfully completed the pipeline."
         )
 
+        ProgressTree().notify_success(out_dir)
+
     except BaseException as exc:
         # Catch all exceptions, show debug traceback and exit
         logging.exception(
             "CARS terminated with following error: {}".format(exc)
         )
+        ProgressTree().notify_crash(exc)
         sys.exit(1)
+    finally:
+        # stop the rich ui if running
+        if logtype == "human":
+            try:
+                ProgressTree().finalize()
+            except Exception:
+                pass
 
 
 def main():

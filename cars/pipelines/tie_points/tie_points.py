@@ -30,6 +30,7 @@ from json_checker import Checker, Or
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications.application import Application
 from cars.core import roi_tools
+from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
@@ -52,12 +53,30 @@ PIPELINE = "tie_points"
 @Pipeline.register(
     PIPELINE,
 )
-class TiePointsPipeline(PipelineTemplate):
+class TiePointsPipeline(PipelineTemplate):  # pylint: disable=R0902
     """
     Tie points pipeline
     """
 
-    # pylint: disable=too-many-instance-attributes
+    def setup_progress_tracking(self, parent_pipeline_id=None):
+        """
+        Setup progress tracking for tie points.
+
+        :param parent_pipeline_id: Optional parent pipeline ID
+        :type parent_pipeline_id: int or None
+        :return: Task ID to pass to orchestrator via set_target_task()
+        :rtype: int
+        """
+        progress_tree = ProgressTree()
+        self.pipeline_progress_id = progress_tree.begin_pipeline(
+            "Tie Points", parent_id=parent_pipeline_id
+        )
+        self.task_progress_id = progress_tree.register_task(
+            self.pipeline_progress_id,
+            "tie_points",
+            weight=1,
+        )
+        return self.task_progress_id
 
     def __init__(self, conf, config_dir=None):
         """
@@ -143,6 +162,10 @@ class TiePointsPipeline(PipelineTemplate):
         self.used_conf[PIPELINE][APPLICATIONS] = application_conf
 
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+
+        # progress tracking attributes
+        self.pipeline_progress_id = None
+        self.task_progress_id = None
 
     @staticmethod
     def check_inputs(conf, config_dir=None):
@@ -445,6 +468,8 @@ class TiePointsPipeline(PipelineTemplate):
         cars_orchestrator=None,
         previous_dir=None,
         res_factor=None,
+        parent_pipeline_id=None,
+        task_progress_id=None,
     ):
         """
         Run pipeline
@@ -475,6 +500,14 @@ class TiePointsPipeline(PipelineTemplate):
             inherent_orchestrator = True
 
         self.cars_orchestrator = cars_orchestrator
+        if task_progress_id is not None:
+            # Route orchestrator progress events to the given progress task
+            cars_orchestrator.set_target_task(task_progress_id)
+        elif parent_pipeline_id is not None:
+            # Fallback to nested creation for standalone usage.
+            task_id = self.setup_progress_tracking(parent_pipeline_id)
+            cars_orchestrator.set_target_task(task_id)
+
         # Run applications
         if epipolar_roi is not None:
             roi_tools.expand_roi(

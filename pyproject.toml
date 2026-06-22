@@ -50,6 +50,7 @@ dependencies = [
     "pyyaml",
     "xarray",
     "tqdm",
+    "rich",
     "netCDF4>=1.5.3",
     "Shapely",
     "Fiona",

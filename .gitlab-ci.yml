@@ -77,7 +77,7 @@ include:
     - apt-get install -y libgl1-mesa-glx libsm6 libxext6 ffmpeg
     - source /app/cars/venv/bin/activate
     # install edge-detection plugin from TestPyPI (PyPI as fallback for deps)
-    - pip install cars-edge-detection-plugin
+    - pip install "cars-edge-detection-plugin==0.1.1rc0"
     # All dependencies should already be installed in the docker env
     - pip install --no-build-isolation --editable .[dev,docs]
     # print installed packages for debugging purposes

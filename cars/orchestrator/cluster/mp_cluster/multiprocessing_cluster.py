@@ -38,7 +38,6 @@ import signal
 import subprocess
 import threading
 import time
-import traceback
 from functools import wraps
 from multiprocessing import freeze_support
 from queue import Queue
@@ -535,10 +534,13 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                     try:
                         res = job_id_progress.get(timeout=per_job_timeout)
                         success = True
-                    except:  # pylint: disable=W0702 # noqa: B001, E722
-                        res = traceback.format_exc()
+                    except Exception as exc:  # noqa: B902
+                        # keep the original exception object
+                        res = exc
                         success = False
-                        logging.error("Exception in worker: {}".format(res))
+                        logging.error(
+                            "Exception in worker: {}".format(exc),
+                        )
                     done_list.append(job_id)
                     done_task_results[job_id] = [success, res]
 
@@ -728,6 +730,8 @@ def replace_job_by_data(args_or_kawargs, done_task_results):
 
             full_res = done_task_results[task_id][1]
             if not done_task_results[task_id][0]:
+                if isinstance(full_res, BaseException):
+                    raise RuntimeError("Current task failed") from full_res
                 raise RuntimeError("Current task failed {}".format(full_res))
 
             if isinstance(full_res, tuple):

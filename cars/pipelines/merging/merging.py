@@ -29,6 +29,7 @@ from json_checker import Checker, OptionalKey, Or
 from cars.applications.application import Application
 from cars.core import preprocessing, roi_tools
 from cars.core.inputs import rasterio_get_epsg
+from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
@@ -56,6 +57,27 @@ class MergingPipeline(PipelineTemplate):
     """
     Merging pipeline
     """
+
+    def setup_progress_tracking(self, parent_pipeline_id=None):
+        """
+        Setup progress tracking for merging.
+
+        :param parent_pipeline_id: Optional parent pipeline ID
+        :type parent_pipeline_id: int or None
+        :return: Task ID to pass to orchestrator via set_target_task()
+        :rtype: int
+        """
+        progress_tree = ProgressTree()
+        if parent_pipeline_id is None:
+            self.pipeline_progress_id = progress_tree.begin_pipeline("Merging")
+        else:
+            self.pipeline_progress_id = parent_pipeline_id
+        self.task_progress_id = progress_tree.register_task(
+            self.pipeline_progress_id,
+            "merging",
+            weight=1.0,
+        )
+        return self.task_progress_id
 
     def __init__(self, conf, config_dir=None):
         """
@@ -122,6 +144,10 @@ class MergingPipeline(PipelineTemplate):
         self.used_conf[APPLICATIONS] = application_conf
 
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
+
+        # progress tracking attributes
+        self.pipeline_progress_id = None
+        self.task_progress_id = None
 
     def check_pipeline_conf(self, conf):
         """
@@ -311,11 +337,15 @@ class MergingPipeline(PipelineTemplate):
 
         return used_conf
 
-    def run(self, args=None, log_dir=None):  # pylint: disable=W0613
+    def run(
+        self, args=None, log_dir=None, parent_pipeline_id=None
+    ):  # pylint: disable=W0613
         """
         Run pipeline
 
         """
+        self.setup_progress_tracking(parent_pipeline_id)
+
         if log_dir is None:
             log_dir = os.path.join(self.out_dir, "logs")
 
@@ -442,6 +472,7 @@ class MergingPipeline(PipelineTemplate):
             )
 
             # Launch merging
+            cars_orchestrator.set_target_task(self.task_progress_id)
             _ = self.dsm_merging_application.run(
                 dict_path,
                 cars_orchestrator,

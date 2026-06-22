@@ -31,22 +31,20 @@ import logging
 import os
 import platform
 import shutil
-import sys
 
 # Third party imports
 import tempfile
 import threading
 import time
-import traceback
 
 import pandas
 import xarray
-from tqdm import tqdm
 
 from cars.core import constants as cst
 
 # CARS imports
 from cars.core.cars_logging import add_progress_message
+from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import achievement_tracker
@@ -164,6 +162,10 @@ class Orchestrator:
         # init cars_ds_names_info for pbar printing
         self.cars_ds_names_info = []
 
+        # Target task ID for progress tracking
+        # (set by pipelines via set_target_task)
+        self.target_task_id = None
+
         # outjson
         self.out_yaml_path = out_yaml_path
         if self.out_yaml_path is None:
@@ -189,6 +191,17 @@ class Orchestrator:
         """
 
         return self.conf
+
+    def set_target_task(self, task_id):
+        """
+        Set the target task ID for progress tracking.
+        Called by pipelines to associate orchestrator
+        tile processing with a ProgressTree task.
+
+        :param task_id: Task ID from ProgressTree
+        :type task_id: int
+        """
+        self.target_task_id = task_id
 
     @cars_profile(name="Add to save lists", interval=0.5)
     def add_to_save_lists(  # pylint: disable=too-many-positional-arguments
@@ -430,19 +443,32 @@ class Orchestrator:
                     " , ".join(list(set(self.cars_ds_names_info)))
                 )
             )
-            tqdm_message = "Tiles processing: "
-            # if loglevel > PROGRESS level tqdm display the data list
-            if logging.getLogger().getEffectiveLevel() > 21:
-                tqdm_message = "Processing Tiles: [ {} ] ...".format(
-                    " , ".join(list(set(self.cars_ds_names_info)))
+
+            # Initialize progress tracking
+            progress_tree = None
+            total_tiles = len(future_objects)
+
+            # Try to get ProgressTree if target_task_id is set
+            if self.target_task_id is not None:
+                try:
+                    progress_tree = ProgressTree()
+                    # Notify the task that it has started
+                    progress_tree.notify(
+                        self.target_task_id,
+                        "started",
+                        total=total_tiles,
+                    )
+                except Exception:
+                    # ProgressTree not available
+                    pass
+
+            # Log initial message
+            logging.info(
+                "Processing {} tiles: [ {} ] ...".format(
+                    total_tiles, " , ".join(list(set(self.cars_ds_names_info)))
                 )
-            pbar = tqdm(
-                total=len(future_objects),
-                desc=tqdm_message,
-                position=0,
-                leave=True,
-                file=sys.stdout,
             )
+
             nb_tiles_computed = 0
 
             interval_was_cropped = False
@@ -478,7 +504,13 @@ class Orchestrator:
                         nb_tiles_computed += 1
                     else:
                         logging.debug("None tile: not saved")
-                    pbar.update()
+
+                    # Update progress tracking
+                    if (
+                        progress_tree is not None
+                        and self.target_task_id is not None
+                    ):
+                        progress_tree.notify(self.target_task_id, "progressed")
 
             except TimeoutError:
                 logging.error("TimeOut")
@@ -491,6 +523,16 @@ class Orchestrator:
                 )
 
             remaining_tiles = self.achievement_tracker.get_remaining_tiles()
+
+            # Report retry count for this pass
+            if progress_tree is not None and self.target_task_id is not None:
+                if len(remaining_tiles) > 0 and only_remaining_delayed is None:
+                    progress_tree.notify(
+                        self.target_task_id,
+                        "retries",
+                        value=len(remaining_tiles),
+                    )
+
             if len(remaining_tiles) > 0:
                 # Some tiles have not been computed
                 logging.info(
@@ -502,15 +544,27 @@ class Orchestrator:
                     # First try
                     logging.info("Retry failed tasks ...")
                     self.reset_cluster()
-                    del pbar
                     self.compute_futures(only_remaining_delayed=remaining_tiles)
                 else:
                     # Second try
                     logging.error("Pipeline will pursue without failed tiles")
+                    if (
+                        progress_tree is not None
+                        and self.target_task_id is not None
+                    ):
+                        progress_tree.notify(
+                            self.target_task_id,
+                            "failed",
+                            value=len(remaining_tiles),
+                        )
                     self.cars_ds_replacer_registry.replace_lasting_jobs(
                         self.cluster.get_delayed_type()
                     )
                     self.reset_registries()
+
+            # Mark current task run complete after retry/failure accounting.
+            if progress_tree is not None and self.target_task_id is not None:
+                progress_tree.notify(self.target_task_id, "completed")
 
             if nb_tiles_computed == 0:
                 logging.warning(
@@ -593,7 +647,7 @@ class Orchestrator:
         except Exception as exc:
             # reset registries
             self.reset_registries()
-            raise RuntimeError(traceback.format_exc()) from exc
+            raise exc
 
         # reset registries
         self.reset_registries()
