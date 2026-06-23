@@ -2148,7 +2148,31 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 filtered_epipolar_point_cloud
             )
 
+            disparity_to_depth_task_id = self.task_ids[
+                "disparity_to_depth_maps"
+            ]
+            progress_tree = ProgressTree()
+            runs_before = progress_tree.get_task_started_runs(
+                disparity_to_depth_task_id
+            )
+
             self.cars_orchestrator.breakpoint()
+
+            runs_after = progress_tree.get_task_started_runs(
+                disparity_to_depth_task_id
+            )
+            if runs_before is not None and runs_after == runs_before:
+                # the breakpoint didn't compute anything
+                # still notify the progress tree to avoid blocking the pipeline
+                progress_tree.notify(
+                    disparity_to_depth_task_id,
+                    "started",
+                    total=1,
+                )
+                progress_tree.notify(
+                    disparity_to_depth_task_id,
+                    "completed",
+                )
 
             dir_to_check = [
                 d
