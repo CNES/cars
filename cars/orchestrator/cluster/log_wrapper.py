@@ -558,7 +558,7 @@ def generate_boxplot(axis, names, data_full, title, data_type):
     Generate boxplot
     """
 
-    axis.boxplot(data_full, vert=False, showfliers=False, labels=names)
+    axis.boxplot(data_full, vert=False, showfliers=False, tick_labels=names)
     axis.invert_yaxis()
     axis.set_xlabel(data_type)
     axis.set_title(title)
