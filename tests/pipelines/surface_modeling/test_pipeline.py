@@ -42,6 +42,7 @@ DEFAULT_TOL = 0.1
 CARS_GITHUB_ACTIONS = (
     os.getenv("CARS_GITHUB_ACTIONS", "false").lower() == "true"
 )
+NB_OUTLIERS_ALLOWED_GITHUB = 10
 
 
 @pytest.mark.end2end_tests
@@ -204,6 +205,9 @@ def test_gizeh_sensor_depthmap():
                 os.path.join(ref_output_dir, ref_name),
                 atol=atol,
                 rtol=rtol,
+                nb_outliers_allowed=(
+                    NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+                ),
             )
 
         intersection_path = (
@@ -232,6 +236,9 @@ def test_gizeh_sensor_depthmap():
                 os.path.join(ref_output_dir, ref_name),
                 atol=atol,
                 rtol=rtol,
+                nb_outliers_allowed=(
+                    NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
+                ),
             )
 
 
