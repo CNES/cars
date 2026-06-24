@@ -182,10 +182,10 @@ class ProgressTree:  # pylint: disable=R0902
         self._task_to_pipeline[task_id] = pipeline_id
         self._pipelines[pipeline_id].total_weight += weight
 
-        add_progress_message(
-            "Registered task {} under pipeline {} with weight {}".format(
-                task_name, self._pipelines[pipeline_id].name, weight
-            )
+        logging.info(
+            f"Registered task {task_name} under pipeline "
+            f"{self._pipelines[pipeline_id].name} with weight "
+            f"{weight} and expected runs {expected_runs}"
         )
         return task_id
 
@@ -532,3 +532,10 @@ class ProgressTree:  # pylint: disable=R0902
             self._ui.update_warning_count(get_warning_count())
             self._ui.update_success(output_dir)
             self._ui.display_final()
+
+    def get_task_started_runs(self, task_id: int) -> int | None:
+        """Return started runs for a task, or None if task is unknown."""
+        task = self._tasks.get(task_id)
+        if task is None:
+            return None
+        return task.started_runs

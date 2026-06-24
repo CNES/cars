@@ -128,7 +128,7 @@ bundleadjustment = [
 ]
 
 edge-detection = [
-    "cars-edge-detection-plugin==0.1.0"
+    "cars-edge-detection-plugin==0.1.1rc0"
 ]
 
 [tool.black]
