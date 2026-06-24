@@ -384,7 +384,7 @@ def check_filling(conf, classif_loader):
         overloaded_conf[filling_method] = conf.get(
             filling_method, default_filling[filling_method]
         )
-        if isinstance(overloaded_conf[filling_method], int):
+        if isinstance(overloaded_conf[filling_method], (int, str)):
             overloaded_conf[filling_method] = [overloaded_conf[filling_method]]
         if overloaded_conf[filling_method] == []:
             overloaded_conf[filling_method] = None

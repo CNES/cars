@@ -590,6 +590,14 @@ class FillingPipeline(PipelineTemplate):
                     base_dict[key] = list(
                         OrderedDict.fromkeys(base_dict[key] + value)
                     )
+                elif (
+                    append_classification
+                    and key in base_dict
+                    and isinstance(base_dict[key], list)
+                    and value is None
+                    and key in ("fill_classification", "fill_nodata")
+                ):
+                    continue
                 else:
                     base_dict[key] = value
 
