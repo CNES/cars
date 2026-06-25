@@ -1,6 +1,38 @@
 # Changelog
 
-## 1.1.0  Guided dense matching optimization (April 2026)
+## 1.2.0 Rich Logging Output (June 2026)
+
+### Added
+
+ - Reformatted CARS CLI log output [#1322]
+ - DTM generated with Bulldozer as a new product level [#1373]
+ - Occlusions and mismatches can now be filled [#1367]
+ - New filling method: interpolation [#1370]
+ - Pandora2D as a new method for sparse matching [#1269]
+ - Height maps in sensor geometry as a new product level [#1326]
+ - Global metadata file for the default pipeline [#1357]
+ - Epipolar errors at intermediate resolutions are now used to optimize sparse matching [#1315]
+ - New scaling coefficient parameter to force the scaling of resolution-dependent parameters [#1374]
+ - Computation of the optimal elevation for the first epipolar grid generation [shareloc#367]
+
+### Changed
+
+ - Updated Pandora to version 1.8.1 [#1388]
+ - Improved integration of the edge detection plugin [#1346]
+ - Classification is now single-band within the filling pipeline [#1324]
+ - ROI mode now applies to all applications [#1060]
+ - Removed the depth map product [#1392]
+ - Pixels whose disparity intervals are invalidated by water are no longer filtered out [#1384]
+
+### Fixed
+
+ - Fixed generation of the `filling.tif` map in the surface modeling pipeline [#1377]
+ - Properly handle crashes when a DSM is empty [#1389]
+ - Fixed parallel writing of the `filling.tif` file [#1372]
+ - Added subsampling configuration to the `global_used_conf.yaml` file [#1371]
+
+
+## 1.1.0 Guided dense matching optimization (April 2026)
 
 ### Added
 
@@ -83,7 +115,6 @@
 - Update Pandora to 1.7.2. [#1231]
 - Update Shareloc to 0.2.11.
 
-
 ### Fixed
 
 - Docker file tests. [#1236]
@@ -118,8 +149,6 @@
 - Cleanup sequential orchestrator [#1123].
 - Fix missing tiles in auxiliary filling outputs [#1061].
 - Fix classification fusion artifacts in dense matching [#1109].
-
-
 
 ## 0.12.0  Improving Dem generations (June 2025)
 
