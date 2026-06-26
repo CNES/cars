@@ -23,6 +23,7 @@
  - ROI mode now applies to all applications [#1060]
  - Removed the depth map product [#1392]
  - Pixels whose disparity intervals are invalidated by water are no longer filtered out [#1384]
+ - MCCNN is now included in the installation package [#1403]
 
 ### Fixed
 
