@@ -688,7 +688,23 @@ class SimpleGaussian(
                 cars_ds_name="invalidity_mask",
                 optional_data=True,
             )
-            paths_data[cst.RASTER_FILLING] = out_filling
+            paths_data[cst.RASTER_INVALIDITY_MASK] = out_invalidity_mask
+
+        out_cropped_disp_range = os.path.join(
+            os.path.dirname(dsm_file_name), "cropped_disp_range.tif"
+        )
+        if out_cropped_disp_range:
+            list_computed_layers += ["cropped_disparity_range"]
+            self.orchestrator.add_to_save_lists(
+                out_cropped_disp_range,
+                cst.RASTER_CROPPED_DISP_RANGE,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="cropped_disp_range",
+                optional_data=True,
+            )
+            paths_data[cst.RASTER_CROPPED_DISP_RANGE] = out_cropped_disp_range
 
         if save_intermediate_data:
             # File is not part of the official product, write it in dump_dir

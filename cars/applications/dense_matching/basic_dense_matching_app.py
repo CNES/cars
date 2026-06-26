@@ -605,6 +605,15 @@ class BasicDenseMatchingApplication(
                 )
 
                 self.orchestrator.add_to_save_lists(
+                    os.path.join(pair_folder, "cropped_disp_range.tif"),
+                    cst.CROPPED_DISPARITY_RANGE,
+                    epipolar_disparity_map,
+                    cars_ds_name="cropped_disp_range",
+                    nodata=255,
+                    dtype=np.uint8,
+                )
+
+                self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp_image.tif"),
                     cst.EPI_TEXTURE,
                     epipolar_disparity_map,

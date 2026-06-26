@@ -36,6 +36,8 @@ import xarray as xr
 from pandora.constants import Criteria
 from scipy.ndimage import generic_filter
 
+from cars.applications.dense_match_filling import fill_disp_wrappers
+
 # CARS imports
 from cars.applications.dense_matching import (
     dense_matching_constants as dense_match_cst,
@@ -528,6 +530,14 @@ def create_disp_dataset(  # noqa: C901
     # add edges
     add_edges(disp_ds, ref_dataset)
 
+    # Add crop_disp_range infos
+    disp_ds = fill_disp_wrappers.add_empty_crop_disp_range_band(
+        disp_ds, ["cropped_disp_range"]
+    )
+
+    if cropped_range is not None:
+        disp_ds = add_crop_info(disp_ds, cropped_range)
+
     if compute_disparity_masks:
         for key, val in pandora_masks.items():
             disp_ds[key] = xr.DataArray(np.copy(val), dims=[cst.ROW, cst.COL])
@@ -556,6 +566,22 @@ def create_disp_dataset(  # noqa: C901
 
     disp_ds.attrs[cst.EPI_FULL_SIZE] = ref_dataset.attrs[cst.EPI_FULL_SIZE]
 
+    return disp_ds
+
+
+def add_crop_info(disp_ds, cropped_range):
+    """
+    Add crop info
+
+    :param disp: disp xarray
+    :param cropped_range: was cropped range, bool
+
+    :return updated dataset
+    """
+
+    fill_disp_wrappers.update_crop_disp_range(
+        disp_ds, cropped_range, "cropped_disp_range"
+    )
     return disp_ds
 
 

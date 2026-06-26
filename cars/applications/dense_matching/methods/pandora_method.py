@@ -734,12 +734,14 @@ class PandoraMethod(
         )
 
         # Crop interval if needed
-        mask_crop = np.zeros(disp_min_grid.shape, dtype=int)
+        mask_crop = None
         is_cropped = False
         if crop_with_range is not None:
             current_min = np.min(disp_min_grid)
             current_max = np.max(disp_max_grid)
             if (current_max - current_min) > crop_with_range:
+                mask_crop = np.zeros(disp_min_grid.shape, dtype=int)
+
                 is_cropped = True
                 logging.warning("disparity range for current tile is cropped")
                 # crop

@@ -385,7 +385,6 @@ class Orchestrator:
                 obj_id
             )
         )
-
         if len(cars_ds_saver.descriptors) == 0 or tag not in cars_ds_saver.tags:
             # nothing is written yet
             return data, None
@@ -432,7 +431,8 @@ class Orchestrator:
 
             if len(delayed_objects) == 0:
                 logging.info("No Object to compute")
-                return
+                return False
+
             # Compute delayed
             future_objects = self.cluster.start_tasks(delayed_objects)
 
@@ -574,10 +574,14 @@ class Orchestrator:
             # close files
             logging.info("Close files ...")
             self.cars_ds_savers_registry.cleanup()
-        else:
-            logging.debug(
-                "orchestrator launch_worker is False, no metadata.json saved"
-            )
+
+            return interval_was_cropped
+
+        logging.debug(
+            "orchestrator launch_worker is False, no metadata.json saved"
+        )
+
+        return False
 
     def reset_cluster(self):
         """
@@ -643,7 +647,7 @@ class Orchestrator:
 
         # Compute futures
         try:
-            self.compute_futures()
+            interval_was_cropped = self.compute_futures()
         except Exception as exc:
             # reset registries
             self.reset_registries()
@@ -651,6 +655,8 @@ class Orchestrator:
 
         # reset registries
         self.reset_registries()
+
+        return interval_was_cropped
 
     def cleanup(self):
         """

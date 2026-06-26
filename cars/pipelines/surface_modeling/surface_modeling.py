@@ -2366,7 +2366,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
             return True
 
         # dsm needs to be saved before filling
-        self.cars_orchestrator.breakpoint()
+        interval_was_cropped = self.cars_orchestrator.breakpoint()
+
+        cropped_file_name = os.path.join(
+            os.path.dirname(dsm_file_name), "cropped_disp_range.tif"
+        )
+        if not interval_was_cropped and os.path.exists(cropped_file_name):
+            os.remove(cropped_file_name)
 
         if (
             not os.path.exists(dsm_file_name)
