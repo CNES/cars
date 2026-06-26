@@ -63,6 +63,41 @@ def add_empty_filling_band(
     return xr.merge([output_dataset, filling])
 
 
+def add_empty_crop_disp_range_band(
+    output_dataset: xr.Dataset,
+    crop_disp_range_types: list,
+):
+    """
+    Add filling attribute to dataset or band to filling attribute
+    if it already exists
+
+    :param output_dataset: output dataset
+    :param filling: input mask of filled pixels
+    :param band_filling: type of filling (zero padding or plane)
+
+    """
+    nb_band = len(crop_disp_range_types)
+    nb_row = len(output_dataset.coords[cst.ROW])
+    nb_col = len(output_dataset.coords[cst.COL])
+    crop_disp_range_data = np.zeros((nb_band, nb_row, nb_col), dtype=bool)
+    crop_disp_range = xr.Dataset(
+        data_vars={
+            cst.CROPPED_DISPARITY_RANGE: (
+                [cst.BAND_CROP_DISP_RANGE, cst.ROW, cst.COL],
+                crop_disp_range_data,
+            )
+        },
+        coords={
+            cst.BAND_CROP_DISP_RANGE: crop_disp_range_types,
+            cst.ROW: output_dataset.coords[cst.ROW],
+            cst.COL: output_dataset.coords[cst.COL],
+        },
+    )
+
+    # Add band to EPI_FILLING attribute or create the attribute
+    return xr.merge([output_dataset, crop_disp_range])
+
+
 def update_filling(
     output_dataset: xr.Dataset,
     filling: np.ndarray = None,
@@ -81,3 +116,25 @@ def update_filling(
     # Add True values from inputmask to output accurate band
     filling = filling.astype(bool)
     output_dataset[cst.EPI_FILLING].sel(**filling_type).values[filling] = True
+
+
+def update_crop_disp_range(
+    output_dataset: xr.Dataset,
+    crop_disp_range: np.ndarray = None,
+    crop_disp_range_type: str = None,
+):
+    """
+    Update filling attribute of dataset with an additional mask
+
+    :param output_dataset: output dataset
+    :param crop_disp_range: input mask of filled pixels
+    :param crop_disp_range_type: the type of crop_disp_range
+
+    """
+    # Select accurate band of output according to the type of filling
+    crop_disp_range_type = {cst.BAND_CROP_DISP_RANGE: crop_disp_range_type}
+    # Add True values from inputmask to output accurate band
+    crop_disp_range = crop_disp_range.astype(bool)
+    output_dataset[cst.CROPPED_DISPARITY_RANGE].sel(
+        **crop_disp_range_type
+    ).values[crop_disp_range] = True

@@ -183,6 +183,8 @@ def create_raster_dataset(  # noqa: C901
     source_pc_names: List[str] = None,
     filling: np.ndarray = None,
     band_filling: List[str] = None,
+    cropped_disp_range: np.ndarray = None,
+    band_cropped_disp_range: List[str] = None,
     performance_map: np.ndarray = None,
     performance_map_classified: np.ndarray = None,
     performance_map_classified_index: list = None,
@@ -429,6 +431,27 @@ def create_raster_dataset(  # noqa: C901
         )
         # update raster output with filling information
         raster_out = xr.merge((raster_out, filling_out))
+
+    if cropped_disp_range is not None and len(cropped_disp_range) > 0:
+        cropped_disp_range = np.nan_to_num(cropped_disp_range, nan=msk_no_data)
+        for idx, band_name in enumerate(band_cropped_disp_range):
+            band_cropped_disp_range[idx] = band_name.replace(
+                cst.POINT_CLOUD_CROPPED_DISP_RANGE_KEY_ROOT + "_", ""
+            )
+        cropped_disp_range_out = xr.Dataset(
+            {
+                cst.RASTER_CROPPED_DISP_RANGE: (
+                    [cst.BAND_CROP_DISP_RANGE, cst.Y, cst.X],
+                    cropped_disp_range,
+                )
+            },
+            coords={
+                **raster_coords,
+                cst.BAND_CROP_DISP_RANGE: band_cropped_disp_range,
+            },
+        )
+        # update raster output with filling information
+        raster_out = xr.merge((raster_out, cropped_disp_range_out))
 
     if performance_map is not None:
         performance_map = np.nan_to_num(performance_map, nan=msk_no_data)

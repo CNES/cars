@@ -14,6 +14,7 @@
  - Epipolar errors at intermediate resolutions are now used to optimize sparse matching [#1315]
  - New scaling coefficient parameter to force the scaling of resolution-dependent parameters [#1374]
  - Computation of the optimal elevation for the first epipolar grid generation [shareloc#367]
+ - New output file `cropped_disp_range.tif` generated when the disparity range is cropped [#1375]
 
 ### Changed
 

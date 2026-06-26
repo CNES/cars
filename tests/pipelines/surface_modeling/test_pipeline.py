@@ -397,6 +397,15 @@ def test_ventoux_full():
                 )
             ),
         )
+        copy2(
+            os.path.join(out_dir, "dsm", "cropped_disp_range.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "cropped_disp_range_test_surface_modeling_ventoux.tif",
+                )
+            ),
+        )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -472,6 +481,17 @@ def test_ventoux_full():
                 os.path.join(
                     ref_output_dir,
                     "pm_test_surface_modeling_ventoux.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "cropped_disp_range.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "cropped_disp_range_test_surface_modeling_ventoux.tif",
                 )
             ),
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,

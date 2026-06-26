@@ -269,7 +269,14 @@ def compute_vector_raster_and_stats(
     values_bands.extend(invalidity_mask_indexes)
     split_indexes.append(len(invalidity_mask_indexes))
 
-    # 9. Performance map from risk and intervals
+    # 9. cropped disp range
+    cropped_disp_range_indexes = rast_wrap.find_indexes_in_point_cloud(
+        cloud, cst.POINT_CLOUD_CROPPED_DISP_RANGE_KEY_ROOT, list_computed_layers
+    )
+    values_bands.extend(cropped_disp_range_indexes)
+    split_indexes.append(len(cropped_disp_range_indexes))
+
+    # 10. Performance map from risk and intervals
     performance_map_indexes = rast_wrap.find_indexes_in_point_cloud(
         cloud, cst.POINT_CLOUD_PERFORMANCE_MAP_ROOT, list_computed_layers
     )
@@ -306,6 +313,7 @@ def compute_vector_raster_and_stats(
         source_pc,
         filling,
         invalidity_mask,
+        cropped_disp_range,
         performance_map,
     ) = np.split(out, np.cumsum(split_indexes), axis=-1)
 
@@ -336,6 +344,10 @@ def compute_vector_raster_and_stats(
     filling_out = None
     if len(filling_indexes) > 0:
         filling_out = np.ceil(filling)
+
+    cropped_disp_range_out = None
+    if len(cropped_disp_range) > 0:
+        cropped_disp_range_out = np.ceil(cropped_disp_range)
 
     invalidity_mask_out = None
     if len(invalidity_mask_indexes) > 0:
@@ -373,6 +385,8 @@ def compute_vector_raster_and_stats(
         source_pc_out,
         filling_out,
         filling_indexes,
+        cropped_disp_range_out,
+        cropped_disp_range_indexes,
         performance_map,
         performance_map_indexes,
         invalidity_mask_out,
@@ -456,6 +470,8 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
         source_pc,
         filling,
         filling_indexes,
+        cropped_disp_range,
+        cropped_disp_range_indexes,
         performance_map_raw,
         performance_map_raw_indexes,
         invalidity_mask,
@@ -493,6 +509,10 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
     if invalidity_mask is not None:
         invalidity_mask = invalidity_mask.reshape(shape_out + (-1,))
         invalidity_mask = np.moveaxis(invalidity_mask, 2, 0)
+
+    if cropped_disp_range is not None:
+        cropped_disp_range = cropped_disp_range.reshape(shape_out + (-1,))
+        cropped_disp_range = np.moveaxis(cropped_disp_range, 2, 0)
 
     if msk is not None:
         msk = msk.reshape(shape_out)
@@ -559,6 +579,8 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
         source_pc_names,
         filling,
         filling_indexes,
+        cropped_disp_range,
+        cropped_disp_range_indexes,
         performance_map_raw,
         performance_map_classified,
         performance_map_classified_indexes,

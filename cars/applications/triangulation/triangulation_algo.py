@@ -456,6 +456,13 @@ def compute_point_cloud(  # pylint: disable=R0917 # noqa:C901
             cst.BAND_INVALIDITY_MASK,
             point_cloud,
         )
+    if cst.CROPPED_DISPARITY_RANGE in matches_dataset:
+        triang_wrap.add_layer(
+            matches_dataset,
+            cst.CROPPED_DISPARITY_RANGE,
+            cst.BAND_CROP_DISP_RANGE,
+            point_cloud,
+        )
 
     if cst.ROI in matches_dataset.attrs:
         point_cloud.attrs[cst.ROI] = matches_dataset.attrs[cst.ROI]

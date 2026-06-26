@@ -112,7 +112,7 @@ def compute_terrain_msk(
     return terrain_tile_data_msk, terrain_tile_data_msk_pos
 
 
-def create_point_cloud_index(cloud_sample):
+def create_point_cloud_index(cloud_sample):  # noqa C901
     """
     Create point cloud index from cloud list keys and color inputs
     """
@@ -167,6 +167,17 @@ def create_point_cloud_index(cloud_sample):
         for band in band_invalidity_mask:
             band_index = "{}_{}".format(
                 cst.POINT_CLOUD_INVALIDITY_MASK_KEY_ROOT, band
+            )
+            cloud_indexes_with_types[band_index] = "uint8"
+
+    # Add invalidity_mask information indexes
+    if cst.CROPPED_DISPARITY_RANGE in cloud_sample:
+        band_cropped_disp_range = list(
+            cloud_sample.coords[cst.BAND_CROP_DISP_RANGE].to_numpy()
+        )
+        for band in band_cropped_disp_range:
+            band_index = "{}_{}".format(
+                cst.POINT_CLOUD_CROPPED_DISP_RANGE_KEY_ROOT, band
             )
             cloud_indexes_with_types[band_index] = "uint8"
 
@@ -477,6 +488,10 @@ def depth_map_dataset_to_dataframe(  # noqa: C901
         (cst.EPI_CLASSIFICATION, cst.POINT_CLOUD_CLASSIF_KEY_ROOT),
         (cst.EPI_FILLING, cst.POINT_CLOUD_FILLING_KEY_ROOT),
         (cst.EPI_INVALIDITY_MASK, cst.POINT_CLOUD_INVALIDITY_MASK_KEY_ROOT),
+        (
+            cst.CROPPED_DISPARITY_RANGE,
+            cst.POINT_CLOUD_CROPPED_DISP_RANGE_KEY_ROOT,
+        ),
     ]
 
     # Add layer inf and sup
