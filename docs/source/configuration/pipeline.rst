@@ -29,6 +29,7 @@ Each of them can be called by themselves, provided the right inputs.
     pipelines/filling
     pipelines/merging
     pipelines/formatting
+    pipelines/edge_detection
 
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
 | Pipeline                                    | Per-resolution | Description                                                                                                                              |
@@ -45,6 +46,9 @@ Each of them can be called by themselves, provided the right inputs.
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
 | :ref:`formatting <formatting>`              | No             | Produces the final formatted output of the CARS pipeline by merging classification layers, selecting color bands, and structuring data.  |
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
+| :ref:`edge_detection <edge_detection>`      | No             | Produces an edge map from a single image using the MoGe2 model. Requires the CARS Edge Detection plugin.                                 |
++---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
+
 
 Each pipeline has its own applications and parameters. 
 They can be set using a key with the pipeline name at the root of the configuration file, itself containing ``applications`` and ``advanced``, as shown below :

@@ -1,0 +1,28 @@
+input:
+  sensors:
+
+    # first option : simply provide the path to the edges mask
+    img1: 
+      image: /path_to_img1
+      edges: /out_edge_detection/img1/edges.tif
+
+    # second option : provide a dictionary with the path to the edges mask, and optionally additional data
+    img2:
+      image: /path_to_img2
+      edges: 
+        edges_mask: /out_edge_detection/edge_detection/img2/edges.tif
+        depth_map: path/to/depth_map.tif
+        normals: null # any key without data can be set to null, or omitted entirely
+        tile_id: path/to/tile_id.tif
+
+    # not all images need to have edges masks
+    img3: /path_to_img3
+
+  pairing:
+    - - img1
+      - img2
+    - - img1
+      - img3
+
+output:
+  directory: out_cars/

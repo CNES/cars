@@ -1,0 +1,20 @@
+pipeline: edge_detection
+
+input:
+  sensors:
+    img1: /path_to_img1
+    img2: /path_to_img2
+
+# options for edge detection, can be entirely omitted if you want to use the default settings
+edge_detection:
+  advanced:
+    right_image_edge_detection: true # if true, will run edge detection on the right images as well
+  applications:
+    depth_map_generation:
+      method: moge2 # the only supported method for now
+      model: Ruicheng/moge-2-vitl-normal # the model weights to use for depth map generation
+      save_intermediate_data: true # whether to save intermediate data (e.g. depth maps, normal maps) to the output directory
+      edge_threshold: 0.7 # the threshold for edge detection, lower values will result in more edges being detected
+
+output:
+  directory: out_edge_detection/
