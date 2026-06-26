@@ -1,0 +1,25 @@
+
+# Option 1: Specify which pipelines to run. The absence of edge_detection will disable it.
+pipeline: 
+  - subsampling
+  - surface_modeling
+  - tie_points
+  - formatting
+
+# Option 2: For each pipeline, specify whether to run it or not. Setting edge_detection to false will disable it.
+pipeline:
+  edge_detection: false
+  subsampling: true
+  surface_modeling: true
+  tie_points: true
+  filling: false
+  formatting: true
+  merging: false
+
+input:
+  sensors:
+    img1: /path_to_img1
+    img2: /path_to_img2
+
+output:
+  directory: out_no_edge_detection/

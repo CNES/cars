@@ -1,0 +1,6 @@
+---
+applications:
+  depth_map_generation:
+    model: "Ruicheng/moge-2-vitl-normal"
+    edge_threshold: 0.4 # lower values will result in more edges being detected
+    save_intermediate_data: false
