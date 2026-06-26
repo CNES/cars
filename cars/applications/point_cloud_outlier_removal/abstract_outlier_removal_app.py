@@ -208,11 +208,8 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
         filtered_point_cloud.attributes.update(epipolar_point_cloud.attributes)
 
         if (
-            depth_map_dir
-            or self.used_config.get(
-                application_constants.SAVE_INTERMEDIATE_DATA
-            )
-        ) and "tif" in point_cloud_format:
+            depth_map_dir and "tif" in point_cloud_format
+        ) or self.used_config.get(application_constants.SAVE_INTERMEDIATE_DATA):
             filtered_dir = (
                 depth_map_dir if depth_map_dir is not None else dump_dir
             )
@@ -317,10 +314,9 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
         # Save laz point cloud if save_intermediate_date is activated (dump_dir)
         # or if point_cloud_dir is provided (save as official product)
         save_point_cloud_as_laz = (
-            point_cloud_dir is not None
-            or self.used_config.get(
-                application_constants.SAVE_INTERMEDIATE_DATA, False
-            )
+            point_cloud_dir is not None and "laz" in point_cloud_format
+        ) or self.used_config.get(
+            application_constants.SAVE_INTERMEDIATE_DATA, False
         )
 
         # Create CarsDataset
@@ -333,7 +329,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
         filtered_point_cloud.attributes = merged_point_cloud.attributes.copy()
 
         laz_pc_dir_name = None
-        if save_point_cloud_as_laz and "laz" in point_cloud_format:
+        if save_point_cloud_as_laz:
             if point_cloud_dir is not None:
                 laz_pc_dir_name = os.path.join(point_cloud_dir, "laz")
                 os.makedirs(laz_pc_dir_name, exist_ok=True)
@@ -345,7 +341,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
                 cars_ds_name="filtered_point_cloud_laz_" + app_name,
             )
         csv_pc_dir_name = None
-        if save_point_cloud_as_csv and "laz" in point_cloud_format:
+        if save_point_cloud_as_csv:
             csv_pc_dir_name = os.path.join(dump_dir, "csv")
             safe_makedirs(csv_pc_dir_name)
             self.orchestrator.add_to_compute_lists(

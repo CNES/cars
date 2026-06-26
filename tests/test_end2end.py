@@ -96,6 +96,9 @@ def test_end2end_gizeh_meta_pipeline():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory, "product_level": ["dtm"]},
+            "surface_modeling": {
+                "advanced": {"all": {"save_intermediate_data": True}}
+            },
         }
         out_dir = conf["output"]["directory"]
         meta_pipeline = default.DefaultPipeline(conf)
