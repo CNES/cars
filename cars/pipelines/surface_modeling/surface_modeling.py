@@ -35,6 +35,7 @@ from __future__ import print_function
 import copy
 import logging
 import os
+import shutil
 from collections import OrderedDict
 from pathlib import Path
 
@@ -2405,23 +2406,26 @@ class SurfaceModelingPipeline(PipelineTemplate):
             filling_file_name is not None
             and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING]
         ):
+            filling_file_name_inter = os.path.join(
+                os.path.dirname(dsm_file_name), "filling_inter.tif"
+            )
             filling_file_name_out = os.path.join(
                 os.path.dirname(dsm_file_name), "filling.tif"
             )
 
-            if not os.path.exists(filling_file_name_out):
-                # create filling file
+            if not os.path.exists(filling_file_name):
+                # create input filling file
                 with rasterio.open(dsm_file_name) as src:
                     profile = src.profile
 
                 profile.update(dtype="uint8", nodata=255)
 
-                with rasterio.open(filling_file_name_out, "w", **profile):
+                with rasterio.open(filling_file_name, "w", **profile):
                     pass
 
             self.merge_filling_bands(
                 filling_file_name,
-                filling_file_name_out,
+                filling_file_name_inter,
                 self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_FILLING],
                 dsm_file_name,
                 os.path.join(
@@ -2429,7 +2433,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 ),
                 local_orchestrator=self.cars_orchestrator,
             )
+
             self.cars_orchestrator.breakpoint()
+
+            try:
+                shutil.move(filling_file_name_inter, filling_file_name_out)
+            except FileNotFoundError:
+                logging.warning("Filling file not found")
 
         invalidity_mask_file = os.path.join(
             os.path.dirname(dsm_file_name), "invalidity_mask.tif"
