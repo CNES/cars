@@ -438,7 +438,11 @@ def create_raster_dataset(  # noqa: C901
             cst.POINT_CLOUD_INVALIDITY_MASK_KEY_ROOT,
         ],
     ):
-        if dataset is not None and bands_name is not None:
+        if (
+            dataset is not None
+            and bands_name is not None
+            and len(bands_name) > 0
+        ):
             dataset = np.nan_to_num(dataset, nan=msk_no_data)
             if band_key_root is not None:
                 for idx, band_name in enumerate(bands_name):
