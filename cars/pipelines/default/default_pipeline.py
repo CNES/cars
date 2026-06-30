@@ -583,7 +583,7 @@ class DefaultPipeline(PipelineTemplate):
         :param conf: configuration of subsampling
         :type conf: dict
         """
-        pipeline = SubsamplingPipeline(conf)
+        pipeline = SubsamplingPipeline(conf, config_dir=self.config_dir)
         advanced = pipeline.check_advanced(
             conf[pipeline_cst.SUBSAMPLING].get(ADVANCED, {}),
             conf[INPUT],
