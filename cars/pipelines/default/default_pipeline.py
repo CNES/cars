@@ -583,7 +583,7 @@ class DefaultPipeline(PipelineTemplate):
         :param conf: configuration of subsampling
         :type conf: dict
         """
-        pipeline = SubsamplingPipeline(conf)
+        pipeline = SubsamplingPipeline(conf, config_dir=self.config_dir)
         advanced = pipeline.check_advanced(
             conf[pipeline_cst.SUBSAMPLING].get(ADVANCED, {}),
             conf[INPUT],
@@ -1557,6 +1557,7 @@ def merge_used_conf(used_configurations, resolutions, out_dir):
         OUTPUT: used_configurations[resolutions[-1]][OUTPUT],
         ORCHESTRATOR: used_configurations[resolutions[0]][ORCHESTRATOR],
     }
+    merged_conf[INPUT][sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] = None
 
     if pipeline_cst.SUBSAMPLING in used_configurations:
         merged_conf[pipeline_cst.SUBSAMPLING] = used_configurations[
