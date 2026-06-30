@@ -1066,7 +1066,7 @@ def test_end2end_gizeh_use_endogenous_dem():
 
 
 @pytest.mark.end2end_tests
-def test_init_with_used_conf():
+def test_run_with_used_conf():
     """
     Default pipeline initialized with generated used conf
     """
@@ -1106,11 +1106,14 @@ def test_init_with_used_conf():
         }
         out_dir = conf["output"]["directory"]
         _ = default.DefaultPipeline(conf)
+        meta_pipeline = default.DefaultPipeline(conf)
+        meta_pipeline.run()
         with open(
             os.path.join(out_dir, "global_used_conf.yaml"), encoding="utf-8"
         ) as used_conf_file:
             used_conf_1 = yaml.safe_load(used_conf_file)
-        _ = default.DefaultPipeline(used_conf_1)
+        meta_pipeline_2 = default.DefaultPipeline(used_conf_1)
+        meta_pipeline_2.run()
         with open(
             os.path.join(out_dir, "global_used_conf.yaml"), encoding="utf-8"
         ) as used_conf_file:
