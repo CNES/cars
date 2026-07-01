@@ -1,5 +1,6 @@
 ---
-classification:
-  path: classif.tif
-  loader: slurp_classification
-
+loaders:
+  classification: slurp
+sensors:
+  my_name_for_this_sensor:
+    classification: classif.tif

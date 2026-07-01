@@ -346,6 +346,10 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
         The SLURP loader does not change the configuration schema of the classification parameter.
 
+        An example is given below : 
+
+        .. include-cars-config:: ../../example_configs/configuration/classif_slurp_loader_config
+
         **Classification pivot loader**
 
         The pivot loader is the full parametrization of the classification. It can be used to optimize the reading of classification file.
