@@ -370,9 +370,9 @@ def check_filling(conf, classif_loader):
     slurp_filling = {
         "fill_with_geoid": [7],
         "interpolate_from_borders": [8],
-        "fill_with_endogenous_dem": [9, "occlusion"],
+        "fill_with_endogenous_dem": [9],
         "fill_with_exogenous_dem": [5],
-        "interpolation": "mismatch",
+        "interpolation": None,
     }
     filling_from_loader = {}
     filling_from_loader["basic"] = basic_filling
