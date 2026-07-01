@@ -400,58 +400,64 @@ def create_raster_dataset(  # noqa: C901
             # update raster output with filling information
             raster_out = xr.merge((raster_out, layer_out))
 
-    if source_pc is not None and source_pc_names is not None:
-        source_pc = np.nan_to_num(source_pc, nan=msk_no_data)
-        source_pc_out = xr.Dataset(
-            {
-                cst.RASTER_SOURCE_PC: (
-                    [cst.BAND_SOURCE_PC, cst.Y, cst.X],
-                    source_pc,
-                )
-            },
-            coords={**raster_coords, cst.BAND_SOURCE_PC: source_pc_names},
-        )
-        # update raster output with classification data
-        raster_out = xr.merge((raster_out, source_pc_out))
-
-    if filling is not None:  # rasterizer produced filling info output
-        filling = np.nan_to_num(filling, nan=msk_no_data)
-        for idx, band_name in enumerate(band_filling):
-            band_filling[idx] = band_name.replace(
-                cst.POINT_CLOUD_FILLING_KEY_ROOT + "_", ""
+    for (
+        dataset,
+        dataset_key,
+        band_key,
+        bands_name,
+        band_key_root,
+    ) in zip(  # noqa: B905
+        [
+            source_pc,
+            filling,
+            cropped_disp_range,
+            invalidity_mask,
+        ],
+        [
+            cst.RASTER_SOURCE_PC,
+            cst.RASTER_FILLING,
+            cst.RASTER_CROPPED_DISP_RANGE,
+            cst.RASTER_INVALIDITY_MASK,
+        ],
+        [
+            cst.BAND_SOURCE_PC,
+            cst.BAND_FILLING,
+            cst.BAND_CROP_DISP_RANGE,
+            cst.BAND_INVALIDITY_MASK,
+        ],
+        [
+            source_pc_names,
+            band_filling,
+            band_cropped_disp_range,
+            band_invalidity_mask,
+        ],
+        [
+            None,
+            cst.POINT_CLOUD_FILLING_KEY_ROOT,
+            cst.POINT_CLOUD_CROPPED_DISP_RANGE_KEY_ROOT,
+            cst.POINT_CLOUD_INVALIDITY_MASK_KEY_ROOT,
+        ],
+    ):
+        if (
+            dataset is not None
+            and bands_name is not None
+            and len(bands_name) > 0
+        ):
+            dataset = np.nan_to_num(dataset, nan=msk_no_data)
+            if band_key_root is not None:
+                for idx, band_name in enumerate(bands_name):
+                    bands_name[idx] = band_name.replace(band_key_root + "_", "")
+            dataset_out = xr.Dataset(
+                {
+                    dataset_key: (
+                        [band_key, cst.Y, cst.X],
+                        dataset,
+                    )
+                },
+                coords={**raster_coords, band_key: bands_name},
             )
-        filling_out = xr.Dataset(
-            {
-                cst.RASTER_FILLING: (
-                    [cst.BAND_FILLING, cst.Y, cst.X],
-                    filling,
-                )
-            },
-            coords={**raster_coords, cst.BAND_FILLING: band_filling},
-        )
-        # update raster output with filling information
-        raster_out = xr.merge((raster_out, filling_out))
-
-    if cropped_disp_range is not None and len(cropped_disp_range) > 0:
-        cropped_disp_range = np.nan_to_num(cropped_disp_range, nan=msk_no_data)
-        for idx, band_name in enumerate(band_cropped_disp_range):
-            band_cropped_disp_range[idx] = band_name.replace(
-                cst.POINT_CLOUD_CROPPED_DISP_RANGE_KEY_ROOT + "_", ""
-            )
-        cropped_disp_range_out = xr.Dataset(
-            {
-                cst.RASTER_CROPPED_DISP_RANGE: (
-                    [cst.BAND_CROP_DISP_RANGE, cst.Y, cst.X],
-                    cropped_disp_range,
-                )
-            },
-            coords={
-                **raster_coords,
-                cst.BAND_CROP_DISP_RANGE: band_cropped_disp_range,
-            },
-        )
-        # update raster output with filling information
-        raster_out = xr.merge((raster_out, cropped_disp_range_out))
+            # update raster output with classification data
+            raster_out = xr.merge((raster_out, dataset_out))
 
     if performance_map is not None:
         performance_map = np.nan_to_num(performance_map, nan=msk_no_data)
@@ -505,27 +511,6 @@ def create_raster_dataset(  # noqa: C901
         raster_out.attrs[cst.RIO_TAG_PERFORMANCE_MAP_CLASSES] = (
             performance_map_classified_index
         )
-
-    if invalidity_mask is not None:
-        invalidity_mask = np.nan_to_num(invalidity_mask, nan=msk_no_data)
-        for idx, band_name in enumerate(band_invalidity_mask):
-            band_invalidity_mask[idx] = band_name.replace(
-                cst.POINT_CLOUD_FILLING_KEY_ROOT + "_", ""
-            )
-            invalidity_mask_out = xr.Dataset(
-                {
-                    cst.RASTER_INVALIDITY_MASK: (
-                        [cst.BAND_INVALIDITY_MASK, cst.Y, cst.X],
-                        invalidity_mask,
-                    )
-                },
-                coords={
-                    **raster_coords,
-                    cst.BAND_INVALIDITY_MASK: band_invalidity_mask,
-                },
-            )
-        # update raster output with invalidity_mask information
-        raster_out = xr.merge((raster_out, invalidity_mask_out))
 
     return raster_out
 
