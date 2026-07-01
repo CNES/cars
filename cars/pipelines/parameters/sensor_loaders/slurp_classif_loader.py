@@ -55,8 +55,14 @@ class SlurpClassifSensorLoader(SensorLoaderTemplate):
             overloaded_conf = {}
             image_path = make_relative_path_absolute(conf, self.config_dir)
             overloaded_conf[sens_cst.INPUT_PATH] = image_path
+        elif isinstance(conf, dict):
+            overloaded_conf = conf.copy()
+            image_path = make_relative_path_absolute(
+                conf[sens_cst.INPUT_PATH], self.config_dir
+            )
+            overloaded_conf[sens_cst.INPUT_PATH] = image_path
         else:
-            raise TypeError(f"Input {conf} is not a string")
+            raise TypeError(f"Input {conf} is not a string or dict")
 
         sensor_schema = {
             sens_cst.INPUT_PATH: str,
