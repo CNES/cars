@@ -137,7 +137,7 @@ class SimpleGaussian(
         overloaded_conf["dsm_no_data"] = conf.get("dsm_no_data", -32768)
         overloaded_conf["texture_no_data"] = conf.get("texture_no_data", None)
         overloaded_conf["texture_dtype"] = conf.get("texture_dtype", None)
-        overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 255)
+        overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 0)
         overloaded_conf["fill_nodata"] = conf.get("fill_nodata", True)
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
@@ -957,7 +957,7 @@ def rasterization_wrapper(  # noqa: C901
     dsm_no_data: int = np.nan,
     texture_no_data: int = np.nan,
     color_dtype: str = "float32",
-    msk_no_data: int = 255,
+    msk_no_data: int = 0,
     source_pc_names=None,
     performance_map_classes=None,
     fill_nodata: bool = True,

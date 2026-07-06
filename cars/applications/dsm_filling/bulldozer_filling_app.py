@@ -283,7 +283,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             "bulldozer_filled_filling",
             filled_dsm_cars_ds,
             dtype=np.uint8,
-            nodata=255,
+            nodata=0,
             optional_data=False,
             cars_ds_name="bulldozer_filled_filling",
             rio_band_description=band_description,

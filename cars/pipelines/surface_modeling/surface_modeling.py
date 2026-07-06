@@ -2418,7 +2418,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 with rasterio.open(dsm_file_name) as src:
                     profile = src.profile
 
-                profile.update(dtype="uint8", nodata=255)
+                profile.update(dtype="uint8", nodata=0)
 
                 with rasterio.open(filling_file_name, "w", **profile):
                     pass
