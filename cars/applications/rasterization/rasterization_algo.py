@@ -58,7 +58,8 @@ def simple_rasterization_dataset_wrapper(
     radius: int = 1,
     dsm_no_data: int = np.nan,
     texture_no_data: int = np.nan,
-    msk_no_data: int = 0,
+    msk_no_data: int = 255,
+    filling_no_data: int = 0,
     list_computed_layers: List[str] = None,
     source_pc_names: List[str] = None,
     performance_map_classes: List[float] = None,
@@ -88,6 +89,7 @@ def simple_rasterization_dataset_wrapper(
     :param dsm_no_data: no data value to use in the final raster
     :param texture_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
+    :param filling_no_data: no data value to use in the final filling image
     :param list_computed_layers: list of computed output data
     :param source_pc_names: list of names of point cloud before merging :
         name of sensors pair or name of point cloud file
@@ -130,6 +132,7 @@ def simple_rasterization_dataset_wrapper(
         hgt_no_data=dsm_no_data,
         texture_no_data=texture_no_data,
         msk_no_data=msk_no_data,
+        filling_no_data=filling_no_data,
         list_computed_layers=list_computed_layers,
         source_pc_names=source_pc_names,
         performance_map_classes=performance_map_classes,
@@ -406,7 +409,8 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
     radius: int = 1,
     hgt_no_data: int = -32768,
     texture_no_data: int = 0,
-    msk_no_data: int = 0,
+    msk_no_data: int = 255,
+    filling_no_data: int = 0,
     list_computed_layers: List[str] = None,
     source_pc_names: List[str] = None,
     performance_map_classes: List[float] = None,
@@ -430,6 +434,7 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
     :param hgt_no_data: no data value to use for height
     :param texture_no_data: no data value to use for color
     :param msk_no_data: no data value to use in the final mask image
+    :param filling_no_data: no data value to use in the final filling image
     :param list_computed_layers: list of computed output data
     :param source_pc_names: list of source pc names
     :param performance_map_classes: list for step defining border of class
@@ -562,6 +567,7 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
         hgt_no_data,
         texture_no_data,
         msk_no_data,
+        filling_no_data,
         epsg,
         mean,
         stdev,
