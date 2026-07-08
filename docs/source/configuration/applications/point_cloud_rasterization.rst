@@ -69,7 +69,7 @@ Only one simple gaussian method is available for now.
       -
       - 255
       -
-    * - msk_no_data
+    * - filling_no_data
       - No data value for filling image
       - int
       -
