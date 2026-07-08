@@ -206,7 +206,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             "border_interp_filled_filling",
             filled_dsm_cars_ds,
             dtype=np.uint8,
-            nodata=0,
+            nodata=255,
             optional_data=False,
             cars_ds_name="border_interp_filled_filling",
             rio_band_description=band_description,

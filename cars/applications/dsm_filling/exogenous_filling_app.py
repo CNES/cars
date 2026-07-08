@@ -228,7 +228,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             "exogenous_filled_filling",
             filled_dsm_cars_ds,
             dtype=np.uint8,
-            nodata=0,
+            nodata=255,
             optional_data=False,
             cars_ds_name="exogenous_filled_filling",
             rio_band_description=band_description,

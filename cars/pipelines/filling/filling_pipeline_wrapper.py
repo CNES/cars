@@ -73,7 +73,7 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
     description = []
 
     dump_dir = Path(dump_dir)
-    nodata = 0
+    nodata = 255
     for folder in dump_dir.iterdir():
         if folder.is_dir() and "dsm_filling" in folder.name:
             for file in folder.iterdir():
@@ -157,6 +157,8 @@ def merge_filling_bands_wrapper(  # pylint: disable=R0917
     filling_mono_bands[mask_1 & mask_2] = (
         inverse_aux_filling["other"] if "other" in inverse_aux_filling else 7
     )
+
+    filling_mono_bands[filling_mono_bands == nodata] = 0
 
     output_dataset = xr.Dataset(
         data_vars={
