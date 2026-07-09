@@ -666,7 +666,7 @@ class FillingPipeline(PipelineTemplate):
             height = src.height
             width = src.width
             filling_dtype = "uint8"
-            nodata_value = 255
+            nodata_value = 0
 
             profile["crs"] = profile["crs"].to_wkt()
 

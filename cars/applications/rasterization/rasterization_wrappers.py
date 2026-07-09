@@ -166,6 +166,7 @@ def create_raster_dataset(  # noqa: C901
     hgt_no_data: int,
     texture_no_data: int,
     msk_no_data: int,
+    filling_no_data: int,
     epsg: int,
     mean: np.ndarray,
     stdev: np.ndarray,
@@ -205,6 +206,7 @@ def create_raster_dataset(  # noqa: C901
     :param hgt_no_data: no data value to use for height
     :param texture_no_data: no data value to use for color
     :param msk_no_data: no data value to use for mask and classif
+    :param filling_no_data: no data value to use for filling
     :param epsg: epsg code for the CRS of the final raster
     :param mean: mean of height and colors
     :param stdev: standard deviation of height and colors
@@ -406,6 +408,7 @@ def create_raster_dataset(  # noqa: C901
         band_key,
         bands_name,
         band_key_root,
+        no_data_value,
     ) in zip(  # noqa: B905
         [
             source_pc,
@@ -437,13 +440,19 @@ def create_raster_dataset(  # noqa: C901
             cst.POINT_CLOUD_CROPPED_DISP_RANGE_KEY_ROOT,
             cst.POINT_CLOUD_INVALIDITY_MASK_KEY_ROOT,
         ],
+        [
+            msk_no_data,
+            filling_no_data,
+            msk_no_data,
+            msk_no_data,
+        ],
     ):
         if (
             dataset is not None
             and bands_name is not None
             and len(bands_name) > 0
         ):
-            dataset = np.nan_to_num(dataset, nan=msk_no_data)
+            dataset = np.nan_to_num(dataset, nan=no_data_value)
             if band_key_root is not None:
                 for idx, band_name in enumerate(bands_name):
                     bands_name[idx] = band_name.replace(band_key_root + "_", "")

@@ -69,6 +69,12 @@ Only one simple gaussian method is available for now.
       -
       - 255
       -
+    * - filling_no_data
+      - No data value for filling image
+      - int
+      -
+      - 0
+      -
     * - save_intermediate_data
       - Save all layers from input point cloud in application `dump_dir`
       - boolean

@@ -99,6 +99,7 @@ class SimpleGaussian(
         self.texture_no_data = self.used_config["texture_no_data"]
         self.color_dtype = self.used_config["texture_dtype"]
         self.msk_no_data = self.used_config["msk_no_data"]
+        self.filling_no_data = self.used_config["filling_no_data"]
         self.fill_nodata = self.used_config["fill_nodata"]
 
         # Init orchestrator
@@ -138,6 +139,7 @@ class SimpleGaussian(
         overloaded_conf["texture_no_data"] = conf.get("texture_no_data", None)
         overloaded_conf["texture_dtype"] = conf.get("texture_dtype", None)
         overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 255)
+        overloaded_conf["filling_no_data"] = conf.get("filling_no_data", 0)
         overloaded_conf["fill_nodata"] = conf.get("fill_nodata", True)
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
@@ -150,6 +152,7 @@ class SimpleGaussian(
             "grid_points_division_factor": Or(None, int),
             "dsm_no_data": int,
             "msk_no_data": int,
+            "filling_no_data": int,
             "texture_no_data": Or(None, int),
             "texture_dtype": Or(None, str),
             "save_intermediate_data": bool,
@@ -668,7 +671,7 @@ class SimpleGaussian(
                 cst.RASTER_FILLING,
                 terrain_raster,
                 dtype=np.uint8,
-                nodata=self.msk_no_data,
+                nodata=self.filling_no_data,
                 cars_ds_name="filling",
                 optional_data=True,
             )
@@ -930,6 +933,7 @@ class SimpleGaussian(
                             texture_no_data=self.texture_no_data,
                             color_dtype=color_dtype,
                             msk_no_data=self.msk_no_data,
+                            filling_no_data=self.filling_no_data,
                             source_pc_names=source_pc_names,
                             performance_map_classes=performance_map_classes,
                             fill_nodata=self.fill_nodata,
@@ -958,6 +962,7 @@ def rasterization_wrapper(  # noqa: C901
     texture_no_data: int = np.nan,
     color_dtype: str = "float32",
     msk_no_data: int = 255,
+    filling_no_data: int = 0,
     source_pc_names=None,
     performance_map_classes=None,
     fill_nodata: bool = True,
@@ -992,6 +997,7 @@ def rasterization_wrapper(  # noqa: C901
     :param dsm_no_data: no data value to use in the final raster
     :param texture_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
+    :param filling_no_data: no data value to use in the final filling image
     :param source_pc_names: list of names of point cloud before merging :
         name of sensors pair or name of point cloud file
     :param performance_map_classes: list for step defining border of class
@@ -1135,6 +1141,7 @@ def rasterization_wrapper(  # noqa: C901
         dsm_no_data=dsm_no_data,
         texture_no_data=texture_no_data,
         msk_no_data=msk_no_data,
+        filling_no_data=filling_no_data,
         list_computed_layers=list_computed_layers,
         source_pc_names=source_pc_names,
         performance_map_classes=performance_map_classes,

@@ -2491,7 +2491,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             height = src.height
             width = src.width
             filling_dtype = src.dtypes[0]
-            nodata_value = src.nodata
+            nodata_value = 0
 
         # Update to one band
         profile.update(count=1, dtype=filling_dtype)
