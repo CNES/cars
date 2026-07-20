@@ -44,6 +44,9 @@ def test_check_full_conf():
         "texture_no_data": 0,
         "texture_dtype": None,
         "msk_no_data": 255,
+        "filling_no_data": 0,
         "save_intermediate_data": False,
+        "fill_nodata": True,
+        "invalidity_mask_threshold": 0.5,
     }
     _ = SimpleGaussian(conf)

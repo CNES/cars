@@ -64,6 +64,7 @@ def simple_rasterization_dataset_wrapper(
     source_pc_names: List[str] = None,
     performance_map_classes: List[float] = None,
     cloud_global_id: int = None,
+    invalidity_mask_threshold: float = 0.5,
 ) -> xr.Dataset:
     """
     Wrapper of simple_rasterization
@@ -97,6 +98,8 @@ def simple_rasterization_dataset_wrapper(
     :type performance_map_classes: list or None
     :param cloud_global_id: global id of pair
     :type cloud_global_id: int
+    :param invalidity_mask_threshold: threshold for invalidity mask
+    :type invalidity_mask_threshold: float
     :return: Rasterized cloud
     """
 
@@ -137,6 +140,7 @@ def simple_rasterization_dataset_wrapper(
         source_pc_names=source_pc_names,
         performance_map_classes=performance_map_classes,
         cloud_global_id=cloud_global_id,
+        invalidity_mask_threshold=invalidity_mask_threshold,
     )
 
     return raster
@@ -154,6 +158,7 @@ def compute_vector_raster_and_stats(
     radius: int,
     list_computed_layers: List[str] = None,
     cloud_global_id: int = None,
+    invalidity_mask_threshold: float = 0.5,
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -179,6 +184,7 @@ def compute_vector_raster_and_stats(
     :param radius: Radius for hole filling.
     :param list_computed_layers: list of computed output data
     :param cloud_global_id: global id of pair
+    :param invalidity_mask_threshold: threshold for invalidity mask
     :return: a tuple with rasterization results and statistics.
     """
     # get points corresponding to (X, Y positions) + data_valid
@@ -358,13 +364,19 @@ def compute_vector_raster_and_stats(
         b1 = invalidity_mask[..., 1]
 
         both_nan = np.isnan(b0) & np.isnan(b1)
-        both_zero = (b0 == 0) & (b1 == 0)
 
-        out0 = (b0 > b1).astype(float)
-        out1 = (b1 > b0).astype(float)
+        b0_above_threshold = b0 > invalidity_mask_threshold
+        b1_above_threshold = b1 > invalidity_mask_threshold
+
+        out0 = (b0_above_threshold & (~b1_above_threshold | (b0 >= b1))).astype(
+            float
+        )
+
+        out1 = (b1_above_threshold & (~b0_above_threshold | (b1 > b0))).astype(
+            float
+        )
 
         invalidity_mask_out = np.stack([out0, out1], axis=-1)
-        invalidity_mask_out[both_zero] = 0
         invalidity_mask_out[both_nan] = np.nan
 
     if len(performance_map_indexes) == 0:
@@ -415,6 +427,7 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
     source_pc_names: List[str] = None,
     performance_map_classes: List[float] = None,
     cloud_global_id: int = None,
+    invalidity_mask_threshold: float = 0.5,
 ) -> Union[xr.Dataset, None]:
     """
     Rasterize a point cloud with its color bands to a Dataset
@@ -440,6 +453,7 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
     :param performance_map_classes: list for step defining border of class
     :type performance_map_classes: list or None
     :param cloud_global_id: global id of pair
+    :param invalidity_mask_threshold: threshold for invalidity mask
     :return: Rasterized cloud color and statistics.
     """
 
@@ -492,6 +506,7 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
         radius,
         list_computed_layers,
         cloud_global_id=cloud_global_id,
+        invalidity_mask_threshold=invalidity_mask_threshold,
     )
 
     # reshape data as a 2d grid.
