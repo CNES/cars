@@ -101,6 +101,9 @@ class SimpleGaussian(
         self.msk_no_data = self.used_config["msk_no_data"]
         self.filling_no_data = self.used_config["filling_no_data"]
         self.fill_nodata = self.used_config["fill_nodata"]
+        self.invalidity_mask_threshold = self.used_config[
+            "invalidity_mask_threshold"
+        ]
 
         # Init orchestrator
         self.orchestrator = None
@@ -141,6 +144,9 @@ class SimpleGaussian(
         overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 255)
         overloaded_conf["filling_no_data"] = conf.get("filling_no_data", 0)
         overloaded_conf["fill_nodata"] = conf.get("fill_nodata", True)
+        overloaded_conf["invalidity_mask_threshold"] = conf.get(
+            "invalidity_mask_threshold", 0.5
+        )
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -157,6 +163,7 @@ class SimpleGaussian(
             "texture_dtype": Or(None, str),
             "save_intermediate_data": bool,
             "fill_nodata": bool,
+            "invalidity_mask_threshold": float,
         }
 
         # Check conf
@@ -937,6 +944,9 @@ class SimpleGaussian(
                             source_pc_names=source_pc_names,
                             performance_map_classes=performance_map_classes,
                             fill_nodata=self.fill_nodata,
+                            invalidity_mask_threshold=(
+                                self.invalidity_mask_threshold,
+                            ),
                         )
                     ind_tile += 1
 
@@ -966,6 +976,7 @@ def rasterization_wrapper(  # noqa: C901
     source_pc_names=None,
     performance_map_classes=None,
     fill_nodata: bool = True,
+    invalidity_mask_threshold: float = 0.5,
 ):
     """
     Wrapper for rasterization step :
@@ -1002,6 +1013,10 @@ def rasterization_wrapper(  # noqa: C901
         name of sensors pair or name of point cloud file
     :param performance_map_classes: list for step defining border of class
     :type performance_map_classes: list or None
+    :param fill_nodata: if True, fill nodata values in the rasterization step
+    :type fill_nodata: bool
+    :param invalidity_mask_threshold: threshold for invalidity mask
+    :type invalidity_mask_threshold: float
 
     :return: digital surface model + projected colors
     :rtype: xr.Dataset
@@ -1146,6 +1161,7 @@ def rasterization_wrapper(  # noqa: C901
         source_pc_names=source_pc_names,
         performance_map_classes=performance_map_classes,
         cloud_global_id=attributes["cloud_id"],
+        invalidity_mask_threshold=invalidity_mask_threshold,
     )
 
     # Fill raster

@@ -87,6 +87,12 @@ Only one simple gaussian method is available for now.
       -
       - true
       - No
+    * - invalidity_mask_threshold
+      - threshold for invalidity mask
+      - float
+      -
+      - 0.5
+      - No
 
 **Example**
 
