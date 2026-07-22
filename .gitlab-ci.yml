@@ -76,6 +76,7 @@ include:
     - apt-get update -y
     - apt-get install -y libgl1-mesa-glx libsm6 libxext6 ffmpeg
     - source /app/cars/venv/bin/activate
+    - pip install --upgrade mlflow
     # All dependencies should already be installed in the docker env
     - pip install --no-build-isolation --editable .[dev,docs,edge_detection]
     # print installed packages for debugging purposes
