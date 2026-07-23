@@ -230,6 +230,7 @@ class PandoraLoader:
                     "interval_indicator": "cars_3",
                     "regularization": True,
                     "ambiguity_indicator": "cars_1",
+                    "ambiguity_threshold": 0.4,
                 }
             }
             pipeline_dict = OrderedDict()
