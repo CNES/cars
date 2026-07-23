@@ -239,7 +239,8 @@ class PandoraMethod(
         # additional checks: confidence_filtering
         conf_to_check["confidence_filtering"] = (
             self.check_conf_confidence_filtering(
-                conf_to_check["confidence_filtering"]
+                conf_to_check["confidence_filtering"],
+                conf_to_check["method"],
             )
         )
 
@@ -331,9 +332,12 @@ class PandoraMethod(
         )
         self.margins = pandora_machine.margins.global_margins
 
-    def check_conf_confidence_filtering(self, overloaded_conf):
+    def check_conf_confidence_filtering(self, overloaded_conf, method):
         """
-        Check the confidence filtering conf
+        Check the confidence filtering configuration.
+
+        Method-specific defaults are applied before user-provided values.
+        User-provided values always have priority.
         """
 
         default_conf = {
@@ -344,6 +348,20 @@ class PandoraMethod(
             "risk_range_threshold": 9,
             "nan_threshold": 0.2,
             "win_nanratio": 20,
+        }
+
+        specific_default_methods = {
+            "pandora_census_sgm_default",
+            "pandora_mccnn_sgm",
+        }
+
+        specific_default_conf = {
+            "bounds_ratio_threshold": 0.6,
+            "bounds_range_threshold": 12,
+            "risk_ratio_threshold": 0.8,
+            "risk_range_threshold": 12,
+            "win_nanratio": 9,
+            "nan_threshold": 0.6,
         }
 
         confidence_filtering_schema = {
@@ -357,6 +375,10 @@ class PandoraMethod(
         }
 
         used_conf = default_conf.copy()
+
+        if method in specific_default_methods:
+            used_conf.update(specific_default_conf)
+
         used_conf.update(overloaded_conf)
 
         checker_confidence_filtering_schema = Checker(
