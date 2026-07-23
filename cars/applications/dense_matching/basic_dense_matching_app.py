@@ -689,6 +689,50 @@ class BasicDenseMatchingApplication(
                     nodata=255,
                 )
 
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_disp_risk_min.tif",
+                    ),
+                    "confidence_from_risk_min.cars_2",
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_disp_risk_min",
+                    nodata=-9999,
+                )
+
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_disp_risk_max.tif",
+                    ),
+                    "confidence_from_risk_max.cars_2",
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_disp_risk_max",
+                    nodata=-9999,
+                )
+
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_disp_interval_bounds_inf.tif",
+                    ),
+                    "confidence_from_interval_bounds_inf.cars_3",
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_disp_interval_bounds_inf",
+                    nodata=-9999,
+                )
+
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_disp_interval_bounds_sup.tif",
+                    ),
+                    "confidence_from_interval_bounds_sup.cars_3",
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_disp_interval_bounds_sup",
+                    nodata=-9999,
+                )
+
             # Get saving infos in order to save tiles when they are computed
             [saving_info] = self.orchestrator.get_saving_infos(
                 [epipolar_disparity_map]
