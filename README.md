@@ -173,16 +173,16 @@ You can also ask your questions on the corresponding [slack](https://join.slack.
 If you use CARS in your research, please cite the following paper:
 
 ```
-@INPROCEEDINGS{9324020,
-  author={Youssefi, David and Michel, Julien and Sarrazin, Emmanuelle and Buffe, Fabrice and Cournet, Myriam and Delvit, Jean-Marc and L'Helguen, Céline and Melet, Olivier and Emilien, Aurélie and Bosman, Julien},
-  booktitle={IGARSS 2020 - 2020 IEEE International Geoscience and Remote Sensing Symposium}, 
-  title={CARS: A Photogrammetry Pipeline Using Dask Graphs to Construct A Global 3D Model}, 
-  year={2020},
-  volume={},
-  number={},
-  pages={453-456},
-  keywords={Automobiles;Geometry;Three-dimensional displays;Computational modeling;Estimation;Stereo image processing;Task analysis;Image processing;Photogrammetry;Stereovision;Digital Surface Model;High Performance Computing;Cloud Computing;Dask},
-  doi={10.1109/IGARSS39084.2020.9324020}}
+@Article{isprs-archives-XLIX-B2-2026-593-2026,
+AUTHOR = {Youssefi, D. and Bellet, V. and Steux, Y. and Roux, M. and Traizet, C. and Rassat, M. and Calendini, T.},
+TITLE = {CARS: A Photogrammetric Pipeline for Global 3D Reconstruction using Satellite Imagery},
+JOURNAL = {The International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences},
+VOLUME = {XLIX-B2-2026},
+YEAR = {2026},
+PAGES = {593--600},
+URL = {https://isprs-archives.copernicus.org/articles/XLIX-B2-2026/593/2026/},
+DOI = {10.5194/isprs-archives-XLIX-B2-2026-593-2026}
+}
 ```
 
 See [Authors file](https://github.com/CNES/cars/blob/master/AUTHORS.md)
@@ -194,4 +194,5 @@ You can contact us on the following mail adress: cars@cnes.fr
 # 🔗 **References**
 
 - [Youssefi D., Michel, J., Sarrazin, E., Buffe, F., Cournet, M., Delvit, J., L’Helguen, C., Melet, O., Emilien, A., Bosman, J., 2020. Cars: A photogrammetry pipeline using dask graphs to construct a global 3d model. IGARSS - IEEE International Geoscience and Remote Sensing Symposium.](https://ieeexplore.ieee.org/document/9324020)
-- [Michel, J., Sarrazin, E., Youssefi, D., Cournet, M., Buffe, F., Delvit, J., Emilien, A., Bosman, J., Melet, O., L’Helguen, C., 2020. A new satellite imagery stereo pipeline designed for scalability, robustness and performance. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.](https://www.isprs-ann-photogramm-remote-sens-spatial-inf-sci.net/V-2-2020/171/2020/)
+- [Michel, J., Sarrazin, E., Youssefi, D., Cournet, M., Buffe, F., Delvit, J., Emilien, A., Bosman, J., Melet, O., L’Helguen, C., 2020. A new satellite imagery stereo pipeline designed for scalability, robustness and performance. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.](https://doi.org/10.5194/isprs-annals-V-2-2020-171-2020)
+- [Youssefi, D., Bellet, V., Steux, Y., Roux, M., Traizet, C., Rassat, M., Calendini, T., 2026. CARS: A Photogrammetric Pipeline for Global 3D Reconstruction using Satellite Imagery. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.](https://doi.org/10.5194/isprs-archives-XLIX-B2-2026-593-2026)
