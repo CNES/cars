@@ -22,8 +22,6 @@
 This module contains the SIFT sparse matching method implementation.
 """
 
-import logging
-
 import numpy as np
 import pandas
 from json_checker import And, Checker, Or
@@ -190,22 +188,8 @@ class SiftSparseMethod(AbstractSparseMatchingMethod, short_name=["sift"]):
         )
 
         if disp_lower_bound is not None and disp_upper_bound is not None:
-            filtered_nb_matches = matches.shape[0]
-
             matches = matches[matches[:, 2] - matches[:, 0] >= disp_lower_bound]
             matches = matches[matches[:, 2] - matches[:, 0] <= disp_upper_bound]
-
-            logging.debug(
-                "{} matches discarded because they fall outside of disparity "
-                "range defined by --elevation_delta_lower_bound and "
-                "--elevation_delta_upper_bound: [{} pix., {} pix.]".format(
-                    filtered_nb_matches - matches.shape[0],
-                    disp_lower_bound,
-                    disp_upper_bound,
-                )
-            )
-        else:
-            logging.debug("Matches outside disparity range were not filtered")
 
         left_matches_dataframe = pandas.DataFrame(matches)
 

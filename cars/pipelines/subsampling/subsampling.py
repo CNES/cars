@@ -40,7 +40,6 @@ import yaml
 from json_checker import Checker, OptionalKey, Or
 
 from cars.applications.application import Application
-from cars.core import cars_logging
 from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
@@ -364,7 +363,7 @@ class SubsamplingPipeline(PipelineTemplate):
         :param log_dir: Optional log directory
         :param parent_pipeline_id: Optional parent pipeline ID if nested
         """
-        cars_logging.add_progress_message("Starting subsampling pipeline")
+        logging.info("Starting subsampling pipeline")
         inputs = copy.deepcopy(self.used_conf[INPUT])
 
         if log_dir is not None:

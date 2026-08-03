@@ -101,7 +101,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                     )
                 )
 
-            logging.info(
+            logging.debug(
                 "The AbstractGeometry {} plugin will be used".format(
                     geometry_plugin
                 )
@@ -164,7 +164,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
 
                 self.default_alt = self.get_dem_median_value()
                 self.elevation = self.default_alt
-                logging.info(
+                logging.debug(
                     "Median value of DEM ({}) will be used as "
                     "default_alt".format(self.default_alt)
                 )
@@ -302,12 +302,12 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                 top=src_transform.f,
             )
 
-        logging.info(
+        logging.debug(
             "DEM bounds : {}, {}, {}, {}".format(
                 bounds.left, bounds.top, bounds.right, bounds.bottom
             )
         )
-        logging.info(
+        logging.debug(
             "ROI bounds : {}, {}, {}, {}".format(
                 self.dem_roi[0],
                 self.dem_roi[1],
@@ -881,7 +881,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
 
         current_out_dir = None
         if save_matches:
-            logging.info("Writing matches file")
+            logging.debug("Writing matches file")
             if pair_folder is None:
                 logging.error("Pair folder not provided")
             else:

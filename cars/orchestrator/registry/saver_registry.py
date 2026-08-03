@@ -339,9 +339,7 @@ class SingleCarsDatasetSaver:  # pylint: disable=R0902
                         log_message = "{} is not consistent.".format(
                             self.tags[count].capitalize()
                         )
-                        if self.optional_data_list[count]:
-                            logging.debug(log_message)
-                        else:
+                        if not self.optional_data_list[count]:
                             logging.warning(log_message)
             elif self.cars_ds.dataset_type == "points":
                 # type points

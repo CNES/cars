@@ -63,7 +63,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
 
         points_removal_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "Points removal method not specified, "
                 "default {} is used".format(points_removal_method)
             )
@@ -82,7 +82,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The PointCloudOutlierRemoval({}) application"
             " will be used".format(points_removal_method)
         )

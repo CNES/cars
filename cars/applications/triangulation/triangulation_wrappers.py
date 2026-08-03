@@ -26,7 +26,6 @@ contains functions used for triangulation
 import copy
 
 # Third party imports
-import logging
 import os
 
 import numpy as np
@@ -84,7 +83,6 @@ def interpolate_geoid_height(
     # Check longitude overlap is not present, rounding to handle egm2008 with
     # rounded pixel size
     if geoid_image.nb_columns * geoid_image.pixel_size_col - 360 < 10**-8:
-        logging.debug("add one pixel overlap on longitudes")
         geoid_image.nb_columns += 1
         # Check if we can add a column
         geoid_image.data = np.column_stack(

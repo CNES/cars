@@ -148,7 +148,7 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
         """
         Save plots
         """
-        logging.info("Save profiling plots ...")
+        logging.debug("Save profiling plots ...")
         try:
             save_data(self.memory_data, self.file_plot)
         except Exception as exc:
@@ -276,7 +276,7 @@ def check_pool_memory_usage(
 
                 # Check memory to inform user
                 if memory_usage_mb > max_ram_per_worker:
-                    logging.info(
+                    logging.debug(
                         "Process {} is using {} Mb > "
                         "max_ram_per_worker = {} Mb".format(
                             pid, memory_usage_mb, max_ram_per_worker

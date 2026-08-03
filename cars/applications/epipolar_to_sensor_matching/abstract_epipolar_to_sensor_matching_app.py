@@ -51,7 +51,7 @@ class EpipolarToSensorMatching(ApplicationTemplate, metaclass=ABCMeta):
         epi_to_sensor_matches_method = cls.default_application
 
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "EpipolarToSensorMatching method not specified, default "
                 " {} is used".format(epi_to_sensor_matches_method)
             )
@@ -70,7 +70,7 @@ class EpipolarToSensorMatching(ApplicationTemplate, metaclass=ABCMeta):
                 "{} registered".format(epi_to_sensor_matches_method)
             )
 
-        logging.info(
+        logging.debug(
             "The EpipolarToSensorMatching({}) application "
             "will be used".format(epi_to_sensor_matches_method)
         )

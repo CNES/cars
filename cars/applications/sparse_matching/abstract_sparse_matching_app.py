@@ -56,7 +56,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
         matching_application = cls.default_application
         if bool(conf) is False or "application" not in conf:
-            logging.info(
+            logging.debug(
                 "Sparse Matching application not specified, default "
                 " {} is used".format(matching_application)
             )
@@ -77,7 +77,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The SparseMatching({}) application will be used".format(
                 matching_application
             )

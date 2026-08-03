@@ -231,7 +231,7 @@ def check_ground_truth_dsm_data(conf):
         if isinstance(conf[adv_cst.INPUT_GEOID], bool):
             if conf[adv_cst.INPUT_GEOID]:
                 # Use CARS geoid
-                logging.info(
+                logging.debug(
                     "CARS will use its own internal file as geoid reference"
                 )
                 package_path = os.path.dirname(__file__)

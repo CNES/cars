@@ -22,8 +22,6 @@
 CARS dsm inputs
 """
 
-import logging
-
 import numpy as np
 from json_checker import Checker, Or
 
@@ -176,11 +174,6 @@ def check_dsm_inputs(conf, config_dir=None):
     # Modify to absolute path
     if config_dir is not None:
         modify_to_absolute_path(config_dir, overloaded_conf)
-    else:
-        logging.debug(
-            "path of config file was not given,"
-            "relative path are not transformed to absolute paths"
-        )
 
     for dsm_key in conf[dsm_cst.DSMS]:
         # check sizes

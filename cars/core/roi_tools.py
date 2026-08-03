@@ -157,7 +157,7 @@ def geojson_to_shapely(geojson_dict: dict):
 
     features = geojson_dict["features"]
     if len(features) > 1:
-        logging.info(
+        logging.debug(
             "Multi features files are not supported, "
             "the first feature of input geojson will be used"
         )

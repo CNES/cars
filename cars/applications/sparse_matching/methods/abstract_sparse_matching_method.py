@@ -55,7 +55,7 @@ class AbstractSparseMatchingMethod(metaclass=ABCMeta):
 
         matching_method = cls.default_method
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "Sparse Matching method not specified, default "
                 "{} is used".format(matching_method)
             )
@@ -74,7 +74,7 @@ class AbstractSparseMatchingMethod(metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The AbstractSparseMatchingMethod({}) method will be used".format(
                 matching_method
             )

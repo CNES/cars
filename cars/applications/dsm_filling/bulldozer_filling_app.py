@@ -206,7 +206,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                         ):
                             dsm_to_dtm(bull_conf_path)
                 except Exception:
-                    logging.info(
+                    logging.debug(
                         "Bulldozer failed on its first execution. Retrying"
                     )
                     # suppress prints in bulldozer by redirecting stdout&stderr
@@ -436,7 +436,7 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
                 "descriptions {}".format(label, classif_values)
             )
             continue
-        logging.info("Filling of {} with Bulldozer DTM".format(label))
+        logging.debug("Filling of {} with Bulldozer DTM".format(label))
         dsm[filling_mask] = dtm[filling_mask]
         combined_mask = np.logical_or(combined_mask, filling_mask)
 
@@ -450,7 +450,7 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
                 invalidity_mask == int(label), roi_raster > 0
             )
 
-            logging.info("Filling of {} with Bulldozer DTM".format(label))
+            logging.debug("Filling of {} with Bulldozer DTM".format(label))
             dsm[filling_mask] = dtm[filling_mask]
             combined_mask = np.logical_or(combined_mask, filling_mask)
 

@@ -302,7 +302,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
                     dem_data.shape, dtype=in_geoid.dtypes[0]
                 )
 
-                logging.info("Reprojection of geoid data")
+                logging.debug("Reprojection of geoid data")
 
                 reproject(
                     source=rio.band(in_geoid, 1),
@@ -322,7 +322,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
                     dem_data.shape, dtype=in_geoid.dtypes[0]
                 )
 
-                logging.info("Reprojection of geoid data")
+                logging.debug("Reprojection of geoid data")
 
                 reproject(
                     source=rio.band(in_geoid, 1),
@@ -339,19 +339,19 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
         footprint = skimage.morphology.disk(
             self.morphological_filters_size // 2, decomposition="sequence"
         )
-        logging.info("Generation of DEM min")
+        logging.debug("Generation of DEM min")
         dem_data[not_filled_pixels] = -nodata
         dem_min = (
             skimage.morphology.erosion(dem_data, footprint=footprint)
             - self.min_height_margin
         )
         dem_data[not_filled_pixels] = nodata
-        logging.info("Generation of DEM max")
+        logging.debug("Generation of DEM max")
         dem_max = (
             skimage.morphology.dilation(dem_data, footprint=footprint)
             + self.max_height_margin
         )
-        logging.info("Generation of DEM median")
+        logging.debug("Generation of DEM median")
         dem_median = skimage.filters.median(
             dem_data,
             footprint=np.ones(
@@ -456,7 +456,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
             saved_transform = edit_transform(
                 dem_min_path, resolution=dem_min_max_res
             )
-            logging.info("Launch Bulldozer on DEM min")
+            logging.debug("Launch Bulldozer on DEM min")
             temp_output_path = launch_bulldozer(
                 dem_min_path,
                 os.path.join(output_dir, "dem_min_bulldozer"),
@@ -472,7 +472,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
                 dem_max_path, resolution=dem_min_max_res
             )
             reverse_dem(dem_max_path)
-            logging.info("Launch Bulldozer on DEM max")
+            logging.debug("Launch Bulldozer on DEM max")
             temp_output_path = launch_bulldozer(
                 dem_max_path,
                 os.path.join(output_dir, "dem_max_bulldozer"),
@@ -537,7 +537,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
         if self.compute_stats:
             diff = dem_data - dem_min
             diff = diff[dem_data != 0]
-            logging.info(
+            logging.debug(
                 "Statistics of difference between subsampled "
                 "DSM and DEM min (in meters)"
             )
@@ -545,7 +545,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
 
             diff = dem_max - dem_data
             diff = diff[dem_data != 0]
-            logging.info(
+            logging.debug(
                 "Statistics of difference between DEM max "
                 "and subsampled DSM (in meters)"
             )
@@ -553,7 +553,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
 
             diff = dem_max - dem_min
             diff = diff[dem_data != 0]
-            logging.info(
+            logging.debug(
                 "Statistics of difference between DEM max "
                 "and DEM min (in meters)"
             )

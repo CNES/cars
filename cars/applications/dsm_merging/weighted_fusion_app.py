@@ -296,7 +296,7 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
             )
 
         [saving_info] = orchestrator.get_saving_infos([terrain_raster])
-        logging.info(
+        logging.debug(
             "Merge DSM info in {} x {} tiles".format(
                 terrain_raster.shape[0], terrain_raster.shape[1]
             )

@@ -103,7 +103,7 @@ def init_cluster_variables(  # pylint: disable=too-many-positional-arguments
         )
         lifetime_with_margin = lifetime
 
-    logging.info(
+    logging.debug(
         "Starting Dask {0} cluster with {1} workers "
         "({2} workers with {3} cores each per {0} job)".format(
             cluster_name,
@@ -113,7 +113,7 @@ def init_cluster_variables(  # pylint: disable=too-many-positional-arguments
         )
     )
 
-    logging.info(
+    logging.debug(
         "Submitting {} {} jobs "
         "with configuration cpu={}, mem={}, walltime={}".format(
             nb_jobs, cluster_name, nb_cpus, memory, walltime
@@ -201,4 +201,4 @@ def stop_cluster(cluster, client):
         )
         # not raising to not fail tests
 
-    logging.info("Dask cluster correctly stopped")
+    logging.debug("Dask cluster correctly stopped")

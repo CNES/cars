@@ -75,13 +75,13 @@ def read_vector(path_to_file):
         return polys[0], int(epsg)
 
     if len(polys) > 1:
-        logging.info(
+        logging.debug(
             "Multi features files are not supported, "
             "the first feature of {} will be used".format(path_to_file)
         )
         return polys[0], int(epsg)
 
-    logging.info("No feature is present in the {} file".format(path_to_file))
+    logging.debug("No feature is present in the {} file".format(path_to_file))
     return None
 
 
@@ -180,9 +180,9 @@ def rasterio_get_classif_values(raster_file: str) -> int:
     with rio.open(raster_file, "r") as descriptor:
         max_value = int(descriptor.stats()[0].max)
         if max_value <= 10:
-            logging.info("Max value of classif is {}")
+            logging.debug("Max value of classif is {}")
             values = list(range(max_value + 1))
-            logging.info("Classes are {}".format(values))
+            logging.debug("Classes are {}".format(values))
             return values
         logging.warning(
             "Input classif has classes over 10"
@@ -190,7 +190,7 @@ def rasterio_get_classif_values(raster_file: str) -> int:
         )
         array = descriptor.read()
         values = list(map(int, np.unique(array)))
-        logging.info("Classes are {}".format(values))
+        logging.debug("Classes are {}".format(values))
         return values
 
 

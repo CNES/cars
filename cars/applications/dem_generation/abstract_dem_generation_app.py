@@ -53,7 +53,7 @@ class DemGeneration(ScalingApplicationTemplate, metaclass=ABCMeta):
 
         dem_generation_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "MntGeneration method not specified, default"
                 " {} is used".format(dem_generation_method)
             )
@@ -72,7 +72,7 @@ class DemGeneration(ScalingApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The DemGeneration {} application will be used".format(
                 dem_generation_method
             )

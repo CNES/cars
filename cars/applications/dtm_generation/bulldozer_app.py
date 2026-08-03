@@ -163,7 +163,7 @@ class Bulldozer(DtmGeneration, short_name="bulldozer"):
                     ):
                         dsm_to_dtm(bull_conf_path)
             except Exception:
-                logging.info(
+                logging.debug(
                     "Bulldozer failed on its first execution. Retrying"
                 )
                 # suppress prints in bulldozer by redirecting stdout&stderr

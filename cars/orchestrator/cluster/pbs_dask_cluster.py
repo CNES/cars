@@ -105,7 +105,7 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 
         """
         stop_cluster(self.cluster, self.client)
-        logging.info("Dask cluster closed")
+        logging.debug("Dask cluster closed")
 
 
 def start_cluster(  # pylint: disable=too-many-positional-arguments
@@ -198,10 +198,10 @@ def start_cluster(  # pylint: disable=too-many-positional-arguments
             scheduler_options=scheduler_options,
             resource_spec="select=1:ncpus={}:mem={}MB".format(nb_cpus, memory),
         )
-        logging.info("Dask cluster started")
+        logging.debug("Dask cluster started")
         cluster.adapt(minimum=nb_workers, maximum=nb_workers)
         client = Client(cluster, timeout=timeout)
-        logging.info(
+        logging.debug(
             "Dashboard started at {}".format(get_dashboard_link(cluster))
         )
     return cluster, client

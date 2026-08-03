@@ -498,7 +498,7 @@ def get_best_roi(low_res_dir, tile_size=2000):
         }
 
         geosjon = json.dumps(geojson_feature, indent=2)
-        logging.info(f"Best ROI GeoJSON:\n{geosjon}")
+        logging.debug(f"Best ROI GeoJSON:\n{geosjon}")
 
         return bbox_roi
 

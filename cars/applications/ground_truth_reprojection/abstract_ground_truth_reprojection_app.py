@@ -53,7 +53,7 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
         ground_truth_computation_method = cls.default_application
 
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "Ground truth reprojection method not specified"
                 ", default {} is used".format(ground_truth_computation_method)
             )
@@ -72,7 +72,7 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
                 "registered".format(ground_truth_computation_method)
             )
 
-        logging.info(
+        logging.debug(
             "The GroundTruthReprojection({}) application will be "
             "used".format(ground_truth_computation_method)
         )

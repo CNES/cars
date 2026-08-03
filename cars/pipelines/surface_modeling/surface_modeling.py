@@ -702,7 +702,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 "No product level was given. CARS has not detected any "
                 "data you wish to save. No computation will be done."
             )
-            logging.info(log_msg)
+            logging.debug(log_msg)
         else:
             log_msg = (
                 "No product level was given. CARS has detected that you "
@@ -984,7 +984,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             f" - {k}={a.used_method}"
             for k, a in self.pc_outlier_removal_apps.items()
         )
-        logging.info(
+        logging.debug(
             "{} point cloud outlier removal apps registered:\n{}".format(
                 len(self.pc_outlier_removal_apps), methods_str
             )
@@ -1027,7 +1027,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         filling_classif_values = []
 
         if sens_cst.FILLING not in inputs or inputs[sens_cst.FILLING] is None:
-            logging.info("No filling in input configuration")
+            logging.debug("No filling in input configuration")
             return None
 
         filling_classif_values = []
@@ -1185,7 +1185,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.list_sensor_pairs = sensor_inputs.generate_pairs(
             self.used_conf[INPUT]
         )
-        logging.info(
+        logging.debug(
             "Received {} stereo pairs configurations".format(
                 len(self.list_sensor_pairs)
             )
@@ -1490,7 +1490,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     disp_max = np.percentile(
                         sift_disp, 100 - disp_bounds_params["percentile"]
                     )
-                    logging.info(
+                    logging.debug(
                         "Global disparity interval without margin : "
                         f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                     )
@@ -1500,7 +1500,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     disp_max += (
                         disp_bounds_params["lower_margin"] / disp_to_alt_ratio
                     )
-                    logging.info(
+                    logging.debug(
                         "Global disparity interval with margin : "
                         f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                     )
@@ -1511,14 +1511,14 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     disp_max = (
                         -self.elevation_delta_lower_bound / disp_to_alt_ratio
                     )
-                    logging.info(
+                    logging.debug(
                         "Global disparity interval : "
                         f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                     )
             else:
                 disp_min = -self.elevation_delta_upper_bound / disp_to_alt_ratio
                 disp_max = -self.elevation_delta_lower_bound / disp_to_alt_ratio
-                logging.info(
+                logging.debug(
                     "Global disparity interval : "
                     f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                 )

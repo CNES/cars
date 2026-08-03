@@ -466,9 +466,6 @@ class CarsDataset:
         new_profile = get_profile_for_tag_dataset(future_result, tag)
 
         if "width" not in new_profile or "height" not in new_profile:
-            logging.debug(
-                "CarsDataset doesn't have a profile, default is given"
-            )
             new_profile = DefaultGTiffProfile(count=new_profile["count"])
             new_profile["height"] = np.max(self.tiling_grid[:, :, 1])
             new_profile["width"] = np.max(self.tiling_grid[:, :, 3])
@@ -751,7 +748,6 @@ def save_single_tile_array(dataset: xr.Dataset, tile_path_name: str):
     """
 
     if dataset is None:
-        logging.debug("Tile is None: not saved")
         return
 
     # Create tile folder
@@ -795,7 +791,6 @@ def save_single_tile_points(dataframe, tile_path_name: str):
     :type tile_path_name: str
     """
     if dataframe is None:
-        logging.debug("Tile is None: not saved")
         return
     # Create tile folder
     safe_makedirs(tile_path_name)
@@ -1111,10 +1106,7 @@ def save_dataset(  # pylint: disable=too-many-positional-arguments
     rio_window = None
     overlap = [0, 0, 0, 0]
     if use_windows_and_overlaps:
-        if window is None:
-            logging.debug("User wants to use window but none was set")
-
-        else:
+        if window is not None:
             rio_window = generate_rasterio_window(window)
 
             if overlaps is not None:
@@ -1155,7 +1147,6 @@ def save_dataset(  # pylint: disable=too-many-positional-arguments
 
     new_profile = profile
     if "width" not in new_profile or "height" not in new_profile:
-        logging.debug("CarsDataset doesn't have a profile, default is given")
         new_profile = DefaultGTiffProfile(count=new_profile["count"])
         new_profile["height"] = data.shape[0]
         new_profile["width"] = data.shape[1]

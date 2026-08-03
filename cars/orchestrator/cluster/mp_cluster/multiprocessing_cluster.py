@@ -258,7 +258,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         nb_workers = conf.get("nb_workers", "auto")
         if nb_workers == "auto":
-            logging.info("auto mode : nb_workers will be set automatically")
+            logging.debug("auto mode : nb_workers will be set automatically")
             # Compute parameters for auto mode
             nb_workers = compute_conf_auto_mode(
                 IS_WIN, overloaded_conf["max_ram_per_worker"]
@@ -908,7 +908,7 @@ def compute_conf_auto_mode(is_windows, max_ram_per_worker):
         available_cpu = (
             mp.cpu_count() if is_windows else len(os.sched_getaffinity(0))
         )
-        logging.info("available cpu : {}".format(available_cpu))
+        logging.debug("available cpu : {}".format(available_cpu))
 
     if available_cpu == 1:
         logging.warning("Only one CPU detected.")
@@ -921,7 +921,7 @@ def compute_conf_auto_mode(is_windows, max_ram_per_worker):
         ram_to_use = max_ram_slurm
     else:
         ram_to_use = get_total_ram()
-        logging.info("total ram :  {}".format(ram_to_use))
+        logging.debug("total ram :  {}".format(ram_to_use))
 
     # use 50% of total ram
     ram_to_use *= 0.5
@@ -931,8 +931,8 @@ def compute_conf_auto_mode(is_windows, max_ram_per_worker):
         logging.warning("Not enough memory available : failure might occur")
     nb_workers_to_use = max(1, min(possible_workers, available_cpu - 1))
 
-    logging.info("Number of workers : {}".format(nb_workers_to_use))
-    logging.info("Max memory per worker : {} MB".format(max_ram_per_worker))
+    logging.debug("Number of workers : {}".format(nb_workers_to_use))
+    logging.debug("Max memory per worker : {} MB".format(max_ram_per_worker))
 
     # Check with available ram
     available_ram = get_available_ram()
@@ -983,8 +983,8 @@ def get_slurm_data():
         slurm_max_ram = get_data(slurm_infos, r"ReqTRES=cpu=.*?mem=(\d+)")
         # convert to Mb
         slurm_max_ram *= 1024
-        logging.info("Available CPUs  in SLURM : {}".format(slurm_nb_cpu))
-        logging.info("Available RAM  in SLURM : {}".format(slurm_max_ram))
+        logging.debug("Available CPUs  in SLURM : {}".format(slurm_nb_cpu))
+        logging.debug("Available RAM  in SLURM : {}".format(slurm_max_ram))
 
     except Exception as exc:
         logging.debug("Not on Slurm cluster")

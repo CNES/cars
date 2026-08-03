@@ -284,7 +284,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
     ):
         sensor_keys = list(overloaded_conf[sens_cst.SENSORS].keys())
         overloaded_conf[sens_cst.PAIRING] = [[sensor_keys[0], sensor_keys[1]]]
-        logging.info(
+        logging.debug(
             (
                 "Pairing is not defined, '{}' will be used as left sensor and "
                 + "'{}' will be used as right sensor"
@@ -308,11 +308,6 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
     # Modify to absolute path
     if config_dir is not None:
         modify_to_absolute_path(config_dir, overloaded_conf)
-    else:
-        logging.debug(
-            "path of config file was not given,"
-            "relative path are not transformed to absolute paths"
-        )
 
     # Check consistency of pairs images
     for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
@@ -681,7 +676,7 @@ def check_srtm(srtm_dir):
                     "the default altitude will be used as reference altitude."
                 )
             else:
-                logging.info(
+                logging.debug(
                     "Indicated SRTM tiles valid regions "
                     "will be used as reference altitudes "
                     "(the default altitude is used "
@@ -691,7 +686,9 @@ def check_srtm(srtm_dir):
             # TODO add check for single file
             pass
     else:
-        logging.info("The default altitude will be used as reference altitude.")
+        logging.debug(
+            "The default altitude will be used as reference altitude."
+        )
 
 
 def check_input_data(image, color):
@@ -742,7 +739,7 @@ def get_initial_elevation(config):
     # Add geoid path to the initial_elevation dict
     if sens_cst.GEOID not in updated_config:
         # use cars geoid
-        logging.info("CARS will use its own internal file as geoid reference")
+        logging.debug("CARS will use its own internal file as geoid reference")
         # Get root package directory
         package_path = os.path.dirname(__file__)
         geoid_path = os.path.join(

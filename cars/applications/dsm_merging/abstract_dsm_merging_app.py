@@ -51,7 +51,7 @@ class DsmMerging(ApplicationTemplate, metaclass=ABCMeta):
 
         dsm_merging_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "dsm_merging method not specified, default"
                 " {} is used".format(dsm_merging_method)
             )
@@ -70,7 +70,7 @@ class DsmMerging(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The DsmMerging {} application will be used".format(
                 dsm_merging_method
             )

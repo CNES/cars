@@ -347,24 +347,6 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
             "rmsd_epipolar_error": rmsd_epipolar_error,
         }
 
-        logging.debug(
-            "Epipolar error before correction: \n"
-            "x    = {:.3f} +/- {:.3f} pixels \n"
-            "y    = {:.3f} +/- {:.3f} pixels \n"
-            "rmse = {:.3f} +/- {:.3f} pixels \n"
-            "medianx = {:.3f} pixels \n"
-            "mediany = {:.3f} pixels".format(
-                mean_epipolar_error[0],
-                std_epipolar_error[0],
-                mean_epipolar_error[1],
-                std_epipolar_error[1],
-                rms_epipolar_error,
-                rmsd_epipolar_error,
-                median_epipolar_error[0],
-                median_epipolar_error[1],
-            )
-        )
-
         # Perform bilinear regression for both component of epipolar error
         nan_mask = np.logical_and(
             ~np.isnan(epipolar_error_x), ~np.isnan(epipolar_error_y)
@@ -376,21 +358,16 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
                 matches_y2[nan_mask],
             ]
         ).T
-        coefsx, residx, __, __ = np.linalg.lstsq(
+        coefsx, _, __, __ = np.linalg.lstsq(
             lstsq_input, epipolar_error_x[nan_mask], rcond=None
         )
-        coefsy, residy, __, __ = np.linalg.lstsq(
+        coefsy, _, __, __ = np.linalg.lstsq(
             lstsq_input, epipolar_error_y[nan_mask], rcond=None
         )
 
         # Normalize residuals by number of matches
-        rmsex = np.sqrt(residx / matches.shape[0])
-        rmsey = np.sqrt(residy / matches.shape[1])
-
-        logging.debug(
-            "Root Mean Square Error of correction estimation:"
-            "rmsex={} pixels, rmsey={} pixels".format(rmsex, rmsey)
-        )
+        # rmsex = np.sqrt(residx / matches.shape[0])
+        # rmsey = np.sqrt(residy / matches.shape[1])
 
         # Reshape coefs to 2D (expected by np.polynomial.polyval2d)
         coefsx_2d = np.ndarray((2, 2))
@@ -486,28 +463,10 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
             "rmsd_epipolar_error": rmsd_corrected_epipolar_error,
         }
 
-        logging.debug(
-            "Epipolar error after  correction: \n"
-            "x    = {:.3f} +/- {:.3f} pixels \n"
-            "y    = {:.3f} +/- {:.3f} pixels \n"
-            "rmse = {:.3f} +/- {:.3f} pixels \n"
-            "medianx = {:.3f} pixels \n"
-            "mediany = {:.3f} pixels".format(
-                mean_corrected_epipolar_error[0],
-                std_corrected_epipolar_error[0],
-                mean_corrected_epipolar_error[1],
-                std_corrected_epipolar_error[1],
-                rms_corrected_epipolar_error,
-                rmsd_corrected_epipolar_error,
-                median_corrected_epipolar_error[0],
-                median_corrected_epipolar_error[1],
-            )
-        )
-
         corrected_epipolar_error = (
             corrected_matches[:, 1] - corrected_matches[:, 3]
         )
-        logging.info(
+        logging.debug(
             "Epipolar error after correction: mean = {:.3f} pix., "
             "standard deviation = {:.3f} pix., max = {:.3f} pix.".format(
                 np.mean(corrected_epipolar_error),
@@ -520,7 +479,7 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
         matches_array_path = None
         current_out_dir = None
         if save_matches:
-            logging.info("Writing matches file")
+            logging.debug("Writing matches file")
             if pair_folder is None:
                 logging.error("Pair folder not provided")
             else:

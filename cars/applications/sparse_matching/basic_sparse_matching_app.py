@@ -268,13 +268,13 @@ class BasicSparseMatchingApplication(
         margins.attrs["disp_min"] = disp_min
         margins.attrs["disp_max"] = disp_max
 
-        logging.info(
+        logging.debug(
             "Margins added to left region for matching: {}".format(
                 margins["left_margin"].data
             )
         )
 
-        logging.info(
+        logging.debug(
             "Margins added to right region for matching: {}".format(
                 margins["right_margin"].data
             )
@@ -330,7 +330,7 @@ class BasicSparseMatchingApplication(
         disp_min_global = np.min(disp_min_grid_arr)
         disp_max_global = np.max(disp_max_grid_arr)
 
-        logging.info(
+        logging.debug(
             "Global Disparity range for current pair:  "
             "[{:.3f} pix., {:.3f} pix.] "
             "(or [{:.3f} m., {:.3f} m.])".format(
@@ -458,14 +458,14 @@ class BasicSparseMatchingApplication(
 
         raw_nb_matches = matches.shape[0]
 
-        logging.info(
+        logging.debug(
             "Raw number of matches found: {} matches".format(raw_nb_matches)
         )
 
         if save_matches:
             safe_makedirs(pair_folder)
 
-            logging.info("Writing raw matches file")
+            logging.debug("Writing raw matches file")
             raw_matches_array_path = os.path.join(
                 pair_folder, "raw_matches.npy"
             )
@@ -508,10 +508,10 @@ class BasicSparseMatchingApplication(
                 " considering a shift of {} pix".format(epipolar_median_shift)
             )
 
-        logging.info(matches_discarded_message)
+        logging.debug(matches_discarded_message)
 
         if save_matches:
-            logging.info("Writing filtered matches file")
+            logging.debug("Writing filtered matches file")
             filtered_matches_array_path = os.path.join(
                 pair_folder, "filtered_matches.npy"
             )
@@ -530,7 +530,7 @@ class BasicSparseMatchingApplication(
             )
             logging.warning(error_message_matches)
 
-        logging.info(
+        logging.debug(
             "Number of matches kept for epipolar "
             "error correction: {} matches".format(nb_matches)
         )
@@ -544,7 +544,7 @@ class BasicSparseMatchingApplication(
             epi_error_mean = 0
             epi_error_std = 0
             epi_error_max = 0
-            logging.info(
+            logging.debug(
                 "Epipolar error before correction: mean = {:.3f} pix., "
                 "standard deviation = {:.3f} pix., max = {:.3f} pix.".format(
                     epi_error_mean,
@@ -742,7 +742,7 @@ class BasicSparseMatchingApplication(
                 }
             }
             self.orchestrator.update_out_info(updating_infos)
-            logging.info(
+            logging.debug(
                 "Generate disparity: Number tiles: {}".format(
                     epipolar_disparity_map_left.shape[1]
                     * epipolar_disparity_map_left.shape[0]

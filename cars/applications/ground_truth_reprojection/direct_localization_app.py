@@ -163,7 +163,7 @@ class DirectLocalization(
         :type pair_key: str
         """
 
-        logging.info("Starting ground truth reprojection application")
+        logging.debug("Starting ground truth reprojection application")
 
         # Default orchestrator
         if orchestrator is None:

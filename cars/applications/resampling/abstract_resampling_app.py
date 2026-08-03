@@ -51,7 +51,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
 
         resampling_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "Resampling method not specified, default"
                 " {} is used".format(resampling_method)
             )
@@ -70,7 +70,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The Resampling({}) application will be used".format(
                 resampling_method
             )

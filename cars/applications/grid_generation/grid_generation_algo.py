@@ -139,7 +139,7 @@ def generate_epipolar_grids(  # pylint: disable=too-many-positional-arguments
         (x-axis size is given with the index 0, y-axis size with index 1)
         - the disparity to altitude ratio as a float
     """
-    logging.info("Generating epipolar rectification grid ...")
+    logging.debug("Generating epipolar rectification grid ...")
 
     return geometry_plugin.generate_epipolar_grids(
         sensor1,
@@ -237,7 +237,7 @@ def compute_epipolar_grid_min_max(
 
     nb_elems_clipped = len(clipped_matches_min) + len(clipped_matches_max)
     if nb_elems_clipped > 0:
-        logging.info(
+        logging.debug(
             f"{nb_elems_clipped} points were clipped to the right "
             "image's bounds."
         )

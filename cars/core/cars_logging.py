@@ -61,10 +61,8 @@ else:
         fcntl.flock(file, fcntl.LOCK_UN)
 
 
-PROGRESS = 21
-logging.addLevelName(PROGRESS, "PROGRESS")
-PROFILING_LOG = 15
-logging.addLevelName(PROFILING_LOG, "PROFILING_LOG")
+PROFILING = 5  # we want DEBUG to not have profiling logs
+logging.addLevelName(PROFILING, "PROFILING")
 
 profiling_logger = logging.getLogger("profiling_logger")
 
@@ -105,7 +103,20 @@ class ProfilingFilter(logging.Filter):  # pylint: disable=R0903
         """
         Filter message
         """
-        return "PROFILING_LOG" not in record.msg
+        return "PROFILING" not in record.msg
+
+
+class SharelocFilter(logging.Filter):  # pylint: disable=R0903
+    """
+    SharelocFilter - filters out logs from shareloc module
+    """
+
+    def filter(self, record):
+        """
+        Filter message - return False to exclude shareloc logs
+        """
+        path_parts = record.pathname.split(os.sep)
+        return "shareloc" not in path_parts
 
 
 class ProfilinglHandler(logging.FileHandler):  # pylint: disable=R0903
@@ -170,7 +181,7 @@ class LogSender:  # pylint: disable=R0903
 
 
 def setup_logging(  # pylint: disable=too-many-positional-arguments
-    loglevel="PROGRESS",
+    loglevel="INFO",
     out_dir=None,
     log_dir=None,
     pipeline="",
@@ -186,13 +197,10 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
     """
 
     # logging
-    if loglevel == "PROGRESS":
-        numeric_level = PROGRESS
+    if isinstance(loglevel, int):
+        numeric_level = loglevel
     else:
-        if isinstance(loglevel, int):
-            numeric_level = loglevel
-        else:
-            numeric_level = getattr(logging, loglevel, None)
+        numeric_level = getattr(logging, loglevel, None)
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: %s" % loglevel)
@@ -228,28 +236,31 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
                 "formatter": "standard",
                 "class": "logging.StreamHandler",
                 "stream": "ext://sys.stdout",
-                "filters": ["no_profiling"],
+                "filters": ["no_profiling", "no_shareloc"],
             },
             "warning_counter": {
                 "level": "WARNING",
                 "class": "cars.core.cars_logging.WarningCounterHandler",
             },
         },
-        "filters": {"no_profiling": {"()": ProfilingFilter}},
+        "filters": {
+            "no_profiling": {"()": ProfilingFilter},
+            "no_shareloc": {"()": SharelocFilter},
+        },
         "loggers": {
             "": {  # root logger
                 "handlers": [],
-                "level": min(numeric_level, PROFILING_LOG),
+                "level": min(numeric_level, PROFILING),
                 "propagate": False,
             },
             "cars": {
                 "handlers": [],
-                "level": min(numeric_level, PROFILING_LOG),
+                "level": min(numeric_level, PROFILING),
                 "propagate": False,
             },
             "__main__": {  # if __name__ == '__main__'
                 "handlers": [],
-                "level": min(numeric_level, PROFILING_LOG),
+                "level": min(numeric_level, PROFILING),
                 "propagate": False,
             },
         },
@@ -266,7 +277,7 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
             "level": min(numeric_level, logging.INFO),
             "mode": "a",
             "formatter": "standard",
-            "filters": ["no_profiling"],
+            "filters": ["no_profiling", "no_shareloc"],
         }
         add_handler_name(logging_config, handler_global_main)
 
@@ -286,7 +297,7 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
             "level": min(numeric_level, logging.INFO),
             "mode": "a",
             "formatter": "standard",
-            "filters": ["no_profiling"],
+            "filters": ["no_profiling", "no_shareloc"],
         }
         add_handler_name(logging_config, handler_main)
 
@@ -300,7 +311,7 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
         logging_config["handlers"][handler_main_profiling] = {
             "class": "logging.FileHandler",
             "filename": profiling_file,
-            "level": PROFILING_LOG,
+            "level": PROFILING,
             "mode": "a",
             "formatter": "standard",
         }
@@ -322,7 +333,7 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
         handler_workers_profiling = "file_workers_profiling"
         logging_config["loggers"]["profiling_logger"] = {
             "handlers": [],
-            "level": PROFILING_LOG,
+            "level": PROFILING,
             "propagate": False,
         }
 
@@ -338,6 +349,7 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
             "filename": log_file_workers,
             "level": min(numeric_level, logging.INFO),
             "formatter": "workers",
+            "filters": ["no_shareloc"],
         }
         add_handler_name(logging_config, handler_workers)
 
@@ -350,7 +362,7 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
         logging_config["handlers"][handler_workers_profiling] = {
             "class": "cars.core.cars_logging.ProfilinglHandler",
             "filename": log_file_workers_profiling,
-            "level": PROFILING_LOG,
+            "level": PROFILING,
             "formatter": "workers",
         }
         add_handler_name(logging_config, handler_workers_profiling)
@@ -365,24 +377,14 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
     return None
 
 
-def add_progress_message(message):
-    """
-    Add enforced message with INFO level
-    to stdout and logging file
-
-    :param message: logging message
-    """
-    logging.log(PROGRESS, message)
-
-
 def add_profiling_message(message):
     """
-    Add enforced message with PROFILING_LOG level
+    Add enforced message with PROFILING level
     to stdout and logging file
 
     :param message: logging message
     """
-    logging.log(PROFILING_LOG, message)
+    logging.log(PROFILING, message)
 
 
 def wrap_logger(func, log_dir, log_level):

@@ -59,10 +59,10 @@ def cars_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--loglevel",
-        default="PROGRESS",
-        choices=("DEBUG", "INFO", "PROGRESS", "WARNING", "ERROR", "CRITICAL"),
+        default="INFO",
+        choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
         help="Logger level (default: WARNING. Should be one of "
-        "(DEBUG, INFO, PROGRESS, WARNING, ERROR, CRITICAL)",
+        "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
 
     parser.add_argument(
@@ -156,7 +156,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
             pipeline_name = "default"
 
         # Logging configuration with args Loglevel
-        loglevel = getattr(args, "loglevel", "PROGRESS").upper()
+        loglevel = getattr(args, "loglevel", "INFO").upper()
         out_dir = config["output"]["directory"]
 
         log_dir = os.path.join(out_dir, "logs")
@@ -172,13 +172,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
         )
         ProgressTree().update_log_file_path(log_file)
 
-        logging.debug("Show argparse arguments: {}".format(args))
-
         # Generate pipeline and check conf
-        cars_logging.add_progress_message("Check configuration...")
+        logging.info("Check configuration...")
         used_pipeline = Pipeline(pipeline_name, config, config_dir)
         ProgressTree().update_empty_status_text("Starting pipeline")
-        cars_logging.add_progress_message("CARS pipeline is started.")
+        logging.info("CARS pipeline is started.")
         if not dry_run:
             # run pipeline
             args.log_dir = log_dir
@@ -193,9 +191,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
                 clean_worker_logs=True,
             )
 
-        cars_logging.add_progress_message(
-            "CARS has successfully completed the pipeline."
-        )
+        logging.info("CARS has successfully completed the pipeline.")
 
         ProgressTree().notify_success(out_dir)
 

@@ -467,7 +467,7 @@ class PandoraMethod(
         disp_min_global = np.min(disp_min_grid_arr)
         disp_max_global = np.max(disp_max_grid_arr)
 
-        logging.info(
+        logging.debug(
             "Global Disparity range for current pair:  "
             "[{:.3f} pix., {:.3f} pix.] "
             "(or [{:.3f} m., {:.3f} m.])".format(

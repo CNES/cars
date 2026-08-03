@@ -73,7 +73,7 @@ def remove_epipolar_outliers(matches, percent=0.1):
     epipolar_error_max = np.percentile(
         matches[:, 1] - matches[:, 3], 100 - percent
     )
-    logging.info(
+    logging.debug(
         "Epipolar error range after outlier rejection: [{},{}]".format(
             epipolar_error_min, epipolar_error_max
         )
@@ -155,13 +155,13 @@ def compute_disp_min_disp_max(
     dmin -= margin
     dmax += margin
 
-    logging.info(
+    logging.debug(
         "Disparity range with margin: [{:.3f} pix., {:.3f} pix.] "
         "(margin = {:.3f} pix.)".format(dmin, dmax, margin)
     )
 
     if disp_to_alt_ratio is not None:
-        logging.info(
+        logging.debug(
             "Equivalent range in meters: [{:.3f} m, {:.3f} m] "
             "(margin = {:.3f} m)".format(
                 dmin * disp_to_alt_ratio,

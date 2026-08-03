@@ -182,7 +182,7 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
     out_dir = pair_folder
 
     # Check that the envelopes intersect one another
-    logging.info("Computing images envelopes and their intersection")
+    logging.debug("Computing images envelopes and their intersection")
     geojson1 = os.path.join(out_dir, "left_envelope.geojson")
     geojson2 = os.path.join(out_dir, "right_envelope.geojson")
     out_envelopes_intersection = os.path.join(
@@ -248,7 +248,7 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
     orchestrator.update_out_info(updating_dict)
 
     if check_inputs:
-        logging.info("Checking DEM coverage")
+        logging.debug("Checking DEM coverage")
         _, epsg1 = inputs.read_vector(geojson1)
         __, dem_coverage = projection.compute_dem_intersection_with_poly(
             geometry_plugin.dem, inter_poly, epsg1
@@ -310,7 +310,7 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
         terrain_max[1] - terrain_min[1]
     )
 
-    logging.info(
+    logging.debug(
         "Terrain area covered: {} square meters (or square degrees)".format(
             terrain_area
         )
@@ -330,7 +330,7 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
         inter_xmin, inter_ymin, inter_xmax, inter_ymax, resolution
     )
 
-    logging.info(
+    logging.debug(
         "Terrain bounding box : [{}, {}] x [{}, {}]".format(
             xmin, xmax, ymin, ymax
         )
@@ -488,7 +488,7 @@ def compute_epsg(  # pylint: disable=too-many-positional-arguments
 
     epsg = get_utm_zone_as_epsg_code(*np.nanmean(terrain_dispmin, axis=0))
 
-    logging.info("EPSG code: {}".format(epsg))
+    logging.debug("EPSG code: {}".format(epsg))
 
     return epsg
 
@@ -525,7 +525,7 @@ def crop_terrain_bounds_with_roi(roi_poly, xmin, ymin, xmax, ymax):
     if not roi_poly.intersects(terrain_poly):
         raise RuntimeError("None of the input data intersect the requested ROI")
     # Show ROI if valid (no exception raised) :
-    logging.info("Setting terrain bounding box to the requested ROI")
+    logging.debug("Setting terrain bounding box to the requested ROI")
     new_xmin, new_ymin, new_xmax, new_ymax = roi_poly.bounds
 
     return new_xmin, new_ymin, new_xmax, new_ymax
@@ -569,7 +569,7 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
             xmin, ymin, xmax, ymax, resolution
         )
 
-    logging.info(
+    logging.debug(
         "Total terrain bounding box : [{}, {}] x [{}, {}]".format(
             xmin, xmax, ymin, ymax
         )
@@ -585,7 +585,7 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
         * resolution
     )
 
-    logging.info(
+    logging.debug(
         "Optimal terrain tile size: {}x{} pixels".format(
             int(optimal_terrain_tile_width / resolution),
             int(optimal_terrain_tile_width / resolution),

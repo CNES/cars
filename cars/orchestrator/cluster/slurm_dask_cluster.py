@@ -117,7 +117,7 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 
         """
         stop_cluster(self.cluster, self.client)
-        logging.info("Dask cluster closed")
+        logging.debug("Dask cluster closed")
 
 
 def start_cluster(  # pylint: disable=too-many-positional-arguments
@@ -203,7 +203,7 @@ def start_cluster(  # pylint: disable=too-many-positional-arguments
         )
         if qos:
             qos = ["--qos=" + qos]
-            logging.info("Quality of Service option: {}".format(qos[0]))
+            logging.debug("Quality of Service option: {}".format(qos[0]))
         cluster = SLURMCluster(
             processes=nb_workers_per_job,
             cores=nb_workers_per_job,
@@ -225,10 +225,10 @@ def start_cluster(  # pylint: disable=too-many-positional-arguments
             scheduler_options=scheduler_options,
             job_extra_directives=qos,
         )
-        logging.info("Dask cluster started")
+        logging.debug("Dask cluster started")
         cluster.adapt(minimum=nb_workers, maximum=nb_workers)
         client = Client(cluster, timeout=timeout)
-        logging.info(
+        logging.debug(
             "Dashboard started at {}".format(get_dashboard_link(cluster))
         )
     return cluster, client

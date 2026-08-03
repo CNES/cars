@@ -475,7 +475,7 @@ class BasicDenseMatchingApplication(
                     mins.append(dict_data["global_min"])
                     maxs.append(dict_data["global_max"])
                 except Exception:
-                    logging.info(
+                    logging.debug(
                         "Tile {} {} not computed in epi disp range"
                         " generation".format(row, col)
                     )
@@ -706,7 +706,7 @@ class BasicDenseMatchingApplication(
                 }
             }
             self.orchestrator.update_out_info(updating_dict)
-            logging.info(
+            logging.debug(
                 "Compute disparity: number tiles: {}".format(
                     epipolar_disparity_map.shape[1]
                     * epipolar_disparity_map.shape[0]
