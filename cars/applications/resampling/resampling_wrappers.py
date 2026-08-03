@@ -212,11 +212,11 @@ def check_tiles_in_sensor(  # pylint: disable=too-many-positional-arguments
     tiles_dumped_left = nb_tiles - np.sum(in_sensor_left_array)
     tiles_dumped_right = nb_tiles - np.sum(in_sensor_right_array)
 
-    logging.info(
+    logging.debug(
         "Number of left epipolar image tiles outside left sensor "
         "image and removed: {}".format(tiles_dumped_left)
     )
-    logging.info(
+    logging.debug(
         "Number of right epipolar image tiles outside right sensor "
         "image and removed: {}".format(tiles_dumped_right)
     )

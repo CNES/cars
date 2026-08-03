@@ -28,7 +28,6 @@ TODO: refactor in several files and remove too-many-lines
 
 
 # Standard imports
-import logging
 from typing import List, Tuple, Union
 
 import numpy as np
@@ -462,14 +461,7 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
 
     # If no valid points are found in cloud, return default values
     if cloud.size == 0:
-        logging.debug("No points to rasterize, returning None")
         return None
-
-    logging.debug(
-        "Rasterization grid: start=[{},{}], size=[{},{}], resolution={}".format(
-            x_start, y_start, x_size, y_size, resolution
-        )
-    )
 
     (
         out,

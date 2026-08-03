@@ -196,21 +196,16 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             grid_left["epipolar_size_y"],
         ]
 
-        origin = grid_left["grid_origin"]
-        spacing = grid_left["grid_spacing"]
-
-        logging.info(
+        logging.debug(
             "Size of epipolar image: {}".format(largest_epipolar_region)
         )
-        logging.debug("Origin of epipolar grid: {}".format(origin))
-        logging.debug("Spacing of epipolar grid: {}".format(spacing))
 
         if tile_width is None:
             tile_width = grid_left["epipolar_size_x"]
         if tile_height is None:
             tile_height = self.strip_height
 
-        logging.info(
+        logging.debug(
             "Tile size for epipolar regions: "
             "{width}x{height} pixels".format(
                 width=tile_width, height=tile_height
@@ -226,7 +221,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             tile_width,
         )
 
-        logging.info(
+        logging.debug(
             "Epipolar image will be processed in {} splits".format(
                 epipolar_regions_grid.shape[0] * epipolar_regions_grid.shape[1]
             )
@@ -547,7 +542,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             [epipolar_images_left, epipolar_images_right]
         )
 
-        logging.info(
+        logging.debug(
             "Number of tiles in epipolar resampling: "
             "row: {} "
             "col: {}".format(

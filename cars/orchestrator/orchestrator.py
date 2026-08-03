@@ -43,7 +43,6 @@ import xarray
 from cars.core import constants as cst
 
 # CARS imports
-from cars.core.cars_logging import add_progress_message
 from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -99,7 +98,6 @@ class Orchestrator:
         else:
             self.out_dir = tempfile.mkdtemp()
             self.add_to_clean(self.out_dir)
-            logging.debug("No out_dir defined")
 
         if log_dir is not None:
             self.log_dir = log_dir
@@ -111,7 +109,7 @@ class Orchestrator:
         # overload orchestrator_conf
         if orchestrator_conf is None:
             if orchestrator_conf is None:
-                logging.info(
+                logging.debug(
                     "No orchestrator configuration given: "
                     " multiprocessing mode is used"
                 )
@@ -417,7 +415,7 @@ class Orchestrator:
             self.save_index()
 
             # run compute and save files
-            logging.info("Compute delayed ...")
+            logging.debug("Compute delayed ...")
             # Flatten to list
             if only_remaining_delayed is None:
                 delayed_objects = flatten_object(
@@ -430,15 +428,15 @@ class Orchestrator:
                 delayed_objects = only_remaining_delayed
 
             if len(delayed_objects) == 0:
-                logging.info("No Object to compute")
+                logging.debug("No Object to compute")
                 return False
 
             # Compute delayed
             future_objects = self.cluster.start_tasks(delayed_objects)
 
             # Save objects when they are computed
-            logging.info("Wait for futures results ...")
-            add_progress_message(
+            logging.debug("Wait for futures results ...")
+            logging.info(
                 "Data list to process: [ {} ] ...".format(
                     " , ".join(list(set(self.cars_ds_names_info)))
                 )
@@ -463,7 +461,7 @@ class Orchestrator:
                     pass
 
             # Log initial message
-            logging.info(
+            logging.debug(
                 "Processing {} tiles: [ {} ] ...".format(
                     total_tiles, " , ".join(list(set(self.cars_ds_names_info)))
                 )
@@ -502,8 +500,6 @@ class Orchestrator:
                         # update achievement
                         self.achievement_tracker.add_tile(future_obj)
                         nb_tiles_computed += 1
-                    else:
-                        logging.debug("None tile: not saved")
 
                     # Update progress tracking
                     if (
@@ -535,14 +531,14 @@ class Orchestrator:
 
             if len(remaining_tiles) > 0:
                 # Some tiles have not been computed
-                logging.info(
+                logging.debug(
                     "{} tiles have not been computed".format(
                         len(remaining_tiles)
                     )
                 )
                 if only_remaining_delayed is None:
                     # First try
-                    logging.info("Retry failed tasks ...")
+                    logging.debug("Retry failed tasks ...")
                     self.reset_cluster()
                     self.compute_futures(only_remaining_delayed=remaining_tiles)
                 else:
@@ -572,14 +568,10 @@ class Orchestrator:
                 )
 
             # close files
-            logging.info("Close files ...")
+            logging.debug("Close files ...")
             self.cars_ds_savers_registry.cleanup()
 
             return interval_was_cropped
-
-        logging.debug(
-            "orchestrator launch_worker is False, no metadata.json saved"
-        )
 
         return False
 
@@ -665,7 +657,7 @@ class Orchestrator:
         """
 
         # close cluster
-        logging.info("Close cluster ...")
+        logging.debug("Close cluster ...")
         if self.launch_worker:
             self.cluster.cleanup()
 

@@ -477,10 +477,10 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
             continue
 
         if label in fill_with_geoid:
-            logging.info("Filling of {} with geoid".format(label))
+            logging.debug("Filling of {} with geoid".format(label))
             dsm[filling_mask] = 0
         else:
-            logging.info("Filling of {} with DEM and geoid".format(label))
+            logging.debug("Filling of {} with DEM and geoid".format(label))
             dsm[filling_mask] = elev_data[filling_mask]
 
         # apply offset to project on geoid if needed
@@ -507,10 +507,10 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
             )
 
             if label in fill_with_geoid:
-                logging.info("Filling of {} with geoid".format(label))
+                logging.debug("Filling of {} with geoid".format(label))
                 dsm[filling_mask] = 0
             else:
-                logging.info("Filling of {} with DEM and geoid".format(label))
+                logging.debug("Filling of {} with DEM and geoid".format(label))
                 dsm[filling_mask] = elev_data[filling_mask]
 
             # apply offset to project on geoid if needed

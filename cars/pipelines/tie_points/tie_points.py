@@ -582,7 +582,7 @@ class TiePointsPipeline(PipelineTemplate):  # pylint: disable=R0902
 
                 disp_min = disp_range_grid["global_min"]
                 disp_max = disp_range_grid["global_max"]
-                logging.info(
+                logging.debug(
                     "Global disparity range for sparse matching : "
                     "[{} pix, {} pix]".format(disp_min, disp_max)
                 )

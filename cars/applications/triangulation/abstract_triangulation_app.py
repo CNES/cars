@@ -50,7 +50,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
 
         triangulation_method = cls.default_application
         if bool(conf) is False or "method" in conf:
-            logging.info(
+            logging.debug(
                 "Triangulation method not specified, default "
                 " {} is used".format(triangulation_method)
             )
@@ -69,7 +69,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The Triangulation({}) application will be used".format(
                 triangulation_method
             )

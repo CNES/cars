@@ -640,7 +640,7 @@ class SharelocGeometry(AbstractGeometry):
             h, residue = SharelocGeometry.find_optimal_alt(
                 image1, image2, shareloc_model1, shareloc_model2
             )
-            logging.info(
+            logging.debug(
                 "Optimal altitude found for epipolar grid generation : {}m. "
                 "Residue of triangulation : {}m".format(
                     round(h, 2), round(residue, 5)

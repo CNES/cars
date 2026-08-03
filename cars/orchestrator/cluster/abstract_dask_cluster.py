@@ -228,7 +228,7 @@ def save_config(output_dir: str, file_name: str):
     :param file_name: output file name
 
     """
-    logging.info(
+    logging.debug(
         "Save DASK global merged config for debug "
         "(1: $DASK_DIR if exists, 2: ~/.config/dask/, ... ) "
     )
@@ -364,7 +364,7 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         process_memory = float(process_memory) / 1000000
 
         # Log memory state
-        logging.info(
+        logging.debug(
             "Memory report: data created = {} ({} Mb), "
             "python process memory = {} Mb".format(
                 total_in_memory,

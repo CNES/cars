@@ -259,7 +259,7 @@ class DefaultPipeline(PipelineTemplate):
         self.keep_low_res_dir = True
 
         if dsm_cst.DSMS in conf[INPUT] and len(self.resolutions) != 1:
-            logging.info(
+            logging.debug(
                 "For the use of those pipelines, "
                 "you have to give only one resolution"
             )
@@ -671,7 +671,7 @@ class DefaultPipeline(PipelineTemplate):
         ):
             try:
                 shutil.rmtree(self.intermediate_data_dir)
-                logging.info(
+                logging.debug(
                     f"th directory {self.intermediate_data_dir} "
                     f" has been cleaned."
                 )
@@ -681,7 +681,7 @@ class DefaultPipeline(PipelineTemplate):
                     f"{exception}"
                 )
         else:
-            logging.info(
+            logging.debug(
                 f"The directory {self.intermediate_data_dir} has not "
                 f"been deleted"
             )
@@ -770,7 +770,7 @@ class DefaultPipeline(PipelineTemplate):
 
         """
 
-        loglevel = getattr(args, "loglevel", "PROGRESS").upper()
+        loglevel = getattr(args, "loglevel", "INFO").upper()
         logtype = getattr(args, "logtype", "human").lower()
         use_stdout = logtype != "human"
         global_log_file = os.path.join(
@@ -914,9 +914,9 @@ class DefaultPipeline(PipelineTemplate):
                     use_stdout=use_stdout,
                 )
 
-                cars_logging.add_progress_message(
-                    "Starting surface modeling pipeline for resolution 1/"
-                    + str(epipolar_res)
+                logging.info(
+                    "Starting surface modeling pipeline "
+                    f"for resolution 1/{epipolar_res}"
                 )
 
                 # define wich resolution

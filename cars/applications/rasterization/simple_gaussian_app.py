@@ -213,7 +213,7 @@ class SimpleGaussian(
             np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
         )
 
-        logging.info(
+        logging.debug(
             "Estimated optimal tile size for rasterization: {} meters".format(
                 tile_size
             )
@@ -425,7 +425,9 @@ class SimpleGaussian(
 
         # Derive output image files parameters to pass to rasterio
         _, _, xsize, ysize = tiling.roi_to_start_and_size(bounds, resolution)
-        logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
+        logging.debug(
+            "DSM output image size: {}x{} pixels".format(xsize, ysize)
+        )
 
         try:
             if isinstance(point_clouds, tuple):
@@ -879,7 +881,7 @@ class SimpleGaussian(
         )
 
         # Get number of tiles
-        logging.info(
+        logging.debug(
             "Number of tiles in cloud rasterization: "
             "row: {} "
             "col: {}".format(

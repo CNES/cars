@@ -30,13 +30,13 @@ CARS default pipeline class file
 # Standard imports
 from __future__ import print_function
 
+import logging
 import os
 import shutil
 from pathlib import Path
 
 from json_checker import Checker
 
-from cars.core import cars_logging
 from cars.core.progress.progress import ProgressTree
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -205,7 +205,7 @@ class FormattingPipeline(PipelineTemplate):
         """
         Run the formatting pipeline
         """
-        cars_logging.add_progress_message("Starting formatting pipeline")
+        logging.info("Starting formatting pipeline")
 
         source_dir = Path(self.used_conf[INPUT]["input_path"])
         destination_dir = Path(self.used_conf[OUTPUT]["directory"])

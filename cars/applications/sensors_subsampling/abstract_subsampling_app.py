@@ -50,7 +50,7 @@ class SensorsSubsampling(ApplicationTemplate, metaclass=ABCMeta):
 
         subsampling_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "subsampling method not specified, default "
                 " {} is used".format(subsampling_method)
             )
@@ -69,7 +69,7 @@ class SensorsSubsampling(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The subsampling({}) application will be used".format(
                 subsampling_method
             )

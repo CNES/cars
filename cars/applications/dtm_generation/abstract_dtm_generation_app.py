@@ -51,7 +51,7 @@ class DtmGeneration(ApplicationTemplate, metaclass=ABCMeta):
 
         dtm_generation_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "dtm_generation method not specified, default"
                 " {} is used".format(dtm_generation_method)
             )
@@ -70,7 +70,7 @@ class DtmGeneration(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The DtmGeneration {} application will be used".format(
                 dtm_generation_method
             )

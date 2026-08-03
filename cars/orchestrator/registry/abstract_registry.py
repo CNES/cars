@@ -22,7 +22,6 @@
 This module contains the abstract registry class
 """
 
-import logging
 from abc import abstractmethod
 
 # CARS imports
@@ -133,11 +132,7 @@ class AbstractCarsDatasetRegistry:
         if SAVING_INFO in attributes_info_dict:
             if CARS_DS_ROW in attributes_info_dict[SAVING_INFO]:
                 cars_ds_row = attributes_info_dict[SAVING_INFO][CARS_DS_ROW]
-            else:
-                logging.debug("No row given in object")
             if CARS_DS_COL in attributes_info_dict[SAVING_INFO]:
                 cars_ds_col = attributes_info_dict[SAVING_INFO][CARS_DS_COL]
-            else:
-                logging.debug("No col given in object")
 
         return cars_ds_row, cars_ds_col

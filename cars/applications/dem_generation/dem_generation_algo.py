@@ -89,7 +89,7 @@ def launch_bulldozer(
                 ):
                     dsm_to_dtm(bull_conf_path)
         except Exception:
-            logging.info("Bulldozer failed on its first execution. Retrying")
+            logging.debug("Bulldozer failed on its first execution. Retrying")
             # suppress prints in bulldozer by redirecting stdout&stderr
             with open(os.devnull, "w", encoding="utf8") as devnull:
                 with (

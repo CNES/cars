@@ -178,15 +178,15 @@ class WrapperDisk(AbstractWrapper):
         :param keep_shared_dir: do not clean directory of shared objects
         """
 
-        logging.info("Clean removing thread pool ...")
+        logging.debug("Clean removing thread pool ...")
         self.removing_pool.close()
         self.removing_pool.join()
 
-        logging.info("Clean tmp directory ...")
+        logging.debug("Clean tmp directory ...")
         removing_disk_data(self.tmp_dir)
 
         if not keep_shared_dir:
-            logging.info("Clean shared directory ...")
+            logging.debug("Clean shared directory ...")
             removing_disk_data(self.shared_dir)
 
     def cleanup_future_res(self, future_res):

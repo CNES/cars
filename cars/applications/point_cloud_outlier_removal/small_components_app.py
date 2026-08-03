@@ -190,7 +190,7 @@ class SmallComponents(
             np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
         )
 
-        logging.info(
+        logging.debug(
             "Estimated optimal tile size for small"
             "component removal: {} meters".format(tile_size)
         )

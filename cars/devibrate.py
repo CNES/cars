@@ -83,7 +83,7 @@ def acquisition_direction(
         """
         return 180 * math.atan2(vec[1], vec[0]) / math.pi
 
-    logging.info(
+    logging.debug(
         "Time direction average azimuth: "
         "{}deg (img1: {}deg, img2: {}deg)".format(
             display_angle(time_direction_vector),

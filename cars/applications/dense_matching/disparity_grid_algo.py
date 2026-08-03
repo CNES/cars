@@ -467,7 +467,7 @@ def generate_disp_range_from_dem_wrapper(
 
     # Add margin
     diff = grid_max - grid_min
-    logging.info("Max grid max - grid min : {} disp ".format(np.max(diff)))
+    logging.debug("Max grid max - grid min : {} disp ".format(np.max(diff)))
 
     if disp_min_threshold is not None:
         if np.any(grid_min < disp_min_threshold):

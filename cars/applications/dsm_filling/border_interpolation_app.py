@@ -350,14 +350,14 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
 
     # get dtm to fill the dsm
     if dtm_file is not None:
-        logging.info(
+        logging.debug(
             "Use DTM file {} for border interpolation".format(dtm_file)
         )
         with rio.open(dtm_file) as in_dtm:
             dtm = in_dtm.read(1, window=rasterio_window)
             dtm_nodata = in_dtm.nodata
     else:
-        logging.info(
+        logging.debug(
             "No DTM provided : DSM {} will be used for "
             "border interpolation".format(dsm_file)
         )
@@ -380,7 +380,7 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
                 "descriptions {}".format(label, classif_values)
             )
             continue
-        logging.info(
+        logging.debug(
             "Filling of {} with Bulldozer DTM using "
             "border interpolation".format(label)
         )
@@ -392,7 +392,7 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
             ],
         )
         features, num_features = scipy.ndimage.label(filling_mask)
-        logging.info("Filling of {} features".format(num_features))
+        logging.debug("Filling of {} features".format(num_features))
         features_boundaries = skimage.morphology.dilation(
             features,
             footprint=[
@@ -428,7 +428,7 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
                 invalidity_mask == int(label), roi_raster > 0
             )
 
-            logging.info(
+            logging.debug(
                 "Filling of {} with Bulldozer DTM using "
                 "border interpolation".format(label)
             )
@@ -440,7 +440,7 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
                 ],
             )
             features, num_features = scipy.ndimage.label(filling_mask)
-            logging.info("Filling of {} features".format(num_features))
+            logging.debug("Filling of {} features".format(num_features))
             features_boundaries = skimage.morphology.dilation(
                 features,
                 footprint=[

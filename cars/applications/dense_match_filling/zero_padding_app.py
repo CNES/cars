@@ -164,7 +164,7 @@ class ZerosPadding(
         res = None
 
         if not self.fill_classification:
-            logging.info("Disparity holes filling was not activated")
+            logging.debug("Disparity holes filling was not activated")
             res = epipolar_disparity_map
 
         else:
@@ -206,7 +206,7 @@ class ZerosPadding(
                     }
                 }
                 self.orchestrator.update_out_info(updating_dict)
-                logging.info(
+                logging.debug(
                     "Fill missing disparities with zeros values"
                     ": number tiles: {}".format(
                         epipolar_disparity_map.shape[1]

@@ -198,7 +198,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
                 sensor1, sensor2, geomodel1, geomodel2, geometry_plugin
             )
 
-            logging.info(
+            logging.debug(
                 "Left satellite acquisition angles: "
                 "Azimuth angle: {:.1f} degrees, "
                 "Elevation angle: {:.1f} degrees".format(
@@ -206,7 +206,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
                 )
             )
 
-            logging.info(
+            logging.debug(
                 "Right satellite acquisition angles: "
                 "Azimuth angle: {:.1f} degrees, "
                 "Elevation angle: {:.1f} degrees".format(
@@ -214,7 +214,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
                 )
             )
 
-            logging.info(
+            logging.debug(
                 "Stereo satellite convergence angle from ground: "
                 "{:.1f} degrees".format(convergence_angle)
             )
@@ -324,12 +324,12 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         }
         self.orchestrator.update_out_info(updating_dict)
 
-        logging.info(
+        logging.debug(
             "Size of epipolar images: {}x{} pixels".format(
                 epipolar_size[0], epipolar_size[1]
             )
         )
-        logging.info(
+        logging.debug(
             "Disparity to altitude factor for pixel at 1/{} "
             "sampling : {} m/pixel".format(
                 resolution, np.round(disp_to_alt_ratio, 2)

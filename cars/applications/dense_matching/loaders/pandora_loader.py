@@ -349,7 +349,7 @@ class PandoraLoader:
         if corresponding_conf_name is None:
             corresponding_conf_name = "census_sgm_default"
 
-        logging.info(
+        logging.debug(
             "The conf that has been chosen regarding the "
             "world classification map is {}".format(corresponding_conf_name)
         )
@@ -576,7 +576,7 @@ def overload_pandora_conf_with_confidence(conf, confidence_conf):
 
     for key in confidence_conf_keys:
         if key in conf_keys:
-            logging.info("{} pandora key already in configuration".format(key))
+            logging.debug("{} pandora key already in configuration".format(key))
 
     # update confidence
     out_dict.update(confidence_conf)

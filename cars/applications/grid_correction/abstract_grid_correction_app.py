@@ -51,7 +51,7 @@ class GridCorrection(ApplicationTemplate, metaclass=ABCMeta):
         grid_method = cls.default_application
 
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "Grid correction method not specified, default "
                 " {} is used".format(grid_method)
             )
@@ -70,7 +70,7 @@ class GridCorrection(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The GridCorrection({}) application will be used".format(
                 grid_method
             )

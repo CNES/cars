@@ -53,7 +53,7 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
 
         matching_method = cls.default_method
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "Dense Matching method not specified, "
                 "default {} is used".format(matching_method)
             )
@@ -68,7 +68,7 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
                 "No matching method named {} registered".format(matching_method)
             )
 
-        logging.info(
+        logging.debug(
             "The AbstractDenseMatchingMethod({}) method will be used".format(
                 matching_method
             )

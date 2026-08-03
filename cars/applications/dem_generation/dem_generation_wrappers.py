@@ -151,11 +151,11 @@ def compute_stats(diff):
     p95 = ("p95", np.nanpercentile(diff, 95))
     p99 = ("p99", np.nanpercentile(diff, 99))
     maxi = ("Max", np.nanmax(diff))
-    logging.info(  # pylint: disable=logging-fstring-interpolation
+    logging.debug(  # pylint: disable=logging-fstring-interpolation
         f"| {mini[0]:6} | {median[0]:6} | {p90[0]:6} | "
         f"{p95[0]:6} | {p99[0]:6} | {maxi[0]:6} |"
     )
-    logging.info(  # pylint: disable=logging-fstring-interpolation
+    logging.debug(  # pylint: disable=logging-fstring-interpolation
         f"| {mini[1]:6.2f} | {median[1]:6.2f} | {p90[1]:6.2f} | "
         f"{p95[1]:6.2f} | {p99[1]:6.2f} | {maxi[1]:6.2f} |"
     )

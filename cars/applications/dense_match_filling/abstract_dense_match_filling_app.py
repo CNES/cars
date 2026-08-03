@@ -57,7 +57,7 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
 
         fill_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "dense_match_filling method not specified, "
                 "default {} is used".format(fill_method)
             )
@@ -74,7 +74,7 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
                 " named {} registered".format(fill_method)
             )
 
-        logging.info(
+        logging.debug(
             "The DenseMatchFilling({}) application "
             "will be used".format(fill_method)
         )

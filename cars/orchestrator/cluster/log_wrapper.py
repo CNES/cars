@@ -96,12 +96,12 @@ def loop_function(argv, kwargs, func, nb_iteration=5):
     Returns:
         _type_: result of the function
     """
-    logging.info("{} {}".format(func.__module__, func.__name__.capitalize()))
+    logging.debug("{} {}".format(func.__module__, func.__name__.capitalize()))
     argv_temp = copy.copy(argv)
     kwargs_temp = copy.deepcopy(kwargs)
     # execute sevral time the function to observe possible leaks
     for k in range(1, nb_iteration):
-        logging.info("loop iteration {}".format(k))
+        logging.debug("loop iteration {}".format(k))
         func(*argv, **kwargs)
         del argv
         del kwargs
@@ -188,8 +188,6 @@ def generate_summary(
         if "orchestrator" in used_conf[first_key]:
             if "nb_workers" in used_conf[first_key]["orchestrator"]:
                 nb_workers = used_conf[first_key]["orchestrator"]["nb_workers"]
-            else:
-                logging.debug("nb_workers not in conf, set to 1")
     else:
         if "nb_workers" in used_conf["orchestrator"]:
             nb_workers = used_conf["orchestrator"]["nb_workers"]
@@ -214,9 +212,7 @@ def generate_summary(
     max_cpu = []
 
     for log_file in log_files:
-        if not os.path.exists(log_file):
-            logging.debug("{} log file does not exist".format(log_file))
-        else:
+        if os.path.exists(log_file):
             with open(log_file, encoding="UTF-8") as file_desc:
                 for item in file_desc:
                     if "CarsProfiling" in item:
@@ -529,7 +525,7 @@ def generate_pdf_profiling(log_dir):
                 pdf.savefig(fig, bbox_inches="tight", dpi=300)
                 plt.close(fig)
 
-    logging.info("PDF profiling summary generated: {}".format(pdf_path))
+    logging.debug("PDF profiling summary generated: {}".format(pdf_path))
 
 
 def filter_lists(names, data, cond):
@@ -546,7 +542,6 @@ def filter_lists(names, data, cond):
             filtered_data.append(dat)
 
     if len(filtered_data) == 0:
-        logging.debug("No data after filtering with condition on names")
         return ["no name"], [0]
 
     return filtered_names, filtered_data

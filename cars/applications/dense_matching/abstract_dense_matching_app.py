@@ -49,7 +49,7 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
 
         matching_application = cls.default_application
         if bool(conf) is False or "application" not in conf:
-            logging.info(
+            logging.debug(
                 "Dense Matching application not specified, "
                 f"default {matching_application} is used"
             )
@@ -68,7 +68,7 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
                 "registered"
             )
 
-        logging.info(
+        logging.debug(
             f"The AbstractDenseMatching({matching_application}) application "
             "will be used"
         )

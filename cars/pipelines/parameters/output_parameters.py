@@ -133,7 +133,7 @@ def check_output_parameters(  # noqa: C901 : too complex
                 )
         else:
             resolution = float(res_val * scaling_coeff)
-            logging.info(
+            logging.debug(
                 "The resolution of the output DSM will be "
                 f"{resolution} meters. "
             )
@@ -434,7 +434,7 @@ def check_performance_classes(overloaded_conf):
     raw_performance_map = False
     request_raw_performance_map = [[], [0], None]
     if performance_map_classes in request_raw_performance_map:
-        logging.info("Raw performance map will be returned")
+        logging.debug("Raw performance map will be returned")
         overloaded_conf[output_constants.AUXILIARY][
             output_constants.AUX_PERFORMANCE_MAP
         ] = [0]

@@ -74,7 +74,9 @@ class AbstractCluster(metaclass=ABCMeta):
             logging.error("No mode named {} registered".format(cluster_mode))
             raise KeyError("No mode named {} registered".format(cluster_mode))
 
-        logging.info("The AbstractCluster {} will be used".format(cluster_mode))
+        logging.debug(
+            "The AbstractCluster {} will be used".format(cluster_mode)
+        )
 
         return super(AbstractCluster, cls).__new__(
             cls.available_modes[cluster_mode]

@@ -34,7 +34,6 @@ from itertools import count
 from rich.console import Console
 
 from cars.core.cars_logging import (
-    add_progress_message,
     get_warning_count,
 )
 from cars.core.progress.ui import PipelineTreeUI
@@ -182,7 +181,7 @@ class ProgressTree:  # pylint: disable=R0902
         self._task_to_pipeline[task_id] = pipeline_id
         self._pipelines[pipeline_id].total_weight += weight
 
-        logging.info(
+        logging.debug(
             f"Registered task {task_name} under pipeline "
             f"{self._pipelines[pipeline_id].name} with weight "
             f"{weight} and expected runs {expected_runs}"
@@ -290,7 +289,7 @@ class ProgressTree:  # pylint: disable=R0902
 
         self._set_running_state_for_lineage(pipeline.pipeline_id)
         self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
-        add_progress_message(
+        logging.info(
             f"Started task {task.name} in "
             f"pipeline {pipeline.name}, total: {total}"
         )
@@ -335,7 +334,7 @@ class ProgressTree:  # pylint: disable=R0902
 
         if current_percent >= task.last_logged_percent + 10:
             task.last_logged_percent = (current_percent // 10) * 10
-            add_progress_message(
+            logging.info(
                 f"Data list to process: {task.last_logged_percent}% "
                 f"complete ({current_count}/{task.total} tiles) "
                 f"[run {task.started_runs}/{task.expected_runs}]"

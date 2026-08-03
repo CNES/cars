@@ -24,8 +24,6 @@ contains functions related to regions and tiles management
 """
 # pylint: disable=too-many-lines
 
-import logging
-
 # Standard imports
 import math
 from typing import Dict, List, Tuple
@@ -648,11 +646,6 @@ def get_corresponding_tiles_row_col(
              Terrain regions "rank" allowing to sorting tiles for dask
              processing
     """
-
-    logging.debug(
-        "Processing tile located at {},{} in tile grid".format(row, col)
-    )
-
     # Terrain grid [row, j, :] = [xmin, xmax, ymin, ymax]
     # terrain region = [xmin, ymin, xmax, ymax]
     terrain_region = [
@@ -665,8 +658,6 @@ def get_corresponding_tiles_row_col(
     # reverse convention as row and col correspond to new format
     # Former format is transposed
     row, col = col, row
-
-    logging.debug("Corresponding terrain region: {}".format(terrain_region))
 
     # This list will hold the required points clouds for this terrain tile
     required_point_clouds = []
@@ -755,17 +746,8 @@ def get_corresponding_tiles_row_col(
         # Crop epipolar region to largest region
         epipolar_region = crop(epipolar_region, largest_epipolar_region)
 
-        logging.debug(
-            "Corresponding epipolar region: {}".format(epipolar_region)
-        )
-
         # Check if the epipolar region contains any pixels to process
-        if empty(epipolar_region):
-            logging.debug(
-                "Skipping terrain region "
-                "because corresponding epipolar region is empty"
-            )
-        else:
+        if not empty(epipolar_region):
             # Loop on all epipolar tiles covered by epipolar region
             for epipolar_tile in list_tiles(
                 epipolar_region,

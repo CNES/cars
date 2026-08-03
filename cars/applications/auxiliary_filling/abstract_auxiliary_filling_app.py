@@ -52,7 +52,7 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
         auxiliary_filling_method = cls.default_application
 
         if bool(conf) is False or "method" not in conf:
-            logging.info(
+            logging.debug(
                 "Auxiliary filling method not specified, "
                 "default {} is used".format(auxiliary_filling_method)
             )
@@ -71,7 +71,7 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The AuxiliaryFilling({}) application will be used".format(
                 auxiliary_filling_method
             )

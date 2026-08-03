@@ -51,7 +51,7 @@ class DsmFilling(ApplicationTemplate, metaclass=ABCMeta):
 
         dsm_filling_method = cls.default_application
         if bool(conf) is False:
-            logging.info(
+            logging.debug(
                 "dsm_filling method not specified, default"
                 " {} is used".format(dsm_filling_method)
             )
@@ -70,7 +70,7 @@ class DsmFilling(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.info(
+        logging.debug(
             "The DsmFilling {} application will be used".format(
                 dsm_filling_method
             )
