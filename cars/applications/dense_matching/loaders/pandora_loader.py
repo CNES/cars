@@ -257,8 +257,6 @@ class PandoraLoader:
         # Check conf
         self.pandora_config = conf
 
-        print(conf)
-
     def get_conf(self):
         """
         Get pandora configuration used
