@@ -155,6 +155,7 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                     "width": new_width,
                     "transform": new_transform,
                     "driver": "GTiff",
+                    "interleave": "band",
                     "compress": "lzw",
                 }
             )

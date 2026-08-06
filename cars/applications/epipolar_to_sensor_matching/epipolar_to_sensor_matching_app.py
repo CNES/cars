@@ -171,6 +171,7 @@ class EpipolarToSensorMatchingApp(
                 "width": width_left,
                 "driver": "GTiff",
                 "dtype": "float32",
+                "interleave": "band",
                 "transform": transform_left,
                 "tiled": True,
             }

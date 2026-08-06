@@ -243,6 +243,7 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
                 "width": xsize,
                 "driver": "GTiff",
                 "dtype": "float32",
+                "interleave": "band",
                 "transform": transform,
                 "crs": "EPSG:{}".format(epsg),
                 "tiled": True,
