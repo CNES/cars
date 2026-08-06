@@ -732,6 +732,16 @@ class BasicDenseMatchingApplication(
                     cars_ds_name="epi_disp_interval_bounds_sup",
                     nodata=-9999,
                 )
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_disp_ambiguity.tif",
+                    ),
+                    "ambiguity",
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_disp_ambiguity",
+                    nodata=-9999,
+                )
 
             # Get saving infos in order to save tiles when they are computed
             [saving_info] = self.orchestrator.get_saving_infos(

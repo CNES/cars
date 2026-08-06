@@ -232,6 +232,12 @@ class PandoraLoader:
                     "ambiguity_indicator": "cars_1",
                 }
             }
+
+            if method_name == "pandora_mccnn_sgm":
+                conf_filter_interval["filter.cars_3"].update(
+                    ambiguity_threshold=0.4
+                )
+
             pipeline_dict = OrderedDict()
             pipeline_dict.update(conf["pipeline"])
             # Filter is placed after validation in config
