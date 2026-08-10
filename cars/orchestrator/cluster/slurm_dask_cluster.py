@@ -22,12 +22,13 @@
 Contains abstract function for SLURM dask Cluster
 """
 
-import logging
 import os
 import warnings
 
 from dask.distributed import Client
 from json_checker import Or
+
+from cars.core.cars_logging import logger
 
 with warnings.catch_warnings():
     # Ignore some internal dask_jobqueue warnings
@@ -92,7 +93,7 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
                 error_msg = (
                     "'account' parameter must be set for slurm dask cluster"
                 )
-                logging.error(error_msg)
+                logger.error(error_msg)
                 raise RuntimeError(error_msg)
         return check_configuration(overloaded_conf, cluster_schema)
 
@@ -117,7 +118,7 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 
         """
         stop_cluster(self.cluster, self.client)
-        logging.debug("Dask cluster closed")
+        logger.debug("Dask cluster closed")
 
 
 def start_cluster(  # pylint: disable=too-many-positional-arguments
@@ -203,7 +204,7 @@ def start_cluster(  # pylint: disable=too-many-positional-arguments
         )
         if qos:
             qos = ["--qos=" + qos]
-            logging.debug("Quality of Service option: {}".format(qos[0]))
+            logger.debug("Quality of Service option: {}".format(qos[0]))
         cluster = SLURMCluster(
             processes=nb_workers_per_job,
             cores=nb_workers_per_job,
@@ -225,10 +226,10 @@ def start_cluster(  # pylint: disable=too-many-positional-arguments
             scheduler_options=scheduler_options,
             job_extra_directives=qos,
         )
-        logging.debug("Dask cluster started")
+        logger.debug("Dask cluster started")
         cluster.adapt(minimum=nb_workers, maximum=nb_workers)
         client = Client(cluster, timeout=timeout)
-        logging.debug(
+        logger.debug(
             "Dashboard started at {}".format(get_dashboard_link(cluster))
         )
     return cluster, client

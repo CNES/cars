@@ -24,9 +24,6 @@ this module contains the statistical point removal application class.
 
 
 import copy
-
-# Standard imports
-import logging
 import os
 
 import numpy as np
@@ -51,6 +48,9 @@ from cars.applications.triangulation.triangulation_wrappers import (
 )
 from cars.core import constants as cst
 from cars.core import projection
+
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.data_structures import cars_dataset
 
 # R0903  temporary disabled for error "Too few public methods"
@@ -187,7 +187,7 @@ class Statistical(
             np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
         )
 
-        logging.debug(
+        logger.debug(
             "Estimated optimal tile size for statistical "
             "removal: {} meters".format(tile_size)
         )
@@ -446,7 +446,7 @@ def epipolar_statistical_removal_wrapper(
     # Check if can be used to filter
     spatial_ref = CRS.from_epsg(cloud_epsg)
     if spatial_ref.is_geographic:
-        logging.debug(
+        logger.debug(
             "The point cloud to filter is not in a cartographic system. "
             "The filter's default parameters might not be adapted "
             "to this referential. Please, convert the point "

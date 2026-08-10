@@ -22,7 +22,6 @@
 This module contains the interpolation dsm filling application class.
 """
 
-import logging
 import os
 import shutil
 
@@ -38,6 +37,7 @@ from shapely import Polygon
 
 import cars.orchestrator.orchestrator as ocht
 from cars.core import projection
+from cars.core.cars_logging import logger
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -338,13 +338,13 @@ def interpolation_filling_wrapper(  # pylint: disable=R0917 # noqa: C901
                 filling_mask = dsm_mask == 0
             filling_mask = np.logical_and(filling_mask, roi_raster > 0)
         else:
-            logging.error(
+            logger.error(
                 f"Label {label} not found in classification "
                 f"descriptions {classif_values}"
             )
             continue
 
-        logging.debug(f"Filling of {label} with rasterio.fill.fillnodata")
+        logger.debug(f"Filling of {label} with rasterio.fill.fillnodata")
         combined_mask = np.logical_or(combined_mask, filling_mask)
 
     # Keep only targets inside DSM contour to preserve true outside nodata.

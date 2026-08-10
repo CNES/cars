@@ -23,7 +23,6 @@ CARS analysis pipeline class file
 """
 import copy
 import json
-import logging
 import math
 import os
 
@@ -34,6 +33,7 @@ from shapely.geometry import box, mapping
 
 from cars import extractroi
 from cars.core import projection
+from cars.core.cars_logging import logger
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
@@ -271,7 +271,7 @@ def launch_low_res_pipeline(conf, low_res_dir, config_dir):
     except Exception as exc:
         # Generate report with error message
         log_error = "Error during low res pipeline: {}".format(exc)
-        logging.error(log_error)
+        logger.error(log_error)
         error = True
 
     # Generate report
@@ -339,7 +339,7 @@ def launch_full_res_pipeline(
     except Exception as exc:
         # Generate report with error message
         log_error = "Error during full res pipeline: {}".format(exc)
-        logging.error(log_error)
+        logger.error(log_error)
         error = True
 
     # Generate report on crop results
@@ -498,7 +498,7 @@ def get_best_roi(low_res_dir, tile_size=2000):
         }
 
         geosjon = json.dumps(geojson_feature, indent=2)
-        logging.debug(f"Best ROI GeoJSON:\n{geosjon}")
+        logger.debug(f"Best ROI GeoJSON:\n{geosjon}")
 
         return bbox_roi
 

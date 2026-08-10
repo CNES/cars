@@ -27,7 +27,6 @@ progress contributes to the pipeline bar accordingly.
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from itertools import count
 
@@ -35,6 +34,7 @@ from rich.console import Console
 
 from cars.core.cars_logging import (
     get_warning_count,
+    logger,
 )
 from cars.core.progress.ui import PipelineTreeUI
 
@@ -167,7 +167,7 @@ class ProgressTree:  # pylint: disable=R0902
         weight = float(weight)
         expected_runs = max(1, int(expected_runs))
         if weight <= 0:
-            logging.warning(
+            logger.warning(
                 f"ProgressTree warning: task {task_name} has "
                 f"non-positive weight {weight}"
             )
@@ -181,7 +181,7 @@ class ProgressTree:  # pylint: disable=R0902
         self._task_to_pipeline[task_id] = pipeline_id
         self._pipelines[pipeline_id].total_weight += weight
 
-        logging.debug(
+        logger.debug(
             f"Registered task {task_name} under pipeline "
             f"{self._pipelines[pipeline_id].name} with weight "
             f"{weight} and expected runs {expected_runs}"
@@ -267,13 +267,13 @@ class ProgressTree:  # pylint: disable=R0902
             # trigger warnings about exceeding expected_runs
             task.nominal_started_runs += 1
             if task.nominal_started_runs > task.expected_runs:
-                logging.warning(
+                logger.warning(
                     f"ProgressTree warning: task {task.name} in pipeline "
                     f"{pipeline.name} started more times than expected "
                     f"({task.nominal_started_runs} > {task.expected_runs})"
                 )
             if total <= 0:
-                logging.warning(
+                logger.warning(
                     f"ProgressTree warning: task {task.name} in "
                     f"pipeline {pipeline.name} started with "
                     f"non-positive total={total}"
@@ -289,7 +289,7 @@ class ProgressTree:  # pylint: disable=R0902
 
         self._set_running_state_for_lineage(pipeline.pipeline_id)
         self._refresh_pipeline_and_ancestors(pipeline.pipeline_id)
-        logging.info(
+        logger.info(
             f"Started task {task.name} in "
             f"pipeline {pipeline.name}, total: {total}"
         )
@@ -301,14 +301,14 @@ class ProgressTree:  # pylint: disable=R0902
         value: int,
     ) -> None:
         if task.total <= 0:
-            logging.warning(
+            logger.warning(
                 f"ProgressTree warning: task {task.name} in "
                 f"pipeline {pipeline.name} received 'progressed' before "
                 f"a valid 'started' (total={task.total})"
             )
             return
         if value <= 0:
-            logging.warning(
+            logger.warning(
                 f"ProgressTree warning: task {task.name} in "
                 f"pipeline {pipeline.name} received "
                 f"non-positive progressed value={value}"
@@ -323,7 +323,7 @@ class ProgressTree:  # pylint: disable=R0902
         # Log progress at 10% intervals
         current_count = max(0, task.progressed_tiles - task.retries)
         if current_count > task.total:
-            logging.warning(
+            logger.warning(
                 f"ProgressTree warning: task {task.name} in "
                 f"pipeline {pipeline.name} effective progressed tiles "
                 f"exceed total ({current_count} > {task.total})"
@@ -334,7 +334,7 @@ class ProgressTree:  # pylint: disable=R0902
 
         if current_percent >= task.last_logged_percent + 10:
             task.last_logged_percent = (current_percent // 10) * 10
-            logging.info(
+            logger.info(
                 f"Data list to process: {task.last_logged_percent}% "
                 f"complete ({current_count}/{task.total} tiles) "
                 f"[run {task.started_runs}/{task.expected_runs}]"
@@ -350,7 +350,7 @@ class ProgressTree:  # pylint: disable=R0902
     ) -> None:
         retries_count = int(value)
         if retries_count < 0:
-            logging.warning(
+            logger.warning(
                 f"ProgressTree warning: task {task.name} in "
                 f"pipeline {pipeline.name} received "
                 f"negative retries={retries_count}"
@@ -361,7 +361,7 @@ class ProgressTree:  # pylint: disable=R0902
         if retries_count > 0:
             task.pending_retry_pass = True
         if task.total > 0 and retries_count > task.total:
-            logging.warning(
+            logger.warning(
                 f"ProgressTree warning: task {task.name} in "
                 f"pipeline {pipeline.name} received "
                 f"retries greater than total ({retries_count} > {task.total})"
@@ -387,7 +387,7 @@ class ProgressTree:  # pylint: disable=R0902
     ) -> None:
         failed_count = int(value)
         if failed_count < 0:
-            logging.warning(
+            logger.warning(
                 f"ProgressTree warning: task {task.name} in "
                 f"pipeline {pipeline.name} received "
                 f"negative failed={failed_count}"
@@ -403,20 +403,20 @@ class ProgressTree:  # pylint: disable=R0902
         pipeline: PipelineState,
     ) -> None:
         if task.started_runs == 0:
-            logging.warning(
+            logger.warning(
                 f"ProgressTree warning: task {task.name} in "
                 f"pipeline {pipeline.name} completed without any start"
             )
         if not task.current_pass_is_retry:
             next_nominal_runs = task.completed_nominal_runs + 1
             if next_nominal_runs > task.expected_runs:
-                logging.warning(
+                logger.warning(
                     f"ProgressTree warning: task {task.name} in "
                     f"pipeline {pipeline.name} completed more times than "
                     f"expected ({next_nominal_runs} > {task.expected_runs})"
                 )
             if task.started_runs < next_nominal_runs:
-                logging.warning(
+                logger.warning(
                     f"ProgressTree warning: task {task.name} in "
                     f"pipeline {pipeline.name} completed without matching "
                     f"starts ({task.started_runs} < {next_nominal_runs})"
@@ -499,7 +499,7 @@ class ProgressTree:  # pylint: disable=R0902
             for task in self._tasks.values():
                 pipeline = self._pipelines[task.pipeline_id]
                 if task.completed_nominal_runs < task.expected_runs:
-                    logging.warning(
+                    logger.warning(
                         f"ProgressTree warning: task {task.name} in "
                         f"pipeline {pipeline.name} finished with only "
                         f"{task.completed_nominal_runs}/{task.expected_runs} "

@@ -25,9 +25,6 @@ this module contains the basic sparse matching application class.
 # pylint: disable= C0302
 
 import inspect
-
-# Standard imports
-import logging
 import math
 import os
 
@@ -48,6 +45,9 @@ from cars.applications.sparse_matching.abstract_sparse_matching_app import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, tiling
+
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.data_structures.cars_dict import CarsDict
@@ -268,13 +268,13 @@ class BasicSparseMatchingApplication(
         margins.attrs["disp_min"] = disp_min
         margins.attrs["disp_max"] = disp_max
 
-        logging.debug(
+        logger.debug(
             "Margins added to left region for matching: {}".format(
                 margins["left_margin"].data
             )
         )
 
-        logging.debug(
+        logger.debug(
             "Margins added to right region for matching: {}".format(
                 margins["right_margin"].data
             )
@@ -330,7 +330,7 @@ class BasicSparseMatchingApplication(
         disp_min_global = np.min(disp_min_grid_arr)
         disp_max_global = np.max(disp_max_grid_arr)
 
-        logging.debug(
+        logger.debug(
             "Global Disparity range for current pair:  "
             "[{:.3f} pix., {:.3f} pix.] "
             "(or [{:.3f} m., {:.3f} m.])".format(
@@ -458,14 +458,14 @@ class BasicSparseMatchingApplication(
 
         raw_nb_matches = matches.shape[0]
 
-        logging.debug(
+        logger.debug(
             "Raw number of matches found: {} matches".format(raw_nb_matches)
         )
 
         if save_matches:
             safe_makedirs(pair_folder)
 
-            logging.debug("Writing raw matches file")
+            logger.debug("Writing raw matches file")
             raw_matches_array_path = os.path.join(
                 pair_folder, "raw_matches.npy"
             )
@@ -477,7 +477,7 @@ class BasicSparseMatchingApplication(
             np.abs(epipolar_median_shift - self.epipolar_error_estimation)
             > epipolar_error_maximum_bias
         ):
-            logging.warning(
+            logger.warning(
                 "epipolar_median_shift is greater than "
                 "epipolar_maximum_bias {} > {}".format(
                     np.abs(
@@ -508,10 +508,10 @@ class BasicSparseMatchingApplication(
                 " considering a shift of {} pix".format(epipolar_median_shift)
             )
 
-        logging.debug(matches_discarded_message)
+        logger.debug(matches_discarded_message)
 
         if save_matches:
-            logging.debug("Writing filtered matches file")
+            logger.debug("Writing filtered matches file")
             filtered_matches_array_path = os.path.join(
                 pair_folder, "filtered_matches.npy"
             )
@@ -528,9 +528,9 @@ class BasicSparseMatchingApplication(
                     self.minimum_nb_matches,
                 )
             )
-            logging.warning(error_message_matches)
+            logger.warning(error_message_matches)
 
-        logging.debug(
+        logger.debug(
             "Number of matches kept for epipolar "
             "error correction: {} matches".format(nb_matches)
         )
@@ -544,7 +544,7 @@ class BasicSparseMatchingApplication(
             epi_error_mean = 0
             epi_error_std = 0
             epi_error_max = 0
-            logging.debug(
+            logger.debug(
                 "Epipolar error before correction: mean = {:.3f} pix., "
                 "standard deviation = {:.3f} pix., max = {:.3f} pix.".format(
                     epi_error_mean,
@@ -742,7 +742,7 @@ class BasicSparseMatchingApplication(
                 }
             }
             self.orchestrator.update_out_info(updating_infos)
-            logging.debug(
+            logger.debug(
                 "Generate disparity: Number tiles: {}".format(
                     epipolar_disparity_map_left.shape[1]
                     * epipolar_disparity_map_left.shape[0]
@@ -809,7 +809,7 @@ class BasicSparseMatchingApplication(
                         )
 
         else:
-            logging.error(
+            logger.error(
                 "SparseMatching application doesn't "
                 "support this input data format"
             )

@@ -21,7 +21,6 @@
 """
 Contains function to convert the point cloud dataframe to laz format:
 """
-import logging
 import warnings
 
 import laspy
@@ -31,6 +30,7 @@ import numpy as np
 from pyproj import CRS
 
 import cars.core.constants as cst
+from cars.core.cars_logging import logger
 
 
 def convert_pcl_to_laz(point_clouds, output_filename: str):
@@ -74,10 +74,10 @@ def get_input_color(point_clouds):
     ]
     nb_color = len(color_names)
     if nb_color == 1:
-        logging.warning("No color available for point cloud")
+        logger.warning("No color available for point cloud")
         input_color = color_names
     elif sorted(color_names[:3]) != sorted(input_color):
-        logging.warning(
+        logger.warning(
             "Descriptions of color bands {} does not conform to names "
             "'R', 'G', 'B'".format(color_names[:3])
         )
@@ -148,7 +148,7 @@ def generate_prj_file(output_filename, epsg):
         crs = CRS.from_epsg(epsg)
         proj = crs.to_proj4()
     if crs.is_geographic:
-        logging.warning(
+        logger.warning(
             "Coordinate system of point cloud is geographic: "
             "Display of LAZ file may not work"
         )

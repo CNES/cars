@@ -51,6 +51,7 @@ from cars.applications.dense_matching.methods import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, tiling
+from cars.core.cars_logging import logger
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -263,8 +264,8 @@ class PandoraMethod(
                 "configuration"
             )
 
-        logger = logging.getLogger("transitions.core")
-        logger.addFilter(
+        pandora_logger = logging.getLogger("transitions.core")
+        pandora_logger.addFilter(
             lambda record: "to model due to model override policy"
             not in record.getMessage()
         )
@@ -453,7 +454,7 @@ class PandoraMethod(
         if min_elevation_offset is not None:
             user_disp_min = min_elevation_offset / disp_to_alt_ratio
             if np.any(disp_min_grid_arr < user_disp_min):
-                logging.warning(
+                logger.warning(
                     (
                         "Overridden disparity minimum "
                         "= {:.3f} pix. (= {:.3f} m.) "
@@ -471,7 +472,7 @@ class PandoraMethod(
         if max_elevation_offset is not None:
             user_disp_max = max_elevation_offset / disp_to_alt_ratio
             if np.any(disp_max_grid_arr > user_disp_max):
-                logging.warning(
+                logger.warning(
                     (
                         "Overridden disparity maximum "
                         "= {:.3f} pix. (or {:.3f} m.) "
@@ -489,7 +490,7 @@ class PandoraMethod(
         disp_min_global = np.min(disp_min_grid_arr)
         disp_max_global = np.max(disp_max_grid_arr)
 
-        logging.debug(
+        logger.debug(
             "Global Disparity range for current pair:  "
             "[{:.3f} pix., {:.3f} pix.] "
             "(or [{:.3f} m., {:.3f} m.])".format(
@@ -765,7 +766,7 @@ class PandoraMethod(
                 mask_crop = np.zeros(disp_min_grid.shape, dtype=int)
 
                 is_cropped = True
-                logging.warning("disparity range for current tile is cropped")
+                logger.warning("disparity range for current tile is cropped")
                 # crop
                 new_min = (
                     current_min * crop_with_range / (current_max - current_min)

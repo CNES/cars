@@ -23,7 +23,6 @@ CARS containing inputs checking for sensor input data
 Used for full_res and low_res pipelines
 """
 
-import logging
 import math
 import os
 
@@ -35,6 +34,7 @@ import cars.core.constants as cst
 
 # CARS imports
 from cars.core import inputs, projection
+from cars.core.cars_logging import logger
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -201,7 +201,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
                 sens_cst.INPUT_EDGES_TILE_ID: None,
             }
         elif not isinstance(edges, dict):
-            logging.error("Key edges {} is not a path or dict".format(edges))
+            logger.error("Key edges {} is not a path or dict".format(edges))
             raise RuntimeError(
                 "Key edges {} is not a path or dict".format(edges)
             )
@@ -284,7 +284,7 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
     ):
         sensor_keys = list(overloaded_conf[sens_cst.SENSORS].keys())
         overloaded_conf[sens_cst.PAIRING] = [[sensor_keys[0], sensor_keys[1]]]
-        logging.debug(
+        logger.debug(
             (
                 "Pairing is not defined, '{}' will be used as left sensor and "
                 + "'{}' will be used as right sensor"
@@ -299,10 +299,10 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
 
     for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
         if key1 not in overloaded_conf[sens_cst.SENSORS]:
-            logging.error("{} not in sensors images".format(key1))
+            logger.error("{} not in sensors images".format(key1))
             raise RuntimeError("{} not in sensors images".format(key1))
         if key2 not in overloaded_conf["sensors"]:
-            logging.error("{} not in sensors images".format(key2))
+            logger.error("{} not in sensors images".format(key2))
             raise RuntimeError("{} not in sensors images".format(key2))
 
     # Modify to absolute path
@@ -671,12 +671,12 @@ def check_srtm(srtm_dir):
         if os.path.isdir(srtm_dir):
             srtm_tiles = os.listdir(srtm_dir)
             if len(srtm_tiles) == 0:
-                logging.warning(
+                logger.warning(
                     "SRTM directory is empty, "
                     "the default altitude will be used as reference altitude."
                 )
             else:
-                logging.debug(
+                logger.debug(
                     "Indicated SRTM tiles valid regions "
                     "will be used as reference altitudes "
                     "(the default altitude is used "
@@ -686,9 +686,7 @@ def check_srtm(srtm_dir):
             # TODO add check for single file
             pass
     else:
-        logging.debug(
-            "The default altitude will be used as reference altitude."
-        )
+        logger.debug("The default altitude will be used as reference altitude.")
 
 
 def check_input_data(image, color):
@@ -704,7 +702,7 @@ def check_input_data(image, color):
     with rio.open(image) as img_reader:
         trans = img_reader.transform
         if trans.e < 0:
-            logging.warning(
+            logger.warning(
                 "{} seems to have an incoherent pixel size. "
                 "Input images has to be in sensor geometry.".format(image)
             )
@@ -712,7 +710,7 @@ def check_input_data(image, color):
     with rio.open(color) as img_reader:
         trans = img_reader.transform
         if trans.e < 0:
-            logging.warning(
+            logger.warning(
                 "{} seems to have an incoherent pixel size. "
                 "Input images has to be in sensor geometry.".format(image)
             )
@@ -739,7 +737,7 @@ def get_initial_elevation(config):
     # Add geoid path to the initial_elevation dict
     if sens_cst.GEOID not in updated_config:
         # use cars geoid
-        logging.debug("CARS will use its own internal file as geoid reference")
+        logger.debug("CARS will use its own internal file as geoid reference")
         # Get root package directory
         package_path = os.path.dirname(__file__)
         geoid_path = os.path.join(
@@ -807,7 +805,7 @@ def check_nbits(mask):
     if mask is not None:
         nbits = inputs.rasterio_get_nbits(mask)
         if not check_all_nbits_equal_one(nbits):
-            logging.warning(
+            logger.warning(
                 "The mask {} have {} nbits per band."
                 "Only the mask with nbits=1 is supported!".format(mask, nbits)
             )
@@ -882,7 +880,7 @@ def check_classification_values(sensors, sensor_type, key1, key2, filling):
                 for filling_value in filling_values:
                     if isinstance(filling_value, int):
                         if filling_value not in all_values:
-                            logging.warning(
+                            logger.warning(
                                 "Value {} on which filling {} "
                                 "must be applied does"
                                 " not exist on"

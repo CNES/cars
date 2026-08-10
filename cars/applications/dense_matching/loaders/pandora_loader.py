@@ -24,7 +24,6 @@ CARS pandora loader file
 
 import copy
 import json
-import logging
 import os
 from collections import OrderedDict
 from typing import Dict
@@ -44,6 +43,7 @@ from pandora.state_machine import PandoraMachine
 from rasterio.mask import mask
 from shapely.geometry import mapping
 
+from cars.core.cars_logging import logger
 from cars.core.projection import polygon_projection
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -122,7 +122,7 @@ class PandoraLoader:
             try:
                 filename = config_map[method_name]
             except KeyError as err:
-                logging.error(
+                logger.error(
                     "No method named {} in pandora loader".format(method_name)
                 )
                 raise NameError(
@@ -355,7 +355,7 @@ class PandoraLoader:
         if corresponding_conf_name is None:
             corresponding_conf_name = "census_sgm_default"
 
-        logging.debug(
+        logger.debug(
             "The conf that has been chosen regarding the "
             "world classification map is {}".format(corresponding_conf_name)
         )
@@ -582,7 +582,7 @@ def overload_pandora_conf_with_confidence(conf, confidence_conf):
 
     for key in confidence_conf_keys:
         if key in conf_keys:
-            logging.debug("{} pandora key already in configuration".format(key))
+            logger.debug("{} pandora key already in configuration".format(key))
 
     # update confidence
     out_dict.update(confidence_conf)

@@ -22,7 +22,6 @@
 This module contains the implementation of a tiled Dense matching application
 """
 
-import logging
 import os
 
 import numpy as np
@@ -45,6 +44,7 @@ from cars.applications.dense_matching.disparity_grid_algo import (
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core import tiling
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 from cars.data_structures.cars_dict import CarsDict
@@ -475,7 +475,7 @@ class BasicDenseMatchingApplication(
                     mins.append(dict_data["global_min"])
                     maxs.append(dict_data["global_max"])
                 except Exception:
-                    logging.debug(
+                    logger.debug(
                         "Tile {} {} not computed in epi disp range"
                         " generation".format(row, col)
                     )
@@ -760,7 +760,7 @@ class BasicDenseMatchingApplication(
                 }
             }
             self.orchestrator.update_out_info(updating_dict)
-            logging.debug(
+            logger.debug(
                 "Compute disparity: number tiles: {}".format(
                     epipolar_disparity_map.shape[1]
                     * epipolar_disparity_map.shape[0]
@@ -833,7 +833,7 @@ class BasicDenseMatchingApplication(
                         )
 
         else:
-            logging.error(
+            logger.error(
                 "DenseMatching application doesn't "
                 "support this input data format"
             )

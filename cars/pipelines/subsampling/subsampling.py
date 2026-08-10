@@ -31,7 +31,6 @@ CARS subsampling pipeline class file
 from __future__ import print_function
 
 import copy
-import logging
 import os
 from pathlib import Path
 
@@ -40,6 +39,7 @@ import yaml
 from json_checker import Checker, OptionalKey, Or
 
 from cars.applications.application import Application
+from cars.core.cars_logging import logger
 from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
@@ -243,7 +243,7 @@ class SubsamplingPipeline(PipelineTemplate):
                 image_width = min(image.height, image.width)
                 sizes.append(image_width)
             except (KeyError, rio.errors.RasterioIOError):
-                logging.warning("Sensor {} not found".format(sensor))
+                logger.warning("Sensor {} not found".format(sensor))
 
         min_resolution = 1
         if sizes:
@@ -254,7 +254,7 @@ class SubsamplingPipeline(PipelineTemplate):
                     overloaded_conf[adv_cst.RESOLUTIONS].remove(res)
 
         if len(overloaded_conf[adv_cst.RESOLUTIONS]) == 0:
-            logging.warning(
+            logger.warning(
                 "All resolutions are too low for the given images, {} is"
                 " used as resolution".format(min_resolution)
             )
@@ -290,7 +290,7 @@ class SubsamplingPipeline(PipelineTemplate):
                     f"No {app_key} application used in the "
                     + "default Cars pipeline"
                 )
-                logging.error(msg)
+                logger.error(msg)
                 raise NameError(msg)
 
         used_conf = copy.deepcopy(conf)
@@ -363,7 +363,7 @@ class SubsamplingPipeline(PipelineTemplate):
         :param log_dir: Optional log directory
         :param parent_pipeline_id: Optional parent pipeline ID if nested
         """
-        logging.info("Starting subsampling pipeline")
+        logger.info("Starting subsampling pipeline")
         inputs = copy.deepcopy(self.used_conf[INPUT])
 
         if log_dir is not None:

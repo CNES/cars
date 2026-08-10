@@ -24,8 +24,6 @@ contains some general purpose functions using polygons and data projections
 """
 # pylint: disable=C0302(too-many-lines)
 
-# Standard imports
-import logging
 import os
 from typing import List, Tuple
 
@@ -42,6 +40,9 @@ from shapely.ops import transform
 
 from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
+
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
@@ -147,7 +148,7 @@ def compute_dem_intersection_with_poly(  # noqa: C901
                         dem_poly = dem_poly.union(local_dem_poly)
 
             except AttributeError as attribute_error:
-                logging.warning(
+                logger.warning(
                     "Impossible to read the SRTM"
                     "tile epsg code: {}".format(attribute_error)
                 )
@@ -468,7 +469,7 @@ def point_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
             cloud[cst.Z] = xyz[:, 2]
             cloud.attrs[cst.EPSG] = epsg_out
         else:
-            logging.error(
+            logger.error(
                 "point_cloud_conversion_dataset error: point cloud is unknown"
             )
 
@@ -786,9 +787,7 @@ def get_output_crs(epsg, out_conf):
                 + '    LENGTHUNIT["metre", 1, ID["EPSG", 9001]]'
                 "]"
             )
-            logging.warning(
-                "Could not create a known VCRS from the geoid file."
-            )
+            logger.warning("Could not create a known VCRS from the geoid file.")
             return CRS.from_wkt(
                 f'COMPOUNDCRS["EPSG:{epsg} + Custom geoid height",'
                 f"    {crs_epsg.to_wkt()},"
@@ -809,7 +808,7 @@ def get_output_crs(epsg, out_conf):
         + '    LENGTHUNIT["metre", 1, ID["EPSG", 9001]]'
         "]"
     )
-    logging.warning("The output VCRS is WGS84.")
+    logger.warning("The output VCRS is WGS84.")
 
     return CRS.from_wkt(
         f'COMPOUNDCRS["EPSG:{epsg} + WGS84 ellipsoidal height",'

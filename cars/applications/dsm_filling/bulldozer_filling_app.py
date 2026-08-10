@@ -23,7 +23,6 @@ This module contains the bulldozer dsm filling application class.
 """
 
 import contextlib
-import logging
 import os
 import shutil
 
@@ -43,6 +42,7 @@ from cars.applications.dem_generation.dem_generation_wrappers import (
     edit_transform,
 )
 from cars.core import preprocessing, projection, tiling
+from cars.core.cars_logging import logger, mute_external_logging
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -203,10 +203,11 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                         with (
                             contextlib.redirect_stdout(devnull),
                             contextlib.redirect_stderr(devnull),
+                            mute_external_logging(),
                         ):
                             dsm_to_dtm(bull_conf_path)
                 except Exception:
-                    logging.debug(
+                    logger.debug(
                         "Bulldozer failed on its first execution. Retrying"
                     )
                     # suppress prints in bulldozer by redirecting stdout&stderr
@@ -214,10 +215,11 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                         with (
                             contextlib.redirect_stdout(devnull),
                             contextlib.redirect_stderr(devnull),
+                            mute_external_logging(),
                         ):
                             dsm_to_dtm(bull_conf_path)
             except Exception:
-                logging.warning(
+                logger.warning(
                     "Bulldozer failed on its second execution."
                     + " The DSM could not be filled."
                 )
@@ -431,12 +433,12 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
                 filling_mask = ~dsm_msk
             filling_mask = np.logical_and(filling_mask, roi_raster > 0)
         else:
-            logging.error(
+            logger.error(
                 "Label {} not found in classification "
                 "descriptions {}".format(label, classif_values)
             )
             continue
-        logging.debug("Filling of {} with Bulldozer DTM".format(label))
+        logger.debug("Filling of {} with Bulldozer DTM".format(label))
         dsm[filling_mask] = dtm[filling_mask]
         combined_mask = np.logical_or(combined_mask, filling_mask)
 
@@ -450,7 +452,7 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
                 invalidity_mask == int(label), roi_raster > 0
             )
 
-            logging.debug("Filling of {} with Bulldozer DTM".format(label))
+            logger.debug("Filling of {} with Bulldozer DTM".format(label))
             dsm[filling_mask] = dtm[filling_mask]
             combined_mask = np.logical_or(combined_mask, filling_mask)
 

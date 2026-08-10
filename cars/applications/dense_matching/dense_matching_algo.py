@@ -22,9 +22,6 @@ This module is responsible for the dense matching algorithms:
 - thus it creates a disparity map from a pair of images
 """
 import copy
-
-# Standard imports
-import logging
 from typing import Dict
 
 import numpy as np
@@ -45,6 +42,9 @@ from cars.applications.dense_matching import dense_matching_wrappers as dm_wrap
 # CARS imports
 from cars.core import constants as cst
 from cars.core import inputs
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 # pylint: disable=too-many-lines
 
@@ -205,7 +205,7 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
     disp_max = np.ceil(np.max(disp_max_grid))
 
     if disp_min < left_dataset.attrs[cst.EPI_DISP_MIN]:
-        logging.error(
+        logger.error(
             "disp_min ({}) is lower than disp_min used to determine "
             "margin during rectification ({})".format(
                 disp_min, left_dataset.attrs["disp_min"]
@@ -213,7 +213,7 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
         )
 
     if disp_max > left_dataset.attrs[cst.EPI_DISP_MAX]:
-        logging.error(
+        logger.error(
             "disp_max ({}) is greater than disp_max used to determine "
             "margin during rectification ({})".format(
                 disp_max, left_dataset.attrs["disp_max"]

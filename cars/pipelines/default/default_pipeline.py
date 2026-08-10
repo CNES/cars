@@ -32,16 +32,15 @@ from __future__ import print_function
 
 import copy
 import json
-import logging
 import os
 import shutil
 from collections import OrderedDict
-from datetime import datetime
 
 import yaml
 
 # CARS imports
 from cars.core import cars_logging
+from cars.core.cars_logging import logger
 from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -240,7 +239,7 @@ class DefaultPipeline(PipelineTemplate):
 
         for pipeline, activated in self.pipeline_to_use.items():
             if pipeline in conf and not activated:
-                logging.warning(
+                logger.warning(
                     f"You tried to override the {pipeline} pipeline but "
                     f"didn't specify it in the pipeline section. "
                     "Therefore, this pipeline will not be used"
@@ -259,7 +258,7 @@ class DefaultPipeline(PipelineTemplate):
         self.keep_low_res_dir = True
 
         if dsm_cst.DSMS in conf[INPUT] and len(self.resolutions) != 1:
-            logging.debug(
+            logger.debug(
                 "For the use of those pipelines, "
                 "you have to give only one resolution"
             )
@@ -270,7 +269,7 @@ class DefaultPipeline(PipelineTemplate):
             not self.pipeline_to_use[pipeline_cst.SUBSAMPLING]
             and len(self.resolutions) != 1
         ):
-            logging.warning(
+            logger.warning(
                 "As you're not using the subsampling pipeline, "
                 "the working resolution will be 1"
             )
@@ -567,7 +566,7 @@ class DefaultPipeline(PipelineTemplate):
         ):
             if not edge_detection_available():
                 dict_pipeline[pipeline_cst.EDGE_DETECTION] = False
-                logging.warning(
+                logger.warning(
                     "The edge detection plugin is not installed. "
                     "Continuing without edge detection."
                 )
@@ -671,17 +670,17 @@ class DefaultPipeline(PipelineTemplate):
         ):
             try:
                 shutil.rmtree(self.intermediate_data_dir)
-                logging.debug(
+                logger.debug(
                     f"th directory {self.intermediate_data_dir} "
                     f" has been cleaned."
                 )
             except Exception as exception:
-                logging.error(
+                logger.error(
                     f"Error while deleting {self.intermediate_data_dir}: "
                     f"{exception}"
                 )
         else:
-            logging.debug(
+            logger.debug(
                 f"The directory {self.intermediate_data_dir} has not "
                 f"been deleted"
             )
@@ -771,17 +770,6 @@ class DefaultPipeline(PipelineTemplate):
         """
 
         loglevel = getattr(args, "loglevel", "INFO").upper()
-        logtype = getattr(args, "logtype", "human").lower()
-        use_stdout = logtype != "human"
-        global_log_file = os.path.join(
-            self.out_dir,
-            "logs",
-            "{}_{}.log".format(
-                datetime.now().strftime("%y-%m-%d_%Hh%Mm"), "default_pipeline"
-            ),
-        )
-
-        ProgressTree().update_log_file_path(global_log_file)
 
         self.progress_tasks = {}
         self.edge_detection_pid = None
@@ -799,12 +787,10 @@ class DefaultPipeline(PipelineTemplate):
 
         if self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]:
             current_log_dir = os.path.join(self.out_dir, "logs", EDGE_DETECTION)
-            cars_logging.setup_logging(
+            cars_logging.setup_logging_pipeline(
                 loglevel,
                 out_dir=current_log_dir,
                 pipeline=EDGE_DETECTION,
-                global_log_file=global_log_file,
-                use_stdout=use_stdout,
             )
 
             edge_detection_pipeline = Pipeline(
@@ -827,12 +813,10 @@ class DefaultPipeline(PipelineTemplate):
 
         if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
             current_log_dir = os.path.join(self.out_dir, "logs", "subsampling")
-            cars_logging.setup_logging(
+            cars_logging.setup_logging_pipeline(
                 loglevel,
                 out_dir=current_log_dir,
                 pipeline="subsampling",
-                global_log_file=global_log_file,
-                use_stdout=use_stdout,
             )
 
             subsampling_pipeline = SubsamplingPipeline(
@@ -906,15 +890,13 @@ class DefaultPipeline(PipelineTemplate):
                     "surface_modeling_res_" + str(epipolar_res),
                 )
 
-                cars_logging.setup_logging(
+                cars_logging.setup_logging_pipeline(
                     loglevel,
                     out_dir=current_log_dir,
                     pipeline="surface_modeling",
-                    global_log_file=global_log_file,
-                    use_stdout=use_stdout,
                 )
 
-                logging.info(
+                logger.info(
                     "Starting surface modeling pipeline "
                     f"for resolution 1/{epipolar_res}"
                 )
@@ -1011,12 +993,10 @@ class DefaultPipeline(PipelineTemplate):
         final_conf = None
         if self.pipeline_to_use[pipeline_cst.MERGING]:
             current_log_dir = os.path.join(self.out_dir, "logs", "merging")
-            cars_logging.setup_logging(
+            cars_logging.setup_logging_pipeline(
                 loglevel,
                 out_dir=current_log_dir,
                 pipeline="merging",
-                global_log_file=global_log_file,
-                use_stdout=use_stdout,
             )
             merging_conf = self.construct_merging_conf(self.used_conf)
             merging_pipeline = MergingPipeline(merging_conf, self.config_dir)
@@ -1044,12 +1024,10 @@ class DefaultPipeline(PipelineTemplate):
 
         if self.pipeline_to_use[pipeline_cst.FILLING]:
             current_log_dir = os.path.join(self.out_dir, "logs", "filling")
-            cars_logging.setup_logging(
+            cars_logging.setup_logging_pipeline(
                 loglevel,
                 out_dir=current_log_dir,
                 pipeline="filling",
-                global_log_file=global_log_file,
-                use_stdout=use_stdout,
             )
             if self.filling_conf[INPUT][pipeline_cst.DSM_TO_FILL] is None:
                 if (
@@ -1127,12 +1105,10 @@ class DefaultPipeline(PipelineTemplate):
                 total=1,
             )
             current_log_dir = os.path.join(self.out_dir, "logs", "formatting")
-            cars_logging.setup_logging(
+            cars_logging.setup_logging_pipeline(
                 loglevel,
                 out_dir=current_log_dir,
                 pipeline="formatting",
-                global_log_file=global_log_file,
-                use_stdout=use_stdout,
             )
             formatting_conf = self.construct_formatting_conf(
                 formatting_input_dir

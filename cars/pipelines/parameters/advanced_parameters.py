@@ -22,12 +22,12 @@
 """
 CARS module containing functions to check advanced parameters configuration
 """
-import logging
 import os
 
 import rasterio as rio
 from json_checker import And, Checker, OptionalKey, Or
 
+from cars.core.cars_logging import logger
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
@@ -198,7 +198,7 @@ def check_ground_truth_dsm_data(conf):
         with rio.open(conf) as img_reader:
             trans = img_reader.transform
             if trans.e < 0:
-                logging.warning(
+                logger.warning(
                     "{} seems to have an incoherent pixel size. "
                     "Input images has to be in sensor geometry.".format(conf)
                 )
@@ -220,7 +220,7 @@ def check_ground_truth_dsm_data(conf):
         with rio.open(gt_dsm_path) as img_reader:
             trans = img_reader.transform
             if trans.e < 0:
-                logging.warning(
+                logger.warning(
                     "{} seems to have an incoherent pixel size. "
                     "Input images has to be in sensor geometry.".format(
                         gt_dsm_path
@@ -231,7 +231,7 @@ def check_ground_truth_dsm_data(conf):
         if isinstance(conf[adv_cst.INPUT_GEOID], bool):
             if conf[adv_cst.INPUT_GEOID]:
                 # Use CARS geoid
-                logging.debug(
+                logger.debug(
                     "CARS will use its own internal file as geoid reference"
                 )
                 package_path = os.path.dirname(__file__)

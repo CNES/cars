@@ -22,11 +22,12 @@
 This module contains the abstract sparse matching method class
 """
 
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 import xarray as xr
+
+from cars.core.cars_logging import logger
 
 
 class AbstractSparseMatchingMethod(metaclass=ABCMeta):
@@ -55,7 +56,7 @@ class AbstractSparseMatchingMethod(metaclass=ABCMeta):
 
         matching_method = cls.default_method
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "Sparse Matching method not specified, default "
                 "{} is used".format(matching_method)
             )
@@ -63,7 +64,7 @@ class AbstractSparseMatchingMethod(metaclass=ABCMeta):
             matching_method = conf.get("method", cls.default_method)
 
         if matching_method not in cls.available_methods:
-            logging.error(
+            logger.error(
                 "No sparse matching method named {} registered".format(
                     matching_method
                 )
@@ -74,7 +75,7 @@ class AbstractSparseMatchingMethod(metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The AbstractSparseMatchingMethod({}) method will be used".format(
                 matching_method
             )

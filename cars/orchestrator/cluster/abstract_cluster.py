@@ -22,12 +22,12 @@
 Contains abstract function for Abstract Cluster
 """
 
-# Standard imports
-import logging
 import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
@@ -66,17 +66,15 @@ class AbstractCluster(metaclass=ABCMeta):
         cluster_mode = "multiprocessing"
         if conf_cluster is not None:
             if "mode" not in conf_cluster:
-                logging.warning("Cluster mode not defined, default is used")
+                logger.warning("Cluster mode not defined, default is used")
             else:
                 cluster_mode = conf_cluster["mode"]
 
         if cluster_mode not in cls.available_modes:
-            logging.error("No mode named {} registered".format(cluster_mode))
+            logger.error("No mode named {} registered".format(cluster_mode))
             raise KeyError("No mode named {} registered".format(cluster_mode))
 
-        logging.debug(
-            "The AbstractCluster {} will be used".format(cluster_mode)
-        )
+        logger.debug("The AbstractCluster {} will be used".format(cluster_mode))
 
         return super(AbstractCluster, cls).__new__(
             cls.available_modes[cluster_mode]
@@ -127,8 +125,8 @@ class AbstractCluster(metaclass=ABCMeta):
         if not os.path.exists(self.worker_log_dir):
             os.makedirs(self.worker_log_dir)
 
-        self.log_level = logging.getLogger().getEffectiveLevel()
-        handlers = logging.getLogger().handlers
+        self.log_level = logger.getEffectiveLevel()
+        handlers = logger.handlers
         for hand in handlers:
             if "stdout" == hand.get_name():
                 self.log_level = hand.level

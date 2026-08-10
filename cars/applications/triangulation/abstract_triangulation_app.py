@@ -21,12 +21,12 @@
 """
 this module contains the abstract triangulation application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("triangulation")
@@ -50,7 +50,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
 
         triangulation_method = cls.default_application
         if bool(conf) is False or "method" in conf:
-            logging.debug(
+            logger.debug(
                 "Triangulation method not specified, default "
                 " {} is used".format(triangulation_method)
             )
@@ -58,7 +58,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
             triangulation_method = conf.get("method", cls.default_application)
 
         if triangulation_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No triangulation application named {} registered".format(
                     triangulation_method
                 )
@@ -69,7 +69,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The Triangulation({}) application will be used".format(
                 triangulation_method
             )

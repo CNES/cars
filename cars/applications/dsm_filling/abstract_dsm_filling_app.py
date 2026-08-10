@@ -21,12 +21,12 @@
 """
 this module contains the abstract dsm filling application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("dsm_filling")
@@ -51,7 +51,7 @@ class DsmFilling(ApplicationTemplate, metaclass=ABCMeta):
 
         dsm_filling_method = cls.default_application
         if bool(conf) is False:
-            logging.debug(
+            logger.debug(
                 "dsm_filling method not specified, default"
                 " {} is used".format(dsm_filling_method)
             )
@@ -59,7 +59,7 @@ class DsmFilling(ApplicationTemplate, metaclass=ABCMeta):
             dsm_filling_method = conf["method"]
 
         if dsm_filling_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No dsm_filling application named {} registered".format(
                     dsm_filling_method
                 )
@@ -70,7 +70,7 @@ class DsmFilling(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The DsmFilling {} application will be used".format(
                 dsm_filling_method
             )

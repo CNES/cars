@@ -21,7 +21,6 @@
 """
 this module contains the abstract dense matches filling application class.
 """
-import logging
 import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
@@ -32,6 +31,7 @@ from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -57,7 +57,7 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
 
         fill_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "dense_match_filling method not specified, "
                 "default {} is used".format(fill_method)
             )
@@ -65,7 +65,7 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
             fill_method = conf.get("method", cls.default_application)
 
         if fill_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No DenseMatchFilling application "
                 "named {} registered".format(fill_method)
             )
@@ -74,7 +74,7 @@ class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
                 " named {} registered".format(fill_method)
             )
 
-        logging.debug(
+        logger.debug(
             "The DenseMatchFilling({}) application "
             "will be used".format(fill_method)
         )

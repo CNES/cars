@@ -22,7 +22,6 @@
 This module contains the border interpolation dsm filling application class.
 """
 
-import logging
 import os
 import shutil
 
@@ -39,6 +38,7 @@ from shapely import Polygon
 
 import cars.orchestrator.orchestrator as ocht
 from cars.core import projection, tiling
+from cars.core.cars_logging import logger
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -153,7 +153,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
 
         if self.fill_classification is None:
             self.fill_classification = ["nodata"]
-            logging.error(
+            logger.error(
                 "Filling method 'border_interpolation' needs a classification"
             )
 
@@ -350,14 +350,14 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
 
     # get dtm to fill the dsm
     if dtm_file is not None:
-        logging.debug(
+        logger.debug(
             "Use DTM file {} for border interpolation".format(dtm_file)
         )
         with rio.open(dtm_file) as in_dtm:
             dtm = in_dtm.read(1, window=rasterio_window)
             dtm_nodata = in_dtm.nodata
     else:
-        logging.debug(
+        logger.debug(
             "No DTM provided : DSM {} will be used for "
             "border interpolation".format(dsm_file)
         )
@@ -375,12 +375,12 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
         if label in classif_values:
             filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
         else:
-            logging.error(
+            logger.error(
                 "Label {} not found in classification "
                 "descriptions {}".format(label, classif_values)
             )
             continue
-        logging.debug(
+        logger.debug(
             "Filling of {} with Bulldozer DTM using "
             "border interpolation".format(label)
         )
@@ -392,7 +392,7 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
             ],
         )
         features, num_features = scipy.ndimage.label(filling_mask)
-        logging.debug("Filling of {} features".format(num_features))
+        logger.debug("Filling of {} features".format(num_features))
         features_boundaries = skimage.morphology.dilation(
             features,
             footprint=[
@@ -428,7 +428,7 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
                 invalidity_mask == int(label), roi_raster > 0
             )
 
-            logging.debug(
+            logger.debug(
                 "Filling of {} with Bulldozer DTM using "
                 "border interpolation".format(label)
             )
@@ -440,7 +440,7 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
                 ],
             )
             features, num_features = scipy.ndimage.label(filling_mask)
-            logging.debug("Filling of {} features".format(num_features))
+            logger.debug("Filling of {} features".format(num_features))
             features_boundaries = skimage.morphology.dilation(
                 features,
                 footprint=[

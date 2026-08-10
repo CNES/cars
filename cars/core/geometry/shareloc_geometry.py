@@ -23,7 +23,6 @@
 Shareloc geometry sub class : CARS geometry wrappers functions to shareloc ones
 """
 
-import logging
 from typing import List, Tuple, Union
 
 import bindings_cpp  # pylint: disable=E0401
@@ -51,6 +50,7 @@ from shareloc.proj_utils import coordinates_conversion
 
 from cars.core import constants as cst
 from cars.core import projection
+from cars.core.cars_logging import logger
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 
 GRID_TYPE = "GRID"
@@ -429,7 +429,7 @@ class SharelocGeometry(AbstractGeometry):
 
             llh = point_wgs84.reshape((row.size, col.size, 3))
         else:
-            logging.error(
+            logger.error(
                 "{} mode is not available in the "
                 "shareloc plugin triangulation".format(mode)
             )
@@ -640,7 +640,7 @@ class SharelocGeometry(AbstractGeometry):
             h, residue = SharelocGeometry.find_optimal_alt(
                 image1, image2, shareloc_model1, shareloc_model2
             )
-            logging.debug(
+            logger.debug(
                 "Optimal altitude found for epipolar grid generation : {}m. "
                 "Residue of triangulation : {}m".format(
                     round(h, 2), round(residue, 5)

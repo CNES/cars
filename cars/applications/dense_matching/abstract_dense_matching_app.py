@@ -22,7 +22,6 @@
 this module contains the abstract matching application class.
 """
 
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
@@ -31,6 +30,7 @@ from cars.applications.application_template import ApplicationTemplate
 from cars.applications.dense_matching.methods import (
     abstract_dense_matching_method as adm,
 )
+from cars.core.cars_logging import logger
 
 AbstractDenseMatchingMethod = adm.AbstractDenseMatchingMethod
 
@@ -49,7 +49,7 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
 
         matching_application = cls.default_application
         if bool(conf) is False or "application" not in conf:
-            logging.debug(
+            logger.debug(
                 "Dense Matching application not specified, "
                 f"default {matching_application} is used"
             )
@@ -59,7 +59,7 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         if matching_application not in cls.available_applications:
-            logging.error(
+            logger.error(
                 f"No matching application named {matching_application} "
                 "registered"
             )
@@ -68,7 +68,7 @@ class AbstractDenseMatchingApplication(ApplicationTemplate, metaclass=ABCMeta):
                 "registered"
             )
 
-        logging.debug(
+        logger.debug(
             f"The AbstractDenseMatching({matching_application}) application "
             "will be used"
         )

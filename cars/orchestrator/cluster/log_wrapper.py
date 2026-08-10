@@ -27,7 +27,6 @@ import copy
 import datetime
 import functools
 import gc
-import logging
 import os
 import shutil
 import time
@@ -43,6 +42,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from PIL import Image
 
 from cars.core import cars_logging
+from cars.core.cars_logging import logger
 
 THREAD_TIMEOUT = 2
 
@@ -96,12 +96,12 @@ def loop_function(argv, kwargs, func, nb_iteration=5):
     Returns:
         _type_: result of the function
     """
-    logging.debug("{} {}".format(func.__module__, func.__name__.capitalize()))
+    logger.debug("{} {}".format(func.__module__, func.__name__.capitalize()))
     argv_temp = copy.copy(argv)
     kwargs_temp = copy.deepcopy(kwargs)
     # execute sevral time the function to observe possible leaks
     for k in range(1, nb_iteration):
-        logging.debug("loop iteration {}".format(k))
+        logger.debug("loop iteration {}".format(k))
         func(*argv, **kwargs)
         del argv
         del kwargs
@@ -168,7 +168,7 @@ def exception_safe(func):
             error_msg = (
                 f"Error in {func.__name__}: {type(exc).__name__}: {str(exc)}"
             )
-            logging.error(error_msg)
+            logger.error(error_msg)
             cars_logging.add_profiling_message(f"ERROR - {error_msg}")
             return None
 
@@ -368,9 +368,10 @@ def generate_summary(
     )
 
     # file_name
+    profiling_dir = os.path.join(out_dir, "profiling")
+    os.makedirs(profiling_dir, exist_ok=True)
     profiling_plot = os.path.join(
-        out_dir,
-        "profiling",
+        profiling_dir,
         "profiling_plots_histograms.png",
     )
     plt.savefig(profiling_plot)
@@ -429,8 +430,7 @@ def generate_summary(
     )
 
     profiling_plot2 = os.path.join(
-        out_dir,
-        "profiling",
+        profiling_dir,
         "profiling_plots_pie_chart.png",
     )
     plt.savefig(profiling_plot2)
@@ -525,7 +525,7 @@ def generate_pdf_profiling(log_dir):
                 pdf.savefig(fig, bbox_inches="tight", dpi=300)
                 plt.close(fig)
 
-    logging.debug("PDF profiling summary generated: {}".format(pdf_path))
+    logger.debug("PDF profiling summary generated: {}".format(pdf_path))
 
 
 def filter_lists(names, data, cond):
@@ -742,4 +742,4 @@ class CarsMemProf(Thread):
             self.pipe.send(max_cpu)
 
         except BrokenPipeError:
-            logging.debug("broken pipe error in log wrapper ")
+            logger.debug("broken pipe error in log wrapper ")

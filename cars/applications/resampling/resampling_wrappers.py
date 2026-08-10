@@ -25,15 +25,15 @@ contains functions used for epipolar resampling
 
 import copy
 
-# Standard imports
-import logging
-
 # Third party imports
 import numpy as np
 
 # CARS imports
 from cars.core import constants as cst
 from cars.core import inputs
+
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
@@ -212,11 +212,11 @@ def check_tiles_in_sensor(  # pylint: disable=too-many-positional-arguments
     tiles_dumped_left = nb_tiles - np.sum(in_sensor_left_array)
     tiles_dumped_right = nb_tiles - np.sum(in_sensor_right_array)
 
-    logging.debug(
+    logger.debug(
         "Number of left epipolar image tiles outside left sensor "
         "image and removed: {}".format(tiles_dumped_left)
     )
-    logging.debug(
+    logger.debug(
         "Number of right epipolar image tiles outside right sensor "
         "image and removed: {}".format(tiles_dumped_right)
     )

@@ -31,7 +31,6 @@ CARS filling pipeline class file
 from __future__ import print_function
 
 import copy
-import logging
 import os
 from collections import OrderedDict
 
@@ -42,6 +41,7 @@ from pyproj import CRS
 import cars.orchestrator.orchestrator as ocht
 from cars.applications.application import Application
 from cars.core import inputs, projection, tiling
+from cars.core.cars_logging import logger
 from cars.core.inputs import read_vector
 from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
@@ -389,7 +389,7 @@ class FillingPipeline(PipelineTemplate):
                     f"The key {app_key} is defined twice in the input "
                     "configuration."
                 )
-                logging.error(msg)
+                logger.error(msg)
                 raise NameError(msg)
 
             if app_key[11:] == ".1":
@@ -409,7 +409,7 @@ class FillingPipeline(PipelineTemplate):
         methods_str = "\n".join(
             f" - {k}={a.used_method}" for k, a in self.dsm_filling_apps.items()
         )
-        logging.debug(
+        logger.debug(
             "{} dsm filling apps registered:\n{}".format(
                 len(self.dsm_filling_apps), methods_str
             )
@@ -1011,7 +1011,7 @@ class FillingPipeline(PipelineTemplate):
         """
         Run pipeline
         """
-        logging.info("Starting filling pipeline")
+        logger.info("Starting filling pipeline")
 
         self.log_dir = os.path.join(self.filling_dir, "logs")
         if log_dir is not None:

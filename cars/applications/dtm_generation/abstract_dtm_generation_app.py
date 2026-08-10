@@ -21,12 +21,12 @@
 """
 this module contains the abstract dtm generation application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("dtm_generation")
@@ -51,7 +51,7 @@ class DtmGeneration(ApplicationTemplate, metaclass=ABCMeta):
 
         dtm_generation_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "dtm_generation method not specified, default"
                 " {} is used".format(dtm_generation_method)
             )
@@ -59,7 +59,7 @@ class DtmGeneration(ApplicationTemplate, metaclass=ABCMeta):
             dtm_generation_method = conf["method"]
 
         if dtm_generation_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No dtm_generation application named {} registered".format(
                     dtm_generation_method
                 )
@@ -70,7 +70,7 @@ class DtmGeneration(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The DtmGeneration {} application will be used".format(
                 dtm_generation_method
             )

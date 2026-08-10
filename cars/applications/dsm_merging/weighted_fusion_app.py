@@ -23,7 +23,6 @@ CARS dsm inputs
 """
 
 import collections
-import logging
 import os
 
 import numpy as np
@@ -41,6 +40,7 @@ from cars.applications.rasterization.rasterization_wrappers import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, preprocessing, tiling
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -317,7 +317,7 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
             )
 
         [saving_info] = orchestrator.get_saving_infos([terrain_raster])
-        logging.debug(
+        logger.debug(
             "Merge DSM info in {} x {} tiles".format(
                 terrain_raster.shape[0], terrain_raster.shape[1]
             )

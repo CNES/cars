@@ -23,8 +23,6 @@ This module is responsible for the dense matching algorithms:
 """
 # pylint: disable=C0302
 
-# Standard imports
-import logging
 import math
 import warnings
 from typing import Dict
@@ -45,6 +43,9 @@ from cars.applications.dense_matching import (
 from cars.conf import mask_cst as msk_cst
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 from .cpp import dense_matching_cpp
 
@@ -872,7 +873,7 @@ def optimal_tile_size_pandora_plugin_libsgm(
     row_or_col = float(((memory - import_) * 2**23)) / tot
 
     if row_or_col <= 0:
-        logging.warning(
+        logger.warning(
             "Optimal tile size is null, "
             "forcing it to {} pixels".format(tile_size_rounding)
         )
@@ -885,7 +886,7 @@ def optimal_tile_size_pandora_plugin_libsgm(
         tile_size = (1.0 - margin / 100.0) * tile_size
 
     if math.isinf(tile_size):
-        logging.warning("Tile size infinite")
+        logger.warning("Tile size infinite")
 
     if tile_size > max_tile_size:
         tile_size = max_tile_size

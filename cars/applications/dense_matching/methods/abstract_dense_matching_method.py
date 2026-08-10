@@ -22,11 +22,12 @@
 This module contains the abstract dense matching method class
 """
 
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 import xarray as xr
+
+from cars.core.cars_logging import logger
 
 
 class AbstractDenseMatchingMethod(metaclass=ABCMeta):
@@ -53,7 +54,7 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
 
         matching_method = cls.default_method
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "Dense Matching method not specified, "
                 "default {} is used".format(matching_method)
             )
@@ -61,14 +62,14 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
             matching_method = conf.get("method", cls.default_method)
 
         if matching_method not in cls.available_methods:
-            logging.error(
+            logger.error(
                 "No matching method named {} registered".format(matching_method)
             )
             raise KeyError(
                 "No matching method named {} registered".format(matching_method)
             )
 
-        logging.debug(
+        logger.debug(
             "The AbstractDenseMatchingMethod({}) method will be used".format(
                 matching_method
             )

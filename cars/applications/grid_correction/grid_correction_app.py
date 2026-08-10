@@ -24,8 +24,6 @@ this module contains the epipolar grid correction application class.
 # Standard imports
 from __future__ import absolute_import
 
-# Standard imports
-import logging
 import os
 
 import numpy as np
@@ -49,6 +47,9 @@ from cars.applications.grid_generation import (
 from cars.applications.grid_generation import (
     grid_generation_constants as grid_constants,
 )
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 # CARS imports
 from cars.core.utils import safe_makedirs
@@ -249,7 +250,7 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
             cars_orchestrator = orchestrator
 
         if matches.shape[0] < self.nb_matches:
-            logging.error(
+            logger.error(
                 "Insufficient amount of matches found"
                 ", can not safely estimate epipolar error correction"
             )
@@ -466,7 +467,7 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
         corrected_epipolar_error = (
             corrected_matches[:, 1] - corrected_matches[:, 3]
         )
-        logging.debug(
+        logger.debug(
             "Epipolar error after correction: mean = {:.3f} pix., "
             "standard deviation = {:.3f} pix., max = {:.3f} pix.".format(
                 np.mean(corrected_epipolar_error),
@@ -479,9 +480,9 @@ class GridCorrectionApp(GridCorrection, short_name="default"):
         matches_array_path = None
         current_out_dir = None
         if save_matches:
-            logging.debug("Writing matches file")
+            logger.debug("Writing matches file")
             if pair_folder is None:
-                logging.error("Pair folder not provided")
+                logger.error("Pair folder not provided")
             else:
                 safe_makedirs(pair_folder)
                 current_out_dir = pair_folder

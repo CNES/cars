@@ -22,7 +22,6 @@
 This module contains tools for ROI
 """
 
-import logging
 import os
 from typing import List, Tuple
 
@@ -31,6 +30,7 @@ from shapely.geometry import LineString, MultiPolygon, Point, Polygon, shape
 
 # CARS imports
 from cars.core import inputs, projection
+from cars.core.cars_logging import logger
 
 
 def generate_roi_poly_from_inputs(roi):
@@ -157,7 +157,7 @@ def geojson_to_shapely(geojson_dict: dict):
 
     features = geojson_dict["features"]
     if len(features) > 1:
-        logging.debug(
+        logger.debug(
             "Multi features files are not supported, "
             "the first feature of input geojson will be used"
         )
@@ -172,7 +172,7 @@ def geojson_to_shapely(geojson_dict: dict):
                 geo_json_epsg = geojson_dict["crs"]["properties"]["name"]
                 # format: EPSG:4326
                 if "EPSG:" not in geo_json_epsg:
-                    logging.error("ROI EPSG could not be read, wrong format")
+                    logger.error("ROI EPSG could not be read, wrong format")
                 else:
                     roi_epsg = int(geo_json_epsg.replace("EPSG:", ""))
 
@@ -196,14 +196,14 @@ def parse_roi_file(arg_roi_file: str) -> Tuple[List[float], int]:
 
     # test file existence
     if not os.path.exists(arg_roi_file):
-        logging.error("File {} does not exist".format(arg_roi_file))
+        logger.error("File {} does not exist".format(arg_roi_file))
     else:
         # if it is a vector file
         if extension in [".gpkg", ".shp", ".kml"]:
             roi_poly, roi_epsg = inputs.read_vector(arg_roi_file)
 
         else:
-            logging.error(
+            logger.error(
                 "ROI file {} has an unsupported format".format(arg_roi_file)
             )
             raise AttributeError(

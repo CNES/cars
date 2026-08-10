@@ -24,7 +24,6 @@ This module contains the abstract direct_localization application class.
 
 # Standard imports
 import collections
-import logging
 import os
 
 import numpy as np
@@ -44,6 +43,7 @@ from cars.applications.ground_truth_reprojection import (
 # CARS imports
 from cars.core import constants as cst
 from cars.core import inputs
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -163,7 +163,7 @@ class DirectLocalization(
         :type pair_key: str
         """
 
-        logging.debug("Starting ground truth reprojection application")
+        logger.debug("Starting ground truth reprojection application")
 
         # Default orchestrator
         if orchestrator is None:

@@ -22,12 +22,13 @@
 Contains functions for dask jobqueue cluster (PBS, SLURM)
 """
 
-import logging
 import math
 import os
 import sys
 import warnings
 from datetime import timedelta
+
+from cars.core.cars_logging import logger
 
 
 def init_cluster_variables(  # pylint: disable=too-many-positional-arguments
@@ -93,7 +94,7 @@ def init_cluster_variables(  # pylint: disable=too-many-positional-arguments
     lifetime_with_margin = lifetime - min_walltime
     if lifetime_with_margin.total_seconds() < 0:
         min_walltime_minutes = min_walltime.total_seconds() / 60
-        logging.warning(
+        logger.warning(
             "Could not add worker lifetime margin because specified walltime "
             "is too short. Workers might get killed by {} before they can "
             "cleanly exit, which might break adaptative scaling. Please "
@@ -103,7 +104,7 @@ def init_cluster_variables(  # pylint: disable=too-many-positional-arguments
         )
         lifetime_with_margin = lifetime
 
-    logging.debug(
+    logger.debug(
         "Starting Dask {0} cluster with {1} workers "
         "({2} workers with {3} cores each per {0} job)".format(
             cluster_name,
@@ -113,7 +114,7 @@ def init_cluster_variables(  # pylint: disable=too-many-positional-arguments
         )
     )
 
-    logging.debug(
+    logger.debug(
         "Submitting {} {} jobs "
         "with configuration cpu={}, mem={}, walltime={}".format(
             nb_jobs, cluster_name, nb_cpus, memory, walltime
@@ -196,9 +197,9 @@ def stop_cluster(cluster, client):
             )
             cluster.close()
     except AssertionError as assert_error:
-        logging.warning(
+        logger.warning(
             "Dask cluster failed " "to stop properly: {}".format(assert_error)
         )
         # not raising to not fail tests
 
-    logging.debug("Dask cluster correctly stopped")
+    logger.debug("Dask cluster correctly stopped")

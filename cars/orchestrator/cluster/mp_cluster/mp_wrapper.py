@@ -22,8 +22,6 @@
 Contains functions for wrapper disk
 """
 
-# Standard imports
-import logging
 import os
 import pickle
 import shutil
@@ -34,6 +32,9 @@ import pandas
 
 # Third party imports
 import xarray as xr
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 # CARS imports
 from cars.core.utils import safe_makedirs
@@ -178,15 +179,15 @@ class WrapperDisk(AbstractWrapper):
         :param keep_shared_dir: do not clean directory of shared objects
         """
 
-        logging.debug("Clean removing thread pool ...")
+        logger.debug("Clean removing thread pool ...")
         self.removing_pool.close()
         self.removing_pool.join()
 
-        logging.debug("Clean tmp directory ...")
+        logger.debug("Clean tmp directory ...")
         removing_disk_data(self.tmp_dir)
 
         if not keep_shared_dir:
-            logging.debug("Clean shared directory ...")
+            logger.debug("Clean shared directory ...")
             removing_disk_data(self.shared_dir)
 
     def cleanup_future_res(self, future_res):
@@ -400,7 +401,7 @@ def load(path):
             obj = load_shared_data(path)
 
         else:
-            logging.warning(
+            logger.warning(
                 "Not a dumped arrays or points or dict or shared data"
             )
 
@@ -465,7 +466,7 @@ def create_path(obj, tmp_dir, id_num):
         # is from dict
         path = DICT_NAME
     else:
-        logging.warning("Not an arrays or points or dict")
+        logger.warning("Not an arrays or points or dict")
         path = obj
 
     path = os.path.join(tmp_dir, path + "_" + repr(id_num))

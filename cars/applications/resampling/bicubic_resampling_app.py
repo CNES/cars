@@ -24,8 +24,6 @@ this module contains the bicubic_resampling application class.
 # pylint: disable=too-many-lines
 # TODO refacto: factorize disributed code, and remove too-many-lines
 
-# Standard imports
-import logging
 import os
 from typing import Dict, Tuple
 
@@ -46,6 +44,9 @@ from cars.applications.resampling import (
 from cars.applications.resampling.abstract_resampling_app import Resampling
 from cars.core import constants as cst
 from cars.core import inputs, tiling
+
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 from cars.data_structures.cars_dict import CarsDict
@@ -196,7 +197,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             grid_left["epipolar_size_y"],
         ]
 
-        logging.debug(
+        logger.debug(
             "Size of epipolar image: {}".format(largest_epipolar_region)
         )
 
@@ -205,7 +206,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         if tile_height is None:
             tile_height = self.strip_height
 
-        logging.debug(
+        logger.debug(
             "Tile size for epipolar regions: "
             "{width}x{height} pixels".format(
                 width=tile_width, height=tile_height
@@ -221,7 +222,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             tile_width,
         )
 
-        logging.debug(
+        logger.debug(
             "Epipolar image will be processed in {} splits".format(
                 epipolar_regions_grid.shape[0] * epipolar_regions_grid.shape[1]
             )
@@ -542,7 +543,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             [epipolar_images_left, epipolar_images_right]
         )
 
-        logging.debug(
+        logger.debug(
             "Number of tiles in epipolar resampling: "
             "row: {} "
             "col: {}".format(

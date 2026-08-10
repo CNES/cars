@@ -22,7 +22,6 @@
 This module contains the exogenous dsm filling application class.
 """
 
-import logging
 import os
 import shutil
 
@@ -39,6 +38,7 @@ from shapely import Polygon
 
 import cars.orchestrator.orchestrator as ocht
 from cars.core import projection, tiling
+from cars.core.cars_logging import logger
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -174,9 +174,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         )
 
         if geom_plugin is None:
-            logging.error(
-                "No DEM was provided, exogenous_filling will not run."
-            )
+            logger.error("No DEM was provided, exogenous_filling will not run.")
             return None
 
         if not os.path.exists(dump_dir):
@@ -470,17 +468,17 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
                 filling_mask = ~dsm_msk
             filling_mask = np.logical_and(filling_mask, roi_raster > 0)
         else:
-            logging.error(
+            logger.error(
                 "Label {} not found in classification "
                 "descriptions {}".format(label, classif_values)
             )
             continue
 
         if label in fill_with_geoid:
-            logging.debug("Filling of {} with geoid".format(label))
+            logger.debug("Filling of {} with geoid".format(label))
             dsm[filling_mask] = 0
         else:
-            logging.debug("Filling of {} with DEM and geoid".format(label))
+            logger.debug("Filling of {} with DEM and geoid".format(label))
             dsm[filling_mask] = elev_data[filling_mask]
 
         # apply offset to project on geoid if needed
@@ -507,10 +505,10 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
             )
 
             if label in fill_with_geoid:
-                logging.debug("Filling of {} with geoid".format(label))
+                logger.debug("Filling of {} with geoid".format(label))
                 dsm[filling_mask] = 0
             else:
-                logging.debug("Filling of {} with DEM and geoid".format(label))
+                logger.debug("Filling of {} with DEM and geoid".format(label))
                 dsm[filling_mask] = elev_data[filling_mask]
 
             # apply offset to project on geoid if needed

@@ -22,11 +22,11 @@
 Contains functions for local dask Cluster
 """
 
-# Standard imports
-import logging
-
 # Third party imports
 from dask.distributed import Client, LocalCluster
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster, abstract_dask_cluster
@@ -71,7 +71,7 @@ class LocalDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 
         """
         stop_local_cluster(self.cluster, self.client)
-        logging.debug("Dask cluster closed")
+        logger.debug("Dask cluster closed")
 
 
 def start_local_cluster(nb_workers, timeout=600, activate_dashboard=False):
@@ -85,7 +85,7 @@ def start_local_cluster(nb_workers, timeout=600, activate_dashboard=False):
     :return: Local cluster and Dask client
     :rtype: (dask.distributed.LocalCluster, dask.distributed.Client) tuple
     """
-    logging.debug("Local cluster with {} workers started".format(nb_workers))
+    logger.debug("Local cluster with {} workers started".format(nb_workers))
 
     if activate_dashboard:
         dashboard_address = ":0"
@@ -113,4 +113,4 @@ def stop_local_cluster(cluster, client):
     """
     client.close()
     cluster.close()
-    logging.debug("Local cluster correctly stopped")
+    logger.debug("Local cluster correctly stopped")

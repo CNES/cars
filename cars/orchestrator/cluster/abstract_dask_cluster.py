@@ -22,8 +22,6 @@
 Contains abstract function for abstract dask Cluster
 """
 
-# Standard imports
-import logging
 import os
 import time
 
@@ -44,6 +42,9 @@ from distributed.diagnostics.plugin import WorkerPlugin
 from distributed.utils import CancelledError
 
 from cars.core import cars_logging
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
@@ -228,7 +229,7 @@ def save_config(output_dir: str, file_name: str):
     :param file_name: output file name
 
     """
-    logging.debug(
+    logger.debug(
         "Save DASK global merged config for debug "
         "(1: $DASK_DIR if exists, 2: ~/.config/dask/, ... ) "
     )
@@ -364,7 +365,7 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         process_memory = float(process_memory) / 1000000
 
         # Log memory state
-        logging.debug(
+        logger.debug(
             "Memory report: data created = {} ({} Mb), "
             "python process memory = {} Mb".format(
                 total_in_memory,

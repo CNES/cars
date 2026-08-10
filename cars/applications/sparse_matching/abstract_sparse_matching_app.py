@@ -21,7 +21,6 @@
 """
 this module contains the abstract matching application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
@@ -30,6 +29,7 @@ from cars.applications.application_template import ApplicationTemplate
 from cars.applications.sparse_matching.methods import (
     abstract_sparse_matching_method as asmm,
 )
+from cars.core.cars_logging import logger
 
 AbstractSparseMatchingMethod = asmm.AbstractSparseMatchingMethod
 
@@ -56,7 +56,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
         matching_application = cls.default_application
         if bool(conf) is False or "application" not in conf:
-            logging.debug(
+            logger.debug(
                 "Sparse Matching application not specified, default "
                 " {} is used".format(matching_application)
             )
@@ -66,7 +66,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         if matching_application not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No matching application named {} registered".format(
                     matching_application
                 )
@@ -77,7 +77,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The SparseMatching({}) application will be used".format(
                 matching_application
             )

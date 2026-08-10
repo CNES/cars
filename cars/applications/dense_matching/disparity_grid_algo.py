@@ -24,7 +24,6 @@ this module contains the wrapper used in disparity grid computation.
 
 # Standard imports
 import itertools
-import logging
 
 # Third party imports
 import numpy as np
@@ -40,6 +39,7 @@ from cars.applications.dense_matching.dense_matching_algo import (
     LinearInterpNearestExtrap,
 )
 from cars.core import inputs, projection
+from cars.core.cars_logging import logger
 from cars.core.projection import point_cloud_conversion
 from cars.data_structures import cars_dataset, cars_dict
 
@@ -359,7 +359,7 @@ def generate_disp_range_from_dem_wrapper(
         dem_max, lon_mean, lat_mean, point_cloud_conversion
     )
     if dem_min_list is None or dem_max_list is None:
-        logging.warning("DEM min and DEM max does not cover this tile")
+        logger.warning("DEM min and DEM max does not cover this tile")
         disp_range, global_infos = empty_disparity_grids(
             row_range_no_margin,
             col_range_no_margin,
@@ -467,11 +467,11 @@ def generate_disp_range_from_dem_wrapper(
 
     # Add margin
     diff = grid_max - grid_min
-    logging.debug("Max grid max - grid min : {} disp ".format(np.max(diff)))
+    logger.debug("Max grid max - grid min : {} disp ".format(np.max(diff)))
 
     if disp_min_threshold is not None:
         if np.any(grid_min < disp_min_threshold):
-            logging.warning(
+            logger.warning(
                 "Override disp_min  with disp_min_threshold {}".format(
                     disp_min_threshold
                 )
@@ -479,7 +479,7 @@ def generate_disp_range_from_dem_wrapper(
             grid_min[grid_min < disp_min_threshold] = disp_min_threshold
     if disp_max_threshold is not None:
         if np.any(grid_max > disp_max_threshold):
-            logging.warning(
+            logger.warning(
                 "Override disp_max with disp_max_threshold {}".format(
                     disp_max_threshold
                 )

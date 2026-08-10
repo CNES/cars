@@ -23,13 +23,13 @@
 This module contains class application factory.
 """
 
-# Standard imports
-import logging
-
 from cars.applications.application_template import ScalingApplicationTemplate
 
 # CARS imports
 from cars.conf.input_parameters import ConfigType
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 
 class Application:
@@ -80,7 +80,7 @@ class Application:
         try:
             app_class = cls.available_applications[name]
         except KeyError:
-            logging.error("No application named {0} supported".format(name))
+            logger.error("No application named {0} supported".format(name))
             return None
 
         if issubclass(app_class, ScalingApplicationTemplate):

@@ -22,12 +22,12 @@
 this module contains the abstract AuxiliaryFilling application class.
 """
 
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("auxiliary_filling")
@@ -52,7 +52,7 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
         auxiliary_filling_method = cls.default_application
 
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "Auxiliary filling method not specified, "
                 "default {} is used".format(auxiliary_filling_method)
             )
@@ -60,7 +60,7 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
             auxiliary_filling_method = conf["method"]
 
         if auxiliary_filling_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No auxiliary_filling application named {} registered".format(
                     auxiliary_filling_method
                 )
@@ -71,7 +71,7 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The AuxiliaryFilling({}) application will be used".format(
                 auxiliary_filling_method
             )

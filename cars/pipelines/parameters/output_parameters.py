@@ -23,7 +23,6 @@
 This module contains the output definition
 """
 
-import logging
 import os
 
 from json_checker import And, Checker, Or
@@ -31,6 +30,7 @@ from pyproj import CRS
 
 import cars.core.constants as cst
 from cars.core import preprocessing
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.pipelines.parameters import output_constants
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -125,7 +125,7 @@ def check_output_parameters(  # noqa: C901 : too complex
     if scaling_coeff is not None:
         if resolution is not None:
             if resolution < res_val * scaling_coeff:
-                logging.warning(
+                logger.warning(
                     "The requested DSM resolution of "
                     f"{overloaded_conf[output_constants.RESOLUTION]} seems "
                     "too low for the sensor images' resolution. "
@@ -133,7 +133,7 @@ def check_output_parameters(  # noqa: C901 : too complex
                 )
         else:
             resolution = float(res_val * scaling_coeff)
-            logging.debug(
+            logger.debug(
                 "The resolution of the output DSM will be "
                 f"{resolution} meters. "
             )
@@ -222,7 +222,7 @@ def check_output_parameters(  # noqa: C901 : too complex
         if spatial_ref.is_geographic:
             if overloaded_conf[output_constants.RESOLUTION] is not None:
                 if overloaded_conf[output_constants.RESOLUTION] > 10e-3:
-                    logging.warning(
+                    logger.warning(
                         "The resolution of the "
                         + "point_cloud_rasterization should be "
                         + "fixed according to the epsg"
@@ -434,7 +434,7 @@ def check_performance_classes(overloaded_conf):
     raw_performance_map = False
     request_raw_performance_map = [[], [0], None]
     if performance_map_classes in request_raw_performance_map:
-        logging.debug("Raw performance map will be returned")
+        logger.debug("Raw performance map will be returned")
         overloaded_conf[output_constants.AUXILIARY][
             output_constants.AUX_PERFORMANCE_MAP
         ] = [0]

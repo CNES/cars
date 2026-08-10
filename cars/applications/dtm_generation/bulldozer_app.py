@@ -23,7 +23,6 @@ This module contains the bulldozer dsm filling application class.
 """
 
 import contextlib
-import logging
 import os
 from pathlib import Path
 
@@ -37,6 +36,7 @@ from cars.applications.dem_generation.dem_generation_wrappers import (
     edit_transform,
 )
 from cars.core import preprocessing
+from cars.core.cars_logging import logger, mute_external_logging
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 from .abstract_dtm_generation_app import DtmGeneration
@@ -160,10 +160,11 @@ class Bulldozer(DtmGeneration, short_name="bulldozer"):
                     with (
                         contextlib.redirect_stdout(devnull),
                         contextlib.redirect_stderr(devnull),
+                        mute_external_logging(),
                     ):
                         dsm_to_dtm(bull_conf_path)
             except Exception:
-                logging.debug(
+                logger.debug(
                     "Bulldozer failed on its first execution. Retrying"
                 )
                 # suppress prints in bulldozer by redirecting stdout&stderr
@@ -171,10 +172,11 @@ class Bulldozer(DtmGeneration, short_name="bulldozer"):
                     with (
                         contextlib.redirect_stdout(devnull),
                         contextlib.redirect_stderr(devnull),
+                        mute_external_logging(),
                     ):
                         dsm_to_dtm(bull_conf_path)
         except Exception:
-            logging.warning(
+            logger.warning(
                 "Bulldozer failed on its second execution."
                 + " The DSM could not be filled."
             )

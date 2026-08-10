@@ -21,12 +21,12 @@
 """
 this module contains the abstract resampling application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("resampling")
@@ -51,7 +51,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
 
         resampling_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "Resampling method not specified, default"
                 " {} is used".format(resampling_method)
             )
@@ -59,7 +59,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
             resampling_method = conf["method"]
 
         if resampling_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No resampling application named {} registered".format(
                     resampling_method
                 )
@@ -70,7 +70,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The Resampling({}) application will be used".format(
                 resampling_method
             )

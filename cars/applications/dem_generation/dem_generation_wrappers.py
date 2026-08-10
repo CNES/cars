@@ -22,7 +22,6 @@
 this module contains tools for the dem generation
 """
 import contextlib
-import logging
 import os
 
 import numpy as np
@@ -38,6 +37,7 @@ from rasterio.warp import calculate_default_transform, reproject
 from scipy.ndimage import median_filter
 
 from cars.core import preprocessing
+from cars.core.cars_logging import logger
 
 
 def fit_initial_elevation_on_dem_median(
@@ -100,7 +100,7 @@ def fit_initial_elevation_on_dem_median(
                 fit_dem.save(dem_out_path)
                 coreg_offsets = coreg_pipeline.meta["outputs"]["affine"]
             except (ValueError, AssertionError, TypeError):
-                logging.warning(
+                logger.warning(
                     "xDEM coregistration failed. This can happen when sensor "
                     "images are too small. No shift will be applied on DEM"
                 )
@@ -131,7 +131,7 @@ def add_margin(bbox, ratio=1):
         new_top = bbox.top + ratio * height
         new_bbox = BoundingBox(new_left, new_bottom, new_right, new_top)
     except AssertionError:
-        logging.warning("Bounding box {} cannot be read".format(bbox))
+        logger.warning("Bounding box {} cannot be read".format(bbox))
         new_bbox = bbox
     return new_bbox
 
@@ -151,11 +151,11 @@ def compute_stats(diff):
     p95 = ("p95", np.nanpercentile(diff, 95))
     p99 = ("p99", np.nanpercentile(diff, 99))
     maxi = ("Max", np.nanmax(diff))
-    logging.debug(  # pylint: disable=logging-fstring-interpolation
+    logger.debug(  # pylint: disable=logging-fstring-interpolation
         f"| {mini[0]:6} | {median[0]:6} | {p90[0]:6} | "
         f"{p95[0]:6} | {p99[0]:6} | {maxi[0]:6} |"
     )
-    logging.debug(  # pylint: disable=logging-fstring-interpolation
+    logger.debug(  # pylint: disable=logging-fstring-interpolation
         f"| {mini[1]:6.2f} | {median[1]:6.2f} | {p90[1]:6.2f} | "
         f"{p95[1]:6.2f} | {p99[1]:6.2f} | {maxi[1]:6.2f} |"
     )

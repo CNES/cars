@@ -21,8 +21,6 @@
 """
 this module contains the dichotomic dem generation application class.
 """
-# Standard library
-import logging
 import math
 import os
 import shutil
@@ -54,6 +52,9 @@ from cars.applications.dem_generation.dem_generation_wrappers import (
 
 # CARS imports - Core
 from cars.core import inputs
+
+# Standard library
+from cars.core.cars_logging import logger
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
@@ -302,7 +303,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
                     dem_data.shape, dtype=in_geoid.dtypes[0]
                 )
 
-                logging.debug("Reprojection of geoid data")
+                logger.debug("Reprojection of geoid data")
 
                 reproject(
                     source=rio.band(in_geoid, 1),
@@ -322,7 +323,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
                     dem_data.shape, dtype=in_geoid.dtypes[0]
                 )
 
-                logging.debug("Reprojection of geoid data")
+                logger.debug("Reprojection of geoid data")
 
                 reproject(
                     source=rio.band(in_geoid, 1),
@@ -339,19 +340,19 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
         footprint = skimage.morphology.disk(
             self.morphological_filters_size // 2, decomposition="sequence"
         )
-        logging.debug("Generation of DEM min")
+        logger.debug("Generation of DEM min")
         dem_data[not_filled_pixels] = -nodata
         dem_min = (
             skimage.morphology.erosion(dem_data, footprint=footprint)
             - self.min_height_margin
         )
         dem_data[not_filled_pixels] = nodata
-        logging.debug("Generation of DEM max")
+        logger.debug("Generation of DEM max")
         dem_max = (
             skimage.morphology.dilation(dem_data, footprint=footprint)
             + self.max_height_margin
         )
-        logging.debug("Generation of DEM median")
+        logger.debug("Generation of DEM median")
         dem_median = skimage.filters.median(
             dem_data,
             footprint=np.ones(
@@ -456,7 +457,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
             saved_transform = edit_transform(
                 dem_min_path, resolution=dem_min_max_res
             )
-            logging.debug("Launch Bulldozer on DEM min")
+            logger.debug("Launch Bulldozer on DEM min")
             temp_output_path = launch_bulldozer(
                 dem_min_path,
                 os.path.join(output_dir, "dem_min_bulldozer"),
@@ -472,7 +473,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
                 dem_max_path, resolution=dem_min_max_res
             )
             reverse_dem(dem_max_path)
-            logging.debug("Launch Bulldozer on DEM max")
+            logger.debug("Launch Bulldozer on DEM max")
             temp_output_path = launch_bulldozer(
                 dem_max_path,
                 os.path.join(output_dir, "dem_max_bulldozer"),
@@ -537,7 +538,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
         if self.compute_stats:
             diff = dem_data - dem_min
             diff = diff[dem_data != 0]
-            logging.debug(
+            logger.debug(
                 "Statistics of difference between subsampled "
                 "DSM and DEM min (in meters)"
             )
@@ -545,7 +546,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
 
             diff = dem_max - dem_data
             diff = diff[dem_data != 0]
-            logging.debug(
+            logger.debug(
                 "Statistics of difference between DEM max "
                 "and subsampled DSM (in meters)"
             )
@@ -553,7 +554,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
 
             diff = dem_max - dem_min
             diff = diff[dem_data != 0]
-            logging.debug(
+            logger.debug(
                 "Statistics of difference between DEM max "
                 "and DEM min (in meters)"
             )
@@ -617,7 +618,7 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
                 or abs(coreg_offsets["shift_x"]) > self.coregistration_max_shift
                 or abs(coreg_offsets["shift_y"]) > self.coregistration_max_shift
             ):
-                logging.warning(
+                logger.warning(
                     "The initial elevation will be used as-is because "
                     "coregistration failed or gave inconsistent results"
                 )

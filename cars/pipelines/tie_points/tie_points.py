@@ -21,7 +21,6 @@
 """
 CARS tie points pipeline class file
 """
-import logging
 import os
 
 import yaml
@@ -30,6 +29,7 @@ from json_checker import Checker, Or
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications.application import Application
 from cars.core import roi_tools
+from cars.core.cars_logging import logger
 from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
@@ -582,7 +582,7 @@ class TiePointsPipeline(PipelineTemplate):  # pylint: disable=R0902
 
                 disp_min = disp_range_grid["global_min"]
                 disp_max = disp_range_grid["global_max"]
-                logging.debug(
+                logger.debug(
                     "Global disparity range for sparse matching : "
                     "[{} pix, {} pix]".format(disp_min, disp_max)
                 )

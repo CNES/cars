@@ -28,9 +28,6 @@ import collections
 
 # Third party imports
 import copy
-
-# Standard imports
-import logging
 import os
 from typing import List
 
@@ -59,6 +56,9 @@ from cars.applications.rasterization.abstract_pc_rasterization_app import (
 from cars.applications.triangulation import pc_transform
 from cars.core import constants as cst
 from cars.core import projection, tiling
+
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -213,7 +213,7 @@ class SimpleGaussian(
             np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
         )
 
-        logging.debug(
+        logger.debug(
             "Estimated optimal tile size for rasterization: {} meters".format(
                 tile_size
             )
@@ -386,7 +386,7 @@ class SimpleGaussian(
                 "this input data "
                 "format : type : {}".format(type(point_clouds))
             )
-            logging.error(message)
+            logger.error(message)
             raise RuntimeError(message)
 
         # Create CarsDataset
@@ -425,9 +425,7 @@ class SimpleGaussian(
 
         # Derive output image files parameters to pass to rasterio
         _, _, xsize, ysize = tiling.roi_to_start_and_size(bounds, resolution)
-        logging.debug(
-            "DSM output image size: {}x{} pixels".format(xsize, ysize)
-        )
+        logger.debug("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
         try:
             if isinstance(point_clouds, tuple):
@@ -881,7 +879,7 @@ class SimpleGaussian(
         )
 
         # Get number of tiles
-        logging.debug(
+        logger.debug(
             "Number of tiles in cloud rasterization: "
             "row: {} "
             "col: {}".format(
@@ -1051,7 +1049,7 @@ def rasterization_wrapper(  # noqa: C901
             cloud, epsg
         )
     elif cloud is None:
-        logging.warning("Input cloud is None")
+        logger.warning("Input cloud is None")
         return None
     else:
         cloud_epsg = attributes.get("epsg")
@@ -1127,7 +1125,7 @@ def rasterization_wrapper(  # noqa: C901
     )
 
     if xsize == 0 or ysize == 0:
-        logging.warning("Tile is empty")
+        logger.warning("Tile is empty")
         return None
 
     if window is None:

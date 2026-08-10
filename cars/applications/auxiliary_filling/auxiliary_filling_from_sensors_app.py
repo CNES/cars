@@ -22,7 +22,6 @@
 this module contains the AuxiliaryFillingFromSensors application class.
 """
 
-import logging
 import os
 import shutil
 
@@ -47,6 +46,7 @@ from cars.applications.auxiliary_filling.abstract_auxiliary_filling_app import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
+from cars.core.cars_logging import logger
 from cars.data_structures import cars_dataset
 
 
@@ -182,7 +182,7 @@ class AuxiliaryFillingFromSensors(
         if not self.used_config["activated"]:
             return None
         if sensor_inputs is None:
-            logging.error(
+            logger.error(
                 "No sensor inputs were provided, "
                 "auxiliary_filling will not run."
             )

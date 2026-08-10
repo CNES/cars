@@ -23,7 +23,6 @@ CARS analysis pipeline report tools module
 """
 import functools
 import json
-import logging
 import os
 import os.path
 import re
@@ -37,6 +36,8 @@ import numpy as np
 import rasterio
 import yaml
 from matplotlib.patches import ConnectionPatch
+
+from cars.core.cars_logging import logger
 
 
 def make_paths_relative(html_content, output_file_path):
@@ -109,7 +110,7 @@ def merge_reports(reports_html_files, report_file_html, report_file_pdf):
         # Export to PDF
         HTML(string=merged_html).write_pdf(report_file_pdf)
     except ImportError:
-        logging.warning(
+        logger.warning(
             "WeasyPrint not installed, skipping PDF generation "
             "for merged report. \n"
             " Install with cars target : pdf_report \n"
@@ -238,7 +239,7 @@ def safe_list_return(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            logging.error(f"Error in {func.__name__}: {e}")
+            logger.error(f"Error in {func.__name__}: {e}")
             return []
 
     return wrapper
@@ -305,7 +306,7 @@ def generate_epipolar_images(output_dir, used_resolution, images_dir):
         img_r_path = os.path.join(path_imgs, "epi_img_right.tif")
 
         if not (os.path.exists(img_l_path) and os.path.exists(path_matches)):
-            logging.error("no matches or epipolar images found")
+            logger.error("no matches or epipolar images found")
             continue
 
         with (

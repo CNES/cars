@@ -27,7 +27,6 @@ Preprocessing contains function used in pipelines
 from __future__ import print_function
 
 import json
-import logging
 import math
 import os
 
@@ -41,6 +40,7 @@ from cars.applications.grid_generation import grid_generation_algo as grids_algo
 
 # CARS imports
 from cars.core import inputs, projection, tiling
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -65,7 +65,7 @@ def get_utm_zone_as_epsg_code(lon, lat):
     """
 
     if lon is None or lat is None or np.isnan(lon) or np.isnan(lat):
-        logging.warning(
+        logger.warning(
             "An incorrect position was given when trying "
             "to select the right EPSG for computations. "
             "The default EPSG 32632 will be used."
@@ -73,13 +73,13 @@ def get_utm_zone_as_epsg_code(lon, lat):
         return 32632
 
     if lat > 84:
-        logging.warning(
+        logger.warning(
             "Since the latitude is above 84°, the EPSG 32661 will be used."
         )
         return 32661
 
     if lat < -80:
-        logging.warning(
+        logger.warning(
             "Since the latitude is under -80°, the EPSG 32761 will be used."
         )
         return 32761
@@ -182,7 +182,7 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
     out_dir = pair_folder
 
     # Check that the envelopes intersect one another
-    logging.debug("Computing images envelopes and their intersection")
+    logger.debug("Computing images envelopes and their intersection")
     geojson1 = os.path.join(out_dir, "left_envelope.geojson")
     geojson2 = os.path.join(out_dir, "right_envelope.geojson")
     out_envelopes_intersection = os.path.join(
@@ -248,14 +248,14 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
     orchestrator.update_out_info(updating_dict)
 
     if check_inputs:
-        logging.debug("Checking DEM coverage")
+        logger.debug("Checking DEM coverage")
         _, epsg1 = inputs.read_vector(geojson1)
         __, dem_coverage = projection.compute_dem_intersection_with_poly(
             geometry_plugin.dem, inter_poly, epsg1
         )
 
         if dem_coverage < 100.0:
-            logging.warning(
+            logger.warning(
                 "The input DEM covers {}% of the useful zone".format(
                     int(dem_coverage)
                 )
@@ -310,7 +310,7 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
         terrain_max[1] - terrain_min[1]
     )
 
-    logging.debug(
+    logger.debug(
         "Terrain area covered: {} square meters (or square degrees)".format(
             terrain_area
         )
@@ -330,7 +330,7 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
         inter_xmin, inter_ymin, inter_xmax, inter_ymax, resolution
     )
 
-    logging.debug(
+    logger.debug(
         "Terrain bounding box : [{}, {}] x [{}, {}]".format(
             xmin, xmax, ymin, ymax
         )
@@ -341,7 +341,7 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
     # Check if roi given by user intersects with current terrain region
     if roi_poly is not None:
         if not roi_poly.intersects(inter_poly):
-            logging.warning(
+            logger.warning(
                 "The pair composed of {} and {} "
                 "does not intersect the requested ROI".format(
                     sensor_image_left[sens_cst.INPUT_IMG],
@@ -488,7 +488,7 @@ def compute_epsg(  # pylint: disable=too-many-positional-arguments
 
     epsg = get_utm_zone_as_epsg_code(*np.nanmean(terrain_dispmin, axis=0))
 
-    logging.debug("EPSG code: {}".format(epsg))
+    logger.debug("EPSG code: {}".format(epsg))
 
     return epsg
 
@@ -525,7 +525,7 @@ def crop_terrain_bounds_with_roi(roi_poly, xmin, ymin, xmax, ymax):
     if not roi_poly.intersects(terrain_poly):
         raise RuntimeError("None of the input data intersect the requested ROI")
     # Show ROI if valid (no exception raised) :
-    logging.debug("Setting terrain bounding box to the requested ROI")
+    logger.debug("Setting terrain bounding box to the requested ROI")
     new_xmin, new_ymin, new_xmax, new_ymax = roi_poly.bounds
 
     return new_xmin, new_ymin, new_xmax, new_ymax
@@ -569,7 +569,7 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
             xmin, ymin, xmax, ymax, resolution
         )
 
-    logging.debug(
+    logger.debug(
         "Total terrain bounding box : [{}, {}] x [{}, {}]".format(
             xmin, xmax, ymin, ymax
         )
@@ -585,7 +585,7 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
         * resolution
     )
 
-    logging.debug(
+    logger.debug(
         "Optimal terrain tile size: {}x{} pixels".format(
             int(optimal_terrain_tile_width / resolution),
             int(optimal_terrain_tile_width / resolution),

@@ -26,7 +26,6 @@ cars_dataset module:
 
 
 import copy
-import logging
 import math
 
 # Standard imports
@@ -47,6 +46,7 @@ from rasterio.windows import Window
 # CARS imports
 from cars.core import constants as cst
 from cars.core import outputs
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dict, dataframe_converter
 
@@ -507,7 +507,7 @@ class CarsDataset:
         safe_makedirs(directory)
 
         if self.tiles is None:
-            logging.error("No tiles managed by CarsDatasets")
+            logger.error("No tiles managed by CarsDatasets")
             raise RuntimeError("No tiles managed by CarsDatasets")
 
         # save tiles info
@@ -649,7 +649,7 @@ def load_single_tile_array(tile_path_name: str) -> xr.Dataset:
     # get dataset
     dataset_file_name = os.path.join(tile_path_name, DATASET_FILE)
     if not os.path.exists(dataset_file_name):
-        logging.error("Tile {} does not exists".format(dataset_file_name))
+        logger.error("Tile {} does not exists".format(dataset_file_name))
         return None
     with open(dataset_file_name, "rb") as handle:
         dataset = pickle.load(handle)
@@ -684,7 +684,7 @@ def load_single_tile_points(tile_path_name: str):
     dataframe_file_name = os.path.join(tile_path_name, DATAFRAME_FILE)
 
     if not os.path.exists(dataframe_file_name):
-        logging.error("Tile {} does not exists".format(dataframe_file_name))
+        logger.error("Tile {} does not exists".format(dataframe_file_name))
         return None
 
     with open(dataframe_file_name, "rb") as handle:
@@ -718,7 +718,7 @@ def load_single_tile_dict(tile_path_name: str):
     dict_file_name = os.path.join(tile_path_name, CARSDICT_FILE)
 
     if not os.path.exists(dict_file_name):
-        logging.error("Tile {} does not exists".format(dict_file_name))
+        logger.error("Tile {} does not exists".format(dict_file_name))
         return None
 
     with open(dict_file_name, "rb") as handle:
@@ -1097,7 +1097,7 @@ def save_dataset(  # pylint: disable=too-many-positional-arguments
 
     """
     if dataset is None:
-        logging.error("Tile is None: not saved ")
+        logger.error("Tile is None: not saved ")
         return
 
     overlaps = get_overlaps_dataset(dataset)

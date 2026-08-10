@@ -23,8 +23,6 @@ Inputs module:
 contains some CARS global shared general purpose inputs functions
 """
 
-import logging
-
 # Standard imports
 import os
 import warnings
@@ -41,6 +39,8 @@ from pyproj import CRS
 from rasterio.warp import Resampling, calculate_default_transform, reproject
 from rasterio.windows import Window
 from shapely.geometry import shape
+
+from cars.core.cars_logging import logger
 
 # CARS imports
 
@@ -75,13 +75,13 @@ def read_vector(path_to_file):
         return polys[0], int(epsg)
 
     if len(polys) > 1:
-        logging.debug(
+        logger.debug(
             "Multi features files are not supported, "
             "the first feature of {} will be used".format(path_to_file)
         )
         return polys[0], int(epsg)
 
-    logging.debug("No feature is present in the {} file".format(path_to_file))
+    logger.debug("No feature is present in the {} file".format(path_to_file))
     return None
 
 
@@ -180,17 +180,17 @@ def rasterio_get_classif_values(raster_file: str) -> int:
     with rio.open(raster_file, "r") as descriptor:
         max_value = int(descriptor.stats()[0].max)
         if max_value <= 10:
-            logging.debug("Max value of classif is {}")
+            logger.debug("Max value of classif is {}")
             values = list(range(max_value + 1))
-            logging.debug("Classes are {}".format(values))
+            logger.debug("Classes are {}".format(values))
             return values
-        logging.warning(
+        logger.warning(
             "Input classif has classes over 10"
             "Classification file will be read to determine exact values"
         )
         array = descriptor.read()
         values = list(map(int, np.unique(array)))
-        logging.debug("Classes are {}".format(values))
+        logger.debug("Classes are {}".format(values))
         return values
 
 
@@ -220,7 +220,7 @@ def rasterio_get_image_type(raster_file: str) -> list:
     # Check if each color bands have the same type
     image_type_set = set(image_types)
     if len(image_type_set) > 1:
-        logging.warning("The image bands don't the same types.")
+        logger.warning("The image bands don't the same types.")
 
     image_type = image_types[0]
 
@@ -507,7 +507,7 @@ def rasterio_can_open(raster_file: str) -> bool:
         rio.open(raster_file)
         return True
     except Exception as read_error:
-        logging.warning(
+        logger.warning(
             "Impossible to read file {}: {}".format(raster_file, read_error)
         )
         return False
@@ -525,7 +525,7 @@ def ncdf_can_open(file_path):
         with xr.open_dataset(file_path) as _:
             return True
     except Exception as read_error:
-        logging.warning(
+        logger.warning(
             "Exception caught while trying to read file {}: {}".format(
                 file_path, read_error
             )
