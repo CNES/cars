@@ -65,6 +65,8 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
         self.used_method = self.used_config["method"]
         self.tile_size = self.used_config["tile_size"]
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
+        self.filling_priority_list = self.used_config["filling_priority_list"]
+        self.classif_priority_list = self.used_config["classif_priority_list"]
 
     def check_conf(self, conf):
 
@@ -78,6 +80,23 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "weighted_fusion")
         overloaded_conf["tile_size"] = conf.get("tile_size", 4000)
+        overloaded_conf["filling_priority_list"] = conf.get(
+            "filling_priority_list",
+            [
+                6,
+                1,
+                4,
+                5,
+                3,
+                2,
+                7,
+                0,
+            ],
+        )
+        overloaded_conf["classif_priority_list"] = conf.get(
+            "classif_priority_list", [7, 8, 9, 5, 3, 1, 2, 4, 6, 10, 11, 255]
+        )
+
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
         )
@@ -86,6 +105,8 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
             "method": str,
             "tile_size": int,
             "save_intermediate_data": bool,
+            "filling_priority_list": list,
+            "classif_priority_list": list,
         }
 
         # Check conf
@@ -316,6 +337,8 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
                     terrain_raster.tiling_grid[row, col],
                     resolution,
                     raster_profile,
+                    self.filling_priority_list,
+                    self.classif_priority_list,
                     full_saving_info,
                     full_sources_band_descriptions,
                 )
@@ -328,6 +351,8 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
     tile_bounds,
     resolution,
     profile,
+    filling_priority_list,
+    classif_priority_list,
     saving_info=None,
     full_sources_band_descriptions=None,
 ):
@@ -379,6 +404,39 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
             else:
                 list_intersection.append("no intersection")
 
+    transform = rasterio.Affine(*profile["transform"][0:6])
+
+    filling_map = None
+    if cst.DSM_FILLING in dict_path:
+        filling_map = create_filling_map(
+            dict_path[cst.DSM_FILLING],
+            height,
+            width,
+            list_intersection,
+            filling_priority_list,
+            tile_bounds,
+            resolution,
+        )
+        dataset[cst.DSM_FILLING] = ([cst.Y, cst.X], filling_map)
+
+    filling_paths = (
+        dict_path[cst.DSM_FILLING] if cst.DSM_FILLING in dict_path else None
+    )
+
+    if cst.DSM_CLASSIF in dict_path:
+        classif_map = create_classif_map(
+            dict_path[cst.DSM_CLASSIF],
+            height,
+            width,
+            list_intersection,
+            filling_paths,
+            filling_map,
+            classif_priority_list,
+            tile_bounds,
+            resolution,
+        )
+        dataset[cst.DSM_CLASSIF] = ([cst.Y, cst.X], classif_map)
+
     # Update the data
     for key in dict_path.keys():
         # Choose the method regarding the variable
@@ -388,11 +446,6 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
             cst.DSM_SOURCE_PC,
         ]:
             method = "bool"
-        elif key in [
-            cst.DSM_FILLING,
-            cst.DSM_CLASSIF,
-        ]:
-            method = "max"
         else:
             method = "basic"
 
@@ -440,6 +493,9 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
                 height,
                 width,
                 band_descriptions,
+                filling_map=filling_map,
+                filling_paths=filling_paths,
+                resolution=resolution,
             )
 
             dataset[key] = (dim, value)
@@ -455,9 +511,12 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
                 width,
                 full_sources_band_descriptions,
                 merge_sources=True,
+                filling_map=filling_map,
+                filling_paths=filling_paths,
+                resolution=resolution,
             )
             dataset[key] = (dim, value)
-        elif key != cst.DSM_WEIGHTS_SUM:
+        elif key not in (cst.DSM_WEIGHTS_SUM, cst.DSM_FILLING, cst.DSM_CLASSIF):
             # Update other variables
             value, _ = assemblage(
                 dict_path[key],
@@ -468,6 +527,9 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
                 height,
                 width,
                 band_descriptions,
+                filling_map=filling_map,
+                filling_paths=filling_paths,
+                resolution=resolution,
             )
 
             dataset[key] = (dim, value)
@@ -486,7 +548,6 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
     xstart, ystart, xsize, ysize = tiling.roi_to_start_and_size(
         bounds, resolution[1]
     )
-    transform = rasterio.Affine(*profile["transform"][0:6])
 
     row_pix_pos, col_pix_pos = rasterio.transform.AffineTransformer(
         transform
@@ -512,6 +573,162 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
     return dataset
 
 
+def create_filling_map(  # pylint: disable=R0917
+    filling_paths,
+    height,
+    width,
+    intersect_bounds,
+    priority_list,
+    tile_bounds,
+    resolution,
+):
+    """
+    Create filling map
+    """
+
+    priority = {v: i for i, v in enumerate(priority_list)}
+
+    dtype = inputs.rasterio_get_dtype(filling_paths[0])
+    filling_map = np.zeros((height, width), dtype=dtype)
+
+    for idx, path in enumerate(filling_paths):
+
+        if intersect_bounds[idx] == "no intersection":
+            continue
+
+        with rasterio.open(path) as src:
+            src_window = from_bounds(
+                *intersect_bounds[idx],
+                transform=src.transform,
+            )
+
+            row_slice, col_slice = get_corresponding_index(
+                intersect_bounds[idx], tile_bounds, resolution
+            )
+            current_filling = src.read(1, window=src_window)
+
+            if current_filling.size == 0:
+                continue
+
+            filling_values = np.unique(current_filling)
+            for value in filling_values:
+                if value not in priority:
+                    raise RuntimeError(
+                        "The priority list does not match the filling values."
+                    )
+
+            priority_current = np.vectorize(priority.get)(current_filling)
+            priority_old = np.vectorize(priority.get)(
+                filling_map[row_slice, col_slice]
+            )
+
+            mask = priority_current < priority_old
+            filling_map[row_slice, col_slice][mask] = current_filling[mask]
+
+    return filling_map
+
+
+def get_corresponding_index(intersect_bounds, tile_bounds, resolution):
+    """
+    get corresponding index
+    """
+
+    xmin, ymin, xmax, ymax = intersect_bounds
+
+    tile_xmin, _, _, tile_ymax = tile_bounds
+    res = resolution[1]
+
+    col_start = int(round((xmin - tile_xmin) / res))
+    col_end = int(round((xmax - tile_xmin) / res))
+
+    row_start = int(round((tile_ymax - ymax) / res))
+    row_end = int(round((tile_ymax - ymin) / res))
+
+    row_slice = slice(row_start, row_end)
+    col_slice = slice(col_start, col_end)
+
+    return row_slice, col_slice
+
+
+def create_classif_map(  # pylint: disable=R0917
+    classif_paths,
+    height,
+    width,
+    intersect_bounds,
+    filling_paths,
+    filling_map,
+    priority_list,
+    tile_bounds,
+    resolution,
+):
+    """
+    Create classif map
+    """
+
+    dtype = inputs.rasterio_get_dtype(classif_paths[0])
+    bands = []
+    bands_name = []
+    for idx, path in enumerate(classif_paths):
+        # Make sure the files intersect
+        if intersect_bounds[idx] != "no intersection":
+            with rasterio.open(path) as src:
+                window = from_bounds(
+                    *intersect_bounds[idx], transform=src.transform
+                )
+
+                row_slice, col_slice = get_corresponding_index(
+                    intersect_bounds[idx], tile_bounds, resolution
+                )
+
+                current_classif = src.read(1, window=window)
+
+                # Verify if the current filling corresponds to the filling map
+                mask = None
+                if filling_paths is not None:
+                    with rasterio.open(filling_paths[idx]) as filling_src:
+                        filling = filling_src.read(1, window=window)
+                        mask = filling != filling_map[row_slice, col_slice]
+
+                if mask is not None:
+                    # We ignore the values if it doesn't
+                    # correspond to the right filling
+                    current_classif[mask] = 0
+
+                values = np.unique(current_classif)
+                values = values[values != 0]
+
+                # Update each band
+                for val in values:
+                    full_mask = np.zeros((height, width), dtype=dtype)
+                    full_mask[row_slice, col_slice] = current_classif == val
+
+                    if str(val) not in bands_name:
+                        bands_name.append(str(val))
+                        bands.append(full_mask)
+                    else:
+                        i = bands_name.index(str(val))
+                        bands[i] += full_mask
+
+    classif_multi_band = np.stack(bands)
+    classes = np.array(bands_name, dtype=int)
+    priority_list = np.array(priority_list)
+
+    # Reorder bands so that np.argmax resolves ties using the priority list
+    order = [
+        np.where(classes == c)[0][0] for c in priority_list if c in classes
+    ]
+    classif_multi_band = classif_multi_band[order]
+    classes = classes[order]
+
+    winner = np.argmax(classif_multi_band, axis=0)
+    max_votes = np.max(classif_multi_band, axis=0)
+
+    classif_mono_band = classes[winner]
+    classif_mono_band[max_votes == 0] = 0
+
+    return classif_mono_band
+
+
 def assemblage(  # pylint: disable=too-many-positional-arguments
     out,
     current_weights,
@@ -522,6 +739,9 @@ def assemblage(  # pylint: disable=too-many-positional-arguments
     width,
     band_descriptions=None,
     merge_sources=False,
+    filling_map=None,
+    filling_paths=None,
+    resolution=None,
 ):
     """
     Update data
@@ -571,6 +791,16 @@ def assemblage(  # pylint: disable=too-many-positional-arguments
                     *intersect_bounds[idx], transform=src.transform
                 )
 
+                row_slice, col_slice = get_corresponding_index(
+                    intersect_bounds[idx], tile_bounds, resolution
+                )
+
+                mask = None
+                if filling_paths is not None:
+                    with rasterio.open(filling_paths[idx]) as filling_src:
+                        filling = filling_src.read(1, window=window)
+                        mask = filling != filling_map[row_slice, col_slice]
+
                 # Extract the data
                 current_nb_bands = src.count
                 if current_nb_bands > 1:
@@ -590,6 +820,9 @@ def assemblage(  # pylint: disable=too-many-positional-arguments
                         indexes.append(band_descriptions.index(current_band))
 
                 current_weights_window = drt.read(1, window=window)
+
+                if mask is not None:
+                    current_weights_window[mask] = 0
 
                 # Calculate the x and y offset because the current_data
                 # doesn't equal to the entire tile

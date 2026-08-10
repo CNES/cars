@@ -15,7 +15,9 @@ This pipeline takes any number of DSMs as inputs, as explained in the :ref:`DSM 
 Applications
 ------------
 
-**WIP** : the application(s) in merging have not been created yet.
+The merging pipeline uses these applications:
+
+  - :ref:`dsm_merging <dsm_merging_app>`
 
 Advanced Parameters
 -------------------
