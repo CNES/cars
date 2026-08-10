@@ -24,7 +24,6 @@ This module contains the PANDORA2D sparse matching method implementation.
 
 import collections
 import copy
-import logging
 
 import numpy as np
 import pandas
@@ -47,6 +46,7 @@ from cars.applications.sparse_matching.methods import (
     abstract_sparse_matching_method as asmm,
 )
 from cars.core import constants as cst
+from cars.core.cars_logging import logger
 from cars.data_structures import cars_dataset
 
 AbstractSparseMatchingMethod = asmm.AbstractSparseMatchingMethod
@@ -230,7 +230,7 @@ class Pandora2DSparseMethod(
         )
 
         if int(disp_max - disp_min) > max_range:
-            logging.warning("disparity range for current tile is cropped")
+            logger.warning("disparity range for current tile is cropped")
 
             disp_min = np.floor(disp_min * max_range / (disp_max - disp_min))
             disp_max = np.ceil(disp_max * max_range / (disp_max - disp_min))

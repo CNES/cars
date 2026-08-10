@@ -23,8 +23,9 @@
 This module contains class pipeline factory.
 """
 
-import logging
 from typing import Dict, Union
+
+from cars.core.cars_logging import logger
 
 
 class Pipeline:
@@ -80,7 +81,7 @@ class Pipeline:
             pipeline_class = cls.available_pipeline[name]
 
         except KeyError as kerr:
-            logging.error("No pipeline named {0} supported".format(name))
+            logger.error("No pipeline named {0} supported".format(name))
             raise NameError(
                 "No pipeline named {0} supported".format(name)
             ) from kerr

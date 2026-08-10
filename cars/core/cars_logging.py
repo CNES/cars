@@ -26,10 +26,11 @@ and workers
 """
 
 import logging
-import logging.config
 import os
 import platform
+import sys
 import threading
+from contextlib import contextmanager
 
 # Standard imports
 from datetime import datetime
@@ -64,11 +65,53 @@ else:
 PROFILING = 5  # we want DEBUG to not have profiling logs
 logging.addLevelName(PROFILING, "PROFILING")
 
-profiling_logger = logging.getLogger("profiling_logger")
-
 
 _WARNING_COUNTER = 0
 _WARNING_LOCK = threading.Lock()  # for logs from workers
+
+
+_LOGGER = None
+
+
+class _LoggerProxy:  # pylint: disable=R0903
+    """
+    Proxy class to forward logging calls to the global logger instance.
+    This allows us to use the logger as a module-level variable without
+    having to pass it around explicitly.
+    """
+
+    def __getattr__(self, attr):
+        return getattr(_get_logger(), attr)
+
+
+logger = _LoggerProxy()
+
+
+def _get_logger():
+    """
+    Helper function to get the global logger instance,
+    creating it if necessary.
+    """
+    global _LOGGER
+    if _LOGGER is None:
+        _LOGGER = logging.getLogger("CARS")
+        _LOGGER.propagate = False
+    return _LOGGER
+
+
+@contextmanager
+def mute_external_logging():
+    """Temporarily mute global/root logging during external tool execution."""
+    previous_disable = logging.root.manager.disable
+    root_logger = logging.getLogger()
+    previous_level = root_logger.level
+    try:
+        logging.disable(logging.CRITICAL)
+        root_logger.setLevel(logging.CRITICAL + 1)
+        yield
+    finally:
+        root_logger.setLevel(previous_level)
+        logging.disable(previous_disable)
 
 
 def reset_warning_count() -> None:
@@ -96,14 +139,26 @@ class WarningCounterHandler(logging.Handler):
 
 class ProfilingFilter(logging.Filter):  # pylint: disable=R0903
     """
-    ProfilingFilter
+    ProfilingFilter - excludes profiling-level messages from standard logs
     """
 
     def filter(self, record):
         """
-        Filter message
+        Filter message - return False to exclude profiling messages
         """
-        return "PROFILING" not in record.msg
+        return record.levelno > PROFILING
+
+
+class OnlyProfilingFilter(logging.Filter):  # pylint: disable=R0903
+    """
+    OnlyProfilingFilter - includes ONLY profiling-level messages
+    """
+
+    def filter(self, record):
+        """
+        Filter message - return True to include only profiling messages
+        """
+        return record.levelno == PROFILING
 
 
 class SharelocFilter(logging.Filter):  # pylint: disable=R0903
@@ -180,23 +235,20 @@ class LogSender:  # pylint: disable=R0903
             unlock(file)
 
 
-def setup_logging(  # pylint: disable=too-many-positional-arguments
+def setup_logging_global(
     loglevel="INFO",
-    out_dir=None,
-    log_dir=None,
-    pipeline="",
-    in_worker=False,
     global_log_file=None,
     use_stdout=True,
 ):
     """
-    Setup the CARS logging configuration
+    Setup global CARS logging configuration.
+    Sets up the logger with stdout handler and main log file.
+    This should be called only once in cars.py.
 
-    :param loglevel: log level default WARNING
+    :param loglevel: log level (default: "INFO")
+    :param global_log_file: path to global log file (optional)
     :param use_stdout: whether to add stdout handler (default: True)
     """
-
-    # logging
     if isinstance(loglevel, int):
         numeric_level = loglevel
     else:
@@ -205,176 +257,183 @@ def setup_logging(  # pylint: disable=too-many-positional-arguments
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: %s" % loglevel)
 
-    def add_handler_name(config, handler_name, filtered_logger=None):
-        """
-        add handler name in known handlers of loggers
-        """
-        for key in config["loggers"].keys():
-            if filtered_logger is not None:
-                if key in filtered_logger:
-                    config["loggers"][key]["handlers"].append(handler_name)
-            else:
-                config["loggers"][key]["handlers"].append(handler_name)
+    # Logger level is set to PROFILING so all messages reach handlers
+    # each handler filters independently
+    logger.setLevel(PROFILING)
 
-    logging_config = {
-        "version": 1,
-        "disable_existing_loggers": True,
-        "formatters": {
-            "standard": {
-                "format": "%(asctime)s :: %(levelname)s ::  %(message)s"
-            },
-            "workers": {
-                "format": (
-                    "%(asctime)s :: %(levelname)s "
-                    + ":: %(thread)d :: %(process)d :: %(message)s"
-                )
-            },
-        },
-        "handlers": {
-            "stdout": {
-                "level": numeric_level,
-                "formatter": "standard",
-                "class": "logging.StreamHandler",
-                "stream": "ext://sys.stdout",
-                "filters": ["no_profiling", "no_shareloc"],
-            },
-            "warning_counter": {
-                "level": "WARNING",
-                "class": "cars.core.cars_logging.WarningCounterHandler",
-            },
-        },
-        "filters": {
-            "no_profiling": {"()": ProfilingFilter},
-            "no_shareloc": {"()": SharelocFilter},
-        },
-        "loggers": {
-            "": {  # root logger
-                "handlers": [],
-                "level": min(numeric_level, PROFILING),
-                "propagate": False,
-            },
-            "cars": {
-                "handlers": [],
-                "level": min(numeric_level, PROFILING),
-                "propagate": False,
-            },
-            "__main__": {  # if __name__ == '__main__'
-                "handlers": [],
-                "level": min(numeric_level, PROFILING),
-                "propagate": False,
-            },
-        },
-    }
+    standard_formatter = logging.Formatter(
+        "%(asctime)s :: %(levelname)s :: %(message)s"
+    )
 
-    # add global log file
+    # stdout handler: respects the user-selected level
+    if use_stdout:
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setLevel(numeric_level)
+        stdout_handler.setFormatter(standard_formatter)
+        stdout_handler.addFilter(ProfilingFilter())
+        stdout_handler.addFilter(SharelocFilter())
+        logger.addHandler(stdout_handler)
+
+    # warning counter handler
+    warningcounter_handler = WarningCounterHandler()
+    warningcounter_handler.setLevel(logging.WARNING)
+    logger.addHandler(warningcounter_handler)
+
     if global_log_file is not None:
+        # global log file handler: at least DEBUG
         os.makedirs(os.path.dirname(global_log_file), exist_ok=True)
+        global_log_file_handler = logging.FileHandler(global_log_file, mode="a")
+        global_log_file_handler.setLevel(logging.DEBUG)
+        global_log_file_handler.setFormatter(standard_formatter)
+        global_log_file_handler.addFilter(ProfilingFilter())
+        global_log_file_handler.addFilter(SharelocFilter())
+        logger.addHandler(global_log_file_handler)
 
-        handler_global_main = "file_global_main"
-        logging_config["handlers"][handler_global_main] = {
-            "class": "logging.FileHandler",
-            "filename": global_log_file,
-            "level": min(numeric_level, logging.INFO),
-            "mode": "a",
-            "formatter": "standard",
-            "filters": ["no_profiling", "no_shareloc"],
-        }
-        add_handler_name(logging_config, handler_global_main)
 
-    # add file formaters:
-    if out_dir is not None:
-        log_file = os.path.join(
-            out_dir,
-            "{}_{}.log".format(
-                datetime.now().strftime("%y-%m-%d_%Hh%Mm"), pipeline
-            ),
-        )
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        handler_main = "file_main"
-        logging_config["handlers"][handler_main] = {
-            "class": "logging.FileHandler",
-            "filename": log_file,
-            "level": min(numeric_level, logging.INFO),
-            "mode": "a",
-            "formatter": "standard",
-            "filters": ["no_profiling", "no_shareloc"],
-        }
-        add_handler_name(logging_config, handler_main)
+def setup_logging_pipeline(
+    loglevel="INFO",
+    out_dir=None,
+    pipeline="",
+):
+    """
+    Setup pipeline-specific logging configuration.
+    Creates a log file for each pipeline step.
+    Removes any previous pipeline-specific log handlers.
 
-        # profiling for main
-        profiling_dir = os.path.join(out_dir, "profiling")
-        if not os.path.exists(profiling_dir):
-            os.makedirs(profiling_dir)
-        profiling_file = os.path.join(profiling_dir, "profiling.log")
-
-        handler_main_profiling = "file_main_profiling"
-        logging_config["handlers"][handler_main_profiling] = {
-            "class": "logging.FileHandler",
-            "filename": profiling_file,
-            "level": PROFILING,
-            "mode": "a",
-            "formatter": "standard",
-        }
-        add_handler_name(logging_config, handler_main_profiling)
-
-    if not in_worker:
-        if use_stdout:
-            add_handler_name(logging_config, "stdout")
-        else:
-            del logging_config["handlers"]["stdout"]
+    :param loglevel: log level (default: "INFO")
+    :param out_dir: output directory for pipeline logs
+    :param pipeline: pipeline name (used in log filename)
+    :return: path to the created log file
+    """
+    if isinstance(loglevel, int):
+        numeric_level = loglevel
     else:
-        # remove stdout as handler
-        del logging_config["handlers"]["stdout"]
+        numeric_level = getattr(logging, loglevel, None)
 
-        # add file handlers
+    if not isinstance(numeric_level, int):
+        raise ValueError("Invalid log level: %s" % loglevel)
 
-        # change level of root logger in workers
-        handler_workers = "file_workers"
-        handler_workers_profiling = "file_workers_profiling"
-        logging_config["loggers"]["profiling_logger"] = {
-            "handlers": [],
-            "level": PROFILING,
-            "propagate": False,
-        }
+    standard_formatter = logging.Formatter(
+        "%(asctime)s :: %(levelname)s :: %(message)s"
+    )
 
-        # sett handlers
-        log_file_workers = os.path.join(
-            log_dir,
-            "workers.log",
-        )
-        os.makedirs(os.path.dirname(log_file_workers), exist_ok=True)
+    if out_dir is None:
+        return None
 
-        logging_config["handlers"][handler_workers] = {
-            "class": "cars.core.cars_logging.WorkerHandler",
-            "filename": log_file_workers,
-            "level": min(numeric_level, logging.INFO),
-            "formatter": "workers",
-            "filters": ["no_shareloc"],
-        }
-        add_handler_name(logging_config, handler_workers)
+    # Create pipeline log file with timestamp
+    log_file = os.path.join(
+        out_dir,
+        "{}_{}.log".format(
+            datetime.now().strftime("%y-%m-%d_%Hh%Mm"), pipeline
+        ),
+    )
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-        # profiling
-        log_file_workers_profiling = os.path.join(
-            log_dir,
-            "profiling.log",
-        )
+    profiling_dir = os.path.join(out_dir, "profiling")
+    os.makedirs(profiling_dir, exist_ok=True)
 
-        logging_config["handlers"][handler_workers_profiling] = {
-            "class": "cars.core.cars_logging.ProfilinglHandler",
-            "filename": log_file_workers_profiling,
-            "level": PROFILING,
-            "formatter": "workers",
-        }
-        add_handler_name(logging_config, handler_workers_profiling)
+    # Remove handlers that were added for pipeline-specific logging
+    # (keeping global and worker handlers)
+    handlers_to_remove = []
+    for handler in logger.handlers:
+        # Skip custom worker handlers
+        if isinstance(handler, (WorkerHandler, ProfilinglHandler)):
+            continue
+        if isinstance(handler, logging.FileHandler):
+            handler_path = os.path.abspath(handler.baseFilename)
+            out_dir_abs = os.path.abspath(out_dir)
+            parent_logs_dir = os.path.dirname(out_dir_abs)
 
-    add_handler_name(logging_config, "warning_counter")
+            # Remove handlers of previous pipeline runs
+            # Keep:
+            # - handlers directly in logs/ (global handler)
+            # - handlers in workers_log/ (worker handlers)
+            if (
+                handler_path.startswith(parent_logs_dir)
+                and "workers_log" not in handler_path
+            ):
+                # Check if handler is in a subdirectory
+                rel_path = os.path.relpath(handler_path, parent_logs_dir)
+                if os.sep in rel_path:  # handler is in a subdirectory
+                    handlers_to_remove.append(handler)
 
-    # Create config
-    logging.config.dictConfig(logging_config)
+    for handler in handlers_to_remove:
+        logger.removeHandler(handler)
+        handler.close()
 
-    if out_dir is not None:
-        return log_file
-    return None
+    # out log file handler: at least DEBUG
+    out_dir_log_file_handler = logging.FileHandler(log_file, mode="a")
+    out_dir_log_file_handler.setLevel(logging.DEBUG)
+    out_dir_log_file_handler.setFormatter(standard_formatter)
+    out_dir_log_file_handler.addFilter(ProfilingFilter())
+    out_dir_log_file_handler.addFilter(SharelocFilter())
+    logger.addHandler(out_dir_log_file_handler)
+
+    # profiling log file handler - only profiling level messages
+    profiling_file = os.path.join(profiling_dir, "profiling.log")
+    profiling_file_handler = logging.FileHandler(profiling_file, mode="a")
+    profiling_file_handler.setLevel(PROFILING)
+    profiling_file_handler.setFormatter(standard_formatter)
+    profiling_file_handler.addFilter(OnlyProfilingFilter())
+    logger.addHandler(profiling_file_handler)
+
+    return log_file
+
+
+def setup_logging_workers(
+    loglevel="INFO",
+    log_dir=None,
+):
+    """
+    Setup worker-specific logging configuration :
+    - profiling.log
+    - workers.log
+
+    :param loglevel: log level (default: "INFO")
+    :param log_dir: directory for worker logs
+    """
+    if log_dir is None:
+        return
+
+    if isinstance(loglevel, int):
+        numeric_level = loglevel
+    else:
+        numeric_level = getattr(logging, loglevel, None)
+
+    if not isinstance(numeric_level, int):
+        raise ValueError("Invalid log level: %s" % loglevel)
+
+    # Set logger level to PROFILING to allow all messages through to handlers
+    logger.setLevel(PROFILING)
+
+    workers_formatter = logging.Formatter(
+        "%(asctime)s :: %(levelname)s :: %(thread)d :: "
+        "%(process)d :: %(message)s"
+    )
+
+    # worker log file handler
+    log_file_workers = os.path.join(
+        log_dir,
+        "workers.log",
+    )
+    os.makedirs(os.path.dirname(log_file_workers), exist_ok=True)
+
+    worker_log_file_handler = WorkerHandler(log_file_workers, mode="a")
+    worker_log_file_handler.setLevel(PROFILING)
+    worker_log_file_handler.setFormatter(workers_formatter)
+    logger.addHandler(worker_log_file_handler)
+
+    # worker profiling log file handler
+    log_file_workers_profiling = os.path.join(
+        log_dir,
+        "profiling.log",
+    )
+    worker_prof_log_file_handler = ProfilinglHandler(
+        log_file_workers_profiling, mode="a"
+    )
+    worker_prof_log_file_handler.setLevel(PROFILING)
+    worker_prof_log_file_handler.setFormatter(workers_formatter)
+    logger.addHandler(worker_prof_log_file_handler)
 
 
 def add_profiling_message(message):
@@ -384,7 +443,7 @@ def add_profiling_message(message):
 
     :param message: logging message
     """
-    logging.log(PROFILING, message)
+    logger.log(PROFILING, message)
 
 
 def wrap_logger(func, log_dir, log_level):
@@ -406,10 +465,10 @@ def wrap_logger(func, log_dir, log_level):
         """
         # init logger
         try:
-            setup_logging(loglevel=log_level, log_dir=log_dir, in_worker=True)
+            setup_logging_workers(loglevel=log_level, log_dir=log_dir)
             res = func(*args, **kwargs)
         except Exception as worker_error:
-            logging.exception(worker_error, exc_info=True)
+            logger.exception(worker_error, exc_info=True)
             raise worker_error
         return res
 
@@ -440,9 +499,9 @@ def logger_func(*args, **kwargs):
         ) from exc
     # init logger
     try:
-        setup_logging(loglevel=log_level, log_dir=log_dir, in_worker=True)
+        setup_logging_workers(loglevel=log_level, log_dir=log_dir)
         res = func(*args, **kwargs)
     except Exception as worker_error:
-        logging.exception(worker_error, exc_info=True)
+        logger.exception(worker_error, exc_info=True)
         raise worker_error
     return res

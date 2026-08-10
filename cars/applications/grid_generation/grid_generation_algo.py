@@ -26,7 +26,6 @@ contains functions used for epipolar grid creation and correction
 # Standard imports
 from __future__ import absolute_import
 
-import logging
 import math
 import os
 
@@ -43,6 +42,7 @@ from cars.applications.triangulation.triangulation_algo import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
+from cars.core.cars_logging import logger
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
@@ -139,7 +139,7 @@ def generate_epipolar_grids(  # pylint: disable=too-many-positional-arguments
         (x-axis size is given with the index 0, y-axis size with index 1)
         - the disparity to altitude ratio as a float
     """
-    logging.debug("Generating epipolar rectification grid ...")
+    logger.debug("Generating epipolar rectification grid ...")
 
     return geometry_plugin.generate_epipolar_grids(
         sensor1,
@@ -237,7 +237,7 @@ def compute_epipolar_grid_min_max(
 
     nb_elems_clipped = len(clipped_matches_min) + len(clipped_matches_max)
     if nb_elems_clipped > 0:
-        logging.debug(
+        logger.debug(
             f"{nb_elems_clipped} points were clipped to the right "
             "image's bounds."
         )
@@ -288,7 +288,7 @@ def compute_epipolar_grid_min_max(
             (pc_max[cst.X].to_numpy(), pc_max[cst.Y].to_numpy()), axis=-1
         )
     else:
-        logging.error("pc min/max error: point cloud is unknown")
+        logger.error("pc min/max error: point cloud is unknown")
 
     return grid_min, grid_max
 

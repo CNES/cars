@@ -23,7 +23,6 @@ cars-extractroi: helper to extract region of interest from image product
 """
 
 import argparse
-import logging
 import os
 
 import numpy as np
@@ -36,6 +35,8 @@ from shareloc.geomodels.rpc_writers import (
     rpc_dict_to_rio_rpcs,
     write_rio_rpc_as_rpb,
 )
+
+from cars.core.cars_logging import logger
 
 
 def is_bbx_in_image(bbx, image_dataset):
@@ -226,7 +227,7 @@ def validate_bounding_box(bbx, image_dataset, rpc_options, external_rpc=None):
             f"({min_x}, {min_y}) and ({max_x}, {max_y})"
         )
         if intersects:
-            logging.error(msg)
+            logger.error(msg)
         else:
             raise ValueError(
                 f"Coordinates must be between "

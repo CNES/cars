@@ -25,8 +25,6 @@ rasterization steps
 """
 # pylint: disable=C0302
 
-# Standard imports
-import logging
 from typing import List, Tuple, Union
 
 # Third party imports
@@ -39,6 +37,9 @@ from cars.applications.dense_matching import dense_matching_wrappers
 # CARS imports
 from cars.core import constants as cst
 from cars.core import projection
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 
 def filter_cloud_with_mask(crop_cloud, crop_terrain_tile_data_msk):
@@ -245,7 +246,7 @@ def get_color_type(clouds):
     if color_types:
         color_type_set = set(color_types)
         if len(color_type_set) > 1:
-            logging.warning("The tiles colors don't have the same type.")
+            logger.warning("The tiles colors don't have the same type.")
         return color_types[0]
 
     return None
@@ -283,7 +284,7 @@ def filter_cloud(
         and cst.POINT_CLOUD_COORD_EPI_GEOM_J in cloud.columns
         and cst.POINT_CLOUD_ID_IM_EPI in cloud.columns
     ):
-        logging.warning(
+        logger.warning(
             "In filter_cloud: the filtered_elt_pos has been activated but "
             "the cloud Datafram has not been build with option with_coords. "
             "The positions cannot be retrieved."
@@ -453,7 +454,7 @@ def depth_map_dataset_to_dataframe(  # noqa: C901
 
         # if no point is found, return Empty cloud
         if terrain_tile_data_msk_pos[0].shape[0] == 0:
-            logging.error("No points found to transform")
+            logger.error("No points found to transform")
             return pd.DataFrame(columns=cloud_indexes), epsg
 
         # get useful data bounding box

@@ -22,7 +22,6 @@
 Contains multiprocessing_profiler class
 """
 
-import logging
 import os
 import threading
 import time
@@ -31,6 +30,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import psutil
+
+from cars.core.cars_logging import logger
 
 # Agg backend for non interactive
 matplotlib.use("Agg")
@@ -148,11 +149,11 @@ class MultiprocessingProfiler:  # pylint: disable=too-few-public-methods
         """
         Save plots
         """
-        logging.debug("Save profiling plots ...")
+        logger.debug("Save profiling plots ...")
         try:
             save_data(self.memory_data, self.file_plot)
         except Exception as exc:
-            logging.debug("unable to save monitoring graph : {}".format(exc))
+            logger.debug("unable to save monitoring graph : {}".format(exc))
 
 
 def clean_thread(thread):
@@ -213,9 +214,7 @@ def save_figure_in_thread(to_fill_dataframe, file_path):
             try:
                 save_data(to_fill_dataframe, file_path)
             except Exception as exc:
-                logging.debug(
-                    "unable to save monitoring graph : {}".format(exc)
-                )
+                logger.debug("unable to save monitoring graph : {}".format(exc))
 
         time.sleep(RAM_PER_WORKER_CHECK_SLEEP_TIME)
 
@@ -276,7 +275,7 @@ def check_pool_memory_usage(
 
                 # Check memory to inform user
                 if memory_usage_mb > max_ram_per_worker:
-                    logging.debug(
+                    logger.debug(
                         "Process {} is using {} Mb > "
                         "max_ram_per_worker = {} Mb".format(
                             pid, memory_usage_mb, max_ram_per_worker

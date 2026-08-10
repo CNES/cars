@@ -21,12 +21,12 @@
 """
 This module contains the abstract dem_generation application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ScalingApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("dem_generation")
@@ -53,7 +53,7 @@ class DemGeneration(ScalingApplicationTemplate, metaclass=ABCMeta):
 
         dem_generation_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "MntGeneration method not specified, default"
                 " {} is used".format(dem_generation_method)
             )
@@ -61,7 +61,7 @@ class DemGeneration(ScalingApplicationTemplate, metaclass=ABCMeta):
             dem_generation_method = conf["method"]
 
         if dem_generation_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No dem_generation application named {} registered".format(
                     dem_generation_method
                 )
@@ -72,7 +72,7 @@ class DemGeneration(ScalingApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The DemGeneration {} application will be used".format(
                 dem_generation_method
             )

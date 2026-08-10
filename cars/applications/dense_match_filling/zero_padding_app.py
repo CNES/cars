@@ -25,7 +25,6 @@ this module contains the fill_disp application class.
 
 # Standard imports
 import copy
-import logging
 
 # Third party imports
 from json_checker import Checker, Or
@@ -42,6 +41,7 @@ from cars.applications.dense_match_filling import (
     fill_disp_wrappers as fd_wrappers,
 )
 from cars.core import constants as cst
+from cars.core.cars_logging import logger
 from cars.data_structures import cars_dataset
 
 
@@ -164,7 +164,7 @@ class ZerosPadding(
         res = None
 
         if not self.fill_classification:
-            logging.debug("Disparity holes filling was not activated")
+            logger.debug("Disparity holes filling was not activated")
             res = epipolar_disparity_map
 
         else:
@@ -206,7 +206,7 @@ class ZerosPadding(
                     }
                 }
                 self.orchestrator.update_out_info(updating_dict)
-                logging.debug(
+                logger.debug(
                     "Fill missing disparities with zeros values"
                     ": number tiles: {}".format(
                         epipolar_disparity_map.shape[1]
@@ -246,7 +246,7 @@ class ZerosPadding(
                 res = new_epipolar_disparity_map
 
             else:
-                logging.error(
+                logger.error(
                     "FillDisp application doesn't support "
                     "this input data format"
                 )

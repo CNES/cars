@@ -33,7 +33,6 @@ CARS surface modeling pipeline class file
 from __future__ import print_function
 
 import copy
-import logging
 import os
 import shutil
 from collections import OrderedDict
@@ -53,6 +52,7 @@ from cars.applications.dem_generation import (
     dem_generation_wrappers as dem_wrappers,
 )
 from cars.core import preprocessing, projection, roi_tools, tiling
+from cars.core.cars_logging import logger
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands
 from cars.core.progress.progress import ProgressTree
@@ -695,14 +695,14 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     "The application {} was not recognized. Its configuration"
                     "will be ignored."
                 ).format(key)
-                logging.warning(warn_msg)
+                logger.warning(warn_msg)
 
         if not (self.compute_depth_map or self.save_output_dsm):
             log_msg = (
                 "No product level was given. CARS has not detected any "
                 "data you wish to save. No computation will be done."
             )
-            logging.debug(log_msg)
+            logger.debug(log_msg)
         else:
             log_msg = (
                 "No product level was given. CARS has detected that you "
@@ -714,7 +714,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     )
                 )
             )
-            logging.warning(log_msg)
+            logger.warning(log_msg)
 
     @staticmethod
     def check_inputs(conf, config_dir=None):
@@ -792,7 +792,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     f"No {app_key} application used in the "
                     + "default Cars pipeline"
                 )
-                logging.error(msg)
+                logger.error(msg)
                 raise NameError(msg)
 
         # Initialize used config
@@ -963,7 +963,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     f"The key {app_key} is defined twice in the input "
                     "configuration."
                 )
-                logging.error(msg)
+                logger.error(msg)
                 raise NameError(msg)
 
             if app_key[27:] == ".1":
@@ -984,7 +984,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             f" - {k}={a.used_method}"
             for k, a in self.pc_outlier_removal_apps.items()
         )
-        logging.debug(
+        logger.debug(
             "{} point cloud outlier removal apps registered:\n{}".format(
                 len(self.pc_outlier_removal_apps), methods_str
             )
@@ -1027,7 +1027,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         filling_classif_values = []
 
         if sens_cst.FILLING not in inputs or inputs[sens_cst.FILLING] is None:
-            logging.debug("No filling in input configuration")
+            logger.debug("No filling in input configuration")
             return None
 
         filling_classif_values = []
@@ -1185,7 +1185,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.list_sensor_pairs = sensor_inputs.generate_pairs(
             self.used_conf[INPUT]
         )
-        logging.debug(
+        logger.debug(
             "Received {} stereo pairs configurations".format(
                 len(self.list_sensor_pairs)
             )
@@ -1455,7 +1455,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         )
                     )
                 else:
-                    logging.warning(
+                    logger.warning(
                         "Grid correction is not applied because number of "
                         "matches found ({}) is less than minimum number of "
                         "matches required for grid correction ({})".format(
@@ -1490,7 +1490,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     disp_max = np.percentile(
                         sift_disp, 100 - disp_bounds_params["percentile"]
                     )
-                    logging.debug(
+                    logger.debug(
                         "Global disparity interval without margin : "
                         f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                     )
@@ -1500,7 +1500,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     disp_max += (
                         disp_bounds_params["lower_margin"] / disp_to_alt_ratio
                     )
-                    logging.debug(
+                    logger.debug(
                         "Global disparity interval with margin : "
                         f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                     )
@@ -1511,14 +1511,14 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     disp_max = (
                         -self.elevation_delta_lower_bound / disp_to_alt_ratio
                     )
-                    logging.debug(
+                    logger.debug(
                         "Global disparity interval : "
                         f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                     )
             else:
                 disp_min = -self.elevation_delta_upper_bound / disp_to_alt_ratio
                 disp_max = -self.elevation_delta_lower_bound / disp_to_alt_ratio
-                logging.debug(
+                logger.debug(
                     "Global disparity interval : "
                     f"[{disp_min:.2f} pix, {disp_max:.2f} pix]"
                 )
@@ -2439,7 +2439,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             try:
                 shutil.move(filling_file_name_inter, filling_file_name_out)
             except FileNotFoundError:
-                logging.warning("Filling file not found")
+                logger.warning("Filling file not found")
 
         invalidity_mask_file = os.path.join(
             os.path.dirname(dsm_file_name), "invalidity_mask.tif"
@@ -2604,7 +2604,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         Merge invalidity mask bands to get mono band in output
         """
         if not os.path.exists(invalidity_mask_path):
-            logging.warning("no invalidity mask to merge")
+            logger.warning("no invalidity mask to merge")
             return False
         with rasterio.open(dsm_file) as in_dsm:
             dsm_msk = in_dsm.read_masks(1)

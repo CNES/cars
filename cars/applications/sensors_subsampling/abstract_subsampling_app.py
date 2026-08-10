@@ -21,12 +21,12 @@
 """
 this module contains the abstract matching application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("sensors_subsampling")
@@ -50,7 +50,7 @@ class SensorsSubsampling(ApplicationTemplate, metaclass=ABCMeta):
 
         subsampling_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "subsampling method not specified, default "
                 " {} is used".format(subsampling_method)
             )
@@ -58,7 +58,7 @@ class SensorsSubsampling(ApplicationTemplate, metaclass=ABCMeta):
             subsampling_method = conf.get("method", cls.default_application)
 
         if subsampling_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No subsampling application named {} registered".format(
                     subsampling_method
                 )
@@ -69,7 +69,7 @@ class SensorsSubsampling(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The subsampling({}) application will be used".format(
                 subsampling_method
             )

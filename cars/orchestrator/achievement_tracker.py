@@ -22,10 +22,9 @@
 this module contains the achievement tracker
 """
 
-import logging
-
 import numpy as np
 
+from cars.core.cars_logging import logger
 from cars.orchestrator.registry.abstract_registry import (
     AbstractCarsDatasetRegistry,
 )
@@ -71,7 +70,7 @@ class AchievementTracker:
         try:
             self._add_tile(tile)
         except RuntimeError:
-            logging.error("Error getting id in Achiement Tracker")
+            logger.error("Error getting id in Achiement Tracker")
 
     def _add_tile(self, tile):
         """
@@ -96,7 +95,7 @@ class AchievementTracker:
             tile
         )
         if None in (row, col):
-            logging.error("None in row, col in achievement tracker")
+            logger.error("None in row, col in achievement tracker")
         else:
             # update
             self.achievement[index][row, col] = 1

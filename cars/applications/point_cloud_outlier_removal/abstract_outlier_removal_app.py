@@ -22,7 +22,6 @@
 this module contains the abstract PointsCloudOutlierRemoval application class.
 """
 
-import logging
 import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
@@ -36,6 +35,7 @@ from cars.applications.point_cloud_outlier_removal import (
     outlier_removal_constants as pr_cst,
 )
 from cars.core import constants as cst
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -63,7 +63,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
 
         points_removal_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "Points removal method not specified, "
                 "default {} is used".format(points_removal_method)
             )
@@ -71,7 +71,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
             points_removal_method = conf.get("method", cls.default_application)
 
         if points_removal_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No Points removal application named {} registered".format(
                     points_removal_method
                 )
@@ -82,7 +82,7 @@ class PointCloudOutlierRemoval(ScalingApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The PointCloudOutlierRemoval({}) application"
             " will be used".format(points_removal_method)
         )

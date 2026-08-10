@@ -28,16 +28,17 @@ user main argparse wrapper to CARS 3D pipelines submodules
 # pylint: disable=import-outside-toplevel
 import argparse
 import json
-import logging
 import os
 import sys
 import warnings
+from datetime import datetime
 
 import yaml
 
 # CARS imports
 from cars import __version__
 from cars.core import cars_logging
+from cars.core.cars_logging import logger
 from cars.core.progress.progress import ProgressTree
 from cars.orchestrator.cluster import log_wrapper
 
@@ -164,19 +165,26 @@ def main_cli(args, dry_run=False):  # noqa: C901
         # When using human, suppress stdout
         use_stdout = logtype != "human"
 
-        log_file = cars_logging.setup_logging(
+        # Create global log file
+        global_log_file = os.path.join(
+            log_dir,
+            "{}_{}.log".format(
+                datetime.now().strftime("%y-%m-%d_%Hh%Mm"), pipeline_name
+            ),
+        )
+
+        cars_logging.setup_logging_global(
             loglevel,
-            out_dir=log_dir,
-            pipeline=pipeline_name,
+            global_log_file=global_log_file,
             use_stdout=use_stdout,
         )
-        ProgressTree().update_log_file_path(log_file)
+        ProgressTree().update_log_file_path(global_log_file)
 
         # Generate pipeline and check conf
-        logging.info("Check configuration...")
+        logger.info("Check configuration...")
         used_pipeline = Pipeline(pipeline_name, config, config_dir)
         ProgressTree().update_empty_status_text("Starting pipeline")
-        logging.info("CARS pipeline is started.")
+        logger.info("CARS pipeline is started.")
         if not dry_run:
             # run pipeline
             args.log_dir = log_dir
@@ -191,15 +199,13 @@ def main_cli(args, dry_run=False):  # noqa: C901
                 clean_worker_logs=True,
             )
 
-        logging.info("CARS has successfully completed the pipeline.")
+        logger.info("CARS has successfully completed the pipeline.")
 
         ProgressTree().notify_success(out_dir)
 
     except BaseException as exc:
         # Catch all exceptions, show debug traceback and exit
-        logging.exception(
-            "CARS terminated with following error: {}".format(exc)
-        )
+        logger.exception("CARS terminated with following error: {}".format(exc))
         ProgressTree().notify_crash(exc)
         sys.exit(1)
     finally:

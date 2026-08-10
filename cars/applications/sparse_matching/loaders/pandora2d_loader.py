@@ -23,7 +23,6 @@ CARS pandora2d loaders file
 """
 
 import json
-import logging
 import os
 
 import numpy as np
@@ -44,6 +43,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
     get_config_input_custom_cars,
     overload_pandora_conf_with_confidence,
 )
+from cars.core.cars_logging import logger
 
 
 class Pandora2DLoader:
@@ -98,7 +98,7 @@ class Pandora2DLoader:
             try:
                 filename = config_map[method_name]
             except KeyError as err:
-                logging.error(
+                logger.error(
                     "No method named {} in pandora2d loaders".format(
                         method_name
                     )

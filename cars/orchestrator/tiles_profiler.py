@@ -23,12 +23,13 @@ this module contains the tile profiler class
 """
 
 import argparse
-import logging
 import os
 import pickle
 
 import numpy as np
 import xarray as xr
+
+from cars.core.cars_logging import logger
 
 COMPUTED = [0, 255, 0]
 NONE_TILE = [255, 0, 0]
@@ -64,7 +65,7 @@ class TileProfiler:  # pylint: disable=too-few-public-methods
         try:
             self._add_tile(tile_object)
         except Exception:
-            logging.debug("Error in TileProfiler.add_tile ")
+            logger.debug("Error in TileProfiler.add_tile ")
 
     def _add_tile(self, tile_object):
         """
@@ -149,7 +150,7 @@ def save_pickle(dataset, file_name):
             with open(file_name, "wb") as desc:  # open a text file
                 pickle.dump(dataset, desc)
     except FileNotFoundError:
-        logging.error("{} could not be opened".format(file_name))
+        logger.error("{} could not be opened".format(file_name))
 
 
 def load_pickle(file_name):
@@ -194,7 +195,7 @@ def main():
 
     except ModuleNotFoundError as exc:
         message = "dash / plotly not found, install cars with dev packages"
-        logging.error(message)
+        logger.error(message)
         raise RuntimeError(message) from exc
 
     app = Dash(__name__, title="CARS tiles progress")

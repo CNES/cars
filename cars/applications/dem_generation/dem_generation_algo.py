@@ -23,7 +23,6 @@ this module contains tools for the dem generation
 """
 
 import contextlib
-import logging
 
 # Standard imports
 import os
@@ -31,6 +30,8 @@ import os
 # Third party imports
 import yaml
 from bulldozer.pipeline.bulldozer_pipeline import dsm_to_dtm
+
+from cars.core.cars_logging import logger, mute_external_logging
 
 
 def launch_bulldozer(
@@ -86,19 +87,21 @@ def launch_bulldozer(
                 with (
                     contextlib.redirect_stdout(devnull),
                     contextlib.redirect_stderr(devnull),
+                    mute_external_logging(),
                 ):
                     dsm_to_dtm(bull_conf_path)
         except Exception:
-            logging.debug("Bulldozer failed on its first execution. Retrying")
+            logger.debug("Bulldozer failed on its first execution. Retrying")
             # suppress prints in bulldozer by redirecting stdout&stderr
             with open(os.devnull, "w", encoding="utf8") as devnull:
                 with (
                     contextlib.redirect_stdout(devnull),
                     contextlib.redirect_stderr(devnull),
+                    mute_external_logging(),
                 ):
                     dsm_to_dtm(bull_conf_path)
     except Exception:
-        logging.error(
+        logger.error(
             "Bulldozer failed on its second execution."
             + " The DSM could not be smoothed."
         )

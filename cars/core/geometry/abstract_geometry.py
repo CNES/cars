@@ -25,7 +25,6 @@
 this module contains the abstract geometry class to use in the
 geometry plugins
 """
-import logging
 import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Union
@@ -48,6 +47,7 @@ from shareloc.geofunctions.rectification_grid import RectificationGrid
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core import inputs, outputs, projection
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -90,7 +90,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                 raise RuntimeError("Not a supported type")
 
             if geometry_plugin not in cls.available_plugins:
-                logging.error(
+                logger.error(
                     "No geometry plugin named {} registered".format(
                         geometry_plugin
                     )
@@ -101,7 +101,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                     )
                 )
 
-            logging.debug(
+            logger.debug(
                 "The AbstractGeometry {} plugin will be used".format(
                     geometry_plugin
                 )
@@ -164,7 +164,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
 
                 self.default_alt = self.get_dem_median_value()
                 self.elevation = self.default_alt
-                logging.debug(
+                logger.debug(
                     "Median value of DEM ({}) will be used as "
                     "default_alt".format(self.default_alt)
                 )
@@ -302,12 +302,12 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                 top=src_transform.f,
             )
 
-        logging.debug(
+        logger.debug(
             "DEM bounds : {}, {}, {}, {}".format(
                 bounds.left, bounds.top, bounds.right, bounds.bottom
             )
         )
-        logging.debug(
+        logger.debug(
             "ROI bounds : {}, {}, {}, {}".format(
                 self.dem_roi[0],
                 self.dem_roi[1],
@@ -574,7 +574,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
 
         elif matches_type == cst.DISP_MODE:
             if matches_msk is None:
-                logging.error("No disparity mask given in input")
+                logger.error("No disparity mask given in input")
                 raise RuntimeError("No disparity mask given in input")
 
             if ul_matches_shift is None:
@@ -754,7 +754,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         valid = np.logical_and(valid_rows, valid_cols)
 
         if np.sum(~valid) > 0:
-            logging.warning(
+            logger.warning(
                 "{}/{} points are outside of epipolar grid".format(
                     np.sum(~valid), valid.size
                 )
@@ -881,9 +881,9 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
 
         current_out_dir = None
         if save_matches:
-            logging.debug("Writing matches file")
+            logger.debug("Writing matches file")
             if pair_folder is None:
-                logging.error("Pair folder not provided")
+                logger.error("Pair folder not provided")
             else:
                 safe_makedirs(pair_folder)
                 current_out_dir = pair_folder
@@ -951,12 +951,12 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
                 z_coord,
             )
         else:
-            logging.warning("Direct loc function launched on empty list")
+            logger.warning("Direct loc function launched on empty list")
             return []
         if z_coord is None:
             status = np.any(np.isnan(ground_points), axis=0)
             if sum(status) > 0:
-                logging.warning(
+                logger.warning(
                     "{} errors have been detected on direct "
                     "loc and will be re-launched".format(sum(status))
                 )
@@ -1024,13 +1024,13 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
             )
             image_points = np.array(image_points)
         else:
-            logging.warning("Inverse loc function launched on empty list")
+            logger.warning("Inverse loc function launched on empty list")
             return [], [], []
         if z_coord is None:
             image_points = np.array(image_points)
             status = np.any(np.isnan(image_points), axis=0)
             if sum(status) > 0:
-                logging.warning(
+                logger.warning(
                     "{} errors have been detected on inverse "
                     "loc and will be re-launched".format(sum(status))
                 )

@@ -23,8 +23,6 @@
 this module contains the LineOfSightIntersection application class.
 """
 
-# Standard imports
-import logging
 import os
 from typing import Dict, Tuple
 
@@ -51,6 +49,9 @@ from cars.applications.triangulation.abstract_triangulation_app import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
+
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -816,7 +817,7 @@ class LineOfSightIntersection(
             self.ref_left_img = conf_left_img
         else:
             if self.snap_to_img1 and self.ref_left_img != conf_left_img:
-                logging.warning(
+                logger.warning(
                     "snap_to_left_image mode is used but inputs "
                     "have different images as their "
                     "left image in pair. This may result in "
@@ -846,7 +847,7 @@ class LineOfSightIntersection(
         if self.snap_to_img1:
             grid_right = uncorrected_grid_right
             if grid_right is None:
-                logging.error(
+                logger.error(
                     "Uncorrected grid was not given in order "
                     "to snap it to img1"
                 )
@@ -1116,7 +1117,7 @@ def triangulation_wrapper(  # noqa: C901 function is too complex
 
         # Triangulate
         if not isinstance(matches_dataset, xr.Dataset):
-            logging.error("Disp ref not xarray Dataset")
+            logger.error("Disp ref not xarray Dataset")
             raise TypeError("Disp ref not xarray Dataset")
 
         # Triangulate epipolar dense disparities

@@ -21,12 +21,12 @@
 """
 this module contains the abstract dsm merging application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("dsm_merging")
@@ -51,7 +51,7 @@ class DsmMerging(ApplicationTemplate, metaclass=ABCMeta):
 
         dsm_merging_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "dsm_merging method not specified, default"
                 " {} is used".format(dsm_merging_method)
             )
@@ -59,7 +59,7 @@ class DsmMerging(ApplicationTemplate, metaclass=ABCMeta):
             dsm_merging_method = conf["method"]
 
         if dsm_merging_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No dsm_merging application named {} registered".format(
                     dsm_merging_method
                 )
@@ -70,7 +70,7 @@ class DsmMerging(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The DsmMerging {} application will be used".format(
                 dsm_merging_method
             )

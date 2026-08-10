@@ -25,9 +25,6 @@ this module contains the epipolar grid correction application class.
 from __future__ import absolute_import
 
 import collections
-
-# Standard imports
-import logging
 import os
 
 import numpy as np
@@ -38,6 +35,9 @@ from scipy.interpolate import griddata
 from shareloc import proj_utils
 
 import cars.orchestrator.orchestrator as ocht
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 # CARS imports
 # fmt: off
@@ -307,7 +307,7 @@ def get_cropped_disparity_map_tiles(disparity_map, grid_left, window):
     indexes = np.argwhere(mask)
 
     if indexes.size == 0:
-        logging.warning(
+        logger.warning(
             "No epipolar pixel found for sensor window {}".format(window)
         )
         return None

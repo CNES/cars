@@ -24,9 +24,6 @@ this module contains the small_components point removal application class.
 
 
 import copy
-
-# Standard imports
-import logging
 import os
 
 # Third party imports
@@ -50,6 +47,9 @@ from cars.applications.triangulation.triangulation_wrappers import (
 )
 from cars.core import constants as cst
 from cars.core import projection
+
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.data_structures import cars_dataset
 
 
@@ -190,7 +190,7 @@ class SmallComponents(
             np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
         )
 
-        logging.debug(
+        logger.debug(
             "Estimated optimal tile size for small"
             "component removal: {} meters".format(tile_size)
         )
@@ -443,7 +443,7 @@ def epipolar_small_component_removal_wrapper(
     # Check if can be used to filter
     spatial_ref = CRS.from_epsg(cloud_epsg)
     if spatial_ref.is_geographic:
-        logging.debug(
+        logger.debug(
             "The points cloud to filter is not in a cartographic system. "
             "The filter's default parameters might not be adapted "
             "to this referential. Please, convert the points "

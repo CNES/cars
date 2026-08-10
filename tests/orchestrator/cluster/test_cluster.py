@@ -107,7 +107,7 @@ def pipeline_step_by_step(conf):
         # Create cluster
         log_dir = os.path.join(directory, "logs")
         os.makedirs(log_dir, exist_ok=True)
-        cars_logging.setup_logging(
+        cars_logging.setup_logging_pipeline(
             logging.WARNING,
             out_dir=log_dir,
             pipeline="unit_pipeline",
@@ -258,7 +258,7 @@ def test_tasks_pipeline_dump_xarray(conf):
         # Create cluster
         log_dir = os.path.join(directory, "logs")
         os.makedirs(log_dir, exist_ok=True)
-        cars_logging.setup_logging(
+        cars_logging.setup_logging_pipeline(
             logging.WARNING,
             out_dir=log_dir,
             pipeline="unit_pipeline",
@@ -320,7 +320,7 @@ def test_factorize_tasks_mp(conf):
         # Create cluster
         log_dir = os.path.join(directory, "logs")
         os.makedirs(log_dir, exist_ok=True)
-        cars_logging.setup_logging(
+        cars_logging.setup_logging_pipeline(
             logging.WARNING,
             out_dir=log_dir,
             pipeline="unit_pipeline",

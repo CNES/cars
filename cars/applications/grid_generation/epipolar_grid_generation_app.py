@@ -22,8 +22,6 @@
 this module contains the epipolar grid generation application class.
 """
 
-# Standard imports
-import logging
 import os
 
 import numpy as np
@@ -43,6 +41,9 @@ from cars.applications.grid_generation.abstract_grid_generation_app import (
     GridGeneration,
 )
 from cars.core import projection
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 # CARS imports
 from cars.core.utils import safe_makedirs
@@ -198,7 +199,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
                 sensor1, sensor2, geomodel1, geomodel2, geometry_plugin
             )
 
-            logging.debug(
+            logger.debug(
                 "Left satellite acquisition angles: "
                 "Azimuth angle: {:.1f} degrees, "
                 "Elevation angle: {:.1f} degrees".format(
@@ -206,7 +207,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
                 )
             )
 
-            logging.debug(
+            logger.debug(
                 "Right satellite acquisition angles: "
                 "Azimuth angle: {:.1f} degrees, "
                 "Elevation angle: {:.1f} degrees".format(
@@ -214,12 +215,12 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
                 )
             )
 
-            logging.debug(
+            logger.debug(
                 "Stereo satellite convergence angle from ground: "
                 "{:.1f} degrees".format(convergence_angle)
             )
         except Exception as exc:
-            logging.error(
+            logger.error(
                 "Error in Angles information retrieval: {}".format(exc)
             )
             (
@@ -324,12 +325,12 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         }
         self.orchestrator.update_out_info(updating_dict)
 
-        logging.debug(
+        logger.debug(
             "Size of epipolar images: {}x{} pixels".format(
                 epipolar_size[0], epipolar_size[1]
             )
         )
-        logging.debug(
+        logger.debug(
             "Disparity to altitude factor for pixel at 1/{} "
             "sampling : {} m/pixel".format(
                 resolution, np.round(disp_to_alt_ratio, 2)

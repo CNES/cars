@@ -27,14 +27,15 @@ Beware: argument-differ is activated in pylintrc for run parameters different
 in sub application classes
 """
 
-# Standard imports
-import logging
 import os
 import pprint
 from abc import ABCMeta, abstractmethod
 
 # CARS imports
 from cars.conf.input_parameters import ConfigType
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 
 class ApplicationTemplate(metaclass=ABCMeta):
@@ -63,7 +64,7 @@ class ApplicationTemplate(metaclass=ABCMeta):
         try:
             self.used_config = self.check_conf(conf)
         except Exception:
-            logging.error(
+            logger.error(
                 "The {} application checking has been failed!".format(
                     self.__class__.__bases__[0].__name__
                 )
@@ -93,7 +94,7 @@ class ApplicationTemplate(metaclass=ABCMeta):
         try:
             pretty_printer.pprint(self.used_config)
         except Exception:
-            logging.error("self.used_config not filled by application")
+            logger.error("self.used_config not filled by application")
 
     def get_conf(self):
         """

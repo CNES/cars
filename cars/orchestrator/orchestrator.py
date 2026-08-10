@@ -25,7 +25,6 @@ this module contains the orchestrator class
 # pylint: disable=C0302
 
 import collections
-import logging
 
 # Standard imports
 import os
@@ -41,6 +40,7 @@ import pandas
 import xarray
 
 from cars.core import constants as cst
+from cars.core.cars_logging import logger
 
 # CARS imports
 from cars.core.progress.progress import ProgressTree
@@ -109,7 +109,7 @@ class Orchestrator:
         # overload orchestrator_conf
         if orchestrator_conf is None:
             if orchestrator_conf is None:
-                logging.debug(
+                logger.debug(
                     "No orchestrator configuration given: "
                     " multiprocessing mode is used"
                 )
@@ -415,7 +415,7 @@ class Orchestrator:
             self.save_index()
 
             # run compute and save files
-            logging.debug("Compute delayed ...")
+            logger.debug("Compute delayed ...")
             # Flatten to list
             if only_remaining_delayed is None:
                 delayed_objects = flatten_object(
@@ -428,15 +428,15 @@ class Orchestrator:
                 delayed_objects = only_remaining_delayed
 
             if len(delayed_objects) == 0:
-                logging.debug("No Object to compute")
+                logger.debug("No Object to compute")
                 return False
 
             # Compute delayed
             future_objects = self.cluster.start_tasks(delayed_objects)
 
             # Save objects when they are computed
-            logging.debug("Wait for futures results ...")
-            logging.info(
+            logger.debug("Wait for futures results ...")
+            logger.info(
                 "Data list to process: [ {} ] ...".format(
                     " , ".join(list(set(self.cars_ds_names_info)))
                 )
@@ -461,7 +461,7 @@ class Orchestrator:
                     pass
 
             # Log initial message
-            logging.debug(
+            logger.debug(
                 "Processing {} tiles: [ {} ] ...".format(
                     total_tiles, " , ".join(list(set(self.cars_ds_names_info)))
                 )
@@ -509,10 +509,10 @@ class Orchestrator:
                         progress_tree.notify(self.target_task_id, "progressed")
 
             except TimeoutError:
-                logging.error("TimeOut")
+                logger.error("TimeOut")
 
             if interval_was_cropped:
-                logging.warning(
+                logger.warning(
                     "Disparity range was cropped in DenseMatching, "
                     "due to a lack of available memory for estimated"
                     " disparity range"
@@ -531,19 +531,19 @@ class Orchestrator:
 
             if len(remaining_tiles) > 0:
                 # Some tiles have not been computed
-                logging.debug(
+                logger.debug(
                     "{} tiles have not been computed".format(
                         len(remaining_tiles)
                     )
                 )
                 if only_remaining_delayed is None:
                     # First try
-                    logging.debug("Retry failed tasks ...")
+                    logger.debug("Retry failed tasks ...")
                     self.reset_cluster()
                     self.compute_futures(only_remaining_delayed=remaining_tiles)
                 else:
                     # Second try
-                    logging.error("Pipeline will pursue without failed tiles")
+                    logger.error("Pipeline will pursue without failed tiles")
                     if (
                         progress_tree is not None
                         and self.target_task_id is not None
@@ -563,12 +563,12 @@ class Orchestrator:
                 progress_tree.notify(self.target_task_id, "completed")
 
             if nb_tiles_computed == 0:
-                logging.warning(
+                logger.warning(
                     "Result have not been saved because all tiles are None"
                 )
 
             # close files
-            logging.debug("Close files ...")
+            logger.debug("Close files ...")
             self.cars_ds_savers_registry.cleanup()
 
             return interval_was_cropped
@@ -657,7 +657,7 @@ class Orchestrator:
         """
 
         # close cluster
-        logging.debug("Close cluster ...")
+        logger.debug("Close cluster ...")
         if self.launch_worker:
             self.cluster.cleanup()
 
@@ -803,7 +803,7 @@ def check_ram_usage():
         available_ram_mb = get_available_ram()
 
         if available_ram_mb < RAM_THRESHOLD_MB:
-            logging.warning(
+            logger.warning(
                 "RAM available < {} Mb, available ram: {} Mb."
                 " Freeze might ocure".format(
                     RAM_THRESHOLD_MB, int(available_ram_mb)

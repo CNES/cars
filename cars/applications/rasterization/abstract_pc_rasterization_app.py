@@ -21,12 +21,12 @@
 """
 this module contains the abstract PointCloudRasterization application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("point_cloud_rasterization")
@@ -50,7 +50,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
 
         rasterization_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "Rasterisation method not specified, "
                 "default {} is used".format(rasterization_method)
             )
@@ -58,7 +58,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
             rasterization_method = conf.get("method", cls.default_application)
 
         if rasterization_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No rasterization application named {} registered".format(
                     rasterization_method
                 )
@@ -69,7 +69,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
                 )
             )
 
-        logging.debug(
+        logger.debug(
             "The PointCloudRasterization({}) application will be used".format(
                 rasterization_method
             )

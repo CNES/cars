@@ -21,12 +21,12 @@
 """
 this module contains the abstract epipolar_to_sensor_matching application class.
 """
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("epipolar_to_sensor_matching")
@@ -51,7 +51,7 @@ class EpipolarToSensorMatching(ApplicationTemplate, metaclass=ABCMeta):
         epi_to_sensor_matches_method = cls.default_application
 
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "EpipolarToSensorMatching method not specified, default "
                 " {} is used".format(epi_to_sensor_matches_method)
             )
@@ -61,7 +61,7 @@ class EpipolarToSensorMatching(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         if epi_to_sensor_matches_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No EpipolarToSensorMatching application named"
                 " {} registered".format(epi_to_sensor_matches_method)
             )
@@ -70,7 +70,7 @@ class EpipolarToSensorMatching(ApplicationTemplate, metaclass=ABCMeta):
                 "{} registered".format(epi_to_sensor_matches_method)
             )
 
-        logging.debug(
+        logger.debug(
             "The EpipolarToSensorMatching({}) application "
             "will be used".format(epi_to_sensor_matches_method)
         )

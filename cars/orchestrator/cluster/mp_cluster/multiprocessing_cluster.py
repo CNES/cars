@@ -25,8 +25,6 @@ Contains abstract function for multiprocessing Cluster
 
 import copy
 import itertools
-import logging
-import logging.handlers
 
 # Standard imports
 import multiprocessing as mp
@@ -46,6 +44,7 @@ from queue import Queue
 from json_checker import And, Checker, Or
 
 from cars.core import cars_logging
+from cars.core.cars_logging import logger
 from cars.data_structures.cars_dataset import CarsDataset
 
 # CARS imports
@@ -107,7 +106,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 " 'mp' keyword has been deprecated, use "
                 "'multiprocessing' instead"
             )
-            logging.warning(message)
+            logger.warning(message)
 
         self.out_dir = out_dir
         self.log_dir = log_dir
@@ -135,7 +134,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         if IS_WIN:
             self.mp_mode = "spawn"
-            logging.warning(
+            logger.warning(
                 "{} is not functionnal in windows,"
                 "spawn will be used instead".format(self.mp_mode)
             )
@@ -258,7 +257,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         nb_workers = conf.get("nb_workers", "auto")
         if nb_workers == "auto":
-            logging.debug("auto mode : nb_workers will be set automatically")
+            logger.debug("auto mode : nb_workers will be set automatically")
             # Compute parameters for auto mode
             nb_workers = compute_conf_auto_mode(
                 IS_WIN, overloaded_conf["max_ram_per_worker"]
@@ -538,7 +537,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                         # keep the original exception object
                         res = exc
                         success = False
-                        logging.error(
+                        logger.error(
                             "Exception in worker: {}".format(exc),
                         )
                     done_list.append(job_id)
@@ -869,7 +868,7 @@ def log_error_hook(args):
     Exception hook for cluster thread
     """
     exc = "Cluster MP thread failed: {}".format(args.exc_value)
-    logging.error(exc)
+    logger.error(exc)
     # Kill thread
     os.kill(os.getpid(), signal.SIGKILL)
     raise RuntimeError(exc)
@@ -908,36 +907,36 @@ def compute_conf_auto_mode(is_windows, max_ram_per_worker):
         available_cpu = (
             mp.cpu_count() if is_windows else len(os.sched_getaffinity(0))
         )
-        logging.debug("available cpu : {}".format(available_cpu))
+        logger.debug("available cpu : {}".format(available_cpu))
 
     if available_cpu == 1:
-        logging.warning("Only one CPU detected.")
+        logger.warning("Only one CPU detected.")
         available_cpu = 2
     elif available_cpu == 0:
-        logging.warning("No CPU detected.")
+        logger.warning("No CPU detected.")
         available_cpu = 2
 
     if on_slurm:
         ram_to_use = max_ram_slurm
     else:
         ram_to_use = get_total_ram()
-        logging.debug("total ram :  {}".format(ram_to_use))
+        logger.debug("total ram :  {}".format(ram_to_use))
 
     # use 50% of total ram
     ram_to_use *= 0.5
 
     possible_workers = int(ram_to_use // max_ram_per_worker)
     if possible_workers == 0:
-        logging.warning("Not enough memory available : failure might occur")
+        logger.warning("Not enough memory available : failure might occur")
     nb_workers_to_use = max(1, min(possible_workers, available_cpu - 1))
 
-    logging.debug("Number of workers : {}".format(nb_workers_to_use))
-    logging.debug("Max memory per worker : {} MB".format(max_ram_per_worker))
+    logger.debug("Number of workers : {}".format(nb_workers_to_use))
+    logger.debug("Max memory per worker : {} MB".format(max_ram_per_worker))
 
     # Check with available ram
     available_ram = get_available_ram()
     if int(nb_workers_to_use) * int(max_ram_per_worker) > available_ram:
-        logging.warning(
+        logger.warning(
             "CARS will use 50% of total RAM, "
             " more than currently available RAM"
         )
@@ -983,12 +982,12 @@ def get_slurm_data():
         slurm_max_ram = get_data(slurm_infos, r"ReqTRES=cpu=.*?mem=(\d+)")
         # convert to Mb
         slurm_max_ram *= 1024
-        logging.debug("Available CPUs  in SLURM : {}".format(slurm_nb_cpu))
-        logging.debug("Available RAM  in SLURM : {}".format(slurm_max_ram))
+        logger.debug("Available CPUs  in SLURM : {}".format(slurm_nb_cpu))
+        logger.debug("Available RAM  in SLURM : {}".format(slurm_max_ram))
 
     except Exception as exc:
-        logging.debug("Not on Slurm cluster")
-        logging.debug(str(exc))
+        logger.debug("Not on Slurm cluster")
+        logger.debug(str(exc))
     if slurm_nb_cpu is not None and slurm_max_ram is not None:
         on_slurm = True
 

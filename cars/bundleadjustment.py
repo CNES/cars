@@ -6,7 +6,6 @@ cars-bundleadjustment
 import argparse
 import copy
 import json
-import logging
 import os
 import textwrap
 import warnings
@@ -16,17 +15,6 @@ import numpy as np
 import pandas as pd
 import rasterio as rio
 import yaml
-
-try:
-    from rpcfit import rpc_fit
-except ModuleNotFoundError:
-    logging.warning(
-        "Module rpcfit is not installed. "
-        "RPC models will not be adjusted. "
-        "Run `pip install cars[bundleadjustment]` to install "
-        "missing module."
-    )
-
 from affine import Affine
 from scipy import interpolate, stats
 from scipy.spatial import cKDTree
@@ -35,7 +23,18 @@ from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.los import LOS
 from shareloc.proj_utils import coordinates_conversion
 
+from cars.core.cars_logging import logger
 from cars.pipelines.pipeline import Pipeline
+
+try:
+    from rpcfit import rpc_fit
+except ModuleNotFoundError:
+    logger.warning(
+        "Module rpcfit is not installed. "
+        "RPC models will not be adjusted. "
+        "Run `pip install cars[bundleadjustment]` to install "
+        "missing module."
+    )
 
 
 def matches_concatenation(matches_list, pairing, nb_decimals):
@@ -542,7 +541,7 @@ def new_rpcs_from_matches(  # pylint: disable=too-many-positional-arguments
         try:
             refined_rpcs = refine_rpc(geomodels, old_coords, new_coords)
         except NameError:
-            logging.warning(
+            logger.warning(
                 "Module rpcfit is not installed. "
                 "RPC models will not be adjusted. "
                 "Run `pip install cars[bundleadjustment]` to install "

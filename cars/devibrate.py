@@ -24,7 +24,6 @@ cars-devibrate: devibrate a high resolution DSM using a low resolution DSM
 
 import argparse
 import json
-import logging
 import math
 
 # Standard imports
@@ -48,6 +47,7 @@ from shareloc.dtm_reader import interpolate_geoid_height
 from shareloc.geofunctions import triangulation
 
 from cars.applications.rasterization import rasterization_algo as rasterization
+from cars.core.cars_logging import logger
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.geometry.shareloc_geometry import SharelocGeometry
 
@@ -83,7 +83,7 @@ def acquisition_direction(
         """
         return 180 * math.atan2(vec[1], vec[0]) / math.pi
 
-    logging.debug(
+    logger.debug(
         "Time direction average azimuth: "
         "{}deg (img1: {}deg, img2: {}deg)".format(
             display_angle(time_direction_vector),
@@ -333,7 +333,7 @@ def lowres_initial_dem_splines_fit(
             dim="l"
         )
 
-    logging.debug(
+    logger.debug(
         "Best smoothing factor for splines regression: "
         "{} (rmse={})".format(smoothing_factor, rmse)
     )

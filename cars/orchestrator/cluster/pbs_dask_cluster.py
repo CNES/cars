@@ -22,14 +22,14 @@
 Contains abstract function for PBS dask Cluster
 """
 
-# Standard imports
-import logging
 import os
 import warnings
 
 # Third party imports
 from dask.distributed import Client
 
+# Standard imports
+from cars.core.cars_logging import logger
 from cars.orchestrator.cluster.dask_cluster_tools import (
     check_configuration,
     create_checker_schema,
@@ -105,7 +105,7 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 
         """
         stop_cluster(self.cluster, self.client)
-        logging.debug("Dask cluster closed")
+        logger.debug("Dask cluster closed")
 
 
 def start_cluster(  # pylint: disable=too-many-positional-arguments
@@ -198,10 +198,10 @@ def start_cluster(  # pylint: disable=too-many-positional-arguments
             scheduler_options=scheduler_options,
             resource_spec="select=1:ncpus={}:mem={}MB".format(nb_cpus, memory),
         )
-        logging.debug("Dask cluster started")
+        logger.debug("Dask cluster started")
         cluster.adapt(minimum=nb_workers, maximum=nb_workers)
         client = Client(cluster, timeout=timeout)
-        logging.debug(
+        logger.debug(
             "Dashboard started at {}".format(get_dashboard_link(cluster))
         )
     return cluster, client

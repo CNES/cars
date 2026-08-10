@@ -23,12 +23,12 @@ This module contains the abstract ground_truth_reprojection
 application class.
 """
 
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.cars_logging import logger
 
 
 @Application.register("ground_truth_reprojection")
@@ -53,7 +53,7 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
         ground_truth_computation_method = cls.default_application
 
         if bool(conf) is False or "method" not in conf:
-            logging.debug(
+            logger.debug(
                 "Ground truth reprojection method not specified"
                 ", default {} is used".format(ground_truth_computation_method)
             )
@@ -63,7 +63,7 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         if ground_truth_computation_method not in cls.available_applications:
-            logging.error(
+            logger.error(
                 "No GroundTruthReprojection application named {} "
                 "registered".format(ground_truth_computation_method)
             )
@@ -72,7 +72,7 @@ class GroundTruthReprojection(ApplicationTemplate, metaclass=ABCMeta):
                 "registered".format(ground_truth_computation_method)
             )
 
-        logging.debug(
+        logger.debug(
             "The GroundTruthReprojection({}) application will be "
             "used".format(ground_truth_computation_method)
         )

@@ -23,10 +23,11 @@ This module contains the saver registry class
 """
 
 
-# Standard imports
-import logging
 import os
 import traceback
+
+# Standard imports
+from cars.core.cars_logging import logger
 
 # CARS imports
 from cars.orchestrator.registry.abstract_registry import (
@@ -156,7 +157,7 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
             if future_result is not None:
                 cars_ds_saver.save(future_result)
             else:
-                logging.debug("Future result tile is None -> not saved")
+                logger.debug("Future result tile is None -> not saved")
 
     def add_file_to_save(  # pylint: disable=too-many-positional-arguments
         self,
@@ -340,7 +341,7 @@ class SingleCarsDatasetSaver:  # pylint: disable=R0902
                             self.tags[count].capitalize()
                         )
                         if not self.optional_data_list[count]:
-                            logging.warning(log_message)
+                            logger.warning(log_message)
             elif self.cars_ds.dataset_type == "points":
                 # type points
                 if not self.already_seen:
@@ -359,15 +360,15 @@ class SingleCarsDatasetSaver:  # pylint: disable=R0902
                 self.count += 1
 
             else:
-                logging.error(
+                logger.error(
                     "Saving {} CarsDataset not implemeted".format(
                         self.cars_ds.dataset_type
                     )
                 )
 
         except:  # pylint: disable=W0702 # noqa: B001, E722
-            logging.error(traceback.format_exc())
-            logging.error("Tile not saved")
+            logger.error(traceback.format_exc())
+            logger.error("Tile not saved")
 
     def cleanup(self):
         """
