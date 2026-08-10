@@ -500,6 +500,7 @@ def intialize_product_index(orchestrator, product_levels, input_pairs):
             cst.INDEX_DSM_MASK: None,
             cst.INDEX_DSM_CLASSIFICATION: None,
             cst.INDEX_DSM_PERFORMANCE_MAP: None,
+            cst.INDEX_DSM_AMBIGUITY: None,
             cst.INDEX_DSM_CONTRIBUTING_PAIR: None,
             cst.INDEX_DSM_WEIGHTS: None,
             cst.INDEX_DSM_INVALIDITY_MASK: None,
@@ -521,6 +522,7 @@ def intialize_product_index(orchestrator, product_levels, input_pairs):
                 cst.INDEX_DEPTH_MAP_MASK: None,
                 cst.INDEX_DEPTH_MAP_CLASSIFICATION: None,
                 cst.INDEX_DEPTH_MAP_PERFORMANCE_MAP: None,
+                cst.INDEX_DEPTH_MAP_AMBIGUITY: None,
                 cst.INDEX_DEPTH_MAP_EPSG: None,
                 cst.INDEX_DSM_INVALIDITY_MASK: None,
             }

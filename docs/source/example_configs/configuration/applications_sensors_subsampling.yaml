@@ -1,0 +1,6 @@
+subsampling:
+  applications:
+    sensors_subsampling:
+      method: "rasterio"
+      tile_size: 500
+      interpolate_image: bicubic

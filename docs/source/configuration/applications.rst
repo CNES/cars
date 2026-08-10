@@ -57,6 +57,8 @@ Application parameters
    applications/auxiliary_filling
    applications/epipolar_to_sensor_matching
    applications/depth_map_generation
+   applications/dsm_merging
+   applications/sensors_subsampling
 
 
 The default configuration can be different for the first resolution, the intermediate resolution(s) and the last resolution. 

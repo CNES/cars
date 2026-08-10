@@ -618,7 +618,6 @@ def update_data(  # pylint: disable=too-many-positional-arguments
             weights = np.repeat(
                 np.expand_dims(weights, axis=0), current_data.shape[0], axis=0
             )
-
         # compute masks
         current_valid = weights != 0
         old_valid = old_weights != 0

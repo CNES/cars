@@ -1,0 +1,7 @@
+merging:
+  applications:
+    dsm_merging:
+      method: "weighted_fusion"
+      tile_size: 4000
+      filling_priority_list: [1, 6, 4, 3, 5, 2, 7, 0] 
+      classif_priority_list: [8, 7, 9, 2, 5, 3, 1, 4, 10, 6, 11, 255] 
