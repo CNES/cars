@@ -186,7 +186,12 @@ test-end2end:
     - .cars-python-job
   script:
     - source /app/cars/venv/bin/activate
-    - pytest --log-cli-level=21 --log-cli-format="%(asctime)s - %(levelname)s - %(message)s" --color=yes -m "end2end_tests"
+    - |
+      MARKER="end2end_tests"
+      if [ "$CI_PIPELINE_SOURCE" = "merge_request_event" ]; then
+        MARKER="end2end_tests and not slow"
+      fi
+      pytest --log-cli-level=21 --log-cli-format="%(asctime)s - %(levelname)s - %(message)s" --color=yes -m "$MARKER"
   artifacts:
     expose_as: "test end2end intermediate data"
     paths:
