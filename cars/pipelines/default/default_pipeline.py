@@ -738,6 +738,7 @@ class DefaultPipeline(PipelineTemplate):
         filling_conf = {}
         filling_conf[INPUT] = copy.deepcopy(conf[INPUT])
         _ = filling_conf[INPUT].pop(dsm_cst.DSMS, None)
+        filling_conf[ORCHESTRATOR] = copy.deepcopy(conf[ORCHESTRATOR])
         filling_conf[OUTPUT] = copy.deepcopy(conf[OUTPUT])
         filling_conf[OUTPUT]["directory"] = self.intermediate_data_dir
         filling_conf[pipeline_cst.FILLING] = conf.get(pipeline_cst.FILLING, {})
