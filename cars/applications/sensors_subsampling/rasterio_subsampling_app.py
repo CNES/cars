@@ -21,7 +21,6 @@
 """
 this module contains the dense_matching application class.
 """
-import copy
 import os
 from pathlib import Path
 
@@ -361,7 +360,7 @@ def generate_subsampled_images_wrapper(
     :param saving_info: the saving information
     """
 
-    global_dataset = None
+    global_dataset = xr.Dataset()
     for key, val in paths_dictionary.items():
         path = val["path"]
         # Rectify images
@@ -379,8 +378,8 @@ def generate_subsampled_images_wrapper(
                 interpolator=interpolator,
             )
 
-            if global_dataset is None:
-                global_dataset = copy.deepcopy(dataset)
+            if "region" not in global_dataset.attrs:
+                global_dataset.attrs["region"] = dataset.attrs["region"]
 
             if key == "classif":
                 global_dataset[key] = xr.DataArray(
