@@ -59,7 +59,7 @@ dependencies = [
     "pandas",
     "urllib3",
     "laspy[laszip]",
-    "pandora[sgm]==1.8.1",
+    "pandora[sgm]==1.9.0a1",
     "pandora2d",
     "cars-rasterize==0.2.*",
     "cars-resample==0.1.*",
@@ -70,7 +70,7 @@ dependencies = [
     "xdem==0.2.*",
     "geopandas",
     "contextily",
-    "pandora_plugin_mccnn==1.3.7"
+    "pandora_plugin_mccnn==1.3.8a1"
 ]
 
 [project.urls]
