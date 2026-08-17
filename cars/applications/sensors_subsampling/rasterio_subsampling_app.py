@@ -21,7 +21,6 @@
 """
 this module contains the dense_matching application class.
 """
-import copy
 import os
 from pathlib import Path
 
@@ -174,8 +173,6 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
             None,
         )
 
-        image = next(iter(image_dict))
-
         mask = sensor_dict.get(sens_cst.INPUT_MSK, None)
 
         classif = sensor_dict.get(sens_cst.INPUT_CLASSIFICATION, None)
@@ -187,10 +184,10 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
 
             classif_path = next(iter(classif))
 
-        paths_dictionary = {"im": image, "mask": mask, "classif": classif_path}
+        paths_dictionary = {"mask": mask, "classif": classif_path}
 
-        for step, key in enumerate(list(image_dict.keys())[1:]):
-            paths_dictionary[f"texture_{step}"] = key
+        for step, key in enumerate(list(image_dict.keys())):
+            paths_dictionary[f"image_{step}"] = key
 
         for key, path in paths_dictionary.items():
             paths_dictionary[key] = {"path": path}
@@ -363,7 +360,7 @@ def generate_subsampled_images_wrapper(
     :param saving_info: the saving information
     """
 
-    global_dataset = None
+    global_dataset = xr.Dataset()
     for key, val in paths_dictionary.items():
         path = val["path"]
         # Rectify images
@@ -380,8 +377,9 @@ def generate_subsampled_images_wrapper(
                 scale_factor=scale_factor,
                 interpolator=interpolator,
             )
-            if key == "im":
-                global_dataset = copy.deepcopy(dataset)
+
+            if "region" not in global_dataset.attrs:
+                global_dataset.attrs["region"] = dataset.attrs["region"]
 
             if key == "classif":
                 global_dataset[key] = xr.DataArray(
@@ -395,14 +393,20 @@ def generate_subsampled_images_wrapper(
                     dims=[cst.ROW, cst.COL],
                 )
 
-            if "texture" in key:
-                global_dataset.coords[cst.BAND_IM] = dataset.attrs[
-                    cst.BAND_NAMES
-                ]
-                global_dataset[key] = xr.DataArray(
-                    dataset[cst.EPI_IMAGE].values,
-                    dims=[cst.BAND_NAMES, cst.ROW, cst.COL],
-                )
+            if "image" in key:
+                if len(dataset.dims) > 2:
+                    global_dataset.coords[cst.BAND_IM] = dataset.attrs[
+                        cst.BAND_NAMES
+                    ]
+                    global_dataset[key] = xr.DataArray(
+                        dataset[cst.EPI_IMAGE].values,
+                        dims=[cst.BAND_NAMES, cst.ROW, cst.COL],
+                    )
+                else:
+                    global_dataset[key] = xr.DataArray(
+                        dataset[cst.EPI_IMAGE].values,
+                        dims=[cst.ROW, cst.COL],
+                    )
 
     window_out_left = {
         "row_min": global_dataset.region[1],
