@@ -475,11 +475,11 @@ class CarsDataset:
         if nodata is not None:
             new_profile["nodata"] = nodata
 
-        if nbits is None:
-            nbits = np.dtype(dtype).itemsize * 8
+        if nbits is not None:
+            new_profile["nbits"] = nbits
 
         descriptor = rio.open(
-            file_name, "w+", nbits=nbits, **new_profile, BIGTIFF="IF_SAFER"
+            file_name, "w+", **new_profile, BIGTIFF="IF_SAFER"
         )
 
         # add tags and desciption
