@@ -10,7 +10,7 @@ Output configuration
 +-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
 | *product_format*        | Format of the point cloud (tif, laz)                        | dict               | {"point_cloud": "laz"} | No       |
 +-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
-| *resolution* [#scaled]_ | Output DSM grid step (only for dsm product level)           | float              | None [#scaled]_        | No       |
+| *resolution* [#scaled]_ | Output DSM grid step (only for dsm product level)           | float, int, list   | None [#scaled]_        | No       |
 +-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
 | *auxiliary*             | Selection of additional files in products                   | dict               | See below              | No       |
 +-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
@@ -197,4 +197,4 @@ Output configuration
 
 .. rubric:: Footnotes
 
-.. [#scaled] This parameter is computed at runtime depending on the resolution of the input sensor images. You can still override it in the configuration.
+.. [#scaled] This parameter is computed at runtime depending on the resolution of the input sensor images. You can still override it in the configuration. Non-square pixels are supported.

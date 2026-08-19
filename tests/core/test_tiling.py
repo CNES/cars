@@ -159,7 +159,7 @@ def test_roi_to_start_and_size():
     """
     Test roi_to_start_and_size function
     """
-    res = tiling.roi_to_start_and_size([0, 0, 10, 10], 10)
+    res = tiling.roi_to_start_and_size([0, 0, 10, 10], [10, 10])
 
     assert res == (0, 10, 1, 1)
 
@@ -169,7 +169,9 @@ def test_snap_to_grid():
     """
     Test snap_to_grid function
     """
-    assert (0, 0, 11, 11) == tiling.snap_to_grid(0.1, 0.2, 10.1, 10.2, 1.0)
+    assert (0, 0, 11, 11) == tiling.snap_to_grid(
+        0.1, 0.2, 10.1, 10.2, [1.0, 1.0]
+    )
 
 
 # function parameters are fixtures set in conftest.py

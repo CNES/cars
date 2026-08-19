@@ -240,6 +240,7 @@ class SimpleGaussian(
         dump_dir=None,
         performance_map_classes=None,
         phasing=None,
+        scaling_coeff=1.0,
     ):
         """
         Run PointCloudRasterisation application.
@@ -276,7 +277,7 @@ class SimpleGaussian(
         :param output_crs: output_crs of raster data
         :type output_crs: str
         :param resolution: resolution of raster data (in target CRS unit)
-        :type resolution: float
+        :type resolution: list
         :param orchestrator: orchestrator used
         :param dsm_file_name: path of dsm
         :type dsm_file_name: str
@@ -302,6 +303,8 @@ class SimpleGaussian(
         :type performance_map_classes: list or None
         :param phasing: if activated, we phase the dsm on this point
         :type phasing: dict
+        :param scaling_coeff: scaling based of the input resolution
+        :type scaling_coeff: float
 
         :return: raster DSM. CarsDataset contains:
 
@@ -416,11 +419,11 @@ class SimpleGaussian(
             for index, value in enumerate(bounds):
                 if index in (0, 2):
                     bounds[index] = rasterization_wrappers.phased_dsm(
-                        value, x_phase, res
+                        value, x_phase, res[0]
                     )
                 else:
                     bounds[index] = rasterization_wrappers.phased_dsm(
-                        value, y_phase, res
+                        value, y_phase, res[1]
                     )
 
         # Derive output image files parameters to pass to rasterio
@@ -857,11 +860,11 @@ class SimpleGaussian(
         # Generate profile
         geotransform = (
             bounds[0],
-            resolution,
+            resolution[0],
             0.0,
             bounds[3],
             0.0,
-            -resolution,
+            -resolution[1],
         )
 
         transform = Affine.from_gdal(*geotransform)
@@ -947,6 +950,7 @@ class SimpleGaussian(
                             invalidity_mask_threshold=(
                                 self.invalidity_mask_threshold,
                             ),
+                            scaling_coeff=scaling_coeff,
                         )
                     ind_tile += 1
 
@@ -977,6 +981,7 @@ def rasterization_wrapper(  # noqa: C901
     performance_map_classes=None,
     fill_nodata: bool = True,
     invalidity_mask_threshold: float = 0.5,
+    scaling_coeff=1.0,
 ):
     """
     Wrapper for rasterization step :
@@ -990,7 +995,7 @@ def rasterization_wrapper(  # noqa: C901
     :type cloud: pandas.DataFrame
     :param terrain_region: terrain bounds
     :param resolution: Produced DSM resolution (meter, degree [EPSG dependent])
-    :type resolution: float
+    :type resolution: list
     :param  epsg_code: epsg code for the CRS of the output DSM
     :type epsg_code: int
     :param  window: Window considered
@@ -1017,6 +1022,8 @@ def rasterization_wrapper(  # noqa: C901
     :type fill_nodata: bool
     :param invalidity_mask_threshold: threshold for invalidity mask
     :type invalidity_mask_threshold: float
+    :param scaling_coeff: scaling based of the input resolution
+    :type scaling_coeff: float
 
     :return: digital surface model + projected colors
     :rtype: xr.Dataset
@@ -1083,10 +1090,10 @@ def rasterization_wrapper(  # noqa: C901
         ymax = np.nanmax(cloud["y"])
         # Add margin to be sure every point is rasterized
         terrain_region = [
-            xmin - radius * resolution,
-            ymin - radius * resolution,
-            xmax + radius * resolution,
-            ymax + radius * resolution,
+            xmin - radius * resolution[0],
+            ymin - radius * resolution[1],
+            xmax + radius * resolution[0],
+            ymax + radius * resolution[1],
         ]
 
         if terrain_full_roi is not None:
@@ -1095,16 +1102,16 @@ def rasterization_wrapper(  # noqa: C901
             terrain_region[0] = (
                 terrain_full_roi[0]
                 + np.round(
-                    (terrain_region[0] - terrain_full_roi[0]) / resolution
+                    (terrain_region[0] - terrain_full_roi[0]) / resolution[0]
                 )
-                * resolution
+                * resolution[0]
             )
             terrain_region[3] = (
                 terrain_full_roi[3]
                 + np.round(
-                    (terrain_region[3] - terrain_full_roi[3]) / resolution
+                    (terrain_region[3] - terrain_full_roi[3]) / resolution[1]
                 )
-                * resolution
+                * resolution[1]
             )
             # Crop
             terrain_region = [
@@ -1162,6 +1169,7 @@ def rasterization_wrapper(  # noqa: C901
         performance_map_classes=performance_map_classes,
         cloud_global_id=attributes["cloud_id"],
         invalidity_mask_threshold=invalidity_mask_threshold,
+        scaling_coeff=scaling_coeff,
     )
 
     # Fill raster

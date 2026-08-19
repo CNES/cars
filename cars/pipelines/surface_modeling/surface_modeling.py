@@ -1169,6 +1169,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         self.resolution = output[out_cst.RESOLUTION]
 
+        if isinstance(self.resolution, (int, float)):
+            self.resolution = [self.resolution, self.resolution]
+
         # List of terrain roi corresponding to each epipolar pair
         # Used to generate final terrain roi
         self.list_terrain_roi = []
@@ -2352,6 +2355,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 out_cst.AUX_PERFORMANCE_MAP
             ],
             phasing=self.phasing,
+            scaling_coeff=self.scaling_coeff,
         )
 
         # Cleaning: don't keep terrain bbox if save_intermediate_data
