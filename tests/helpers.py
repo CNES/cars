@@ -359,6 +359,8 @@ def assert_same_datasets(actual, expected, rtol=0, atol=0):
     for key in expected.attrs.keys():
         if isinstance(expected.attrs[key], np.ndarray):
             np.testing.assert_allclose(actual.attrs[key], expected.attrs[key])
+        elif isinstance(expected.attrs[key], list):
+            assert actual.attrs[key] == expected.attrs[key]
         else:
             assert actual.attrs[key] == expected.attrs[key]
     assert actual.dims == expected.dims

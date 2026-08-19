@@ -107,6 +107,9 @@ def check_output_parameters(  # noqa: C901 : too complex
     resolution = None
     if overloaded_conf.get(output_constants.RESOLUTION, None) is not None:
         resolution = overloaded_conf[output_constants.RESOLUTION]
+
+        if isinstance(resolution, (float, int)):
+            resolution = [resolution, resolution]
     overloaded_scaling_coeff = scaling_coeff
 
     res_val = 0.5
@@ -124,7 +127,10 @@ def check_output_parameters(  # noqa: C901 : too complex
 
     if scaling_coeff is not None:
         if resolution is not None:
-            if resolution < res_val * scaling_coeff:
+            if (
+                resolution[0] < res_val * scaling_coeff
+                and resolution[1] < res_val * scaling_coeff
+            ):
                 logger.warning(
                     "The requested DSM resolution of "
                     f"{overloaded_conf[output_constants.RESOLUTION]} seems "
@@ -181,12 +187,19 @@ def check_output_parameters(  # noqa: C901 : too complex
         output_constants.PRODUCT_FORMAT: dict,
         output_constants.OUT_GEOID: Or(bool, str),
         output_constants.EPSG: And(Or(int, str, None), is_valid_epsg),
-        output_constants.RESOLUTION: Or(int, float, None),
+        output_constants.RESOLUTION: Or(int, float, list, None),
         output_constants.SAVE_BY_PAIR: bool,
         output_constants.AUXILIARY: dict,
     }
     checker_output = Checker(output_schema)
     checker_output.validate(overloaded_conf)
+
+    if resolution is not None and isinstance(resolution, list):
+        for elem in resolution:
+            if not isinstance(elem, (int, float)):
+                raise RuntimeError(
+                    "The resolution values have to be int or float"
+                )
 
     # check auxiliary keys
     auxiliary_schema = {
@@ -221,7 +234,9 @@ def check_output_parameters(  # noqa: C901 : too complex
         spatial_ref = CRS.from_epsg(overloaded_conf["epsg"])
         if spatial_ref.is_geographic:
             if overloaded_conf[output_constants.RESOLUTION] is not None:
-                if overloaded_conf[output_constants.RESOLUTION] > 10e-3:
+                if isinstance(resolution, (int, float)):
+                    resolution = [resolution, resolution]
+                if resolution[0] > 10e-3 and resolution[1] > 10e-3:
                     logger.warning(
                         "The resolution of the "
                         + "point_cloud_rasterization should be "

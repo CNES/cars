@@ -69,7 +69,7 @@ def test_simple_rasterization_synthetic_case():
     pd_cloud = pandas.DataFrame(cloud, columns=[cst.X, cst.Y, cst.Z])
     pd_cloud.attrs = {"attributes": {"number_of_pc": 1}}
     raster = rasterization_algo.rasterize(
-        pd_cloud, 1, None, 0, 12, 3, 2, 0.3, 0
+        pd_cloud, [1, 1], None, 0, 12, 3, 2, 0.3, 0
     )
 
     # Test with radius = 0 and fixed grid
@@ -96,9 +96,9 @@ def test_simple_rasterization_synthetic_case():
         ystart,
         xsize,
         ysize,
-    ) = rasterization_wrappers.compute_xy_starts_and_sizes(1, pd_cloud)
+    ) = rasterization_wrappers.compute_xy_starts_and_sizes([1, 1], pd_cloud)
     raster = rasterization_algo.rasterize(
-        pd_cloud, 1, None, xstart, ystart, xsize, ysize, 0.3, 0
+        pd_cloud, [1, 1], None, xstart, ystart, xsize, ysize, 0.3, 0
     )
     np.testing.assert_equal(
         raster[cst.RASTER_HGT].values[..., None],
@@ -107,7 +107,7 @@ def test_simple_rasterization_synthetic_case():
 
     # Test with fixed grid, radius =  1 and sigma = inf
     raster = rasterization_algo.rasterize(
-        pd_cloud, 1, None, 0, 12, 3, 2, np.inf, 1
+        pd_cloud, [1, 1], None, 0, 12, 3, 2, np.inf, 1
     )
     np.testing.assert_equal(
         raster[cst.RASTER_HGT].values[..., None],
@@ -125,7 +125,7 @@ def test_simple_rasterization_synthetic_case():
 
     # Test with float radius = 1.6 and sigma = inf
     raster = rasterization_algo.rasterize(
-        pd_cloud, 1, None, 0, 12, 3, 2, np.inf, 1.6
+        pd_cloud, [1, 1], None, 0, 12, 3, 2, np.inf, 1.6
     )
     # radius 1.6 add to equation the 1.6 + 0.5 = 2.1 distance points, so
     # all the points for current column
@@ -165,7 +165,7 @@ def test_phased_dsm():
     bounds_two = inputs.rasterio_get_bounds(dsm_two)
     profile = inputs.rasterio_get_profile(dsm_one)
     transform = list(profile["transform"])
-    resolution = transform[4]
+    resolution = [transform[0], transform[4]]
 
     x_phase = 675292.31105432
     y_phase = 4897082.95714968
@@ -173,25 +173,25 @@ def test_phased_dsm():
     for index, value in enumerate(bounds_one):
         if index in (0, 2):
             bounds_one[index] = rasterization_wrappers.phased_dsm(
-                value, x_phase, resolution
+                value, x_phase, resolution[0]
             )
         else:
             bounds_one[index] = rasterization_wrappers.phased_dsm(
-                value, y_phase, resolution
+                value, y_phase, resolution[1]
             )
 
     for index, value in enumerate(bounds_two):
         if index in (0, 2):
             bounds_two[index] = rasterization_wrappers.phased_dsm(
-                value, x_phase, resolution
+                value, x_phase, resolution[0]
             )
         else:
             bounds_two[index] = rasterization_wrappers.phased_dsm(
-                value, y_phase, resolution
+                value, y_phase, resolution[1]
             )
 
     diff = bounds_one[0:2] - bounds_two[0:2]
-    resolution = np.array([resolution, resolution])
+    resolution = np.array(resolution)
     res_ratio = diff / resolution
 
     if ~np.all(np.equal(res_ratio, res_ratio.astype(int))) and ~np.all(
@@ -206,7 +206,7 @@ def test_simple_rasterization_single():
     Test simple rasterization from test cloud ref_single_cloud_in_df.nc
     """
 
-    resolution = 0.5
+    resolution = [0.5, 0.5]
 
     cloud_xr = xr.open_dataset(
         absolute_data_path(
@@ -276,7 +276,7 @@ def test_simple_rasterization_dataset_1():
     ystart = 4927552
     xsize = 114
     ysize = 112
-    resolution = 0.5
+    resolution = [0.5, 0.5]
 
     epsg = 32630
     sigma = 0.3
@@ -343,7 +343,7 @@ def test_simple_rasterization_dataset_1_intervals():
     ystart = 4927552
     xsize = 114
     ysize = 112
-    resolution = 0.5
+    resolution = [0.5, 0.5]
 
     epsg = 32630
     sigma = 0.3
@@ -407,7 +407,7 @@ def test_simple_rasterization_dataset_2():
     ystart = None
     xsize = None
     ysize = None
-    resolution = 0.5
+    resolution = [0.5, 0.5]
 
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
@@ -479,7 +479,7 @@ def test_simple_rasterization_dataset_():
     ystart = 4927552
     xsize = 114
     ysize = 112
-    resolution = 0.5
+    resolution = [0.5, 0.5]
     epsg = 32630
     sigma = 0.3
     radius = 3
@@ -533,7 +533,7 @@ def mask_interp_inputs():  # pylint: disable=redefined-outer-name
     """
     row = 4
     col = 5
-    resolution = 1.0
+    resolution = [1.0, 1.0]
 
     # simple mask all 100 and one 0
     x_coord, y_coord = np.meshgrid(

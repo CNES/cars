@@ -853,7 +853,6 @@ class DefaultPipeline(PipelineTemplate):
                 current_surface_modeling_out_dir = current_conf[OUTPUT][
                     "directory"
                 ]
-
                 # Put right directory for subsampling
                 if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
                     if epipolar_res != 1:

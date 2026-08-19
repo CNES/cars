@@ -186,7 +186,7 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
                     transform = list(profile["transform"])
                     res_x = transform[0]
                     res_y = transform[4]
-                    resolution = (res_y, res_x)
+                    resolution = (res_x, -res_y)
 
                     epsg = src.crs
 
@@ -222,14 +222,14 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
         )
 
         xsize, ysize = tiling.roi_to_start_and_size(
-            global_bounds, resolution[1]
+            global_bounds, list(resolution)
         )[2:]
 
         # build the tranform of the dataset
         # Generate profile
         geotransform = (
             global_bounds[0],
-            resolution[1],
+            resolution[0],
             0.0,
             global_bounds[3],
             0.0,
@@ -372,7 +372,7 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
     """
 
     # create the tile dataset
-    x_value = np.arange(tile_bounds[0], tile_bounds[1], resolution[1])
+    x_value = np.arange(tile_bounds[0], tile_bounds[1], resolution[0])
     y_value = np.arange(tile_bounds[2], tile_bounds[3], resolution[1])
     height = len(y_value)
     width = len(x_value)
@@ -547,7 +547,7 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
     # Define the tile transform
     bounds = [tile_bounds[0], tile_bounds[2], tile_bounds[1], tile_bounds[3]]
     xstart, ystart, xsize, ysize = tiling.roi_to_start_and_size(
-        bounds, resolution[1]
+        bounds, list(resolution)
     )
 
     row_pix_pos, col_pix_pos = rasterio.transform.AffineTransformer(

@@ -149,7 +149,7 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
     :param disp_max: maximum disparity
     :type disp_max: int
     :param resolution: resolution
-    :type resolution: float
+    :type resolution: list
     :param roi_poly: roi polygon
     :type roi_poly: Polygon
     :param pair_key: pair key id
@@ -165,6 +165,9 @@ def compute_terrain_bbox(  # pylint: disable=too-many-positional-arguments  # no
     :rtype: dict
 
     """
+
+    if isinstance(resolution, (float, int)):
+        resolution = [resolution, resolution]
 
     # Default orchestrator
     if orchestrator is None:
@@ -542,11 +545,14 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     :param roi_poly: terrain roi of given roi
     :type roi_poly: Polygon
     :param resolution: list of terrain roi
-    :type resolution: float
+    :type resolution: list
 
     :return: bounds, optimal_terrain_tile_width_average
 
     """
+
+    if isinstance(resolution, (float, int)):
+        resolution = [resolution, resolution]
 
     # get lists
     (
@@ -581,14 +587,14 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     optimal_terrain_tile_width_average = np.nanmean(list_terrain_epi_tile_width)
 
     optimal_terrain_tile_width = (
-        int(math.ceil(optimal_terrain_tile_width_average / resolution))
-        * resolution
+        int(math.ceil(optimal_terrain_tile_width_average / resolution[0]))
+        * resolution[0]
     )
 
     logger.debug(
         "Optimal terrain tile size: {}x{} pixels".format(
-            int(optimal_terrain_tile_width / resolution),
-            int(optimal_terrain_tile_width / resolution),
+            int(optimal_terrain_tile_width / resolution[0]),
+            int(optimal_terrain_tile_width / resolution[0]),
         )
     )
 

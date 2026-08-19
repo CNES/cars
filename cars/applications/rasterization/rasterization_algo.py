@@ -47,7 +47,7 @@ from cars.data_structures import cars_dataset
 # pylint: disable=too-many-positional-arguments
 def simple_rasterization_dataset_wrapper(
     cloud: pandas.DataFrame,
-    resolution: float,
+    resolution: list,
     epsg: int,
     xstart: float = None,
     ystart: float = None,
@@ -64,6 +64,7 @@ def simple_rasterization_dataset_wrapper(
     performance_map_classes: List[float] = None,
     cloud_global_id: int = None,
     invalidity_mask_threshold: float = 0.5,
+    scaling_coeff: float = 1.0,
 ) -> xr.Dataset:
     """
     Wrapper of simple_rasterization
@@ -99,6 +100,8 @@ def simple_rasterization_dataset_wrapper(
     :type cloud_global_id: int
     :param invalidity_mask_threshold: threshold for invalidity mask
     :type invalidity_mask_threshold: float
+    :param scaling_coeff: scaling based of the input resolution
+    :type scaling_coeff: float
     :return: Rasterized cloud
     """
 
@@ -140,6 +143,7 @@ def simple_rasterization_dataset_wrapper(
         performance_map_classes=performance_map_classes,
         cloud_global_id=cloud_global_id,
         invalidity_mask_threshold=invalidity_mask_threshold,
+        scaling_coeff=scaling_coeff,
     )
 
     return raster
@@ -152,7 +156,7 @@ def compute_vector_raster_and_stats(
     y_start: float,
     x_size: int,
     y_size: int,
-    resolution: float,
+    resolution: list,
     sigma: float,
     radius: int,
     list_computed_layers: List[str] = None,
@@ -410,7 +414,7 @@ def compute_vector_raster_and_stats(
 
 def rasterize(  # pylint: disable=too-many-positional-arguments
     cloud: pandas.DataFrame,
-    resolution: float,
+    resolution: list,
     epsg: int,
     x_start: float,
     y_start: float,
@@ -427,6 +431,7 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
     performance_map_classes: List[float] = None,
     cloud_global_id: int = None,
     invalidity_mask_threshold: float = 0.5,
+    scaling_coeff: float = 1.0,
 ) -> Union[xr.Dataset, None]:
     """
     Rasterize a point cloud with its color bands to a Dataset
@@ -457,7 +462,7 @@ def rasterize(  # pylint: disable=too-many-positional-arguments
     """
 
     if sigma is None:
-        sigma = resolution
+        sigma = scaling_coeff / 2
 
     # If no valid points are found in cloud, return default values
     if cloud.size == 0:

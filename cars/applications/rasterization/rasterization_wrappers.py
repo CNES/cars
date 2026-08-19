@@ -41,7 +41,7 @@ from cars.core import constants as cst
 
 
 def compute_xy_starts_and_sizes(
-    resolution: float, cloud: pandas.DataFrame
+    resolution: list, cloud: pandas.DataFrame
 ) -> Tuple[float, float, int, int]:
     """
     Compute xstart, ystart, xsize and ysize
@@ -59,23 +59,23 @@ def compute_xy_starts_and_sizes(
     xmax = np.nanmax(cloud[cst.X].values)
 
     # Clamp to a regular grid
-    x_start = np.floor(xmin / resolution) * resolution
+    x_start = np.floor(xmin / resolution[0]) * resolution[0]
 
     # Derive ystart
     ymin = np.nanmin(cloud[cst.Y].values)
     ymax = np.nanmax(cloud[cst.Y].values)
 
     # Clamp to a regular grid
-    y_start = np.ceil(ymax / resolution) * resolution
+    y_start = np.ceil(ymax / resolution[1]) * resolution[1]
 
-    x_size = int(1 + np.floor((xmax - x_start) / resolution))
-    y_size = int(1 + np.floor((y_start - ymin) / resolution))
+    x_size = int(1 + np.floor((xmax - x_start) / resolution[0]))
+    y_size = int(1 + np.floor((y_start - ymin) / resolution[1]))
 
     return x_start, y_start, x_size, y_size
 
 
 def compute_values_1d(
-    x_start: float, y_start: float, x_size: int, y_size: int, resolution: float
+    x_start: float, y_start: float, x_size: int, y_size: int, resolution: list
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the x and y values as 1d arrays
@@ -89,14 +89,14 @@ def compute_values_1d(
     :return: a tuple composed of the x and y 1d arrays
     """
     x_values_1d = np.linspace(
-        x_start + 0.5 * resolution,
-        x_start + resolution * (x_size + 0.5),
+        x_start + 0.5 * resolution[0],
+        x_start + resolution[0] * (x_size + 0.5),
         x_size,
         endpoint=False,
     )
     y_values_1d = np.linspace(
-        y_start - 0.5 * resolution,
-        y_start - resolution * (y_size + 0.5),
+        y_start - 0.5 * resolution[1],
+        y_start - resolution[1] * (y_size + 0.5),
         y_size,
         endpoint=False,
     )
@@ -159,7 +159,7 @@ def create_raster_dataset(  # noqa: C901
     y_start: float,
     x_size: int,
     y_size: int,
-    resolution: float,
+    resolution: list,
     hgt_no_data: int,
     texture_no_data: int,
     msk_no_data: int,

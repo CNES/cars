@@ -437,14 +437,14 @@ def roi_to_start_and_size(region, resolution):
     :param region: The region to convert
     :type region: list of four float
     :param resolution: The resolution to use to determine sizes
-    :type resolution: float
+    :type resolution: list
     :return: xstart, ystart, xsize, ysize tuple
     :rtype: list of two float + two int
     """
     xstart = region[0]
     ystart = region[3]
-    xsize = int(np.round((region[2] - region[0]) / resolution))
-    ysize = int(np.round((region[3] - region[1]) / resolution))
+    xsize = int(np.round((region[2] - region[0]) / resolution[0]))
+    ysize = int(np.round((region[3] - region[1]) / resolution[1]))
 
     return xstart, ystart, xsize, ysize
 
@@ -463,14 +463,14 @@ def snap_to_grid(xmin, ymin, xmax, ymax, resolution):
     :param ymax: ymax of the roi
     :type ymax: float
     :param resolution: size of cells for snapping
-    :type resolution: float
+    :type resolution: list
     :return: xmin, ymin, xmax, ymax snapped tuple
     :rtype: list of four float
     """
-    xmin = math.floor(xmin / resolution) * resolution
-    xmax = math.ceil(xmax / resolution) * resolution
-    ymin = math.floor(ymin / resolution) * resolution
-    ymax = math.ceil(ymax / resolution) * resolution
+    xmin = math.floor(xmin / resolution[0]) * resolution[0]
+    xmax = math.ceil(xmax / resolution[0]) * resolution[0]
+    ymin = math.floor(ymin / resolution[1]) * resolution[1]
+    ymax = math.ceil(ymax / resolution[1]) * resolution[1]
 
     return xmin, ymin, xmax, ymax
 
