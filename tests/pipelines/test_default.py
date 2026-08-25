@@ -23,10 +23,15 @@ Test module for cars/pipelines/parameters/dsm_inputs.py
 """
 
 import copy
+import os
 
 import pytest
+import yaml
 
-from cars.pipelines.default.default_pipeline import overide_pipeline_conf
+from cars.pipelines.default.default_pipeline import (
+    load_subsampling_inputs,
+    overide_pipeline_conf,
+)
 
 
 @pytest.mark.unit_tests
@@ -192,3 +197,30 @@ def test_overide_pipeline_conf_mixed_types():
     }
 
     assert result == expected
+
+
+@pytest.mark.unit_tests
+def test_load_subsampling_inputs(tmp_path):
+    """Test loading subsampling-generated input configuration."""
+
+    res = 4
+    subsampling_dir = tmp_path / "subsampling" / f"res_{res}"
+    subsampling_dir.mkdir(parents=True)
+
+    expected_inputs = {
+        "sensors": {
+            "one": {
+                "image": "path/to/img1.tif",
+                "geomodel": "path/to/geo1.geom",
+            }
+        },
+        "pairing": [["one", "one"]],
+    }
+
+    yaml_file = os.path.join(subsampling_dir, "input.yaml")
+    with open(yaml_file, "w", encoding="utf-8") as file:
+        yaml.safe_dump(expected_inputs, file)
+
+    loaded_inputs = load_subsampling_inputs(str(tmp_path), res)
+
+    assert loaded_inputs == expected_inputs
