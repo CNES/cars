@@ -3,4 +3,4 @@ surface_modeling:
   applications:
     dense_matching:
       confidence_filtering:
-        activated: false
+        use_bounds_intervals: false

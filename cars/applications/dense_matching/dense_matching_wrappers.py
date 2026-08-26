@@ -557,7 +557,7 @@ def create_disp_dataset(  # noqa: C901
     ] = 1
 
     disp_ds.coords[cst.BAND_INVALIDITY_MASK] = ["occlusion", "mismatch"]
-    disp_ds["invalidity_mask"] = xr.DataArray(
+    disp_ds[cst.EPI_INVALIDITY_MASK] = xr.DataArray(
         invalidity_mask, dims=[cst.BAND_INVALIDITY_MASK, cst.ROW, cst.COL]
     )
 
@@ -972,30 +972,38 @@ def confidence_filtering(
     :param conf_filtering: the confidence_filtering parameters
     :type conf_filtering: dict
     """
-
     data_risk_inf = dataset[requested_confidence[0]].values
     data_risk_sup = dataset[requested_confidence[1]].values
     risk_range = data_risk_sup - data_risk_inf
 
-    data_bounds_inf = dataset[requested_confidence[2]].values
-    data_bounds_sup = dataset[requested_confidence[3]].values
-    bounds_range = data_bounds_sup - data_bounds_inf
-
     disp_min = dataset["disp_min_grid"].values
     disp_max = dataset["disp_max_grid"].values
 
-    risk_ratio = risk_range / (disp_max - disp_min)
-    bounds_ratio = bounds_range / (disp_max - disp_min)
+    if conf_filtering["use_bounds_intervals"]:
+        data_bounds_inf = dataset[requested_confidence[2]].values
+        data_bounds_sup = dataset[requested_confidence[3]].values
+        bounds_range = data_bounds_sup - data_bounds_inf
 
-    bounds_mask = (bounds_ratio > conf_filtering["bounds_ratio_threshold"]) & (
-        bounds_range > conf_filtering["bounds_range_threshold"]
-    )
+        bounds_ratio = bounds_range / (disp_max - disp_min)
+
+        bounds_mask = (
+            bounds_ratio > conf_filtering["bounds_ratio_threshold"]
+        ) & (bounds_range > conf_filtering["bounds_range_threshold"])
+
+    risk_ratio = risk_range / (disp_max - disp_min)
+
     risk_mask = (risk_ratio > conf_filtering["risk_ratio_threshold"]) & (
         risk_range > conf_filtering["risk_range_threshold"]
     )
-    mask = bounds_mask | risk_mask
-    dataset["disp"].values[mask] = np.nan
-    dataset["disp_msk"].values[mask] = 0
+
+    if conf_filtering["use_bounds_intervals"]:
+        mask = bounds_mask | risk_mask
+    else:
+        mask = risk_mask
+
+    dataset[cst.EPI_INVALIDITY_MASK].loc[
+        {cst.BAND_INVALIDITY_MASK: "mismatch"}
+    ].values[mask] = 1
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -1003,9 +1011,16 @@ def confidence_filtering(
             dataset["disp"], nan_ratio_func, size=conf_filtering["win_nanratio"]
         )
 
-    mask = (nan_ratio > conf_filtering["nan_threshold"]) & (
-        (bounds_range > conf_filtering["bounds_range_threshold"])
-        | (risk_range > conf_filtering["risk_range_threshold"])
-    )
-    dataset["disp"].values[mask] = np.nan
-    dataset["disp_msk"].values[mask] = 0
+    if conf_filtering["use_bounds_intervals"]:
+        mask = (nan_ratio > conf_filtering["nan_threshold"]) & (
+            (bounds_range > conf_filtering["bounds_range_threshold"])
+            | (risk_range > conf_filtering["risk_range_threshold"])
+        )
+    else:
+        mask = (nan_ratio > conf_filtering["nan_threshold"]) & (
+            risk_range > conf_filtering["risk_range_threshold"]
+        )
+
+    dataset[cst.EPI_INVALIDITY_MASK].loc[
+        {cst.BAND_INVALIDITY_MASK: "mismatch"}
+    ].values[mask] = 1
