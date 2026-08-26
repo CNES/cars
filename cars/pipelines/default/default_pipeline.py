@@ -1258,15 +1258,15 @@ def extract_conf_with_resolution(
     if first_res:
         # read the first resolution conf with json package
         with open(PIPELINE_CONFS[FIRST_RES], "r", encoding="utf-8") as file:
-            overiding_conf = yaml.safe_load(file)
+            default_conf = yaml.safe_load(file)
     elif intermediate_res:
         with open(
             PIPELINE_CONFS[INTERMEDIATE_RES], "r", encoding="utf-8"
         ) as file:
-            overiding_conf = yaml.safe_load(file)
+            default_conf = yaml.safe_load(file)
     else:
         with open(PIPELINE_CONFS[FINAL_RES], "r", encoding="utf-8") as file:
-            overiding_conf = yaml.safe_load(file)
+            default_conf = yaml.safe_load(file)
 
     if last_res and dsm_cst.DSMS not in current_conf[INPUT]:
         # Use filling applications only for last resolution
@@ -1286,6 +1286,8 @@ def extract_conf_with_resolution(
                 "normals": None,
                 "tile_id": None,
             }
+
+    overiding_conf = {}
 
     # Extract surface modeling conf
     new_conf[pipeline_cst.SURFACE_MODELING] = {}
@@ -1326,19 +1328,47 @@ def extract_conf_with_resolution(
     }
     new_conf = overide_pipeline_conf(new_conf, overiding_conf)
 
+    new_conf = update_conf(new_conf, default_conf)
+
+    dense_matching = (
+        new_conf.get("surface_modeling", {})
+        .get("applications", {})
+        .get("dense_matching", {})
+    )
+
+    confidence_filtering_conf = dense_matching.get("confidence_filtering", {})
+
+    use_bounds_intervals = confidence_filtering_conf.get(
+        "use_bounds_intervals", True
+    )
+    confidence_filtering = confidence_filtering_conf.get("activated", True)
+    performance_map_method = dense_matching.get("performance_map_method")
+
+    if confidence_filtering:
+        if not performance_map_method:
+            performance_map_method = ["risk"]
+        elif isinstance(performance_map_method, str):
+            performance_map_method = [performance_map_method]
+
+        if "risk" not in performance_map_method:
+            performance_map_method.append("risk")
+
+        if use_bounds_intervals and "intervals" not in performance_map_method:
+            performance_map_method.append("intervals")
+
+    overiding_conf = {
+        pipeline_cst.SURFACE_MODELING: {
+            APPLICATIONS: {
+                "dense_matching": {
+                    "performance_map_method": performance_map_method
+                }
+            }
+        },
+    }
+    new_conf = update_conf(new_conf, overiding_conf)
+
     # Overide output to not compute data
     if not last_res:
-        overiding_conf = {
-            pipeline_cst.SURFACE_MODELING: {
-                APPLICATIONS: {
-                    "dense_matching": {
-                        "performance_map_method": ["risk", "intervals"]
-                    }
-                }
-            },
-        }
-        new_conf = overide_pipeline_conf(new_conf, overiding_conf)
-
         # set product level to dsm
         new_conf[OUTPUT][out_cst.PRODUCT_LEVEL] = ["dsm"]
         # remove resolution to let CARS compute it for current
@@ -1519,6 +1549,37 @@ def overide_pipeline_conf(conf, overiding_conf, append_classification=False):
                 base_dict[key] = value
 
     merge_recursive(result, overiding_conf)
+    return result
+
+
+def update_conf(conf, overiding_conf):
+    """
+    update_configuration
+
+    :param conf: base configuration dictionary
+    :type conf: dict
+    :param overiding_conf: overriding configuration dictionary
+    :type overiding_conf: dict
+    :return: merged configuration
+    :rtype: dict
+    """
+    result = copy.deepcopy(conf)
+
+    def merge_recursive(base_dict, override_dict):
+        """Main recursive function"""
+        for key, value in override_dict.items():
+            if (
+                key in base_dict
+                and isinstance(base_dict[key], dict)
+                and isinstance(value, dict)
+            ):
+                merge_recursive(base_dict[key], value)
+
+            elif key not in base_dict:
+                base_dict[key] = value
+
+    merge_recursive(result, overiding_conf)
+
     return result
 
 

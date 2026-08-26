@@ -245,6 +245,10 @@ class PandoraMethod(
             )
         )
 
+        self.use_bounds_intervals = conf_to_check["confidence_filtering"][
+            "use_bounds_intervals"
+        ]
+
         # return the conf without unvalidated keys
         return conf_to_check
 
@@ -349,6 +353,7 @@ class PandoraMethod(
             "risk_range_threshold": 9,
             "nan_threshold": 0.2,
             "win_nanratio": 20,
+            "use_bounds_intervals": True,
         }
 
         specific_default_methods = {
@@ -373,6 +378,7 @@ class PandoraMethod(
             "risk_range_threshold": int,
             "nan_threshold": float,
             "win_nanratio": int,
+            "use_bounds_intervals": bool,
         }
 
         used_conf = default_conf.copy()
@@ -810,9 +816,15 @@ class PandoraMethod(
         requested_confidence = [
             "confidence_from_risk_min.cars_2",
             "confidence_from_risk_max.cars_2",
-            "confidence_from_interval_bounds_inf.cars_3",
-            "confidence_from_interval_bounds_sup.cars_3",
         ]
+
+        if self.use_bounds_intervals:
+            requested_confidence.extend(
+                [
+                    "confidence_from_interval_bounds_inf.cars_3",
+                    "confidence_from_interval_bounds_sup.cars_3",
+                ]
+            )
 
         if (
             all(key in disp_dataset for key in requested_confidence)
