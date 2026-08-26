@@ -125,18 +125,18 @@ class DefaultPipeline(PipelineTemplate):
         progress_tree = ProgressTree()
         progress_tasks = {}
 
+        subsampling_pid = None
+        if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
+            subsampling_pid = progress_tree.begin_pipeline(
+                "Subsampling", parent_id=parent_pipeline_id
+            )
+
         edge_detection_pid = None
         if self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]:
             edge_detection_pid = progress_tree.begin_pipeline(
                 "Edge Detection", parent_id=parent_pipeline_id
             )
             self.edge_detection_pid = edge_detection_pid
-
-        subsampling_pid = None
-        if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
-            subsampling_pid = progress_tree.begin_pipeline(
-                "Subsampling", parent_id=parent_pipeline_id
-            )
 
         sm_pids = {}
         sm_tie_points_pids = {}
@@ -789,32 +789,6 @@ class DefaultPipeline(PipelineTemplate):
         updated_conf = {}
         updated_conf["pipeline"] = self.pipeline_to_use
 
-        if self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]:
-            current_log_dir = os.path.join(self.out_dir, "logs", EDGE_DETECTION)
-            cars_logging.setup_logging_pipeline(
-                loglevel,
-                out_dir=current_log_dir,
-                pipeline=EDGE_DETECTION,
-            )
-
-            edge_detection_pipeline = Pipeline(
-                pipeline_cst.EDGE_DETECTION,
-                self.construct_edge_detection_conf(
-                    self.used_conf[len(self.resolutions) - 1]
-                ),
-                self.config_dir,
-            )
-            edge_detection_pipeline.run(
-                parent_pipeline_id=self.edge_detection_pid
-            )
-            self.edge_detection_used_conf = edge_detection_pipeline.used_conf
-
-            log_wrapper.generate_summary(
-                current_log_dir,
-                edge_detection_pipeline.used_conf,
-                pipeline_cst.EDGE_DETECTION,
-            )
-
         if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
             current_log_dir = os.path.join(self.out_dir, "logs", "subsampling")
             cars_logging.setup_logging_pipeline(
@@ -848,6 +822,41 @@ class DefaultPipeline(PipelineTemplate):
                 APPLICATIONS: subsampling_pipeline.used_conf[APPLICATIONS],
             }
 
+        if self.pipeline_to_use[pipeline_cst.EDGE_DETECTION]:
+            current_log_dir = os.path.join(self.out_dir, "logs", EDGE_DETECTION)
+            cars_logging.setup_logging_pipeline(
+                loglevel,
+                out_dir=current_log_dir,
+                pipeline=EDGE_DETECTION,
+            )
+
+            edge_detection_conf = self.construct_edge_detection_conf(
+                self.used_conf[len(self.resolutions) - 1]
+            )
+            if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
+                final_res = self.resolutions[-1]
+                if final_res != 1:
+                    edge_detection_conf[INPUT] = load_subsampling_inputs(
+                        self.intermediate_data_dir,
+                        final_res,
+                    )
+
+            edge_detection_pipeline = Pipeline(
+                pipeline_cst.EDGE_DETECTION,
+                edge_detection_conf,
+                self.config_dir,
+            )
+            edge_detection_pipeline.run(
+                parent_pipeline_id=self.edge_detection_pid
+            )
+            self.edge_detection_used_conf = edge_detection_pipeline.used_conf
+
+            log_wrapper.generate_summary(
+                current_log_dir,
+                edge_detection_pipeline.used_conf,
+                pipeline_cst.EDGE_DETECTION,
+            )
+
         if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
             for resolution_index, epipolar_res in enumerate(self.resolutions):
 
@@ -859,19 +868,9 @@ class DefaultPipeline(PipelineTemplate):
                 # Put right directory for subsampling
                 if self.pipeline_to_use[pipeline_cst.SUBSAMPLING]:
                     if epipolar_res != 1:
-                        yaml_file = os.path.join(
-                            self.intermediate_data_dir,
-                            "subsampling/res_"
-                            + str(epipolar_res)
-                            + "/input.yaml",
+                        current_conf[INPUT] = load_subsampling_inputs(
+                            self.intermediate_data_dir, epipolar_res
                         )
-                        with open(yaml_file, encoding="utf-8") as f:
-                            data = yaml.safe_load(f)
-
-                        json_str = json.dumps(data, indent=4)
-                        data = json.loads(json_str)
-
-                        current_conf[INPUT] = data
 
                 # update directory for unit pipeline
                 current_conf[OUTPUT][
@@ -1437,6 +1436,31 @@ def edge_detection_available():
     False otherwise.
     """
     return pipeline_cst.EDGE_DETECTION in Pipeline.available_pipeline
+
+
+def load_subsampling_inputs(intermediate_data_dir, epipolar_res):
+    """
+    Load the subsampling-generated input configuration for a resolution.
+
+    :param intermediate_data_dir: intermediate data directory
+    :type intermediate_data_dir: str
+    :param epipolar_res: epipolar resolution
+    :type epipolar_res: int
+    :return: inputs configuration
+    :rtype: dict
+    """
+
+    yaml_file = os.path.join(
+        intermediate_data_dir,
+        "subsampling",
+        "res_" + str(epipolar_res),
+        "input.yaml",
+    )
+    with open(yaml_file, encoding="utf-8") as file:
+        data = yaml.safe_load(file)
+
+    # Keep the same conversion behavior as the rest of the pipeline.
+    return json.loads(json.dumps(data, indent=4))
 
 
 def get_edge_detection_sensor_keys(
