@@ -1,0 +1,8 @@
+---
+surface_modeling:
+  advanced:
+    all:
+      phasing:
+        point: [112082.4, 107924.4]
+        unit: arcsec
+        epsg: 4326

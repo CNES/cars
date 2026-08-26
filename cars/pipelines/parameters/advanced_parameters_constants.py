@@ -42,6 +42,17 @@ MIN_IMAGE_SIZE = "min_image_size"
 
 DSM_MERGING_TILE_SIZE = "dsm_merging_tile_size"
 
+# phasing constants
+PHASING_POINT = "point"
+PHASING_EPSG = "epsg"
+PHASING_UNIT = "unit"
+
+VALID_PHASING_UNITS = [
+    "meter",
+    "degree",
+    "arcsec",
+]
+
 
 # inner epipolar a priori constants
 GRID_CORRECTION = "grid_correction"

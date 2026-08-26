@@ -317,7 +317,7 @@ def check_phasing(dsm_dict):
             continue
 
         epsg = inputs.rasterio_get_epsg_code(dsm_dict[dsm_key]["dsm"])
-        profile = inputs.rasterio_get_profile(dsm_dict[ref_key]["dsm"])
+        profile = inputs.rasterio_get_profile(dsm_dict[dsm_key]["dsm"])
         transform = list(profile["transform"])
         res_x = transform[0]
         res_y = transform[4]
@@ -329,7 +329,12 @@ def check_phasing(dsm_dict):
                 f"expected {ref_epsg}."
             )
 
-        if ref_res_x != res_x or ref_res_y != res_y:
+        if not np.allclose(
+            [ref_res_x, ref_res_y],
+            [res_x, res_y],
+            rtol=0.0,
+            atol=1e-9,
+        ):
             raise RuntimeError(
                 f"Resolution mismatch: DSM {dsm_key} has resolution "
                 f"{(res_x, res_y)}, expected {(ref_res_x, ref_res_y)}."
@@ -340,7 +345,10 @@ def check_phasing(dsm_dict):
         resolution = np.array([ref_res_x, -ref_res_y])
         res_ratio = diff / resolution
 
-        if ~np.all(np.equal(res_ratio, res_ratio.astype(int))) and ~np.all(
-            np.equal(1 / res_ratio, (1 / res_ratio).astype(int))
+        if not np.allclose(
+            res_ratio,
+            np.round(res_ratio),
+            rtol=0.0,
+            atol=1e-6,
         ):
             raise RuntimeError(f"DSM {dsm_key} and {ref_key} are not phased")

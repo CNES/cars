@@ -1698,3 +1698,98 @@ def test_gizeh_with_edge_detection_data():
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
+
+
+@pytest.mark.end2end_tests
+def test_gizeh_phasing_4326_arcsec():
+    """
+    End to end pipeline processing with phasing in EPSG:4326
+    using arcseconds.
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "sensors": {
+                    "image1": {
+                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img1.geom"
+                        ),
+                    },
+                    "image2": {
+                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "geomodel": absolute_data_path(
+                            "input/phr_gizeh/img2.geom"
+                        ),
+                    },
+                },
+            },
+            "orchestrator": {
+                "mode": "multiprocessing",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+            "surface_modeling": {
+                "advanced": {
+                    "phasing": {
+                        "point": [0.03, 0.03],
+                        "unit": "arcsec",
+                        "epsg": 4326,
+                    }
+                }
+            },
+            "output": {
+                "directory": directory,
+                "epsg": 4326,
+            },
+        }
+
+        out_dir = conf["output"]["directory"]
+
+        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
+        surface_modeling_pipeline.run()
+
+        intermediate_output_dir = "intermediate_data"
+        ref_output_dir = "ref_output"
+
+        copy2(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "dsm_test_surface_modeling_gizeh_phasing_4326_arcsec.tif",
+                )
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    intermediate_output_dir,
+                    "image_test_surface_modeling_gizeh_phasing_4326_arcsec.tif",
+                )
+            ),
+        )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "dsm_test_surface_modeling_gizeh_phasing_4326_arcsec.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "image.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "image_test_surface_modeling_gizeh_phasing_4326_arcsec.tif",
+                )
+            ),
+            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
+            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )

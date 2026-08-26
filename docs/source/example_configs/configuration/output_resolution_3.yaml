@@ -1,0 +1,6 @@
+---
+output:
+  epsg: 32636
+  resolution:
+    value: 0.6
+    unit: meter
