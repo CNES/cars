@@ -484,6 +484,11 @@ class SurfaceModelingPipeline(PipelineTemplate):
         )
         pipeline_conf = conf.get(PIPELINE, {})
         self.used_conf[PIPELINE] = {}
+
+        self.input_phasing = copy.deepcopy(
+            pipeline_conf.get(ADVANCED, {}).get(adv_cst.PHASING)
+        )
+
         safe_makedirs(output_dem_dir)
         (
             inputs,
@@ -520,6 +525,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
             output,
             self.scaling_coeff,
         ) = self.check_output(inputs, conf[OUTPUT], self.scaling_coeff, bounds)
+
+        self.phasing = self.used_conf[PIPELINE][ADVANCED][adv_cst.PHASING]
+
+        self.epsg = self.check_phasing_output_consistency(
+            self.phasing,
+            output,
+        )
 
         # Get ROI
         (
@@ -575,8 +587,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.used_classif_values_for_filling = self.get_classif_values_filling(
             self.used_conf[INPUT]
         )
-
-        self.phasing = self.used_conf[PIPELINE][ADVANCED][adv_cst.PHASING]
 
         self.compute_depth_map = not self.output_level_none
 
@@ -732,6 +742,18 @@ class SurfaceModelingPipeline(PipelineTemplate):
         """
         return sensor_inputs.sensors_check_inputs(conf, config_dir=config_dir)
 
+    def restore_input_phasing(self):
+        """
+        Restore the phasing configuration provided by the user.
+        """
+
+        self.used_conf[PIPELINE][ADVANCED][adv_cst.PHASING] = copy.deepcopy(
+            self.input_phasing
+        )
+        self.refined_conf[PIPELINE][ADVANCED][adv_cst.PHASING] = copy.deepcopy(
+            self.input_phasing
+        )
+
     def save_configurations(self):
         """
         Save used_conf and refined_conf configurations
@@ -759,6 +781,24 @@ class SurfaceModelingPipeline(PipelineTemplate):
         """
         return output_parameters.check_output_parameters(
             inputs, conf, scaling_coeff, bounds
+        )
+
+    @staticmethod
+    def check_phasing_output_consistency(phasing, output):
+        """
+        Check consistency between phasing and output configuration.
+
+        :param phasing: validated phasing configuration
+        :type phasing: dict or None
+        :param output: validated output configuration
+        :type output: dict
+
+        :return: EPSG to use for terrain processing
+        :rtype: int or None
+        """
+        return output_parameters.check_phasing_output_parameters(
+            phasing,
+            output,
         )
 
     def check_applications(  # noqa: C901 : too complex
@@ -1152,14 +1192,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
         # pylint:disable=too-many-return-statements
         inputs = self.used_conf[INPUT]
         output = self.used_conf[OUTPUT]
-
-        # Initialize epsg for terrain tiles
-        self.phasing = self.used_conf[PIPELINE][ADVANCED][adv_cst.PHASING]
-
-        if self.phasing is not None:
-            self.epsg = self.phasing["epsg"]
-        else:
-            self.epsg = output[out_cst.EPSG]
 
         if self.epsg is not None:
             # Compute roi polygon, in output EPSG
@@ -2726,8 +2758,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         self.previous_out_dir = previous_out_dir
 
+        # Restore the user-provided phasing in saved configurations
+        # self.phasing keeps the normalized values used for computations
+        self.restore_input_phasing()
+
         # saved used configuration
         self.save_configurations()
+
         # start cars orchestrator
         with orchestrator.Orchestrator(
             orchestrator_conf=self.used_conf[ORCHESTRATOR],

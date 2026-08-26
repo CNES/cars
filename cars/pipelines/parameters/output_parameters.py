@@ -51,6 +51,91 @@ def is_valid_epsg(epsg) -> bool:
         return False
 
 
+def check_resolution_value(value):
+    """Check that a rectangular resolution contains two numeric values."""
+    if isinstance(value, list) and (
+        len(value) != 2
+        or not all(isinstance(elem, (int, float)) for elem in value)
+    ):
+        raise RuntimeError(
+            "The resolution must contain exactly two numeric values"
+        )
+
+
+def check_resolution(resolution, epsg):
+    """
+    Check the resolution parameter and convert it to the unit expected by
+    the selected CRS.
+
+    The resolution value can be either scalar or rectangular.
+
+    Projected CRS:
+        meter -> meter
+
+    Geographic CRS:
+        degree -> degree
+        arcsec -> degree
+
+    Any other unit/CRS combination raises a RuntimeError.
+
+    :param resolution: resolution parameter to check
+    :type resolution: int, float, list, dict, or None
+    :param epsg: EPSG code for the coordinate reference system
+    :type epsg: int or None
+    :return: resolution value in meters or degrees
+    :rtype: int, float, list, or None
+    """
+    if resolution is None:
+        return None
+
+    # Resolution without explicit unit
+    if isinstance(resolution, (int, float, list)):
+        check_resolution_value(resolution)
+        return resolution
+
+    # A dictionary means that an explicit unit was provided.
+    if epsg is None:
+        raise RuntimeError(
+            "An EPSG must be specified when a resolution unit is provided."
+        )
+
+    resolution_schema = {
+        output_constants.RESOLUTION_VALUE: Or(int, float, list),
+        output_constants.RESOLUTION_UNIT: And(
+            str,
+            lambda unit: unit in output_constants.VALID_RESOLUTION_UNITS,
+        ),
+    }
+
+    Checker(resolution_schema).validate(resolution)
+
+    value = resolution[output_constants.RESOLUTION_VALUE]
+    unit = resolution[output_constants.RESOLUTION_UNIT]
+
+    check_resolution_value(value)
+
+    crs = CRS.from_epsg(epsg)
+
+    if crs.is_geographic:
+        if unit == "arcsec":
+            if isinstance(value, list):
+                value = [elem / 3600.0 for elem in value]
+            else:
+                value /= 3600.0
+
+        elif unit != "degree":
+            raise RuntimeError(
+                f"Resolution unit {unit} is incompatible with EPSG {epsg}."
+            )
+
+    elif unit != "meter":
+        raise RuntimeError(
+            f"Resolution unit {unit} is incompatible with EPSG {epsg}."
+        )
+
+    return value
+
+
 def check_output_parameters(  # noqa: C901 : too complex
     inputs,
     conf,
@@ -104,26 +189,32 @@ def check_output_parameters(  # noqa: C901 : too complex
         output_constants.EPSG, None
     )
 
-    resolution = None
-    if overloaded_conf.get(output_constants.RESOLUTION, None) is not None:
-        resolution = overloaded_conf[output_constants.RESOLUTION]
+    resolution = check_resolution(
+        overloaded_conf.get(output_constants.RESOLUTION),
+        overloaded_conf[output_constants.EPSG],
+    )
 
-        if isinstance(resolution, (float, int)):
-            resolution = [resolution, resolution]
+    if isinstance(resolution, (float, int)):
+        resolution = [resolution, resolution]
+
     overloaded_scaling_coeff = scaling_coeff
 
     res_val = 0.5
+    resolution_unit = "m"
+
     if bounds is not None:
         if overloaded_conf[output_constants.EPSG] is not None:
             crs = CRS.from_epsg(overloaded_conf[output_constants.EPSG])
+
             if crs.is_geographic:
+                resolution_unit = "degree"
                 xmin = bounds[0]
                 ymin = bounds[1]
                 utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
                 conversion_factor = preprocessing.get_conversion_factor(
                     bounds, utm_epsg, crs.to_epsg()
                 )
-                res_val = 0.5 / conversion_factor  # convert to degree
+                res_val = 0.5 / conversion_factor  # convert 0.5 m to degrees
 
     if scaling_coeff is not None:
         if resolution is not None:
@@ -133,15 +224,15 @@ def check_output_parameters(  # noqa: C901 : too complex
             ):
                 logger.warning(
                     "The requested DSM resolution of "
-                    f"{overloaded_conf[output_constants.RESOLUTION]} seems "
-                    "too low for the sensor images' resolution. "
+                    f"{resolution} {resolution_unit} "
+                    "seems finer than the sensor images' resolution. "
                     "The pipeline will still continue with it."
                 )
         else:
             resolution = float(res_val * scaling_coeff)
             logger.debug(
                 "The resolution of the output DSM will be "
-                f"{resolution} meters. "
+                f"{resolution} {resolution_unit}."
             )
 
     overloaded_conf[output_constants.RESOLUTION] = resolution
@@ -244,6 +335,54 @@ def check_output_parameters(  # noqa: C901 : too complex
                     )
 
     return overloaded_conf, overloaded_scaling_coeff
+
+
+def check_phasing_output_parameters(phasing, output):
+    """
+    Check consistency between phasing and output configuration.
+
+    The phasing CRS must match the horizontal component of the output CRS.
+    When phasing is enabled, an output EPSG must be explicitly specified.
+
+    :param phasing: validated phasing configuration
+    :type phasing: dict or None
+    :param output: validated output configuration
+    :type output: dict
+
+    :raises RuntimeError:
+        If phasing is enabled without an output EPSG, or if the phasing CRS
+        does not match the horizontal component of the output CRS.
+
+    :return: EPSG to use for terrain processing
+    :rtype: int or None
+    """
+
+    output_epsg = output[output_constants.EPSG]
+
+    if phasing is None:
+        return output_epsg
+
+    if output_epsg is None:
+        raise RuntimeError(
+            "An output EPSG must be specified when phasing is used."
+        )
+
+    phasing_epsg = phasing["epsg"]
+
+    output_crs = CRS(f"EPSG:{output_epsg}")
+
+    if output_crs.is_compound:
+        output_crs = output_crs.sub_crs_list[0]
+
+    output_horizontal_epsg = output_crs.to_epsg()
+
+    if phasing_epsg != output_horizontal_epsg:
+        raise RuntimeError(
+            f"Phasing EPSG {phasing_epsg} does not match "
+            f"output horizontal EPSG {output_horizontal_epsg}."
+        )
+
+    return phasing_epsg
 
 
 def check_product_format(overloaded_conf):

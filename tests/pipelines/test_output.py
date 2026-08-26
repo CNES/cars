@@ -143,6 +143,131 @@ def test_output_epsg(case):
 
 
 @pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "resolution, epsg, expected",
+    [
+        # Resolution can be omitted.
+        (None, 4326, None),
+        # Legacy float syntax must still be supported without requiring an EPSG.
+        (0.6, None, 0.6),
+        # Projected CRS: meters are accepted and returned unchanged.
+        (
+            {"value": 0.6, "unit": "meter"},
+            32631,
+            0.6,
+        ),
+        # Geographic CRS: degrees are accepted and returned unchanged.
+        (
+            {"value": 0.00001, "unit": "degree"},
+            4326,
+            0.00001,
+        ),
+        # Geographic CRS: arcseconds are converted to degrees.
+        (
+            {"value": 1, "unit": "arcsec"},
+            4326,
+            1 / 3600,
+        ),
+    ],
+)
+def test_resolution_valid(resolution, epsg, expected):
+    """
+    Test valid resolution configurations.
+
+    Tested cases:
+    - legacy float syntax
+    - meters with a projected CRS
+    - degrees with a geographic CRS
+    - arcseconds with a geographic CRS
+    """
+
+    assert output_parameters.check_resolution(
+        resolution, epsg
+    ) == pytest.approx(expected)
+
+
+@pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "resolution, epsg",
+    [
+        # Geographic CRS: meters are not allowed.
+        (
+            {"value": 0.6, "unit": "meter"},
+            4326,
+        ),
+        # Projected CRS: degrees are not allowed.
+        (
+            {"value": 0.00001, "unit": "degree"},
+            32631,
+        ),
+        # Projected CRS: arcseconds are not allowed.
+        (
+            {"value": 1, "unit": "arcsec"},
+            32631,
+        ),
+        # A resolution unit requires an EPSG.
+        (
+            {"value": 1, "unit": "arcsec"},
+            None,
+        ),
+    ],
+)
+def test_resolution_invalid(resolution, epsg):
+    """
+    Test invalid resolution and CRS combinations.
+    """
+
+    with pytest.raises(RuntimeError):
+        output_parameters.check_resolution(resolution, epsg)
+
+
+@pytest.mark.unit_tests
+def test_output_parameters_with_resolution_in_arcsec():
+    """
+    Test resolution conversion from arcseconds to degrees.
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        config = {
+            "directory": os.path.join(directory, "outdir"),
+            "epsg": 4326,
+            "resolution": {
+                "value": 1,
+                "unit": "arcsec",
+            },
+        }
+
+        inputs = {
+            "sensors": {
+                "one": {
+                    "image": {
+                        "loader": "pivot_image",
+                        "main_file": "img1_crop.tif",
+                        "bands": {
+                            "b0": {"path": "img1_crop.tif", "band": 0},
+                            "b1": {"path": "color1.tif", "band": 1},
+                            "b2": {"path": "color1.tif", "band": 2},
+                            "b3": {"path": "color1.tif", "band": 2},
+                        },
+                    },
+                    "geomodel": "img1_crop.geom",
+                },
+                "two": {"image": "img2_crop.tif", "geomodel": "img2_crop.geom"},
+            }
+        }
+
+        overloaded_conf, _ = output_parameters.check_output_parameters(
+            inputs,
+            config,
+            1,
+        )
+
+        assert overloaded_conf["resolution"] == pytest.approx(
+            [1 / 3600, 1 / 3600]
+        )
+
+
+@pytest.mark.unit_tests
 def test_output_minimal():
     """
     Test output

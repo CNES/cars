@@ -1,25 +1,25 @@
 Output configuration
 --------------------
 
-+-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
-| Name                    | Description                                                 | Type               | Default value          | Required |
-+=========================+=============================================================+====================+========================+==========+
-| *directory*             | Output folder where results are stored                      | string             | No                     | Yes      |
-+-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
-| *product_level*         | Output requested products (dsm, point_cloud, dtm)           | list or string     | "dsm"                  | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
-| *product_format*        | Format of the point cloud (tif, laz)                        | dict               | {"point_cloud": "laz"} | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
-| *resolution* [#scaled]_ | Output DSM grid step (only for dsm product level)           | float, int, list   | None [#scaled]_        | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
-| *auxiliary*             | Selection of additional files in products                   | dict               | See below              | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
-| *epsg*                  | EPSG code                                                   | int, string        | None                   | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
-| *geoid*                 | Output geoid                                                | bool or string     | True                   | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
-| *save_by_pair*          | Save output point clouds by pair                            | bool               | False                  | No       |
-+-------------------------+-------------------------------------------------------------+--------------------+------------------------+----------+
++--------------------------+-------------------------------------------------------------+--------------------------+------------------------+----------+
+| Name                     | Description                                                 | Type                     | Default value          | Required |
++==========================+=============================================================+==========================+========================+==========+
+| *directory*              | Output folder where results are stored                      | string                   | No                     | Yes      |
++--------------------------+-------------------------------------------------------------+--------------------------+------------------------+----------+
+| *product_level*          | Output requested products (dsm, point_cloud, dtm)           | list or string           | "dsm"                  | No       |
++--------------------------+-------------------------------------------------------------+--------------------------+------------------------+----------+
+| *product_format*         | Format of the point cloud (tif, laz)                        | dict                     | {"point_cloud": "laz"} | No       |
++--------------------------+-------------------------------------------------------------+--------------------------+------------------------+----------+
+| *resolution* [#scaled]_  | Output DSM grid step (only for dsm product level)           | float, int, list or dict | None [#scaled]_        | No       |
++--------------------------+-------------------------------------------------------------+--------------------------+------------------------+----------+
+| *auxiliary*              | Selection of additional files in products                   | dict                     | See below              | No       |
++--------------------------+-------------------------------------------------------------+--------------------------+------------------------+----------+
+| *epsg* [#epsg_required]_ | EPSG code                                                   | int, string              | None                   | No       |
++--------------------------+-------------------------------------------------------------+--------------------------+------------------------+----------+
+| *geoid*                  | Output geoid                                                | bool or string           | True                   | No       |
++--------------------------+-------------------------------------------------------------+--------------------------+------------------------+----------+
+| *save_by_pair*           | Save output point clouds by pair                            | bool                     | False                  | No       |
++--------------------------+-------------------------------------------------------------+--------------------------+------------------------+----------+
 
 .. include-cars-config:: ../../example_configs/configuration/output_1
 
@@ -180,6 +180,41 @@ Output configuration
 
         .. include-cars-config:: ../../example_configs/configuration/output_epsg_3                
 
+    .. tab:: Resolution
+
+        This parameter defines the output DSM grid step.
+
+        By default, the resolution is expressed in the unit associated with the output CRS.
+
+        - For projected CRS (for example EPSG:32636), the resolution is expressed in meters.
+
+        - For geographic CRS (for example EPSG:4326), the resolution is expressed in degrees.
+
+        The resolution can be provided either as a scalar value or as a dictionary.
+
+        **Scalar value**
+
+        .. include-cars-config:: ../../example_configs/configuration/output_resolution_1
+
+        **Dictionary format**
+
+        .. include-cars-config:: ../../example_configs/configuration/output_resolution_2
+
+        Supported units are:
+
+        - ``meter``: only for projected CRS
+        - ``degree``: only for geographic CRS
+        - ``arcsec``: only for geographic CRS
+
+        The selected unit must be compatible with the output EPSG.
+
+        Examples:
+
+        .. include-cars-config:: ../../example_configs/configuration/output_resolution_3
+
+        .. include-cars-config:: ../../example_configs/configuration/output_resolution_4
+
+        If the selected unit is not compatible with the output EPSG, CARS raises an exception.
 
     .. tab:: Geoid
 
@@ -197,4 +232,6 @@ Output configuration
 
 .. rubric:: Footnotes
 
-.. [#scaled] This parameter is computed at runtime depending on the resolution of the input sensor images. You can still override it in the configuration. Non-square pixels are supported.
+.. [#scaled] This parameter is computed at runtime from the input sensor images when not explicitly provided by the user. It can be overridden in the configuration using a scalar value, a list for non-square pixels, or a dictionary specifying both the value and its unit.
+
+.. [#epsg_required] This parameter is required when an explicit resolution unit is provided or when DSM phasing is enabled. See :ref:`surface_modeling_phasing`.

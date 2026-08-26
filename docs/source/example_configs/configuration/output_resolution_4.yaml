@@ -1,0 +1,6 @@
+---
+output:
+  epsg: 4326
+  resolution:
+    value: 0.00000472
+    unit: degree

@@ -206,6 +206,9 @@ class DefaultPipeline(PipelineTemplate):
 
         self.out_dir = conf[OUTPUT][out_cst.OUT_DIRECTORY]
 
+        # Original resolution
+        self.original_resolution = conf[OUTPUT].get(out_cst.RESOLUTION)
+
         conf[PIPELINE] = self.check_pipeline(conf)
 
         self.pipeline_to_use = conf[PIPELINE]
@@ -1146,6 +1149,11 @@ class DefaultPipeline(PipelineTemplate):
             full_used_conf[pipeline_cst.EDGE_DETECTION] = (
                 self.edge_detection_used_conf[pipeline_cst.EDGE_DETECTION]
             )
+
+        if isinstance(self.original_resolution, dict):
+            full_used_conf[OUTPUT][
+                out_cst.RESOLUTION
+            ] = self.original_resolution
 
         # Save used_conf
         cars_dataset.save_dict(

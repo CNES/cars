@@ -34,6 +34,15 @@ RESOLUTION = "resolution"
 SAVE_BY_PAIR = "save_by_pair"
 AUXILIARY = "auxiliary"
 
+# Resolution keys
+RESOLUTION_VALUE = "value"
+RESOLUTION_UNIT = "unit"
+VALID_RESOLUTION_UNITS = [
+    "meter",
+    "degree",
+    "arcsec",
+]
+
 # Auxiliary keys
 AUX_IMAGE = "image"
 AUX_WEIGHTS = "weights"

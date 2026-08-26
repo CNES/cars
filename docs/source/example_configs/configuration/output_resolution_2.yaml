@@ -1,0 +1,5 @@
+---
+output:
+  resolution:
+    value: 0.017
+    unit: arcsec

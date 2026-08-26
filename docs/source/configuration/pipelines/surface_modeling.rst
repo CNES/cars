@@ -89,6 +89,11 @@ Advanced Parameters
       - A flag to indicate whether to use sensor disparity with n lines of sight triangulation
       - bool
       - False
+    * - phasing
+      - Phase to use for DSM {"point": (x, y), "epsg": epsg, "unit": unit}
+      - dict
+      - None
+
 
 
 
@@ -131,3 +136,31 @@ Ground truth DSM
     Example:
 
     .. include-cars-config:: ../../example_configs/pipeline/surface_modeling_ground_truth_dsm
+
+
+.. _surface_modeling_phasing:
+
+Phasing
+^^^^^^^
+
+    Phase can be added to ensure that multiple DSMs can be merged in the ``dsm -> dsm`` pipeline. The ``point`` parameter defines absolute reference coordinates used to align the DSM grid and does not represent an offset to apply to the DSM.
+
+    The phasing point coordinates, their CRS and their unit must be specified. The EPSG code can be provided either as an integer or as a string, but it must define a horizontal CRS since compound CRS are not supported for phasing.
+
+    The selected unit must be compatible with the phasing CRS. Projected CRS (for example ``EPSG:32636``) only support coordinates expressed in meters, while geographic CRS (for example ``EPSG:4326``) support coordinates expressed in degrees or arcseconds. CARS raises an exception if the selected unit is not compatible with the selected EPSG.
+
+    When phasing is used, an output EPSG must be explicitly specified. The EPSG associated with the phasing point must match the horizontal component of the output CRS. Otherwise, CARS raises an exception.
+
+    +---------+---------------------------------------------------+----------------+---------------+-----------------------------+----------+
+    | Name    | Description                                       | Type           | Default value | Available values            | Required |
+    +=========+===================================================+================+===============+=============================+==========+
+    | *point* | Reference coordinates defining the DSM grid phase | list           | None          |                             | True     |
+    +---------+---------------------------------------------------+----------------+---------------+-----------------------------+----------+
+    | *epsg*  | EPSG code of the phasing point                    | int or str     | None          |                             | True     |
+    +---------+---------------------------------------------------+----------------+---------------+-----------------------------+----------+
+    | *unit*  | Unit used for the phasing point                   | str            | None          | meter, degree, arcsec       | True     |
+    +---------+---------------------------------------------------+----------------+---------------+-----------------------------+----------+
+
+    Example:
+
+    .. include-cars-config:: ../../example_configs/pipeline/surface_modeling_phasing

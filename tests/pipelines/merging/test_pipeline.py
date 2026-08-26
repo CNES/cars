@@ -116,7 +116,7 @@ def test_phased_dsm():
 
 
 @pytest.mark.end2end_tests
-def test_unphased_dsm():
+def test_unphased_dsm_resolution():
     """
     End to end pipeline processing
     """
@@ -126,18 +126,58 @@ def test_unphased_dsm():
                 "dsms": {
                     "dsm1": {
                         "dsm": absolute_data_path(
-                            "input/phr_gizeh/dsm1_unphased.tif"
+                            "input/phr_gizeh/dsm1_unphased_resolution.tif"
                         ),
                         "weights": absolute_data_path(
-                            "input/phr_gizeh/weights1_unphased.tif"
+                            "input/phr_gizeh/weights1_unphased_resolution.tif"
                         ),
                     },
                     "dsm2": {
                         "dsm": absolute_data_path(
-                            "input/phr_gizeh/dsm2_unphased.tif"
+                            "input/phr_gizeh/dsm2_unphased_resolution.tif"
                         ),
                         "weights": absolute_data_path(
-                            "input/phr_gizeh/weights2_unphased.tif"
+                            "input/phr_gizeh/weights2_unphased_resolution.tif"
+                        ),
+                    },
+                }
+            },
+            "merging": {
+                "applications": {"dsm_merging": {"method": "weighted_fusion"}},
+                "advanced": {"save_intermediate_data": True},
+            },
+            "output": {"directory": directory},
+        }
+
+        with pytest.raises(RuntimeError) as error:
+            _ = MergingPipeline(conf)
+
+        assert "Resolution mismatch" in str(error.value)
+
+
+@pytest.mark.end2end_tests
+def test_unphased_dsm_origin():
+    """
+    Check that DSMs with a non-integer pixel origin shift are rejected.
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "dsms": {
+                    "dsm1": {
+                        "dsm": absolute_data_path(
+                            "input/phr_gizeh/dsm1_unphased_origin.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "input/phr_gizeh/weights1_unphased_origin.tif"
+                        ),
+                    },
+                    "dsm2": {
+                        "dsm": absolute_data_path(
+                            "input/phr_gizeh/dsm2_unphased_origin.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "input/phr_gizeh/weights2_unphased_origin.tif"
                         ),
                     },
                 }

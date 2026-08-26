@@ -26,6 +26,8 @@ import os
 
 import rasterio as rio
 from json_checker import And, Checker, OptionalKey, Or
+from pyproj import CRS
+from pyproj.exceptions import CRSError
 
 from cars.core.cars_logging import logger
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
@@ -50,6 +52,93 @@ def get_resolutions(conf):
         return conf[adv_cst.RESOLUTIONS]
 
     return [16, 4, 1]
+
+
+def check_phasing(phasing):
+    """
+    Check the phasing parameter and convert the point coordinates to the unit
+    expected by the selected CRS.
+
+    Projected CRS:
+        meter -> meter
+
+    Geographic CRS:
+        degree -> degree
+        arcsec -> degree
+
+    :param phasing: phasing parameter to check
+    :type phasing: dict or None
+
+    :raises RuntimeError:
+        If the phasing EPSG is invalid, if a compound CRS is used for phasing,
+        or if the selected unit is incompatible with the phasing CRS.
+    :raises json_checker.core.exceptions.CheckerError:
+        If the phasing configuration does not match the expected schema.
+
+    :return: phasing configuration with normalized coordinates
+    :rtype: dict or None
+    """
+
+    if phasing is None:
+        return None
+
+    phasing_schema = {
+        adv_cst.PHASING_POINT: And(
+            list,
+            lambda point: len(point) == 2,
+            lambda point: all(
+                isinstance(coord, (int, float)) for coord in point
+            ),
+        ),
+        adv_cst.PHASING_EPSG: Or(int, str),
+        adv_cst.PHASING_UNIT: And(
+            str,
+            lambda unit: unit in adv_cst.VALID_PHASING_UNITS,
+        ),
+    }
+
+    Checker(phasing_schema).validate(phasing)
+
+    point = phasing[adv_cst.PHASING_POINT]
+    epsg = phasing[adv_cst.PHASING_EPSG]
+    unit = phasing[adv_cst.PHASING_UNIT]
+
+    try:
+        crs = CRS(f"EPSG:{epsg}")
+    except CRSError as exc:
+        raise RuntimeError(f"Invalid phasing EPSG {epsg}.") from exc
+
+    if crs.is_compound:
+        raise RuntimeError(
+            "A compound CRS cannot be used for phasing. "
+            "The phasing EPSG must define the horizontal CRS."
+        )
+
+    epsg = crs.to_epsg()
+
+    if crs.is_geographic:
+        if unit == "arcsec":
+            point = [coord / 3600.0 for coord in point]
+            unit = "degree"
+
+        elif unit != "degree":
+            raise RuntimeError(
+                f"Phasing unit {unit} is incompatible with EPSG {epsg}. "
+                "Geographic CRS only support 'degree' and 'arcsec'."
+            )
+
+    else:
+        if unit != "meter":
+            raise RuntimeError(
+                f"Phasing unit {unit} is incompatible with EPSG {epsg}. "
+                "Projected CRS only support 'meter'."
+            )
+
+    return {
+        adv_cst.PHASING_POINT: point,
+        adv_cst.PHASING_EPSG: epsg,
+        adv_cst.PHASING_UNIT: unit,
+    }
 
 
 def check_advanced_parameters(inputs, conf, output_dem_dir=None):
@@ -91,7 +180,9 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING, "config_mapping.json"
     )
 
-    overloaded_conf[adv_cst.PHASING] = conf.get(adv_cst.PHASING, None)
+    overloaded_conf[adv_cst.PHASING] = check_phasing(
+        conf.get(adv_cst.PHASING, None)
+    )
 
     # use endogenous dm when generated
     overloaded_conf[adv_cst.USE_ENDOGENOUS_DEM] = conf.get(
