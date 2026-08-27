@@ -98,7 +98,12 @@ def test_end2end_gizeh_meta_pipeline():
             },
             "output": {"directory": directory, "product_level": ["dtm"]},
             "surface_modeling": {
-                "advanced": {"all": {"save_intermediate_data": True}}
+                "advanced": {
+                    "all": {
+                        "save_intermediate_data": True,
+                        "land_cover_map": "global_land_cover_map.tif",
+                    }
+                }
             },
         }
         out_dir = conf["output"]["directory"]
@@ -225,7 +230,12 @@ def test_end2end_gizeh_meta_pipeline_rectangular_resolution():
                 "resolution": [0.0000127, 0.0000045],
             },
             "surface_modeling": {
-                "advanced": {"all": {"save_intermediate_data": True}}
+                "advanced": {
+                    "all": {
+                        "save_intermediate_data": True,
+                        "land_cover_map": "global_land_cover_map.tif",
+                    }
+                }
             },
         }
         out_dir = conf["output"]["directory"]
@@ -324,6 +334,14 @@ def test_end2end_gizeh_meta_pipeline_pandora2d():
                             "elevation_delta_lower_bound": -1000,
                             "elevation_delta_upper_bound": 3000,
                         }
+                    }
+                }
+            },
+            "surface_modeling": {
+                "advanced": {
+                    "all": {
+                        "save_intermediate_data": True,
+                        "land_cover_map": "global_land_cover_map.tif",
                     }
                 }
             },
@@ -933,8 +951,13 @@ def test_end2end_gizeh_use_endogenous_dem():
             "subsampling": {"advanced": {"resolutions": [4, 2, 1]}},
             "surface_modeling": {
                 "advanced": {
-                    "2": {"use_endogenous_dem": True},
-                    "1": {"use_endogenous_dem": True},
+                    "all": {"land_cover_map": "global_land_cover_map.tif"},
+                    "2": {
+                        "use_endogenous_dem": True,
+                    },
+                    "1": {
+                        "use_endogenous_dem": True,
+                    },
                 },
                 "applications": {
                     "2": {"dem_generation": {"save_intermediate_data": True}},

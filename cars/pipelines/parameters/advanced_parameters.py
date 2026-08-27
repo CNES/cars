@@ -164,7 +164,7 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
     )
 
     overloaded_conf[adv_cst.LAND_COVER_MAP] = conf.get(
-        adv_cst.LAND_COVER_MAP, "global_land_cover_map.tif"
+        adv_cst.LAND_COVER_MAP, "global_land_cover_map_high_res.tif"
     )
 
     overloaded_conf[adv_cst.KEEP_LOW_RES_DIR] = conf.get(
