@@ -1162,7 +1162,10 @@ def save_dataset(  # pylint: disable=too-many-positional-arguments
         bands_description = dataset.coords[cst.BAND_IM].values
     if tag in (cst.RASTER_SOURCE_PC, cst.DSM_SOURCE_PC):
         bands_description = dataset.coords[cst.BAND_SOURCE_PC].values
-    if tag in (cst.EPI_FILLING, cst.RASTER_FILLING):
+    if (
+        tag in (cst.EPI_FILLING, cst.RASTER_FILLING)
+        and cst.BAND_FILLING in dataset.coords
+    ):
         bands_description = dataset.coords[cst.BAND_FILLING].values
     if tag in (
         cst.RASTER_PERFORMANCE_MAP,

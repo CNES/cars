@@ -436,7 +436,12 @@ def rasterio_get_epsg(raster_file: str) -> int:
     """
     epsg = None
     with rio.open(raster_file, "r") as descriptor:
-        epsg = descriptor.crs.to_epsg()
+        crs = CRS(descriptor.crs)
+        if crs.is_compound:
+            horizontal_crs = crs.sub_crs_list[0]
+        else:
+            horizontal_crs = crs
+        epsg = horizontal_crs.to_epsg()
 
     return epsg
 

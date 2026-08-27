@@ -669,6 +669,7 @@ def create_classif_map(  # pylint: disable=R0917
     dtype = inputs.rasterio_get_dtype(classif_paths[0])
     bands = []
     bands_name = []
+    validity_mask = np.zeros((height, width), dtype=dtype)
     for idx, path in enumerate(classif_paths):
         # Make sure the files intersect
         if intersect_bounds[idx] != "no intersection":
@@ -680,6 +681,7 @@ def create_classif_map(  # pylint: disable=R0917
                 row_slice, col_slice = get_corresponding_index(
                     intersect_bounds[idx], tile_bounds, resolution
                 )
+                validity_mask[row_slice, col_slice] = 1
 
                 current_classif = src.read(1, window=window)
 
@@ -726,6 +728,9 @@ def create_classif_map(  # pylint: disable=R0917
 
     classif_mono_band = classes[winner]
     classif_mono_band[max_votes == 0] = 0
+
+    nodata = inputs.rasterio_get_nodata(classif_paths[0])
+    classif_mono_band[validity_mask == 0] = nodata
 
     return classif_mono_band
 

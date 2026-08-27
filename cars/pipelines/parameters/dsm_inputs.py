@@ -112,7 +112,7 @@ def check_dsm_inputs(conf, config_dir=None):
         ][dsm_key].get("dsm", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_CLASSIF] = conf[
             dsm_cst.DSMS
-        ][dsm_key].get("merging_classification", None)
+        ][dsm_key].get("classification", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_COLOR] = conf[
             dsm_cst.DSMS
         ][dsm_key].get("image", None)
@@ -163,7 +163,7 @@ def check_dsm_inputs(conf, config_dir=None):
         ][dsm_key].get("contributing_pair", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_FILLING] = conf[
             dsm_cst.DSMS
-        ][dsm_key].get("merging_filling", None)
+        ][dsm_key].get("filling", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DTM] = conf[dsm_cst.DSMS][
             dsm_key
         ].get("dtm", None)

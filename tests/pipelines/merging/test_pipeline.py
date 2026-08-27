@@ -196,7 +196,7 @@ def test_unphased_dsm_origin():
 
 
 @pytest.mark.end2end_tests
-def test_auxiliary():
+def test_auxiliary_with_roi():
     """
     End to end pipeline processing
     """
@@ -214,13 +214,13 @@ def test_auxiliary():
                         "ambiguity": absolute_data_path(
                             "input/phr_gizeh_small/ambiguity.tif"
                         ),
-                        "merging_classification": absolute_data_path(
+                        "classification": absolute_data_path(
                             "input/phr_gizeh_small/classification.tif"
                         ),
                         "contributing_pair": absolute_data_path(
                             "input/phr_gizeh_small/contributing_pair.tif"
                         ),
-                        "merging_filling": absolute_data_path(
+                        "filling": absolute_data_path(
                             "input/phr_gizeh_small/filling.tif"
                         ),
                         "image": absolute_data_path(
@@ -240,13 +240,13 @@ def test_auxiliary():
                         "ambiguity": absolute_data_path(
                             "input/phr_gizeh_small/ambiguity.tif"
                         ),
-                        "merging_classification": absolute_data_path(
+                        "classification": absolute_data_path(
                             "input/phr_gizeh_small/classification.tif"
                         ),
                         "contributing_pair": absolute_data_path(
                             "input/phr_gizeh_small/contributing_pair.tif"
                         ),
-                        "merging_filling": absolute_data_path(
+                        "filling": absolute_data_path(
                             "input/phr_gizeh_small/filling.tif"
                         ),
                         "image": absolute_data_path(
@@ -256,7 +256,28 @@ def test_auxiliary():
                             "input/phr_gizeh_small/performance_map.tif"
                         ),
                     },
-                }
+                },
+                "roi": {
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {},
+                            "geometry": {
+                                "coordinates": [
+                                    [
+                                        [31.13, 29.975],
+                                        [31.135, 29.975],
+                                        [31.135, 29.98],
+                                        [31.13, 29.98],
+                                        [31.13, 29.975],
+                                    ]
+                                ],
+                                "type": "Polygon",
+                            },
+                        }
+                    ],
+                },
             },
             "merging": {
                 "applications": {"dsm_merging": {"method": "weighted_fusion"}},
