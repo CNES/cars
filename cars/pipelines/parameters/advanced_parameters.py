@@ -190,10 +190,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] is None,
     )
 
-    overloaded_conf[adv_cst.DSM_MERGING_TILE_SIZE] = conf.get(
-        adv_cst.DSM_MERGING_TILE_SIZE, 4000
-    )
-
     overloaded_conf[adv_cst.GROUND_TRUTH_DSM] = conf.get(
         adv_cst.GROUND_TRUTH_DSM, {}
     )
@@ -254,7 +250,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         adv_cst.PHASING: Or(dict, None),
         adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
         adv_cst.PIPELINE: str,
-        adv_cst.DSM_MERGING_TILE_SIZE: And(int, lambda x: x > 0),
         adv_cst.LAND_COVER_MAP: str,
         adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: str,
         adv_cst.USE_ENDOGENOUS_DEM: bool,
