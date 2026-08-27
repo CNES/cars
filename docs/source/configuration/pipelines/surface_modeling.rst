@@ -89,6 +89,10 @@ Advanced Parameters
       - A flag to indicate whether to use sensor disparity with n lines of sight triangulation
       - bool
       - False
+    * - use_endogenous_dem
+      - A flag to indicate whether we use an endogenous dem
+      - bool
+      - False
     * - phasing
       - Phase to use for DSM {"point": (x, y), "epsg": epsg, "unit": unit}
       - dict

@@ -1016,6 +1016,11 @@ class DefaultPipeline(PipelineTemplate):
 
             final_conf = merging_pipeline.used_conf
 
+            full_used_conf[pipeline_cst.MERGING] = {
+                ADVANCED: merging_pipeline.used_conf[ADVANCED],
+                APPLICATIONS: merging_pipeline.used_conf[APPLICATIONS],
+            }
+
         if updated_conf and final_conf is None:
             last_key = list(updated_conf.keys())[-1]
             final_conf = updated_conf[last_key]
