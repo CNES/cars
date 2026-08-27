@@ -166,6 +166,16 @@ def test_fill_dsm(method):
             # save results
             orchestrator.breakpoint()
 
+            # copy2(
+            #     input_dsm_roi,
+            #     absolute_data_path(
+            #         "ref_output_application/dsm_filling/"
+            #         "dsm_filling_{}_gizeh_crop_roi.tif".format(
+            #             method
+            #         )
+            #     ),
+            # )
+
             assert_same_images(
                 input_dsm_roi,
                 absolute_data_path(

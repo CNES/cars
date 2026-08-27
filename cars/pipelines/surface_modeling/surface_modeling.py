@@ -41,6 +41,7 @@ from pathlib import Path
 import numpy as np
 import rasterio
 from json_checker import Checker, OptionalKey
+from rasterio.features import geometry_mask
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars import __version__
@@ -2452,6 +2453,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.merge_invalidity_mask_bands(
                 invalidity_mask_file,
                 dsm_file_name,
+                self.list_intersection_poly,
             )
 
         self.dtm_generation_dump_dir = os.path.join(
@@ -2603,10 +2605,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
         return True
 
     @cars_profile(name="merge invalidity mask bands", interval=0.5)
-    def merge_invalidity_mask_bands(self, invalidity_mask_path, dsm_file):
+    def merge_invalidity_mask_bands(
+        self, invalidity_mask_path, dsm_file, intersection_list_poly
+    ):
         """
         Merge invalidity mask bands to get mono band in output
         """
+
         if not os.path.exists(invalidity_mask_path):
             logger.warning("no invalidity mask to merge")
             return False
@@ -2631,6 +2636,16 @@ class SurfaceModelingPipeline(PipelineTemplate):
             # to keep the previous classif convention
             mask_mono_band[mask_mono_band == 0] = src.nodata
             mask_mono_band[mask_mono_band == 1] = 0
+
+            mask_roi = geometry_mask(
+                intersection_list_poly,
+                out_shape=(mask_multi_bands.shape[1:3]),
+                transform=profile["transform"],
+                invert=True,
+            )
+            mask_no_data = dsm_msk == 0
+
+            mask_mono_band[mask_no_data & mask_roi] = 1
 
             for num_band in range(0, nb_bands):
                 mask_1 = mask_mono_band == 0

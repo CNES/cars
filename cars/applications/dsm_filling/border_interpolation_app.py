@@ -80,7 +80,7 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "border_interpolation")
         overloaded_conf["fill_classification"] = conf.get(
-            "fill_classification", "nodata"
+            "fill_classification", None
         )
         overloaded_conf["fill_nodata"] = conf.get("fill_nodata", None)
         if isinstance(overloaded_conf["fill_classification"], str):
@@ -150,12 +150,6 @@ class BorderInterpolation(DsmFilling, short_name="border_interpolation"):
             dsm_path_out = dsm_file
 
         filling_path_out = os.path.join(dump_dir, "filling.tif")
-
-        if self.fill_classification is None:
-            self.fill_classification = ["nodata"]
-            logger.error(
-                "Filling method 'border_interpolation' needs a classification"
-            )
 
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
@@ -371,52 +365,55 @@ def border_interp_filled_dsm_filling_wrapper(  # noqa C901 # pylint: disable=R09
     if classif_file is not None:
         with rio.open(classif_file) as in_classif:
             classif = in_classif.read(1, window=rasterio_window)
-    for label in fill_classification:
-        if label in classif_values:
-            filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
-        else:
-            logger.error(
-                "Label {} not found in classification "
-                "descriptions {}".format(label, classif_values)
+    if fill_classification is not None:
+        for label in fill_classification:
+            if label in classif_values:
+                filling_mask = np.logical_and(
+                    classif == int(label), roi_raster > 0
+                )
+            else:
+                logger.error(
+                    "Label {} not found in classification "
+                    "descriptions {}".format(label, classif_values)
+                )
+                continue
+            logger.debug(
+                "Filling of {} with Bulldozer DTM using "
+                "border interpolation".format(label)
             )
-            continue
-        logger.debug(
-            "Filling of {} with Bulldozer DTM using "
-            "border interpolation".format(label)
-        )
-        filling_mask = skimage.morphology.binary_opening(
-            filling_mask,
-            footprint=[
-                (np.ones((component_min_size, 1)), 1),
-                (np.ones((1, component_min_size)), 1),
-            ],
-        )
-        features, num_features = scipy.ndimage.label(filling_mask)
-        logger.debug("Filling of {} features".format(num_features))
-        features_boundaries = skimage.morphology.dilation(
-            features,
-            footprint=[
-                (np.ones((border_size, 1)), 1),
-                (np.ones((1, border_size)), 1),
-            ],
-        )
-        features_boundaries[filling_mask] = 0
+            filling_mask = skimage.morphology.binary_opening(
+                filling_mask,
+                footprint=[
+                    (np.ones((component_min_size, 1)), 1),
+                    (np.ones((1, component_min_size)), 1),
+                ],
+            )
+            features, num_features = scipy.ndimage.label(filling_mask)
+            logger.debug("Filling of {} features".format(num_features))
+            features_boundaries = skimage.morphology.dilation(
+                features,
+                footprint=[
+                    (np.ones((border_size, 1)), 1),
+                    (np.ones((1, border_size)), 1),
+                ],
+            )
+            features_boundaries[filling_mask] = 0
 
-        # concat combined_labels for saving
-        if stacked_labels is None:
-            stacked_labels = features_boundaries[np.newaxis, :, :]
-        else:
-            stacked_labels = np.concatenate(
-                [stacked_labels, features_boundaries[np.newaxis, :, :]]
-            )
+            # concat combined_labels for saving
+            if stacked_labels is None:
+                stacked_labels = features_boundaries[np.newaxis, :, :]
+            else:
+                stacked_labels = np.concatenate(
+                    [stacked_labels, features_boundaries[np.newaxis, :, :]]
+                )
 
-        for feature_id in range(1, num_features + 1):
-            altitude = np.nanpercentile(
-                dtm[features_boundaries == feature_id], percentile
-            )
-            if altitude is not None:
-                dsm[features == feature_id] = altitude
-        combined_mask = np.logical_or(combined_mask, filling_mask)
+            for feature_id in range(1, num_features + 1):
+                altitude = np.nanpercentile(
+                    dtm[features_boundaries == feature_id], percentile
+                )
+                if altitude is not None:
+                    dsm[features == feature_id] = altitude
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
     invalidity_mask = None
     if fill_nodata is not None:

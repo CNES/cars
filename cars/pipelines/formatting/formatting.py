@@ -186,9 +186,22 @@ class FormattingPipeline(PipelineTemplate):
             if element.name in ["dsm", "depth_map", "point_cloud"]:
                 dest = destination_dir / element.name
 
-                file_to_delete = element / "invalidity_mask.tif"
-                if file_to_delete.exists():
-                    file_to_delete.unlink()
+                file_to_move = element / "invalidity_mask.tif"
+                if file_to_move.exists():
+                    rasterization_dir = os.path.join(
+                        source_dir, "dump_dir/rasterization/"
+                    )
+
+                    if Path(rasterization_dir).exists():
+                        dest_invalidity_mask = os.path.join(
+                            rasterization_dir, "invalidity_mask_monoband.tif"
+                        )
+
+                        shutil.move(
+                            str(file_to_move), str(dest_invalidity_mask)
+                        )
+                    else:
+                        file_to_move.unlink()
 
                 if dest.exists():
                     if dest.is_dir():

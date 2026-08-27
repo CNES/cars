@@ -81,7 +81,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["fill_classification"] = conf.get(
-            "fill_classification", "nodata"
+            "fill_classification", None
         )
         overloaded_conf["fill_nodata"] = conf.get("fill_nodata", None)
 
@@ -139,9 +139,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             orchestrator = ocht.Orchestrator(
                 orchestrator_conf={"mode": "sequential"}
             )
-
-        if self.fill_classification is None:
-            self.fill_classification = ["nodata"]
 
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
@@ -414,33 +411,24 @@ def bulldozer_filling_wrapper(  # noqa C901 # pylint: disable=R0917
 
     combined_mask = np.zeros_like(dsm).astype(np.uint8)
     classif = None
-    classif_msk = None
-    dsm_msk = None
     if classif_file is not None:
         with rio.open(classif_file) as in_classif:
             classif = in_classif.read(1, window=rasterio_window)
-            classif_msk = in_classif.read_masks(1, window=rasterio_window)
-    else:
-        with rio.open(dsm_file) as in_dsm:
-            dsm_msk = in_dsm.read_masks(1, window=rasterio_window)
-    for label in fill_classification:
-        if label in classif_values:
-            filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
-        elif label == "nodata":
-            if classif_file is not None and os.path.exists(classif_file):
-                filling_mask = ~classif_msk
+    if fill_classification is not None:
+        for label in fill_classification:
+            if label in classif_values:
+                filling_mask = np.logical_and(
+                    classif == int(label), roi_raster > 0
+                )
             else:
-                filling_mask = ~dsm_msk
-            filling_mask = np.logical_and(filling_mask, roi_raster > 0)
-        else:
-            logger.error(
-                "Label {} not found in classification "
-                "descriptions {}".format(label, classif_values)
-            )
-            continue
-        logger.debug("Filling of {} with Bulldozer DTM".format(label))
-        dsm[filling_mask] = dtm[filling_mask]
-        combined_mask = np.logical_or(combined_mask, filling_mask)
+                logger.error(
+                    "Label {} not found in classification "
+                    "descriptions {}".format(label, classif_values)
+                )
+                continue
+            logger.debug("Filling of {} with Bulldozer DTM".format(label))
+            dsm[filling_mask] = dtm[filling_mask]
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
     invalidity_mask = None
     if fill_nodata is not None:

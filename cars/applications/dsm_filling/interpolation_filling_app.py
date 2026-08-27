@@ -80,7 +80,7 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
 
         overloaded_conf["method"] = conf.get("method", "interpolation")
         overloaded_conf["fill_classification"] = conf.get(
-            "fill_classification", "nodata"
+            "fill_classification", None
         )
         overloaded_conf["fill_nodata"] = conf.get("fill_nodata", None)
 
@@ -144,9 +144,6 @@ class InterpolationFilling(DsmFilling, short_name="interpolation"):
             dsm_path_out = dsm_file
 
         filling_path_out = os.path.join(dump_dir, "filling.tif")
-
-        if self.fill_classification is None:
-            self.fill_classification = ["nodata"]
 
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
@@ -322,30 +319,25 @@ def interpolation_filling_wrapper(  # pylint: disable=R0917 # noqa: C901
 
     combined_mask = np.zeros_like(dsm, dtype=bool)
     classif = None
-    classif_msk = None
     if classif_file is not None:
         with rio.open(classif_file) as in_classif:
             classif = in_classif.read(1, window=rasterio_window)
-            classif_msk = in_classif.read_masks(1, window=rasterio_window)
 
-    for label in fill_classification:
-        if label in classif_values and classif is not None:
-            filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
-        elif label == "nodata":
-            if classif_msk is not None:
-                filling_mask = classif_msk == 0
+    if fill_classification is not None:
+        for label in fill_classification:
+            if label in classif_values and classif is not None:
+                filling_mask = np.logical_and(
+                    classif == int(label), roi_raster > 0
+                )
             else:
-                filling_mask = dsm_mask == 0
-            filling_mask = np.logical_and(filling_mask, roi_raster > 0)
-        else:
-            logger.error(
-                f"Label {label} not found in classification "
-                f"descriptions {classif_values}"
-            )
-            continue
+                logger.error(
+                    f"Label {label} not found in classification "
+                    f"descriptions {classif_values}"
+                )
+                continue
 
-        logger.debug(f"Filling of {label} with rasterio.fill.fillnodata")
-        combined_mask = np.logical_or(combined_mask, filling_mask)
+            logger.debug(f"Filling of {label} with rasterio.fill.fillnodata")
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
     # Keep only targets inside DSM contour to preserve true outside nodata.
     combined_mask = np.logical_and(combined_mask, inside_contour_mask)
