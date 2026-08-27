@@ -79,7 +79,7 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "exogenous_filling")
         overloaded_conf["fill_classification"] = conf.get(
-            "fill_classification", "nodata"
+            "fill_classification", None
         )
         if isinstance(overloaded_conf["fill_classification"], str):
             overloaded_conf["fill_classification"] = [
@@ -158,9 +158,6 @@ class ExogenousFilling(DsmFilling, short_name="exogenous_filling"):
             dsm_path_out = dsm_file
 
         filling_path_out = os.path.join(dump_dir, "filling.tif")
-
-        if self.fill_classification is None:
-            self.fill_classification = ["nodata"]
 
         if self.fill_with_geoid is None:
             self.fill_with_geoid = []
@@ -449,50 +446,42 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
     # Fill DSM for every label
     combined_mask = np.zeros_like(dsm).astype(np.uint8)
     classif = None
-    classif_msk = None
-    dsm_msk = None
     if classif_file is not None:
         with rio.open(classif_file) as in_classif:
             classif = in_classif.read(1, window=rasterio_window)
-            classif_msk = in_classif.read_masks(1, window=rasterio_window)
-    else:
-        with rio.open(dsm_file) as in_dsm:
-            dsm_msk = in_dsm.read_masks(1, window=rasterio_window)
-    for label in fill_classification:
-        if label in classif_values:
-            filling_mask = np.logical_and(classif == int(label), roi_raster > 0)
-        elif label == "nodata":
-            if classif_msk is not None:
-                filling_mask = ~classif_msk
+
+    if fill_classification is not None:
+        for label in fill_classification:
+            if label in classif_values:
+                filling_mask = np.logical_and(
+                    classif == int(label), roi_raster > 0
+                )
             else:
-                filling_mask = ~dsm_msk
-            filling_mask = np.logical_and(filling_mask, roi_raster > 0)
-        else:
-            logger.error(
-                "Label {} not found in classification "
-                "descriptions {}".format(label, classif_values)
-            )
-            continue
+                logger.error(
+                    "Label {} not found in classification "
+                    "descriptions {}".format(label, classif_values)
+                )
+                continue
 
-        if label in fill_with_geoid:
-            logger.debug("Filling of {} with geoid".format(label))
-            dsm[filling_mask] = 0
-        else:
-            logger.debug("Filling of {} with DEM and geoid".format(label))
-            dsm[filling_mask] = elev_data[filling_mask]
+            if label in fill_with_geoid:
+                logger.debug("Filling of {} with geoid".format(label))
+                dsm[filling_mask] = 0
+            else:
+                logger.debug("Filling of {} with DEM and geoid".format(label))
+                dsm[filling_mask] = elev_data[filling_mask]
 
-        # apply offset to project on geoid if needed
-        if output_geoid is not True:
-            if isinstance(output_geoid, bool) and output_geoid is False:
-                # out geoid is ellipsoid: add geoid-ellipsoid distance
-                dsm[filling_mask] += input_geoid_data[filling_mask]
-            elif isinstance(output_geoid, str):
-                # out geoid is a new geoid whose path is in output_geoid:
-                # add carsgeoid-ellipsoid then add ellipsoid-outgeoid
-                dsm[filling_mask] += input_geoid_data[filling_mask]
-                dsm[filling_mask] -= output_geoid_data[filling_mask]
+            # apply offset to project on geoid if needed
+            if output_geoid is not True:
+                if isinstance(output_geoid, bool) and output_geoid is False:
+                    # out geoid is ellipsoid: add geoid-ellipsoid distance
+                    dsm[filling_mask] += input_geoid_data[filling_mask]
+                elif isinstance(output_geoid, str):
+                    # out geoid is a new geoid whose path is in output_geoid:
+                    # add carsgeoid-ellipsoid then add ellipsoid-outgeoid
+                    dsm[filling_mask] += input_geoid_data[filling_mask]
+                    dsm[filling_mask] -= output_geoid_data[filling_mask]
 
-        combined_mask = np.logical_or(combined_mask, filling_mask)
+            combined_mask = np.logical_or(combined_mask, filling_mask)
 
     invalidity_mask = None
     if fill_nodata is not None:
