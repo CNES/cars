@@ -617,8 +617,6 @@ class SharelocGeometry(AbstractGeometry):
             final_alt = None
             final_residue = None
 
-        print(final_alt, final_residue)
-
         return final_alt, final_residue
 
     def triangulate_n_los(  # pylint: disable=too-many-positional-arguments
