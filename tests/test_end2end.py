@@ -93,14 +93,13 @@ def test_end2end_gizeh_meta_pipeline():
             },
             "orchestrator": {
                 "mode": "multiprocessing",
-                "nb_workers": 4,
+                "nb_workers": 2,
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory, "product_level": ["dtm"]},
             "surface_modeling": {
                 "advanced": {
                     "all": {
-                        "save_intermediate_data": True,
                         "land_cover_map": "global_land_cover_map.tif",
                     }
                 }
@@ -296,7 +295,6 @@ def test_end2end_gizeh_meta_pipeline_rectangular_resolution():
 
 
 @pytest.mark.end2end_tests
-@pytest.mark.slow
 def test_end2end_gizeh_meta_pipeline_pandora2d():
     """
     End to end processing with color
