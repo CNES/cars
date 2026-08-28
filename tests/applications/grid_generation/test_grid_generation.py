@@ -107,6 +107,7 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
         get_geometry_plugin(default_alt=default_alt),
         epipolar_step=30,
         find_optimal_altitude=True,
+        scaling_coeff=1,
     )
 
     assert epi_size == [612, 612]
@@ -173,6 +174,7 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
         get_geometry_plugin(dem=dem),
         epipolar_step=30,
         find_optimal_altitude=True,
+        scaling_coeff=1,
     )
 
     assert epi_size == [612, 612]

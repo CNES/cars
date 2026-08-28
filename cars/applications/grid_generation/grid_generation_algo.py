@@ -115,6 +115,7 @@ def generate_epipolar_grids(  # pylint: disable=too-many-positional-arguments
     geometry_plugin,
     epipolar_step,
     find_optimal_altitude,
+    scaling_coeff,
 ):
     """
     Computes the left and right epipolar grids
@@ -128,6 +129,8 @@ def generate_epipolar_grids(  # pylint: disable=too-many-positional-arguments
     :param epipolar_step: step to use to construct the epipolar grids
     :param find_optimal_altitude: whether to find the altitude that
         maximize image covering
+    :param scaling_coeff: scaling coefficient for scaling
+    :type scaling_coeff: float
 
     :return: Tuple composed of :
 
@@ -148,6 +151,7 @@ def generate_epipolar_grids(  # pylint: disable=too-many-positional-arguments
         geomodel2,
         epipolar_step=epipolar_step,
         find_optimal_altitude=find_optimal_altitude,
+        scaling_coeff=scaling_coeff,
     )
 
 

@@ -337,6 +337,15 @@ def test_end2end_gizeh_meta_pipeline_pandora2d():
                     }
                 }
             },
+            "pipeline": {
+                "subsampling": True,
+                "surface_modeling": True,
+                "tie_points": True,
+                "filling": False,
+                "merging": False,
+                "formatting": True,
+                "edge_detection": False,
+            },
             "surface_modeling": {
                 "advanced": {
                     "all": {
