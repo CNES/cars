@@ -138,6 +138,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         pair_folder=None,
         pair_key="PAIR_0",
         resolution=1,
+        scaling_coeff=1.0,
     ):
         """
         Run EpipolarGridGeneration application
@@ -156,11 +157,13 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         :type image_right: dict
         :param geometry_plugin: geometry plugin to use
         :type geometry_plugin: AbstractGeometry
+        :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
-        :param orchestrator: orchestrator used
-        :param pair_key: pair configuration id
-        :type pair_key: str
+        :param resolution: the resolution of the image
+        :type resolution: int
+        :param scaling_coeff: scaling coefficient for scaling
+        :type scaling_coeff: float
 
         :return: left grid, right grid. Each grid dict contains :
             - Attributes containing: "grid_spacing", "grid_origin", \
@@ -253,6 +256,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             geometry_plugin,
             self.epi_step,
             self.find_optimal_altitude,
+            scaling_coeff,
         )
 
         # Create CarsDataset

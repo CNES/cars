@@ -108,12 +108,12 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
         self,
         image_left,
         image_right,
+        geometry_plugin,
         orchestrator=None,
         pair_folder=None,
-        srtm_dir=None,
-        default_alt=None,
-        geoid_path=None,
         pair_key="PAIR_0",
+        resolution=1,
+        scaling_coeff=1.0,
     ):
         """
         Run EpipolarGridGeneration application
@@ -121,21 +121,24 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
         Create left and right grid CarsDataset filled with xarray.Dataset ,
         corresponding to left and right epipolar grids.
 
-        :param image_left: left image
+        :param image_left: left image. Dict Must contain keys : \
+         "image", "texture", "geomodel","no_data", "mask". Paths must be
+         absolutes
         :type image_left: dict
-        :param image_right: right image
+        :param image_right: right image. Dict Must contain keys :\
+         "image", "texture", "geomodel","no_data", "mask". Paths must be
+         absolutes
         :type image_right: dict
+        :param geometry_plugin: geometry plugin to use
+        :type geometry_plugin: AbstractGeometry
+        :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
-        :param orchestrator: orchestrator used
-        :param srtm_dir: srtm directory
-        :type srtm_dir: str
-        :param default_alt: default altitude
-        :type default_alt: float
-        :param geoid_path: geoid path
-        :type geoid_path: str
-        :param pair_key: pair configuration id
-        :type pair_key: str
+        :param resolution: the resolution of the image
+        :type resolution: int
+        :param scaling_coeff: scaling coefficient for scaling
+        :type scaling_coeff: float
+
 
         :return: left grid, right grid
         :rtype: Tuple(CarsDataset, CarsDataset)

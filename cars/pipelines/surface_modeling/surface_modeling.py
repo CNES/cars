@@ -1373,6 +1373,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 ),
                 pair_key=pair_key,
                 resolution=self.working_res,
+                scaling_coeff=self.scaling_coeff,
             )
 
             if self.quit_on_app("grid_generation"):
