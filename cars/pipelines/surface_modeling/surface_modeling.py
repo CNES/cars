@@ -478,6 +478,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 ]:
                     self.tie_point_save = True
 
+                if any(
+                    app.get("save_intermediate_data", False) is True
+                    for app in self.used_conf[TIE_POINTS][APPLICATIONS].values()
+                    if app is not None
+                ):
+                    self.tie_point_save = True
+
         # Check advanced parameters
         # TODO static method in the base class
         output_dem_dir = os.path.join(
@@ -2714,20 +2721,13 @@ class SurfaceModelingPipeline(PipelineTemplate):
         Clean temporary files and directory at the end of cars processing
         """
 
-        if (
-            not self.used_conf[PIPELINE][ADVANCED][
-                adv_cst.SAVE_INTERMEDIATE_DATA
-            ]
-            and not self.tie_point_save
-        ):
+        if not self.used_conf[PIPELINE][ADVANCED][
+            adv_cst.SAVE_INTERMEDIATE_DATA
+        ]:
             # delete everything in tile_processing if save_intermediate_data is
             # not activated
             self.cars_orchestrator.add_to_clean(
                 os.path.join(self.dump_dir, "tile_processing")
-            )
-
-            self.cars_orchestrator.add_to_clean(
-                os.path.join(self.out_dir, "tie_points")
             )
 
             # Remove dump_dir if no intermediate data should be written
@@ -2737,6 +2737,11 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 if app is not None
             ):
                 self.cars_orchestrator.add_to_clean(self.dump_dir)
+
+            if not self.tie_point_save:
+                self.cars_orchestrator.add_to_clean(
+                    os.path.join(self.out_dir, "tie_points")
+                )
 
     @cars_profile(name="run_surface_modeling_pipeline", interval=0.5)
     def run(  # pylint: disable=too-many-positional-arguments
