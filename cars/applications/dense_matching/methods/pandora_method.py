@@ -316,7 +316,7 @@ class PandoraMethod(
             denoise_disparity_map=conf["denoise_disparity_map"],
             used_band=conf["used_band"],
             classification_3sgm=classification_3sgm,
-            land_cover_priority_list=self.land_cover_priority_list,
+            land_cover_priority_list=conf["land_cover_priority_list"],
         )
 
         self.loader = pandora_loader
