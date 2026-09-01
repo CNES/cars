@@ -68,6 +68,7 @@ class PandoraLoader:
         denoise_disparity_map=False,
         used_band="b0",
         classification_3sgm=None,
+        land_cover_priority_list=None,
     ):
         """
         Init function of PandoraLoader
@@ -86,6 +87,9 @@ class PandoraLoader:
         :type used_band: str
         :param classification_3sgm: use 3SGM with classif (list of bands)
         :type classification_3sgm: list[str] or None
+        :param land_cover_priority_list: the priority list for
+        the land cover map
+        :type land_cover_priority_list: list
         """
 
         if method_name is None:
@@ -257,6 +261,8 @@ class PandoraLoader:
         # Check conf
         self.pandora_config = conf
 
+        self.land_cover_priority_list = land_cover_priority_list
+
     def get_conf(self):
         """
         Get pandora configuration used
@@ -323,7 +329,7 @@ class PandoraLoader:
 
             # Use a buffer because the land_cover_map resolution is coarse
             data_land_cover, _ = mask(
-                src, [mapping(poly)], crop=True, all_touched=True
+                src, [mapping(poly)], crop=True, all_touched=False
             )
 
             # Find the most common class in the roi
@@ -333,8 +339,19 @@ class PandoraLoader:
             most_common_class = None
             if valid_data.size > 0:
                 classes, counts = np.unique(valid_data, return_counts=True)
-                max_index = np.argmax(counts)
-                most_common_class = classes[max_index]
+
+                if len(set(counts)) == 1:
+                    most_common_class = next(
+                        (
+                            p
+                            for p in self.land_cover_priority_list
+                            if p in classes
+                        ),
+                        classes[0],
+                    )
+                else:
+                    max_index = np.argmax(counts)
+                    most_common_class = classes[max_index]
 
         # Construct the path to the classification to configuration mapping
         if os.path.dirname(classif_to_config_mapping) == "":
