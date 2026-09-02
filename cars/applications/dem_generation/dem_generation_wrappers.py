@@ -239,6 +239,7 @@ def downsample_dem(
         "nearest": Resampling.nearest,
     }
     interpolator = interpolator_dict[interpolator]
+
     reproject(
         data,
         dem_data,
@@ -246,6 +247,7 @@ def downsample_dem(
         src_crs=crs,
         dst_transform=dst_transform,
         dst_crs=crs,
+        src_nodata=nodata,
         dst_nodata=nodata,
         resampling=interpolator,
     )
