@@ -97,13 +97,6 @@ def test_end2end_gizeh_meta_pipeline():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory, "product_level": ["dtm"]},
-            "surface_modeling": {
-                "advanced": {
-                    "all": {
-                        "land_cover_map": "global_land_cover_map.tif",
-                    }
-                }
-            },
         }
         out_dir = conf["output"]["directory"]
         meta_pipeline = default.DefaultPipeline(conf)
@@ -232,7 +225,6 @@ def test_end2end_gizeh_meta_pipeline_rectangular_resolution():
                 "advanced": {
                     "all": {
                         "save_intermediate_data": True,
-                        "land_cover_map": "global_land_cover_map.tif",
                     }
                 }
             },
@@ -348,7 +340,6 @@ def test_end2end_gizeh_meta_pipeline_pandora2d():
                 "advanced": {
                     "all": {
                         "save_intermediate_data": True,
-                        "land_cover_map": "global_land_cover_map.tif",
                     }
                 }
             },
@@ -958,7 +949,6 @@ def test_end2end_gizeh_use_endogenous_dem():
             "subsampling": {"advanced": {"resolutions": [4, 2, 1]}},
             "surface_modeling": {
                 "advanced": {
-                    "all": {"land_cover_map": "global_land_cover_map.tif"},
                     "2": {
                         "use_endogenous_dem": True,
                     },

@@ -81,11 +81,6 @@ def test_gizeh_with_low_res_dsm():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory},
-            "surface_modeling": {
-                "advanced": {
-                    "land_cover_map": "global_land_cover_map.tif",
-                }
-            },
         }
 
         out_dir_cli = os.path.join(directory, "out_cli")
@@ -176,7 +171,6 @@ def test_gizeh_sensor_depthmap():
             "surface_modeling": {
                 "advanced": {
                     "use_sensor_disp": True,
-                    "land_cover_map": "global_land_cover_map.tif",
                 },
                 "applications": {
                     "triangulation": {"save_intermediate_data": True}
@@ -710,9 +704,6 @@ def test_gizeh_dem_min_max_median():
                 "applications": {
                     "dem_generation": {"save_intermediate_data": True}
                 },
-                "advanced": {
-                    "land_cover_map": "global_land_cover_map.tif",
-                },
             },
             "output": {"directory": directory, "product_level": []},
         }
@@ -820,11 +811,6 @@ def test_gizeh_res4():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory},
-            "surface_modeling": {
-                "advanced": {
-                    "land_cover_map": "global_land_cover_map.tif",
-                }
-            },
         }
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
@@ -906,11 +892,6 @@ def test_gizeh_res16():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory},
-            "surface_modeling": {
-                "advanced": {
-                    "land_cover_map": "global_land_cover_map.tif",
-                }
-            },
         }
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
@@ -992,11 +973,6 @@ def test_gizeh_res4_with_roi():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory},
-            "surface_modeling": {
-                "advanced": {
-                    "land_cover_map": "global_land_cover_map.tif",
-                }
-            },
         }
         roi_geo_json = {
             "type": "FeatureCollection",
@@ -1103,11 +1079,6 @@ def test_gizeh_res4_with_a_priori_roi():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory},
-            "surface_modeling": {
-                "advanced": {
-                    "land_cover_map": "global_land_cover_map.tif",
-                }
-            },
         }
         roi_geo_json = {
             "type": "FeatureCollection",
@@ -1226,7 +1197,6 @@ def test_gizeh_res4_with_gt_reprojection():
                             "input/phr_gizeh/srtm_dir/N29E031_KHEOPS.tif"
                         )
                     },
-                    "land_cover_map": "global_land_cover_map.tif",
                 },
             },
             "output": {"product_level": [], "directory": directory},
@@ -1405,11 +1375,6 @@ def test_gizeh_with_mask():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory},
-            "surface_modeling": {
-                "advanced": {
-                    "land_cover_map": "global_land_cover_map.tif",
-                }
-            },
         }
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
@@ -1492,11 +1457,6 @@ def test_gizeh_res4_without_tie_points():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory},
-            "surface_modeling": {
-                "advanced": {
-                    "land_cover_map": "global_land_cover_map.tif",
-                }
-            },
         }
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
@@ -1694,11 +1654,6 @@ def test_gizeh_with_edge_detection_data():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory},
-            "surface_modeling": {
-                "advanced": {
-                    "land_cover_map": "global_land_cover_map.tif",
-                }
-            },
         }
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
