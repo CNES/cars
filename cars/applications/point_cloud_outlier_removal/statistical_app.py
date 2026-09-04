@@ -130,8 +130,8 @@ class Statistical(
         )
         # mean_factor: factor to apply to the mean in the distance threshold
         # computation
-        overloaded_conf["mean_factor"] = conf.get("mean_factor", 1.3)
-        # mean_factor: factor to apply to the standard deviation in the
+        overloaded_conf["mean_factor"] = conf.get("mean_factor", 1.8)
+        # std_dev_factor: factor to apply to the standard deviation in the
         # distance threshold
         overloaded_conf["std_dev_factor"] = conf.get("std_dev_factor", 3.0)
 
