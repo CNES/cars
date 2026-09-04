@@ -497,7 +497,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 cst.EPI_EDGES_TILE_ID,
                 epipolar_images_left,
                 cars_ds_name="epi_img_left_edges_tile_id",
-                dtype=np.uint8,
+                dtype=np.int16,
+                nodata=cst.EPI_EDGES_TILE_ID_NODATA,
                 optional_data=True,
             )
 
@@ -531,7 +532,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 cst.EPI_EDGES_TILE_ID,
                 epipolar_images_right,
                 cars_ds_name="epi_img_right_edges_tile_id",
-                dtype=np.uint8,
+                dtype=np.int16,
+                nodata=cst.EPI_EDGES_TILE_ID_NODATA,
                 optional_data=True,
             )
 

@@ -1,0 +1,13 @@
+---
+applications:
+  point_cloud_refinement:
+    method: normals_guided
+    w_guidance: 1.0
+    w_smooth: 0.1
+    w_data: 0.2
+    max_displacement: 0.5
+    update_xy: true
+    use_metric: true
+    damp: 1.0e-6
+    max_iter: 20
+    save_intermediate_data: false

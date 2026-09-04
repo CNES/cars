@@ -51,6 +51,8 @@ Application parameters
    applications/dense_matching
    applications/dense_match_filling
    applications/triangulation
+   applications/point_cloud_refinement
+   applications/depth_to_z_fusion
    applications/point_cloud_outlier_removal
    applications/point_cloud_rasterization
    applications/dsm_filling

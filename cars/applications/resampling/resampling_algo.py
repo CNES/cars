@@ -235,11 +235,15 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
         ]:
             for band_format, target_dataset in edge_sources:
                 if band_format and band_format.get(key):
+                    edge_nodata = None
+                    if key == "tile_id":
+                        edge_nodata = cst.EPI_EDGES_TILE_ID_NODATA
                     target_dataset[key] = resample_image(
                         band_format[key],
                         grid1,
                         [epipolar_size_x, epipolar_size_y],
                         region=left_region,
+                        nodata=edge_nodata,
                         band_coords=band_name,
                         interpolator_img=interpolators_edges[key],
                         interpolator_mask=interpolator_mask,
@@ -552,12 +556,13 @@ def oversampling_func(  # pylint: disable=too-many-positional-arguments
         grid_as_array[0, ...] /= res_x
         grid_as_array[1, ...] /= res_y
 
+        resample_nodata = 0 if nodata is None else nodata
         block_resamp = cresample.grid(
             img_as_array,
             grid_as_array,
             oversampling,
             interpolator=interpolator_img,
-            nodata=0,
+            nodata=resample_nodata,
         ).astype(np.float32)
 
         if interpolator_img == "bicubic" and band_coords == cst.BAND_CLASSIF:

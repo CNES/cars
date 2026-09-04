@@ -359,7 +359,8 @@ class LineOfSightIntersection(
                 cst.EPI_EDGES_TILE_ID,
                 epi_or_sens_point_cloud,
                 cars_ds_name="depth_map_edges_tile_id",
-                dtype=np.uint8,
+                dtype=np.int16,
+                nodata=cst.EPI_EDGES_TILE_ID_NODATA,
                 optional_data=True,
             )
 

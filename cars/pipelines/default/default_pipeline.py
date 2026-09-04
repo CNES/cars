@@ -763,6 +763,9 @@ class DefaultPipeline(PipelineTemplate):
         edge_detection_conf[pipeline_cst.EDGE_DETECTION].setdefault(
             ADVANCED, {}
         )
+        edge_detection_conf[pipeline_cst.EDGE_DETECTION][ADVANCED].setdefault(
+            "save_intermediate_data", True
+        )
 
         return edge_detection_conf
 

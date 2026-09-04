@@ -27,6 +27,7 @@ from . import auxiliary_filling  # noqa: F401
 from . import dem_generation  # noqa: F401
 from . import dense_match_filling  # noqa: F401
 from . import dense_matching  # noqa: F401
+from . import depth_to_z_fusion  # noqa: F401
 from . import dsm_filling  # noqa: F401
 from . import dsm_merging  # noqa: F401
 from . import dtm_generation  # noqa: F401
@@ -35,6 +36,7 @@ from . import grid_correction  # noqa: F401
 from . import grid_generation  # noqa: F401
 from . import ground_truth_reprojection  # noqa: F401
 from . import point_cloud_outlier_removal  # noqa: F401
+from . import point_cloud_refinement  # noqa: F401
 from . import rasterization  # noqa: F401
 from . import resampling  # noqa: F401
 from . import sensors_subsampling  # noqa: F401

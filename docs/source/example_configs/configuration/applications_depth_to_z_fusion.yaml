@@ -1,0 +1,13 @@
+---
+applications:
+  depth_to_z_fusion:
+    method: anisotropic
+    lambda_data: 0.01
+    depth_sigma: null
+    depth_sigma_auto: true
+    detail_scale: 1.0
+    cross_tile_weight: 1.0
+    fill_values: invalid
+    iterations: 50
+    tol: 1.0e-4
+    save_intermediate_data: false
