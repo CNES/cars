@@ -45,6 +45,8 @@ def get_needed_apps(  # pylint: disable=too-many-positional-arguments
             "dense_match_filling",
             "dense_matching",
             "triangulation",
+            "point_cloud_refinement",
+            "depth_to_z_fusion",
             "dem_generation",
         ]
 

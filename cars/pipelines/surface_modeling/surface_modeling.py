@@ -256,6 +256,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
         ) or self.quit_on_app("dense_match_filling")
         quit_after_triangulation = (
             self.quit_on_app("triangulation")
+            or self.quit_on_app("point_cloud_refinement")
+            or self.quit_on_app("depth_to_z_fusion")
             or self.quit_on_app("point_cloud_outlier_removal.1")
             or self.quit_on_app("point_cloud_outlier_removal.2")
         )
@@ -669,14 +671,16 @@ class SurfaceModelingPipeline(PipelineTemplate):
             "triangulation": 12,
             "point_cloud_outlier_removal.1": 13,
             "point_cloud_outlier_removal.2": 14,
+            "depth_to_z_fusion": 15,
+            "point_cloud_refinement": 16,
         }
 
         depth_to_dsm_apps = {
-            "point_cloud_rasterization": 16,
-            "dsm_filling.1": 18,
-            "dsm_filling.2": 19,
-            "dsm_filling.3": 20,
-            "auxiliary_filling": 21,
+            "point_cloud_rasterization": 18,
+            "dsm_filling.1": 20,
+            "dsm_filling.2": 21,
+            "dsm_filling.3": 22,
+            "auxiliary_filling": 23,
         }
 
         self.app_values = {}
@@ -862,6 +866,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
         self.sparse_mtch_app = None
         self.dense_matching_app = None
         self.triangulation_application = None
+        self.point_cloud_refinement_application = None
+        self.depth_to_z_fusion_application = None
         self.dem_generation_application = None
         self.pc_outlier_removal_apps = {}
         self.rasterization_application = None
@@ -983,6 +989,22 @@ class SurfaceModelingPipeline(PipelineTemplate):
             scaling_coeff=scaling_coeff,
         )
         used_conf["triangulation"] = self.triangulation_application.get_conf()
+
+        self.point_cloud_refinement_application = Application(
+            "point_cloud_refinement",
+            cfg=used_conf.get("point_cloud_refinement", {}),
+        )
+        used_conf["point_cloud_refinement"] = (
+            self.point_cloud_refinement_application.get_conf()
+        )
+
+        self.depth_to_z_fusion_application = Application(
+            "depth_to_z_fusion",
+            cfg=used_conf.get("depth_to_z_fusion", {}),
+        )
+        used_conf["depth_to_z_fusion"] = (
+            self.depth_to_z_fusion_application.get_conf()
+        )
 
         # MNT generation
         self.dem_generation_application = Application(
@@ -2113,6 +2135,23 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 else None
             )
 
+            run_point_cloud_refinement = self.which_resolution in (
+                "final",
+                "single",
+            )
+            run_depth_to_z_fusion = self.which_resolution in (
+                "final",
+                "single",
+            )
+            will_run_point_cloud_refinement = (
+                run_point_cloud_refinement
+                and self.point_cloud_refinement_application.activated
+            )
+            will_run_depth_to_z_fusion = (
+                run_depth_to_z_fusion
+                and self.depth_to_z_fusion_application.activated
+            )
+
             # Run triangulation application : sensor or epipolar
             point_cloud = self.triangulation_application.run(
                 self.pairs[pair_key]["sensor_image_left"],
@@ -2134,6 +2173,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 point_cloud_format=self.product_format["point_cloud"],
                 point_cloud_dir=triangulation_point_cloud_dir,
                 save_output_coordinates=(len(self.pc_outlier_removal_apps) == 0)
+                and (not will_run_point_cloud_refinement)
+                and (not will_run_depth_to_z_fusion)
                 and self.save_output_point_cloud
                 and "tif" in self.product_format["point_cloud"],
                 save_output_color=bool(point_cloud_dir)
@@ -2168,7 +2209,11 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     app_key == list(self.pc_outlier_removal_apps)[-1]
                 )
                 filtering_point_cloud_dir = (
-                    point_cloud_dir if app_key_is_last else None
+                    point_cloud_dir
+                    if app_key_is_last
+                    and (not will_run_depth_to_z_fusion)
+                    and (not will_run_point_cloud_refinement)
+                    else None
                 )
 
                 filtered_epipolar_point_cloud = app.run(
@@ -2189,9 +2234,58 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 if self.quit_on_app("point_cloud_outlier_removal"):
                     continue  # keep iterating over pairs, but don't go further
 
-            self.list_epipolar_point_clouds.append(
-                filtered_epipolar_point_cloud
-            )
+            fused_epipolar_point_cloud = filtered_epipolar_point_cloud
+            depth_to_z_point_cloud_dir = None
+            if run_depth_to_z_fusion:
+                depth_to_z_point_cloud_dir = (
+                    point_cloud_dir
+                    if will_run_depth_to_z_fusion
+                    and (not will_run_point_cloud_refinement)
+                    else None
+                )
+                fused_epipolar_point_cloud = (
+                    self.depth_to_z_fusion_application.run(
+                        filtered_epipolar_point_cloud,
+                        orchestrator=self.cars_orchestrator,
+                        point_cloud_dir=depth_to_z_point_cloud_dir,
+                        point_cloud_format=self.product_format["point_cloud"],
+                        dump_dir=os.path.join(
+                            self.dump_dir,
+                            "depth_to_z_fusion",
+                            pair_key,
+                        ),
+                        pair_key=pair_key,
+                    )
+                )
+
+                if self.quit_on_app("depth_to_z_fusion"):
+                    continue  # keep iterating over pairs, but don't go further
+
+            refined_epipolar_point_cloud = fused_epipolar_point_cloud
+            refinement_point_cloud_dir = None
+            if run_point_cloud_refinement:
+                refinement_point_cloud_dir = (
+                    point_cloud_dir if will_run_point_cloud_refinement else None
+                )
+                refined_epipolar_point_cloud = (
+                    self.point_cloud_refinement_application.run(
+                        fused_epipolar_point_cloud,
+                        orchestrator=self.cars_orchestrator,
+                        point_cloud_dir=refinement_point_cloud_dir,
+                        point_cloud_format=self.product_format["point_cloud"],
+                        dump_dir=os.path.join(
+                            self.dump_dir,
+                            "point_cloud_refinement",
+                            pair_key,
+                        ),
+                        pair_key=pair_key,
+                    )
+                )
+
+                if self.quit_on_app("point_cloud_refinement"):
+                    continue  # keep iterating over pairs, but don't go further
+
+            self.list_epipolar_point_clouds.append(refined_epipolar_point_cloud)
 
             disparity_to_depth_task_id = self.task_ids[
                 "disparity_to_depth_maps"
@@ -2224,6 +2318,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 for d in (
                     triangulation_point_cloud_dir,
                     filtering_point_cloud_dir,
+                    depth_to_z_point_cloud_dir,
+                    refinement_point_cloud_dir,
                 )
                 if d is not None
             ]
@@ -2264,6 +2360,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
         # pylint:disable=too-many-boolean-expressions
         if (
             self.quit_on_app("triangulation")
+            or self.quit_on_app("point_cloud_refinement")
+            or self.quit_on_app("depth_to_z_fusion")
             or self.quit_on_app("point_cloud_outlier_removal.1")
             or self.quit_on_app("point_cloud_outlier_removal.2")
         ):
