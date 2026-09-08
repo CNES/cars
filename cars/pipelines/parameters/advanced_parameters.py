@@ -172,10 +172,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         bool(overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA]),
     )
 
-    overloaded_conf[adv_cst.DEBUG_WITH_ROI] = conf.get(
-        adv_cst.DEBUG_WITH_ROI, False
-    )
-
     overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING] = conf.get(
         adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING, "config_mapping.json"
     )
@@ -242,7 +238,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
 
     # Validate inputs
     schema = {
-        adv_cst.DEBUG_WITH_ROI: bool,
         adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
         adv_cst.KEEP_LOW_RES_DIR: bool,
         adv_cst.GROUND_TRUTH_DSM: Or(dict, str),
