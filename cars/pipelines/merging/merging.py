@@ -36,6 +36,7 @@ from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
+from cars.pipelines.parameters import output_parameters
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
@@ -361,6 +362,12 @@ class MergingPipeline(PipelineTemplate):
             # link metadata
             self.metadata = cars_orchestrator.out_yaml
 
+            _ = output_parameters.intialize_product_index(
+                cars_orchestrator,
+                ["dsm"],
+                [],
+            )
+
             dsms_merging_dump_dir = os.path.join(self.dump_dir, "dsms_merging")
 
             dsm_dict = self.used_conf[INPUT][dsm_cst.DSMS]
@@ -382,6 +389,18 @@ class MergingPipeline(PipelineTemplate):
                 self.out_dir,
                 out_cst.DSM_DIRECTORY,
                 "dsm.tif",
+            )
+
+            weights_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "weights.tif",
+                )
+                if self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_WEIGHTS
+                ]
+                else None
             )
 
             color_file_name = (
@@ -479,6 +498,7 @@ class MergingPipeline(PipelineTemplate):
                 roi_poly,
                 dsms_merging_dump_dir,
                 dsm_file_name,
+                weights_file_name,
                 color_file_name,
                 classif_file_name,
                 filling_file_name,
