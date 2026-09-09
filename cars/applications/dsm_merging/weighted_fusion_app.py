@@ -123,6 +123,7 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
         roi_poly,
         dump_dir=None,
         dsm_file_name=None,
+        weights_file_name=None,
         color_file_name=None,
         classif_file_name=None,
         filling_file_name=None,
@@ -141,6 +142,8 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
         :type dump_dir: str
         :param dsm_file_name: name of the dsm output file
         :type dsm_file_name: str
+        :param weights_file_name: name of the weights output file
+        :type weights_file_name: str
         :param color_file_name: name of the color output file
         :type color_file_name: str
         :param classif_file_name: name of the classif output file
@@ -272,36 +275,72 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
         else:
             out_dump_dir = orchestrator.out_dir
 
+        # Mapping between input layers, requested output files and index keys
+        output_mapping = {
+            cst.DSM_ALT: (
+                dsm_file_name,
+                cst.INDEX_DSM_ALT,
+            ),
+            cst.DSM_WEIGHTS_SUM: (
+                weights_file_name,
+                cst.INDEX_DSM_WEIGHTS,
+            ),
+            cst.DSM_COLOR: (
+                color_file_name,
+                cst.INDEX_DSM_COLOR,
+            ),
+            cst.DSM_CLASSIF: (
+                classif_file_name,
+                cst.INDEX_DSM_CLASSIFICATION,
+            ),
+            cst.DSM_FILLING: (
+                filling_file_name,
+                cst.INDEX_DSM_FILLING,
+            ),
+            cst.DSM_PERFORMANCE_MAP: (
+                performance_map_file_name,
+                cst.INDEX_DSM_PERFORMANCE_MAP,
+            ),
+            cst.DSM_AMBIGUITY: (
+                ambiguity_file_name,
+                cst.INDEX_DSM_AMBIGUITY,
+            ),
+            cst.DSM_SOURCE_PC: (
+                contributing_pair_file_name,
+                cst.INDEX_DSM_CONTRIBUTING_PAIR,
+            ),
+        }
+
         if dsm_file_name is not None:
             safe_makedirs(os.path.dirname(dsm_file_name))
 
-        # Save all file that are in inputs
-        for key in dict_path.keys():
-            if key in (cst.DSM_ALT, cst.DSM_COLOR, cst.DSM_WEIGHTS_SUM):
-                option = False
-            else:
-                option = True
+        # Save all files that are in inputs
+        for key in dict_path:
+            optional_data = key not in (
+                cst.DSM_ALT,
+                cst.DSM_COLOR,
+                cst.DSM_WEIGHTS_SUM,
+            )
 
-            if key == cst.DSM_ALT and dsm_file_name is not None:
-                out_file_name = dsm_file_name
-            elif key == cst.DSM_COLOR and color_file_name is not None:
-                out_file_name = color_file_name
-            elif key == cst.DSM_CLASSIF and classif_file_name is not None:
-                out_file_name = classif_file_name
-            elif key == cst.DSM_FILLING and filling_file_name is not None:
-                out_file_name = filling_file_name
-            elif (
-                key == cst.DSM_PERFORMANCE_MAP
-                and performance_map_file_name is not None
-            ):
-                out_file_name = performance_map_file_name
-            elif key == cst.DSM_AMBIGUITY and ambiguity_file_name is not None:
-                out_file_name = ambiguity_file_name
-            elif (
-                key == cst.DSM_SOURCE_PC
-                and contributing_pair_file_name is not None
-            ):
-                out_file_name = contributing_pair_file_name
+            output = output_mapping.get(key)
+
+            if output is not None:
+                output_file_name, index_key = output
+            else:
+                output_file_name = None
+                index_key = None
+
+            if output_file_name is not None:
+                out_file_name = output_file_name
+
+                orchestrator.update_index(
+                    {
+                        "dsm": {
+                            index_key: os.path.basename(out_file_name),
+                        }
+                    }
+                )
+
             elif key == cst.DTM and dtm_file_name is not None:
                 out_file_name = dtm_file_name
             else:
@@ -314,7 +353,7 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
                 dtype=inputs.rasterio_get_dtype(dict_path[key][0]),
                 nodata=inputs.rasterio_get_nodata(dict_path[key][0]),
                 cars_ds_name=key,
-                optional_data=option,
+                optional_data=optional_data,
             )
 
         [saving_info] = orchestrator.get_saving_infos([terrain_raster])
