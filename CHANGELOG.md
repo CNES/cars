@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.3.0 Point cloud refinement guided by monocular geometry estimation (September 2026)
+
+### Added
+
+ - New application `point_cloud_refinement` to smooth the point cloud along monocular normal predictions [#1414]
+ - New application `depth_to_z_fusion` to fit monocular depth predictions along computed height [#1414]
+ - The ouput resolution can now be different on x and y [#1416]
+ - Phasing and resolution can be given with different units : meters, degrees or arcseconds [#1417]
+
+### Changed
+
+ - Confidence filtering is activated by default for last resolution but only the risk metric is used [#1401]
+ - Logging levels are changed [#1396]
+ - Updated Pandora to version 1.9.0 (MLflow removed from MC-CNN dependencies)
+ - Better resolution for global land cover map [#1415]
+ - Pixels that are nodata after rasterization are considered occlusions for filling pipeline [#1423]
+ - Merging of DSM follows a priority list depending on filling [#1379]
+ - Add a threshold for invalidity mask rasterization [#1405]
+ - Nodata value of `filling.tif` file is now 0 [#1402]
+ - Right sensor footprint is used for epipolar grid generation [shareloc#317]
+
+### Fixed
+
+ - Merging section is now on `global_used_conf` file [#1425]
+ - Reduce ambiguity_threshold parameter in Pandora config to avoid artifacts [#1410]
+ - Adapt confidence filtering parameters to MC-CNN [#1406]
+ - Parameter `interleave` set to `band` for files written in merging pipeline [#1422]
+ - Fix of crash when edge_detection pipeline is activated and last resolution is not 1 [#1421]
+ - Orchestrator conf was not given to filling pipeline [#1419]
+ - External loggers are no more affected by cars setup [#1164]
+ - Fixes regarding the use of ROI in merging pipeline [#1420]
+ - Function find_optimal_altitude is more robust [#1413]
+ - Check of phasing between DSM failed because of floating-point inaccuracies [#1411] 
+ - Fix of save_intermediate_data when activated on an application of tie_points pipeline [#1426]
+ - Add src_nodata parameter in rasterio reproject function (needed by rasterio 1.5.0) [#1385]
+
+
 ## 1.2.0 Rich Logging Output (June 2026)
 
 ### Added
