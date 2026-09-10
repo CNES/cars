@@ -40,8 +40,8 @@ from pandora.check_configuration import (
     update_conf,
 )
 from pandora.state_machine import PandoraMachine
-from rasterio.mask import mask
-from shapely.geometry import mapping
+from rasterio.features import geometry_window
+from shapely.geometry import box, mapping
 
 from cars.core.cars_logging import logger
 from cars.core.projection import polygon_projection
@@ -312,6 +312,7 @@ class PandoraLoader:
         else:
             land_cover_map_path = land_cover_map
 
+        results = {}
         with rasterio.open(land_cover_map_path) as src:
             # Project the polygon to the right epsg
             if src.crs != epsg:
@@ -321,20 +322,35 @@ class PandoraLoader:
             else:
                 poly = intersection_poly
 
-            # Use a buffer because the land_cover_map resolution is coarse
-            data_land_cover, _ = mask(
-                src, [mapping(poly)], crop=True, all_touched=True
-            )
+            window = geometry_window(src, [mapping(poly)])
 
-            # Find the most common class in the roi
-            data_squeeze = data_land_cover.squeeze()
-            valid_data = data_squeeze[data_squeeze != src.nodata]
+            data = src.read(1, window=window)
 
-            most_common_class = None
-            if valid_data.size > 0:
-                classes, counts = np.unique(valid_data, return_counts=True)
-                max_index = np.argmax(counts)
-                most_common_class = classes[max_index]
+            transform = src.window_transform(window)
+
+            for row in range(data.shape[0]):
+                for col in range(data.shape[1]):
+
+                    value = data[row, col]
+
+                    x1 = transform.c + col * transform.a
+                    y1 = transform.f + row * transform.e
+
+                    x2 = x1 + transform.a
+                    y2 = y1 + transform.e
+
+                    pixel = box(
+                        min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)
+                    )
+
+                    intersection = poly.intersection(pixel)
+
+                    if not intersection.is_empty:
+                        area = intersection.area
+                        results[value] = results.get(value, 0) + area
+
+        for value in results:
+            results[value] = results[value] / poly.area * 100
 
         # Construct the path to the classification to configuration mapping
         if os.path.dirname(classif_to_config_mapping) == "":
@@ -348,8 +364,13 @@ class PandoraLoader:
         with open(conf_file_path, "r", encoding="utf8") as fstream:
             conf_mapping = json.load(fstream)
 
+        if results:
+            max_class = max(results, key=results.get)
+        else:
+            max_class = 0
+
         # Find the configuration that corresponds to the most common class
-        corresponding_conf_name = conf_mapping.get(str(most_common_class), None)
+        corresponding_conf_name = conf_mapping.get(str(max_class), None)
 
         # If no equivalence has been found, we use the default configuration
         if corresponding_conf_name is None:
