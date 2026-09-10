@@ -134,7 +134,6 @@ class PandoraMethod(
                 [is_valid_classification_3sgm_value],
                 None,
             ),
-            "land_cover_priority_list": list,
         }
 
         # those will be defined in check_conf
@@ -169,9 +168,6 @@ class PandoraMethod(
         ]
         self.edges_3sgm = self.used_config["edges_3sgm"]
         self.classification_3sgm = self.used_config["classification_3sgm"]
-        self.land_cover_priority_list = self.used_config[
-            "land_cover_priority_list"
-        ]
 
     def check_conf(self, conf):
         """
@@ -207,18 +203,6 @@ class PandoraMethod(
             "filter_incomplete_disparity_range": True,
             "edges_3sgm": True,
             "classification_3sgm": None,
-            "land_cover_priority_list": [
-                50,
-                10,
-                20,
-                30,
-                40,
-                70,
-                80,
-                90,
-                100,
-                60,
-            ],
         }
 
         # Merge defaults with user conf
@@ -231,12 +215,6 @@ class PandoraMethod(
 
         if used_conf["use_cross_validation"] is True:
             used_conf["use_cross_validation"] = "fast"
-
-        for elem in used_conf["land_cover_priority_list"]:
-            if not isinstance(elem, int):
-                raise RuntimeError(
-                    "The land cover priority list must be a list of integers"
-                )
 
         # Get/update perf map method as list
         perf_map_method = used_conf["performance_map_method"]
@@ -316,7 +294,6 @@ class PandoraMethod(
             denoise_disparity_map=conf["denoise_disparity_map"],
             used_band=conf["used_band"],
             classification_3sgm=classification_3sgm,
-            land_cover_priority_list=conf["land_cover_priority_list"],
         )
 
         self.loader = pandora_loader

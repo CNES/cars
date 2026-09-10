@@ -68,7 +68,6 @@ class PandoraLoader:
         denoise_disparity_map=False,
         used_band="b0",
         classification_3sgm=None,
-        land_cover_priority_list=None,
     ):
         """
         Init function of PandoraLoader
@@ -87,9 +86,6 @@ class PandoraLoader:
         :type used_band: str
         :param classification_3sgm: use 3SGM with classif (list of bands)
         :type classification_3sgm: list[str] or None
-        :param land_cover_priority_list: the priority list for
-        the land cover map
-        :type land_cover_priority_list: list
         """
 
         if method_name is None:
@@ -260,8 +256,6 @@ class PandoraLoader:
 
         # Check conf
         self.pandora_config = conf
-
-        self.land_cover_priority_list = land_cover_priority_list
 
     def get_conf(self):
         """
