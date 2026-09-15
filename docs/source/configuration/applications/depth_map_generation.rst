@@ -11,7 +11,7 @@ Generates a depth map from a single image using the MoGe2 model.
 
 .. warning::
 
-  This application is only available if the `CARS Edge Detection plugin <https://github.com/CNES/cars-edge-detection-plugin>` is installed.
+  This application is only available if the `CARS Monocular plugin <https://github.com/CNES/cars-monocular-plugin>` is installed.
 
 **Configuration**
 
@@ -40,7 +40,7 @@ Officially supported models are:
 
 If a model is not already available locally, it will be downloaded from the HuggingFace hub and cached for future use.
 
-The executable ``cars-download-moge2`` can be used to download a model, as further explained in the :ref:`Edge detection example <edge_detection_example>` section.
+The executable ``cars-download-moge2`` can be used to download a model, as further explained in the :ref:`Monocular example <monocular_example>` section.
 
 **Example**
 

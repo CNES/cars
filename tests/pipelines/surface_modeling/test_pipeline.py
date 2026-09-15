@@ -1609,7 +1609,7 @@ def test_ventoux_filling():
 
 
 @pytest.mark.end2end_tests
-def test_gizeh_with_edge_detection_data():
+def test_gizeh_with_monocular_data():
     """
     End to end pipeline processing
     """
@@ -1624,16 +1624,16 @@ def test_gizeh_with_edge_detection_data():
                         ),
                         "edges": {
                             "edges_mask": absolute_data_path(
-                                "input/phr_gizeh/edge_detection/edges.tif"
+                                "input/phr_gizeh/monocular/edges.tif"
                             ),
                             "depth_map": absolute_data_path(
-                                "input/phr_gizeh/edge_detection/depth.tif"
+                                "input/phr_gizeh/monocular/depth.tif"
                             ),
                             "normals": absolute_data_path(
-                                "input/phr_gizeh/edge_detection/normals.tif"
+                                "input/phr_gizeh/monocular/normals.tif"
                             ),
                             "tile_id": absolute_data_path(
-                                "input/phr_gizeh/edge_detection/tile_id.tif"
+                                "input/phr_gizeh/monocular/tile_id.tif"
                             ),
                         },
                     },
@@ -1665,7 +1665,7 @@ def test_gizeh_with_edge_detection_data():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "dsm_test_surface_modeling_gizeh_edge_detection.tif",
+                    "dsm_test_surface_modeling_gizeh_monocular.tif",
                 )
             ),
         )
@@ -1674,7 +1674,7 @@ def test_gizeh_with_edge_detection_data():
             absolute_data_path(
                 os.path.join(
                     intermediate_output_dir,
-                    "image_test_surface_modeling_gizeh_edge_detection.tif",
+                    "image_test_surface_modeling_gizeh_monocular.tif",
                 )
             ),
         )
@@ -1683,7 +1683,7 @@ def test_gizeh_with_edge_detection_data():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "dsm_test_surface_modeling_gizeh_edge_detection.tif",
+                    "dsm_test_surface_modeling_gizeh_monocular.tif",
                 )
             ),
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
@@ -1694,7 +1694,7 @@ def test_gizeh_with_edge_detection_data():
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
-                    "image_test_surface_modeling_gizeh_edge_detection.tif",
+                    "image_test_surface_modeling_gizeh_monocular.tif",
                 )
             ),
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,

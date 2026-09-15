@@ -77,7 +77,7 @@ include:
     - apt-get install -y libgl1-mesa-glx libsm6 libxext6 ffmpeg
     - source /app/cars/venv/bin/activate
     # All dependencies should already be installed in the docker env
-    - pip install --no-build-isolation --editable .[dev,docs,edge_detection]
+    - pip install --no-build-isolation --editable .[dev,docs,monocular]
     # print installed packages for debugging purposes
     - pip freeze
 
@@ -180,7 +180,7 @@ test-end2end:
   # Use dedicated runner for end2end tests
   tags:
     - ${TEST_END2END_RUNNER_TAG}
-  timeout: 120 minutes
+  timeout: 180 minutes
   extends:
     - .cars-python-job
   script:

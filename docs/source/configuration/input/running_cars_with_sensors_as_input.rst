@@ -89,11 +89,11 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
             .. tab:: Edges
 
-                This parameter is used to pass to CARS any data coming out of CARS's edge detection plugin.
+                This parameter is used to pass to CARS any data coming out of CARS's Monocular plugin.
 
                 The simple method for passing edge maps as inputs is to put only the path of the edges mask image.
 
-                It is possible to use a dictionary to define more auxiliary images, related to edge detection :
+                It is possible to use a dictionary to define more auxiliary images, related to extra optional monocular outputs :
 
                 +----------------+-----------------------------------------------------------------------------------------------------+--------+---------------+----------+
                 | Name           | Description                                                                                         | Type   | Default value | Required |

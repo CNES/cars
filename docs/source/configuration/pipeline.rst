@@ -29,7 +29,7 @@ Each of them can be called by themselves, provided the right inputs.
     pipelines/filling
     pipelines/merging
     pipelines/formatting
-    pipelines/edge_detection
+    pipelines/monocular
 
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
 | Pipeline                                    | Per-resolution | Description                                                                                                                              |
@@ -46,7 +46,7 @@ Each of them can be called by themselves, provided the right inputs.
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
 | :ref:`formatting <formatting>`              | No             | Produces the final formatted output of the CARS pipeline by merging classification layers, selecting color bands, and structuring data.  |
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
-| :ref:`edge_detection <edge_detection>`      | No             | Produces an edge map from a single image using the MoGe2 model. Requires the CARS Edge Detection plugin.                                 |
+| :ref:`monocular <monocular>`                | No             | Produces an edge map from a single image using the MoGe2 model. Requires CARS's Monocular plugin.                                        |
 +---------------------------------------------+----------------+------------------------------------------------------------------------------------------------------------------------------------------+
 
 
@@ -61,9 +61,9 @@ Meta pipeline
     The Meta pipeline is the name given to CARS's default pipeline, who itself makes calls to all the other pipelines following the schema provided above.
     By setting a list of pipelines in the ``pipeline`` field, you can control which pipelines will be ran exactly.
 
-    When the optional edge detection plugin is installed, CARS also enables the
-    ``edge_detection`` pipeline by default. If the plugin is not installed, CARS continues without 
-    edge detection and emits a warning.
+    When the optional CARS Monocular plugin is installed, CARS also enables the
+    ``Monocular`` pipeline by default. If the plugin is not installed, CARS continues without 
+    monocular and emits a warning.
 
     A dict will enable you to specify via true or false which pipelines will be ran, instead of relying on presence in the list. In the ``used_conf.yaml`` file, the dict is used for better clarity.
 
