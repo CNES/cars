@@ -270,6 +270,9 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
         with rio.open(dem_median_path_in) as src:
             dem = src.read(1)
             profile = src.profile
+            if "tiled" in profile and not profile["tiled"]:
+                profile.pop("blockxsize", None)
+                profile.pop("blockysize", None)
             nodata = src.nodata
 
         if self.save_intermediate_data:

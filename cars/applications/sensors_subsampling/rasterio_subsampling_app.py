@@ -158,6 +158,9 @@ class RasterioSubsampling(ssa.SensorsSubsampling, short_name=["rasterio"]):
                     "compress": "lzw",
                 }
             )
+            if "tiled" in profile and not profile["tiled"]:
+                profile.pop("blockxsize", None)
+                profile.pop("blockysize", None)
 
         return profile, height, width
 
