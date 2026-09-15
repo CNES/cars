@@ -35,6 +35,7 @@
  - Check of phasing between DSM failed because of floating-point inaccuracies [#1411] 
  - Fix of save_intermediate_data when activated on an application of tie_points pipeline [#1426]
  - Add src_nodata parameter in rasterio reproject function (needed by rasterio 1.5.0) [#1385]
+ - Add index to merging output [#1435]
 
 
 ## 1.2.0 Rich Logging Output (June 2026)
