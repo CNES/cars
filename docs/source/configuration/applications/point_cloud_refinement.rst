@@ -11,7 +11,7 @@ Refine a triangulated point cloud using target surface normals and displacement 
 This application improves the geometric consistency of the 3D point cloud by aligning it with target normal constraints.
 A global rotation is estimated from the surface geometry to align target normals with the XYZ-derived reference frame before refinement.
 
-This application is used when a normal map was given as input, either through the edge detection plugin or manually from the configuration file.
+This application is used when a normal map was given as input, either through the CARS Monocular plugin or manually from the configuration file.
 This application is skipped otherwise.
 
 **Configuration**

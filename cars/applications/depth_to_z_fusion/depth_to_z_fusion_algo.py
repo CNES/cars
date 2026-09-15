@@ -22,7 +22,7 @@
 Depth to Z fusion algorithms.
 """
 
-# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-positional-arguments,too-many-lines
 
 from __future__ import annotations
 
@@ -375,6 +375,98 @@ def estimate_depth_to_z_scale(
     return scale_per_tile, global_slope
 
 
+def center_depth_per_tile(
+    depth: np.ndarray,
+    tile_id: np.ndarray,
+    anchor_mask: np.ndarray,
+    domain_mask: np.ndarray,
+) -> np.ndarray:
+    """
+    Remove the arbitrary per-tile depth DC offset.
+
+    Each monocular ``tile_id`` carries its own absolute depth level, which is
+    meaningless across tiles.  Multiplying the raw depth by the slope therefore
+    injects a huge relief jump at every tile boundary; inside a hole (no anchors
+    to absorb it) that jump surfaces as a sharp Z artefact.  Subtracting a
+    per-tile reference depth keeps only the within-tile relief, so the relief is
+    continuous across boundaries and the smooth residual carries the true level.
+
+    The reference is the anchor mean where available (so relief is ~zero-mean
+    where Z is known), falling back to the domain mean, then to zero.
+    """
+
+    centered = depth.astype(np.float64, copy=True)
+    for tile_value in np.unique(tile_id[domain_mask]):
+        tile_pixels = tile_id == tile_value
+        anchors = tile_pixels & anchor_mask
+        if np.any(anchors):
+            reference = float(np.mean(depth[anchors]))
+        else:
+            in_domain = tile_pixels & domain_mask
+            reference = (
+                float(np.mean(depth[in_domain])) if np.any(in_domain) else 0.0
+            )
+        centered[tile_pixels] -= reference
+    return centered.astype(np.float32)
+
+
+def build_cross_tile_residual_targets(
+    relief_map: np.ndarray,
+    tile_id: np.ndarray,
+    domain_mask: np.ndarray,
+) -> dict[tuple[int, int], np.ndarray]:
+    """
+    Directed residual gradient targets that cancel the relief jump at borders.
+
+    The analytic relief is continuous within a tile but jumps across tile
+    boundaries (different slope and centered-depth level on each side).  Because
+    the residual solve is dominated by smoothness (neighbour weights typically
+    outweigh the per-anchor data term), the residual stays smooth across the
+    border while the relief jumps, so ``fused = relief + residual`` inherits
+    most of that jump -- even at anchored borders where both sides carry
+    a valid Z.
+
+    For the residual solve we therefore request, on every cross-tile edge, a
+    residual gradient ``b_ij = relief_j - relief_i``.  This makes the smoothness
+    term prefer a zero fused gradient (continuity) across the border instead of
+    the spurious relief jump.  The data term still pulls each anchored side
+    toward its true Z, so the genuine (small) terrain step across the border is
+    preserved while the large relief artefact is removed.  Intra-tile edges keep
+    a zero target (unchanged harmonic behaviour).
+    """
+
+    height, width = relief_map.shape
+    relief64 = relief_map.astype(np.float64)
+    targets: dict[tuple[int, int], np.ndarray] = {}
+
+    for delta_i, delta_j in _NEIGHBOURS:
+        target_map = np.zeros((height, width), dtype=np.float32)
+        src_slices, dst_slices = _slices(height, width, delta_i, delta_j)
+        src_i0, src_i1, src_j0, src_j1 = src_slices
+        dst_i0, dst_i1, dst_j0, dst_j1 = dst_slices
+
+        both_domain = (
+            domain_mask[src_i0:src_i1, src_j0:src_j1]
+            & domain_mask[dst_i0:dst_i1, dst_j0:dst_j1]
+        )
+        cross_tile = (
+            tile_id[src_i0:src_i1, src_j0:src_j1]
+            != tile_id[dst_i0:dst_i1, dst_j0:dst_j1]
+        )
+        apply = both_domain & cross_tile
+        if np.any(apply):
+            relief_jump = (
+                relief64[dst_i0:dst_i1, dst_j0:dst_j1]
+                - relief64[src_i0:src_i1, src_j0:src_j1]
+            )
+            target_map[src_i0:src_i1, src_j0:src_j1] = np.where(
+                apply, relief_jump, 0.0
+            ).astype(np.float32)
+        targets[(delta_i, delta_j)] = target_map
+
+    return targets
+
+
 def build_slope_map(
     tile_id: np.ndarray,
     scale_per_tile: dict[float, float],
@@ -445,9 +537,16 @@ def fuse_anisotropic(
     iterations: int,
     tol: float,
     init: np.ndarray | None = None,
+    edge_targets: dict[tuple[int, int], np.ndarray] | None = None,
 ) -> tuple[np.ndarray, int, float]:
     """
     Run Jacobi iterations for depth-guided anisotropic Z fusion.
+
+    ``edge_targets`` optionally provides a directed gradient target ``b_ij`` per
+    edge (the desired ``fused_i - fused_j``).  With it the smoothness energy
+    becomes ``w_ij (fused_i - fused_j - b_ij)**2``, letting the solve reproduce
+    a prescribed jump on selected edges (used to cancel the relief discontinuity
+    across tile borders).  When ``None`` the classic harmonic target (0) is used
     """
 
     height, width = z_map.shape
@@ -474,6 +573,18 @@ def fuse_anisotropic(
             (delta_i, delta_j)
         ][src_i0:src_i1, src_j0:src_j1]
 
+    # The directed gradient targets are also constant across sweeps, so their
+    # contribution to the update numerator (sum_j w_ij * b_ij) is precomputed.
+    target_accum = np.zeros((height, width), dtype=np.float32)
+    if edge_targets is not None:
+        for delta_i, delta_j in _NEIGHBOURS:
+            src_slices, _ = _slices(height, width, delta_i, delta_j)
+            src_i0, src_i1, src_j0, src_j1 = src_slices
+            target_accum[src_i0:src_i1, src_j0:src_j1] += (
+                edge_weights[(delta_i, delta_j)][src_i0:src_i1, src_j0:src_j1]
+                * edge_targets[(delta_i, delta_j)][src_i0:src_i1, src_j0:src_j1]
+            )
+
     denominator = lambda_per_pixel + sum_weights
     has_denom = domain_mask & (denominator > 1.0e-12)
     inv_denom = np.zeros((height, width), dtype=np.float32)
@@ -492,7 +603,7 @@ def fuse_anisotropic(
                 * fused[dst_i0:dst_i1, dst_j0:dst_j1]
             )
 
-        updated = (lambda_z + accumulator) * inv_denom
+        updated = (lambda_z + accumulator + target_accum) * inv_denom
         next_fused = np.where(has_denom, updated, fused)
 
         # Non-updated pixels are unchanged, so the full-array max abs diff
@@ -642,6 +753,7 @@ def fit_depth_to_z_tile(
 
     # Relief / drift decomposition
     relief_map = np.zeros(z_map.shape, dtype=np.float32)
+    edge_targets = None
     if detail_scale != 0.0:
         scale_per_tile, global_slope = estimate_depth_to_z_scale(
             depth,
@@ -652,7 +764,19 @@ def fit_depth_to_z_tile(
         slope_map = detail_scale * build_slope_map(
             tile_id, scale_per_tile, global_slope
         )
-        relief_map = (slope_map * depth.astype(np.float32)).astype(np.float32)
+        # Center depth per tile so relief carries only within-tile structure;
+        # the arbitrary per-tile depth offset would otherwise appear as a sharp
+        # Z jump at tile boundaries inside holes.
+        depth_relief = center_depth_per_tile(
+            depth, tile_id, anchor_mask, domain_mask
+        )
+        relief_map = (slope_map * depth_relief).astype(np.float32)
+        # The relief still jumps across tile borders (different slope/level per
+        # side). Cancel that jump in the residual solve so the fused Z stays
+        # continuous across borders inside holes.
+        edge_targets = build_cross_tile_residual_targets(
+            relief_map, tile_id, domain_mask
+        )
 
     residual_map = np.where(anchor_mask, z_map - relief_map, 0.0).astype(
         np.float32
@@ -672,6 +796,7 @@ def fit_depth_to_z_tile(
         iterations=iterations,
         tol=tol,
         init=residual_init,
+        edge_targets=edge_targets,
     )
     fused_z = relief_map + fused_residual
 

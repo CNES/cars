@@ -1,13 +1,13 @@
-.. _edge_detection:
+.. _monocular:
 
-Edge Detection
-==============
+Monocular
+=========
 
 This pipeline produces an edge map from a single image using the MoGe2 model.
 
 .. warning::
 
-  This pipeline is only available if the `CARS Edge Detection plugin <https://github.com/CNES/cars-edge-detection-plugin>`_ is installed.
+  This pipeline is only available if the `CARS Monocular Plugin <https://github.com/CNES/cars-monocular-plugin>`_ is installed.
 
 Allowed inputs
 --------------
@@ -36,8 +36,8 @@ Advanced Parameters
       - Save intermediate data for all applications inside this pipeline.
       - bool
       - False
-    * - right_image_edge_detection
-      - Whether to run edge detection on the right images as well.
+    * - right_image_monocular
+      - Whether to run monocular on the right images as well.
       - bool
       - False
 

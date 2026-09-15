@@ -89,7 +89,7 @@ def test_end2end_gizeh_meta_pipeline():
                 "filling": False,
                 "merging": False,
                 "formatting": True,
-                "edge_detection": True,
+                "monocular": True,
             },
             "orchestrator": {
                 "mode": "multiprocessing",
@@ -208,7 +208,7 @@ def test_end2end_gizeh_meta_pipeline_rectangular_resolution():
                 "filling": False,
                 "merging": False,
                 "formatting": True,
-                "edge_detection": False,
+                "monocular": False,
             },
             "orchestrator": {
                 "mode": "multiprocessing",
@@ -334,7 +334,7 @@ def test_end2end_gizeh_meta_pipeline_pandora2d():
                 "filling": False,
                 "merging": False,
                 "formatting": True,
-                "edge_detection": False,
+                "monocular": False,
             },
             "surface_modeling": {
                 "advanced": {
@@ -461,7 +461,7 @@ def test_end2end_ventoux_meta_pipeline():
                 "filling": False,
                 "merging": False,
                 "formatting": True,
-                "edge_detection": False,
+                "monocular": False,
             },
             "orchestrator": {
                 "mode": "multiprocessing",
@@ -586,7 +586,7 @@ def test_end2end_ventoux_with_filling():
                 "filling": True,
                 "merging": False,
                 "formatting": True,
-                "edge_detection": False,
+                "monocular": False,
             },
             "orchestrator": {
                 "mode": "multiprocessing",
@@ -760,7 +760,7 @@ def test_end2end_ventoux_with_filling_in_4326():
                 "filling": True,
                 "merging": False,
                 "formatting": True,
-                "edge_detection": False,
+                "monocular": False,
             },
             "orchestrator": {
                 "mode": "multiprocessing",
@@ -888,7 +888,7 @@ def test_end2end_gizeh_merging():
                 "filling": False,
                 "merging": True,
                 "formatting": True,
-                "edge_detection": False,
+                "monocular": False,
             },
             "merging": {
                 "applications": {"dsm_merging": {"method": "weighted_fusion"}},
@@ -968,7 +968,7 @@ def test_end2end_gizeh_use_endogenous_dem():
                 "filling": False,
                 "merging": False,
                 "formatting": True,
-                "edge_detection": False,
+                "monocular": False,
             },
             "orchestrator": {
                 "mode": "multiprocessing",
@@ -1226,7 +1226,7 @@ def test_run_with_used_conf():
                 "filling": False,
                 "merging": False,
                 "formatting": True,
-                "edge_detection": False,
+                "monocular": False,
             },
             "output": {"directory": directory},
         }
