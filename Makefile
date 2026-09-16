@@ -39,7 +39,7 @@ CHECK_DOCKER = $(shell docker -v)
 CARS_VERSION = $(shell python3 -c 'from cars import __version__; print(__version__)')
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 
-CONSTRAINTS_FILE = "tmp_constraint.txt"
+CONSTRAINTS_FILE = tmp_constraint.txt
 
 ################ MAKE targets by sections ######################
 
@@ -62,19 +62,25 @@ install/deps: venv ## install python libs
 
 .PHONY: install/dev-gdal
 install/dev-gdal: install/deps ## install cars on healthy python env for gdal/proj
-	@test -f ${CARS_VENV}/bin/cars ||${CARS_VENV}/bin/python -m pip install cython
-	@test -f ${CARS_VENV}/bin/cars || echo "rasterio --no-binary rasterio" > $CONSTRAINTS_FILE  ; echo "fiona --no-binary fiona" >> $CONSTRAINTS_FILE
-	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install -c $CONSTRAINTS_FILE --no-build-isolation --editable .[dev,docs]
-	@test -f ${CARS_VENV}/bin/cars || rm  $CONSTRAINTS_FILE
+	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/python -m pip install cython
+	@test -f ${CARS_VENV}/bin/cars || ( \
+		echo "rasterio --no-binary rasterio" > ${CONSTRAINTS_FILE} && \
+		echo "fiona --no-binary fiona" >> ${CONSTRAINTS_FILE} && \
+		PATH="${CARS_VENV}/bin:$$PATH" ${CARS_VENV}/bin/python -m pip install \
+			-c ${CONSTRAINTS_FILE} \
+			--no-build-isolation \
+			--editable .[dev,docs] && \
+		rm -f ${CONSTRAINTS_FILE} \
+	)
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
 
-.PHONY: install/deps
-install: install/deps ## install cars in dev editable mode (pip install --no-build-isolation -e .) without recompiling rasterio and fiona
-	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; pip install --no-build-isolation --editable .[dev,docs]
+.PHONY: install
+install: install/deps ## install cars in dev editable mode
+	@test -f ${CARS_VENV}/bin/cars || PATH="${CARS_VENV}/bin:$$PATH" ${CARS_VENV}/bin/python -m pip install --no-build-isolation --editable .[dev,docs]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
