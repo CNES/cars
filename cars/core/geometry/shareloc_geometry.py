@@ -161,6 +161,10 @@ class SharelocGeometry(AbstractGeometry):
         overloaded_conf["dem_roi_margin_rectification"] = conf.get(
             "dem_roi_margin_rectification", 0.5
         )
+        # unused by shareloc plugin
+        overloaded_conf["add_epipolar_margins"] = conf.get(
+            "add_epipolar_margins", True
+        )
 
         geometry_schema = {
             "plugin_name": str,
@@ -169,6 +173,7 @@ class SharelocGeometry(AbstractGeometry):
             "dem_roi_margin_rectification": And(
                 Or(float, int), lambda x: x > 0
             ),
+            "add_epipolar_margins": bool,
         }
 
         # Check conf

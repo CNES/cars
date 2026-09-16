@@ -109,7 +109,10 @@ Meta pipeline
     +------------------------------------+------------------------------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
     | *dem_roi_margin_rectification*     | Additional margin for epipolar grids, as a percentage of total width/height        | int, float, >0 | 0.5                     |                                       | False    |
     +------------------------------------+------------------------------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
+    | *add_epipolar_margins*             | Add margins around the sensor image footprint when computing epipolar grids        | bool           | True                    | True, False                           | False    |
+    +------------------------------------+------------------------------------------------------------------------------------+----------------+-------------------------+---------------------------------------+----------+
 
+    * **add_epipolar_margins**: If enabled, margins are added around the sensor image footprint before computing the epipolar grids. Setting it to ``False`` uses the original sensor image footprint without additional margins. This parameter is not used by the Shareloc geometry plugin, but may be used by other geometry plugins.
 
     To use Shareloc geometry library, CARS input configuration should be defined as :
 
