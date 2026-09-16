@@ -365,7 +365,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
         Directly creates class attributes:
             used_conf
             generate_terrain_products
-            debug_with_roi
             save_output_dsm
             save_output_point_clouds
             geom_plugin_without_dem_and_geoid
@@ -565,10 +564,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.input_roi_poly = self.input_roi_poly.buffer(
                 terrain_margin, join_style=2
             )
-
-        self.debug_with_roi = self.used_conf[PIPELINE][ADVANCED][
-            adv_cst.DEBUG_WITH_ROI
-        ]
 
         self.used_conf[OUTPUT] = output
         self.out_dir = self.used_conf[OUTPUT][out_cst.OUT_DIRECTORY]
@@ -1889,9 +1884,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                         disp_max=self.pairs[pair_key]["disp_range_grid"][
                             "global_max"
                         ],
-                        roi_poly=(
-                            None if self.debug_with_roi else self.roi_poly
-                        ),
+                        roi_poly=self.roi_poly,
                         orchestrator=self.cars_orchestrator,
                         pair_key=pair_key,
                         pair_folder=os.path.join(
@@ -1910,7 +1903,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     self.optimal_terrain_tile_width,
                 ) = preprocessing.compute_terrain_bounds(
                     self.list_terrain_roi,
-                    roi_poly=(None if self.debug_with_roi else self.roi_poly),
+                    roi_poly=self.roi_poly,
                     resolution=self.resolution,
                 )
                 if self.which_resolution not in ("final", "single"):

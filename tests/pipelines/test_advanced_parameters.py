@@ -38,7 +38,6 @@ def test_advanced_parameters_full_config():
     """
 
     config = {
-        "debug_with_roi": True,
         "ground_truth_dsm": {
             "dsm": "tests/data/input/phr_gizeh/img1.tif",
             "geoid": True,
@@ -65,7 +64,7 @@ def test_advanced_parameters_minimal():
     Test configuration check for advanced parameters
     """
 
-    config = {"debug_with_roi": True}
+    config = {}
 
     inputs_config = {
         "sensors": {
@@ -87,7 +86,7 @@ def test_advanced_parameters_update_conf():
     Test configuration check for advanced parameters
     """
 
-    config = {"debug_with_roi": True}
+    config = {}
 
     inputs_config = {
         "sensors": {
