@@ -135,6 +135,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         self.dem_roi_margin_rectification = self.used_config[
             "dem_roi_margin_rectification"
         ]
+        self.add_epipolar_margins = self.used_config["add_epipolar_margins"]
         self.dem = None
         self.dem_roi = None
         self.dem_roi_epsg = None
@@ -409,6 +410,9 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         overloaded_conf["dem_roi_margin_rectification"] = conf.get(
             "dem_roi_margin_rectification", 0.5
         )
+        overloaded_conf["add_epipolar_margins"] = conf.get(
+            "add_epipolar_margins", True
+        )
 
         geometry_schema = {
             "plugin_name": str,
@@ -417,6 +421,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
             "dem_roi_margin_rectification": And(
                 Or(float, int), lambda x: x > 0
             ),
+            "add_epipolar_margins": bool,
         }
 
         # Check conf

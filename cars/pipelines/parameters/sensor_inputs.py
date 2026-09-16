@@ -490,6 +490,7 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin, output_dem_dir):
             default_alt=sens_cst.CARS_DEFAULT_ALT,
         )
     )
+    conf_geom_plugin = temp_geom_plugin.used_config
     average_sensor_resolution = 0
     bounds = None
     for _, sensor_image in conf_inputs[sens_cst.SENSORS].items():
