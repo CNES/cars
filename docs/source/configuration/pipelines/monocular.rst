@@ -7,7 +7,7 @@ This pipeline produces an edge map from a single image using the MoGe2 model.
 
 .. warning::
 
-  This pipeline is only available if the `CARS Monocular Plugin <https://github.com/CNES/cars-monocular-plugin>`_ is installed.
+    This pipeline is only available if the `CARS Monocular Plugin <https://github.com/CNES/cars-monocular-plugin>`_ is installed.
 
 Allowed inputs
 --------------

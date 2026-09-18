@@ -76,6 +76,17 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
 
     overloaded_conf[sens_cst.LOW_RES_DSM] = conf.get(sens_cst.LOW_RES_DSM, None)
 
+    overloaded_conf[sens_cst.LAND_COVER_MAP] = conf.get(
+        sens_cst.LAND_COVER_MAP, "global_land_cover_map.tif"
+    )
+
+    overloaded_conf[sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING] = (
+        conf.get(
+            sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING,
+            "config_mapping.json",
+        )
+    )
+
     overloaded_conf[sens_cst.LOADERS] = check_loaders(
         conf.get(sens_cst.LOADERS, {})
     )
@@ -106,6 +117,8 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         sens_cst.IGNORE_ROI_DURING_APRIORI: Or(bool, False),
         sens_cst.LOADERS: dict,
         sens_cst.FILLING: dict,
+        sens_cst.LAND_COVER_MAP: str,
+        sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: str,
         pipeline_cst.DSM_TO_FILL: Or(str, dict, None),
         pipeline_cst.INPUT_DTM: Or(str, None),
         pipeline_cst.SCALING_COEFF: Or(int, float, None),
@@ -127,6 +140,20 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
 
     # Check srtm dir
     check_srtm(overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH])
+
+    if os.path.isabs(
+        overloaded_conf[sens_cst.LAND_COVER_MAP]
+    ) and not os.path.exists(overloaded_conf[sens_cst.LAND_COVER_MAP]):
+        raise RuntimeError("The land cover map file does not exist")
+
+    if os.path.isabs(
+        overloaded_conf[sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING]
+    ) and not os.path.exists(
+        overloaded_conf[sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING]
+    ):
+        raise RuntimeError(
+            "The classification to configuration mapping file does not exist"
+        )
 
     return overloaded_conf
 

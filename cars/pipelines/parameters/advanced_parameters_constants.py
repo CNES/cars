@@ -28,10 +28,6 @@ FILLING_TILE_SIZE = "filling_tile_size"
 KEEP_LOW_RES_DIR = "keep_low_res_dir"
 PHASING = "phasing"
 DEBUG_WITH_ROI = "debug_with_roi"
-LAND_COVER_MAP = "land_cover_map"
-CLASSIFICATION_TO_CONFIGURATION_MAPPING = (
-    "classification_to_configuration_mapping"
-)
 USE_SENSOR_DISP = "use_sensor_disp"
 
 RESOLUTION_A_PRIORI = "resolution_a_priori"

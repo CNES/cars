@@ -506,8 +506,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
             self.scaling_coeff,
-            self.land_cover_map,
-            self.classification_to_config_mapping,
             bounds,
             self.use_sensor_disp,
         ) = advanced_parameters.check_advanced_parameters(
@@ -1349,8 +1347,6 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 _,
                 _,
                 _,
-                _,
-                _,
             ) = advanced_parameters.check_advanced_parameters(
                 inputs,
                 self.used_conf.get(PIPELINE, {}).get(ADVANCED, {}),
@@ -1920,12 +1916,21 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 method = self.dense_matching_app.dense_matching_method
                 corr_cfg = method.corr_config.copy()
 
-                # Find the conf that correspond to the land cover map
-                conf = self.dense_matching_app.loader.find_auto_conf(
-                    intersection_poly,
-                    self.land_cover_map,
-                    self.classification_to_config_mapping,
-                    self.epsg,
+                if self.optimal_pandora_conf is None:
+                    # Find the conf that correspond to the land cover map
+                    self.optimal_pandora_conf = (
+                        preprocessing.find_land_cover_class(
+                            intersection_poly,
+                            inputs[sens_cst.LAND_COVER_MAP],
+                            inputs[
+                                sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING
+                            ],
+                            self.epsg,
+                        )
+                    )
+
+                conf = self.dense_matching_app.loader.open_optimal_conf(
+                    self.optimal_pandora_conf
                 )
 
                 # Update the used_conf if order to reinitialize
@@ -2845,6 +2850,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
         previous_out_dir=None,
         parent_pipeline_id=None,
         tie_points_pipeline_id=None,
+        optimal_pandora_configuration=None,
     ):  # noqa C901
         """
         Run pipeline
@@ -2876,6 +2882,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
         # saved used configuration
         self.save_configurations()
+
+        self.optimal_pandora_conf = optimal_pandora_configuration
 
         # start cars orchestrator
         with orchestrator.Orchestrator(

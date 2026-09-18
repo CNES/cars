@@ -30,7 +30,6 @@ from typing import Dict
 
 import numpy as np
 import pandora
-import rasterio
 import xarray as xr
 from json_checker import Checker, Or
 from pandora.check_configuration import (
@@ -40,11 +39,8 @@ from pandora.check_configuration import (
     update_conf,
 )
 from pandora.state_machine import PandoraMachine
-from rasterio.features import geometry_window
-from shapely.geometry import box, mapping
 
 from cars.core.cars_logging import logger
-from cars.core.projection import polygon_projection
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
@@ -297,80 +293,13 @@ class PandoraLoader:
         return list(set(classif_bands))
 
     @cars_profile(name="Find auto conf")
-    def find_auto_conf(
-        self, intersection_poly, land_cover_map, classif_to_config_mapping, epsg
-    ):
+    def open_optimal_conf(self, corresponding_conf_name):
         """
-        Find the configuration that suits the most on the
+        Open the configuration that suits the most on the
         land cover map based on the roi
         """
+
         package_path = os.path.dirname(__file__)
-
-        # construct the path to the land_cover_map
-        if os.path.dirname(land_cover_map) == "":
-            land_cover_map_path = os.path.join(package_path, land_cover_map)
-        else:
-            land_cover_map_path = land_cover_map
-
-        results = {}
-        with rasterio.open(land_cover_map_path) as src:
-            # Project the polygon to the right epsg
-            if src.crs != epsg:
-                poly = polygon_projection(
-                    intersection_poly, epsg, src.crs.to_epsg()
-                )
-            else:
-                poly = intersection_poly
-
-            window = geometry_window(src, [mapping(poly)])
-
-            data = src.read(1, window=window)
-
-            transform = src.window_transform(window)
-
-            for row in range(data.shape[0]):
-                for col in range(data.shape[1]):
-
-                    value = data[row, col]
-
-                    x1 = transform.c + col * transform.a
-                    y1 = transform.f + row * transform.e
-
-                    x2 = x1 + transform.a
-                    y2 = y1 + transform.e
-
-                    pixel = box(
-                        min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)
-                    )
-
-                    intersection = poly.intersection(pixel)
-
-                    if not intersection.is_empty:
-                        area = intersection.area
-                        results[value] = results.get(value, 0) + area
-
-        for value in results:
-            results[value] = results[value] / poly.area * 100
-
-        # Construct the path to the classification to configuration mapping
-        if os.path.dirname(classif_to_config_mapping) == "":
-            conf_file_path = os.path.join(
-                package_path, classif_to_config_mapping
-            )
-        else:
-            conf_file_path = classif_to_config_mapping
-
-        # read conf
-        with open(conf_file_path, "r", encoding="utf8") as fstream:
-            conf_mapping = json.load(fstream)
-
-        if results:
-            max_class = max(results, key=results.get)
-        else:
-            max_class = 0
-
-        # Find the configuration that corresponds to the most common class
-        corresponding_conf_name = conf_mapping.get(str(max_class), None)
 
         # If no equivalence has been found, we use the default configuration
         if corresponding_conf_name is None:
