@@ -100,7 +100,7 @@ def test_advanced_parameters_update_conf():
     )
 
     # First config check without epipolar a priori
-    _, updated_config, _, _, _, _, _, _, _, _ = (
+    _, updated_config, _, _, _, _, _, _ = (
         advanced_parameters.check_advanced_parameters(inputs_config, config)
     )
 
@@ -314,7 +314,7 @@ def test_advanced_parameters_phasing_arcsec():
         config_dir=absolute_data_path("input/data_gizeh_crop/"),
     )
 
-    _, updated_config, _, _, _, _, _, _, _, _ = (
+    _, updated_config, _, _, _, _, _, _ = (
         advanced_parameters.check_advanced_parameters(
             inputs_config,
             config,

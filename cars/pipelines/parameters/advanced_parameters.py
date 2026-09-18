@@ -163,17 +163,9 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         adv_cst.USE_SENSOR_DISP, False
     )
 
-    overloaded_conf[adv_cst.LAND_COVER_MAP] = conf.get(
-        adv_cst.LAND_COVER_MAP, "global_land_cover_map_high_res.tif"
-    )
-
     overloaded_conf[adv_cst.KEEP_LOW_RES_DIR] = conf.get(
         adv_cst.KEEP_LOW_RES_DIR,
         bool(overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA]),
-    )
-
-    overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING] = conf.get(
-        adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING, "config_mapping.json"
     )
 
     overloaded_conf[adv_cst.PHASING] = check_phasing(
@@ -245,8 +237,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         adv_cst.PHASING: Or(dict, None),
         adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
         adv_cst.PIPELINE: str,
-        adv_cst.LAND_COVER_MAP: str,
-        adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: str,
         adv_cst.USE_ENDOGENOUS_DEM: bool,
         OptionalKey(adv_cst.FILLING_TILE_SIZE): And(int, lambda x: x > 0),
     }
@@ -261,8 +251,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         geom_plugin_without_dem_and_geoid,
         geom_plugin_with_dem_and_geoid,
         scaling_coeff,
-        overloaded_conf[adv_cst.LAND_COVER_MAP],
-        overloaded_conf[adv_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],
         bounds,
         overloaded_conf[adv_cst.USE_SENSOR_DISP],
     )

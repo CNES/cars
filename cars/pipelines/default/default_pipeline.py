@@ -39,7 +39,7 @@ from collections import OrderedDict
 import yaml
 
 # CARS imports
-from cars.core import cars_logging
+from cars.core import cars_logging, inputs, preprocessing, projection
 from cars.core.cars_logging import logger
 from cars.core.progress.progress import ProgressTree
 from cars.core.utils import safe_makedirs
@@ -50,6 +50,7 @@ from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.filling.filling import FillingPipeline
 from cars.pipelines.formatting.formatting import FormattingPipeline
 from cars.pipelines.merging.merging import MergingPipeline
+from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
@@ -132,7 +133,7 @@ class DefaultPipeline(PipelineTemplate):
             )
 
         monocular_pid = None
-        if self.pipeline_to_use[pipeline_cst.MONOCULAR]:
+        if self.use_monocular:
             monocular_pid = progress_tree.begin_pipeline(
                 "Monocular", parent_id=parent_pipeline_id
             )
@@ -212,6 +213,8 @@ class DefaultPipeline(PipelineTemplate):
         conf[PIPELINE] = self.check_pipeline(conf)
 
         self.pipeline_to_use = conf[PIPELINE]
+
+        self.use_monocular = self.use_of_monocular(conf)
 
         # Check input
         conf[INPUT] = self.check_inputs(conf, config_dir=config_dir)
@@ -294,7 +297,7 @@ class DefaultPipeline(PipelineTemplate):
 
         if (
             self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]
-            and self.pipeline_to_use[pipeline_cst.MONOCULAR]
+            and self.use_monocular
         ):
             self.monocular_out_dir = os.path.join(
                 self.intermediate_data_dir, MONOCULAR
@@ -393,10 +396,54 @@ class DefaultPipeline(PipelineTemplate):
             self.used_conf = copy.deepcopy(conf)
             full_used_conf = self.used_conf
 
+        if dsm_cst.DSMS in conf[INPUT]:
+            self.use_monocular = False
+
+        self.optimal_pandora_conf = None
+        if self.use_monocular:
+            # Find the land cover map most common class
+            # for the use of monocular
+            (
+                _,
+                _,
+                _,
+                _,
+                geom_plugin_with_dem_and_geoid,
+                _,
+                _,
+                _,
+            ) = advanced_parameters.check_advanced_parameters(
+                conf[INPUT],
+                conf.get(ADVANCED, {}),
+            )
+
+            epsg = conf[OUTPUT][out_cst.EPSG]
+
+            list_intersection_poly = self.compute_intersection_poly(
+                conf[INPUT],
+                self.intermediate_data_dir,
+                epsg,
+                geom_plugin_with_dem_and_geoid,
+            )
+
+            # Find the conf that correspond to the land cover map
+            self.optimal_pandora_conf = preprocessing.find_land_cover_class(
+                list_intersection_poly,
+                conf[INPUT][sens_cst.LAND_COVER_MAP],
+                conf[INPUT][sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],
+                epsg,
+            )
+
+            if self.use_monocular == "auto":
+                if self.optimal_pandora_conf != "census_sgm_urban":
+                    self.use_monocular = False
+                else:
+                    self.use_monocular = True
+
         full_used_conf[pipeline_cst.SUBSAMPLING] = subsampling_used_conf
         full_used_conf[pipeline_cst.PIPELINE] = conf[PIPELINE]
         full_used_conf[pipeline_cst.FILLING] = filling_used_conf
-        if self.pipeline_to_use[pipeline_cst.MONOCULAR]:
+        if self.use_monocular:
             full_used_conf[pipeline_cst.MONOCULAR] = monocular_used_conf
 
         # Save used_conf
@@ -450,6 +497,26 @@ class DefaultPipeline(PipelineTemplate):
         )
         return conf_output
 
+    def use_of_monocular(self, conf):
+        """defined monocular activation mode"""
+
+        advanced = conf.get(pipeline_cst.MONOCULAR, {}).get("advanced", {})
+
+        use_monocular = advanced.get("activated", "auto")
+
+        if pipeline_cst.MONOCULAR in conf[INPUT] or use_monocular in (
+            True,
+            "auto",
+        ):
+            if not monocular_available():
+                use_monocular = False
+                logger.warning(
+                    "The monocular plugin is not installed. "
+                    "Continuing without monocular."
+                )
+
+        return use_monocular
+
     def check_pipeline(self, conf):  # noqa: C901
         """
         Check the pipeline section
@@ -461,7 +528,6 @@ class DefaultPipeline(PipelineTemplate):
             pipeline_cst.FILLING,
             pipeline_cst.MERGING,
             pipeline_cst.FORMATTING,
-            pipeline_cst.MONOCULAR,
         ]
         dict_pipeline = {}
 
@@ -475,8 +541,6 @@ class DefaultPipeline(PipelineTemplate):
                     pipeline_cst.TIE_POINTS,
                     pipeline_cst.FORMATTING,
                 ]
-                if monocular_available():
-                    conf[PIPELINE] += [pipeline_cst.MONOCULAR]
 
         if isinstance(conf[PIPELINE], str):
             if conf[PIPELINE] not in possible_pipeline:
@@ -560,20 +624,6 @@ class DefaultPipeline(PipelineTemplate):
         ):
             dict_pipeline[pipeline_cst.TIE_POINTS] = True
 
-        # always check the plugin install if monocular is involved
-        if (
-            pipeline_cst.MONOCULAR in conf[INPUT]
-            or dict_pipeline[pipeline_cst.MONOCULAR]
-        ):
-            if not monocular_available():
-                dict_pipeline[pipeline_cst.MONOCULAR] = False
-                logger.warning(
-                    "CARS Monocular is not installed. "
-                    "Continuing without monocular."
-                )
-            else:
-                dict_pipeline[pipeline_cst.MONOCULAR] = True
-
         return dict_pipeline
 
     def check_subsampling(self, conf):
@@ -654,7 +704,7 @@ class DefaultPipeline(PipelineTemplate):
                 for key in pipeline_conf[section]:
                     if key not in possible_keys:
                         raise KeyError(
-                            "When meta pipeline is used, keys of {} pipeline"
+                            "When default pipeline is used, keys of {} pipeline"
                             "must be in {}".format(
                                 pipeline_name,
                                 string_keys + ["all"],
@@ -765,6 +815,63 @@ class DefaultPipeline(PipelineTemplate):
 
         return monocular_conf
 
+    def compute_intersection_poly(
+        self, inputs_conf, intermediate_dir, epsg, geometry_plugin
+    ):
+        """Compute polygone intersection"""
+
+        list_sensor_pairs = sensor_inputs.generate_pairs(inputs_conf)
+
+        list_intersection_poly = []
+        for _, (pair_key, sensor_image_left, sensor_image_right) in enumerate(
+            list_sensor_pairs
+        ):
+            out_dir = os.path.join(intermediate_dir, "terrain_bbox", pair_key)
+
+            safe_makedirs(out_dir)
+
+            # Check that the envelopes intersect one another
+            logger.debug("Computing images envelopes and their intersection")
+            geojson1 = os.path.join(out_dir, "left_envelope.geojson")
+            geojson2 = os.path.join(out_dir, "right_envelope.geojson")
+            out_envelopes_intersection = os.path.join(
+                out_dir, "envelopes_intersection.geojson"
+            )
+
+            sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
+            sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+            geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
+            geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
+
+            inter_poly, _ = projection.ground_intersection_envelopes(
+                sensor1["bands"]["b0"]["path"],
+                sensor2["bands"]["b0"]["path"],
+                geomodel1,
+                geomodel2,
+                geometry_plugin,
+                geojson1,
+                geojson2,
+                out_envelopes_intersection,
+                envelope_file_driver="GeoJSON",
+                intersect_file_driver="GeoJSON",
+            )
+
+            # Retrieve bounding box of the ground intersection of the envelopes
+            inter_poly, inter_epsg = inputs.read_vector(
+                out_envelopes_intersection
+            )
+
+            # Project polygon if epsg is different
+            if epsg is not None:
+                if epsg != inter_epsg:
+                    inter_poly = projection.polygon_projection(
+                        inter_poly, inter_epsg, epsg
+                    )
+
+            list_intersection_poly.append(inter_poly)
+
+        return list_intersection_poly
+
     @cars_profile(name="Run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
         """
@@ -821,7 +928,7 @@ class DefaultPipeline(PipelineTemplate):
                 APPLICATIONS: subsampling_pipeline.used_conf[APPLICATIONS],
             }
 
-        if self.pipeline_to_use[pipeline_cst.MONOCULAR]:
+        if self.use_monocular:
             current_log_dir = os.path.join(self.out_dir, "logs", MONOCULAR)
             cars_logging.setup_logging_pipeline(
                 loglevel,
@@ -915,7 +1022,7 @@ class DefaultPipeline(PipelineTemplate):
                     dsm = os.path.join(previous_out_dir, "dsm/dsm.tif")
                     current_conf[INPUT][sens_cst.LOW_RES_DSM] = dsm
 
-                if last_res and self.pipeline_to_use[pipeline_cst.MONOCULAR]:
+                if last_res and self.use_monocular:
                     add_monocular_inputs(
                         current_conf[INPUT],
                         self.monocular_out_dir,
@@ -955,6 +1062,7 @@ class DefaultPipeline(PipelineTemplate):
                     tie_points_pipeline_id=self.sm_tie_points_pids.get(
                         epipolar_res
                     ),
+                    optimal_pandora_configuration=self.optimal_pandora_conf,
                 )
 
                 # Update metadata
@@ -1143,10 +1251,14 @@ class DefaultPipeline(PipelineTemplate):
                 APPLICATIONS: filling_pipeline.used_conf[APPLICATIONS],
             }
 
-        if self.pipeline_to_use[pipeline_cst.MONOCULAR]:
+        if self.use_monocular:
             full_used_conf[pipeline_cst.MONOCULAR] = self.monocular_used_conf[
                 pipeline_cst.MONOCULAR
             ]
+        else:
+            full_used_conf[pipeline_cst.MONOCULAR] = {
+                "advanced": {"activated": False}
+            }
 
         if isinstance(self.original_resolution, dict):
             full_used_conf[OUTPUT][

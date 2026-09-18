@@ -38,7 +38,10 @@ GEOID = "geoid"
 DEM_PATH = "dem"
 LOADERS = "loaders"
 FILLING = "filling"
-
+LAND_COVER_MAP = "land_cover_map"
+CLASSIFICATION_TO_CONFIGURATION_MAPPING = (
+    "classification_to_configuration_mapping"
+)
 INPUT_IMG = "image"
 INPUT_MSK = "mask"
 INPUT_CLASSIFICATION = "classification"

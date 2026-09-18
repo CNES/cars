@@ -26,7 +26,7 @@ import json
 import os
 
 import pytest
-from json_checker.core.exceptions import MissKeyCheckerError
+from json_checker.core.exceptions import DictCheckerError, MissKeyCheckerError
 
 from cars.pipelines.parameters import sensor_inputs
 
@@ -437,6 +437,165 @@ def test_input_pivot_image_loader():
         },
     }
     _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
+
+
+@pytest.mark.unit_tests
+def test_input_land_cover_map_fail_file_does_not_exist():
+    """
+    Input when land cover map file does not exist
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "loaders": {"image": "pivot"},
+        "sensors": {
+            "left": {
+                "image": {
+                    "bands": {
+                        "b0": {"path": "left_image.tif", "band": 0},
+                        "b1": {"path": "color_image.tif", "band": 0},
+                        "b2": {"path": "color_image.tif", "band": 1},
+                        "b3": {"path": "color_image.tif", "band": 2},
+                    },
+                },
+                "geomodel": {"path": "left_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+            "right": {
+                "image": {
+                    "bands": {"b0": {"path": "right_image.tif", "band": 0}},
+                },
+                "geomodel": {"path": "right_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+        },
+        "land_cover_map": "/file.tif",
+    }
+
+    with pytest.raises(RuntimeError):
+        _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
+
+
+@pytest.mark.unit_tests
+def test_input_land_over_map_fail_wrong_value():
+    """
+    Input when putting a wrong value to land_cover_map
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "loaders": {"image": "pivot"},
+        "sensors": {
+            "left": {
+                "image": {
+                    "bands": {
+                        "b0": {"path": "left_image.tif", "band": 0},
+                        "b1": {"path": "color_image.tif", "band": 0},
+                        "b2": {"path": "color_image.tif", "band": 1},
+                        "b3": {"path": "color_image.tif", "band": 2},
+                    },
+                },
+                "geomodel": {"path": "left_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+            "right": {
+                "image": {
+                    "bands": {"b0": {"path": "right_image.tif", "band": 0}},
+                },
+                "geomodel": {"path": "right_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+        },
+        "land_cover_map": 4,
+    }
+
+    with pytest.raises(DictCheckerError):
+        _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
+
+
+@pytest.mark.unit_tests
+def test_input_classif_to_configuration_mapping_fail_file_does_not_exist():
+    """
+    Input when classification to mapping file does not exist
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "loaders": {"image": "pivot"},
+        "sensors": {
+            "left": {
+                "image": {
+                    "bands": {
+                        "b0": {"path": "left_image.tif", "band": 0},
+                        "b1": {"path": "color_image.tif", "band": 0},
+                        "b2": {"path": "color_image.tif", "band": 1},
+                        "b3": {"path": "color_image.tif", "band": 2},
+                    },
+                },
+                "geomodel": {"path": "left_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+            "right": {
+                "image": {
+                    "bands": {"b0": {"path": "right_image.tif", "band": 0}},
+                },
+                "geomodel": {"path": "right_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+        },
+        "classification_to_configuration_mapping": "/file.json",
+    }
+
+    with pytest.raises(RuntimeError):
+        _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
+
+
+def test_input_classification_to_configuration_mapping_fail_wrong_value():
+    """
+    Input when putting a wrong value to classification to configuration mapping
+    """
+
+    input_json = absolute_data_path("input/phr_ventoux/input.json")
+    json_dir_path = os.path.dirname(input_json)
+    conf = {
+        "loaders": {"image": "pivot"},
+        "sensors": {
+            "left": {
+                "image": {
+                    "bands": {
+                        "b0": {"path": "left_image.tif", "band": 0},
+                        "b1": {"path": "color_image.tif", "band": 0},
+                        "b2": {"path": "color_image.tif", "band": 1},
+                        "b3": {"path": "color_image.tif", "band": 2},
+                    },
+                },
+                "geomodel": {"path": "left_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+            "right": {
+                "image": {
+                    "bands": {"b0": {"path": "right_image.tif", "band": 0}},
+                },
+                "geomodel": {"path": "right_image.geom"},
+                "mask": None,
+                "classification": None,
+            },
+        },
+        "classification_to_configuration_mapping": 4,
+    }
+
+    with pytest.raises(DictCheckerError):
+        _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
 
 
 @pytest.mark.unit_tests
