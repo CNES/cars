@@ -3,3 +3,6 @@ applications:
   triangulation:
     method: line_of_sight_intersection
     snap_to_img1: true
+    save_intermediate_data: false
+    z_inf_sup_bh_approximation: true
+    performance_map_affine_normalization: [1, 0]

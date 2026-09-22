@@ -223,7 +223,12 @@ def generate_point_cloud_file_names(
 
 
 def compute_performance_map(
-    alti_ref, z_inf, z_sup, ambiguity_map=None, perf_ambiguity_threshold=None
+    alti_ref,
+    z_inf,
+    z_sup,
+    ambiguity_map=None,
+    perf_ambiguity_threshold=None,
+    performance_map_affine_normalization=None,
 ):
     """
     Compute performance map
@@ -238,6 +243,9 @@ def compute_performance_map(
     :type ambiguity_map: xarray Dataarray
     :param perf_ambiguity_threshold: ambiguity threshold to use
     :type perf_ambiguity_threshold: None or float
+    :param performance_map_affine_normalization:  list or None containing
+        affine normalization parameters
+    :type performance_map_affine_normalization: list or None
 
     """
     performance_map = copy.copy(alti_ref)
@@ -254,6 +262,11 @@ def compute_performance_map(
         w_ambi = ambiguity_map / perf_ambiguity_threshold
         w_ambi[mask_ambi] = 1
         performance_map_values *= w_ambi
+
+    # apply affine normalization if provided
+    if performance_map_affine_normalization is not None:
+        a, b = performance_map_affine_normalization
+        performance_map_values = a * performance_map_values + b
 
     performance_map.values = performance_map_values
 

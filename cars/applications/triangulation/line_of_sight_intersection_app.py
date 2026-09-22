@@ -29,7 +29,7 @@ from typing import Dict, Tuple
 # Third party imports
 import numpy as np
 import xarray as xr
-from json_checker import Checker
+from json_checker import Checker, Or
 from shareloc.geofunctions.rectification_grid import RectificationGrid
 
 # CARS imports
@@ -82,6 +82,9 @@ class LineOfSightIntersection(
         self.z_inf_sup_bh_approximation = self.used_config[
             "z_inf_sup_bh_approximation"
         ]
+        self.performance_map_affine_normalization = self.used_config[
+            "performance_map_affine_normalization"
+        ]
 
         # global value for left image to check if snap_to_img1 can
         # be applied : Need than same application object is run
@@ -125,16 +128,31 @@ class LineOfSightIntersection(
             "z_inf_sup_bh_approximation", True
         )
 
+        overloaded_conf["performance_map_affine_normalization"] = conf.get(
+            "performance_map_affine_normalization", [1, 0]
+        )
+
         triangulation_schema = {
             "method": str,
             "snap_to_img1": bool,
             "save_intermediate_data": bool,
             "z_inf_sup_bh_approximation": bool,
+            "performance_map_affine_normalization": [
+                Or(int, float),
+                Or(int, float),
+            ],
         }
 
         # Check conf
         checker = Checker(triangulation_schema)
         checker.validate(overloaded_conf)
+
+        a, _ = overloaded_conf["performance_map_affine_normalization"]
+        if a <= 0:
+            raise ValueError(
+                "performance_map_affine_normalization first coefficient "
+                "must be strictly positive"
+            )
 
         return overloaded_conf
 
@@ -1032,6 +1050,9 @@ class LineOfSightIntersection(
                         point_cloud_laz_file_name=laz_pc_file_name,
                         saving_info_epipolar=full_saving_info_epipolar,
                         saving_info_flatten=full_saving_info_flatten,
+                        performance_map_affine_normalization=(
+                            self.performance_map_affine_normalization
+                        ),
                         **wrapper_kwargs,
                     )
 
@@ -1066,39 +1087,70 @@ def triangulation_wrapper(  # noqa: C901 function is too complex
     point_cloud_laz_file_name=None,
     saving_info_epipolar=None,
     saving_info_flatten=None,
+    performance_map_affine_normalization=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute point clouds from image objects and disparity objects.
 
+    :param is_epipolar: If True, triangulate an epipolar disparity map.
+        Otherwise, triangulate sensor matches.
+    :type is_epipolar: bool
+    :param sensor1: path to left sensor image
+    :type sensor1: str
+    :param sensors2: paths to right sensor images
+    :type sensors2: list[str]
+    :param geomodel1: path and attributes for left geomodel
+    :type geomodel1: dict
+    :param geomodels2: paths and attributes for right geomodels
+    :type geomodels2: list[dict]
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: AbstractGeometry
+    :param epsg: EPSG code of the output point cloud
+    :type epsg: int or None
+    :param grid1: dataset of the reference image grid file
+    :type grid1: CarsDataset
+    :param grid2: dataset of the secondary image grid file
+    :type grid2: CarsDataset
     :param disparity_object: Left disparity map dataset with :
             - cst_disp.MAP
             - cst_disp.VALID
             - cst.EPI_TEXTURE
     :type disparity_object: xr.Dataset
-    :param sensor1: path to left sensor image
-    :type sensor1: str
-    :param sensor2: path to right sensor image
-    :type sensor2: str
-    :param geomodel1: path and attributes for left geomodel
-    :type geomodel1: dict
-    :param geomodel2: path and attributes for right geomodel
-    :type geomodel2: dict
-    :param grid1: dataset of the reference image grid file
-    :type grid1: CarsDataset
-    :param grid2: dataset of the secondary image grid file
-    :type grid2: CarsDataset
-    :param geometry_plugin: geometry plugin to use
-    :type geometry_plugin: AbstractGeometry
+    :param sensor_matches: sensor matches used for triangulation in sensor
+        geometry
+    :type sensor_matches: list or None
+    :param z_inf_sup_bh_approximation: If True, approximate lower and upper
+        altitude bounds using the disparity-to-altitude ratio. Otherwise,
+        triangulate the lower and upper disparity bounds.
+    :type z_inf_sup_bh_approximation: bool
+    :param disp_to_alt_ratio: ratio used to convert disparity variations into
+        altitude variations
+    :type disp_to_alt_ratio: float or None
     :param geoid_path: Geoid used for altimetric reference. Defaults to None
         for using ellipsoid as altimetric reference.
     :type geoid_path: str
+    :param denoising_overload_fun: function to overload dataset
+    :type denoising_overload_fun: fun
+    :param cloud_id: identifier associated with the generated point cloud
+    :type cloud_id: int or None
     :param performance_maps_to_generate: None or list containing
         "risk" or "intervals"
     :param performance_maps_parameters: parameters used to
         generate performance map
     :type performance_maps_parameters: dict or None
-    :param denoising_overload_fun: function to overload dataset
-    :type denoising_overload_fun: fun
+    :param point_cloud_csv_file_name: output CSV point cloud file name
+    :type point_cloud_csv_file_name: str or None
+    :param point_cloud_laz_file_name: output LAZ point cloud file name
+    :type point_cloud_laz_file_name: str or None
+    :param saving_info_epipolar: saving information associated with the
+        epipolar point cloud
+    :type saving_info_epipolar: dict or None
+    :param saving_info_flatten: saving information associated with the
+        flattened point cloud
+    :type saving_info_flatten: dict or None
+    :param performance_map_affine_normalization: list or None containing
+        affine normalization coefficients [a, b], applied as a * x + b
+    :type performance_map_affine_normalization: list or None
 
     :return: Left disparity object
 
@@ -1240,6 +1292,9 @@ def triangulation_wrapper(  # noqa: C901 function is too complex
                     points[cst.STEREO_REF][cars_sup_key],
                     ambiguity_map=ambiguity_map,
                     perf_ambiguity_threshold=perf_ambiguity_threshold,
+                    performance_map_affine_normalization=(
+                        performance_map_affine_normalization
+                    ),
                 )
             )
 
