@@ -314,3 +314,74 @@ def test_triangulation_intervals_shareloc(
         )
     )
     assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.0e-3)
+
+
+@pytest.mark.unit_tests
+def test_compute_performance_map_affine_normalization():
+    """
+    Test performance map affine normalization.
+    """
+    alti_ref = xr.DataArray(
+        np.array(
+            [
+                [10.0, 20.0],
+                [30.0, 40.0],
+            ]
+        )
+    )
+    z_inf = xr.DataArray(
+        np.array(
+            [
+                [8.0, 17.0],
+                [29.0, 35.0],
+            ]
+        )
+    )
+    z_sup = xr.DataArray(
+        np.array(
+            [
+                [11.0, 24.0],
+                [32.0, 43.0],
+            ]
+        )
+    )
+
+    performance_map = triangulation_wrappers.compute_performance_map(
+        alti_ref,
+        z_inf,
+        z_sup,
+        performance_map_affine_normalization=[2.0, 1.0],
+    )
+
+    expected_performance_map = np.array(
+        [
+            [5.0, 9.0],
+            [5.0, 11.0],
+        ]
+    )
+
+    np.testing.assert_allclose(
+        performance_map.values,
+        expected_performance_map,
+    )
+
+
+@pytest.mark.unit_tests
+def test_compute_performance_map_without_affine_normalization():
+    """
+    Test performance map without affine normalization.
+    """
+    alti_ref = xr.DataArray(np.array([[10.0, 20.0]]))
+    z_inf = xr.DataArray(np.array([[8.0, 17.0]]))
+    z_sup = xr.DataArray(np.array([[11.0, 24.0]]))
+
+    performance_map = triangulation_wrappers.compute_performance_map(
+        alti_ref,
+        z_inf,
+        z_sup,
+    )
+
+    np.testing.assert_allclose(
+        performance_map.values,
+        np.array([[2.0, 4.0]]),
+    )

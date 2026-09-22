@@ -302,6 +302,7 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
             ]
         ]
 
+    use_pandora_machine = False
     # Check that the datasets are not full of nan (would crash later)
     if left_dataset["msk"].all() or right_dataset["msk"].all():
         height = left_dataset.sizes["row"]
@@ -337,6 +338,7 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
             },
         )
     else:
+        use_pandora_machine = True
         # Instantiate pandora state machine
         pandora_machine = PandoraMachine()
         # check datasets
@@ -363,6 +365,33 @@ def compute_disparity(  # pylint: disable=too-many-positional-arguments
         texture_bands=texture_bands,
         filter_incomplete_disparity_range=filter_incomplete_disparity_range,
     )
+
+    # Normalize with local disparity range
+    if (
+        use_pandora_machine
+        and "cost_volume_confidence.cars_1" in corr_cfg["pipeline"]
+    ):
+        pandora_machine.cost_volume_confidence_check_conf(
+            corr_cfg["pipeline"], "cost_volume_confidence.cars_1"
+        )
+        _eta_max = float(
+            pandora_machine.pipeline_cfg["pipeline"][
+                "cost_volume_confidence.cars_1"
+            ]["eta_max"]
+        )
+        _eta_step = float(
+            pandora_machine.pipeline_cfg["pipeline"][
+                "cost_volume_confidence.cars_1"
+            ]["eta_step"]
+        )
+        _etas = np.arange(0, _eta_max, _eta_step)
+        nbr_etas = _etas.shape[0]
+        subpix = pandora_machine.left_cv.attrs["subpixel"]
+        disp_range = (
+            disp_dataset["disp_max_grid"].values
+            - disp_dataset["disp_min_grid"].values
+        )
+        disp_dataset["ambiguity"].values /= disp_range * nbr_etas * subpix
 
     return disp_dataset
 
