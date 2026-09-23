@@ -400,9 +400,16 @@ class DefaultPipeline(PipelineTemplate):
             self.use_monocular = False
 
         self.optimal_pandora_conf = None
+
         if self.use_monocular:
             # Find the land cover map most common class
             # for the use of monocular
+            conf_advanced = full_used_conf[pipeline_cst.SURFACE_MODELING].get(
+                ADVANCED, {}
+            )
+            last_key = next(reversed(conf_advanced))
+            conf_advanced_last_res = conf_advanced[last_key]
+
             (
                 _,
                 _,
@@ -414,7 +421,7 @@ class DefaultPipeline(PipelineTemplate):
                 _,
             ) = advanced_parameters.check_advanced_parameters(
                 conf[INPUT],
-                conf.get(ADVANCED, {}),
+                conf_advanced_last_res,
             )
 
             epsg = conf[OUTPUT][out_cst.EPSG]

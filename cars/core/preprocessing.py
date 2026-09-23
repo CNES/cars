@@ -105,7 +105,6 @@ def find_land_cover_class(
     package_path = os.path.dirname(__file__)
 
     # construct the path to the land_cover_map
-    # construct the path to the land_cover_map
     if os.path.dirname(land_cover_map) == "":
         land_cover_map_path = os.path.join(
             package_path, "land_cover_map", land_cover_map
@@ -120,9 +119,7 @@ def find_land_cover_class(
 
         if epsg is not None:
             if src.crs != epsg:
-                poly = polygon_projection(
-                    intersection_poly, epsg, src.crs.to_epsg()
-                )
+                poly = polygon_projection(poly, epsg, src.crs.to_epsg())
 
         window = geometry_window(src, [mapping(poly)])
 

@@ -479,7 +479,7 @@ def test_end2end_ventoux_meta_pipeline():
                 "nb_workers": 4,
                 "max_ram_per_worker": 1000,
             },
-            "output": {"directory": directory},
+            "output": {"directory": directory, "epsg": 32636},
         }
         out_dir = conf["output"]["directory"]
         meta_pipeline = default.DefaultPipeline(conf)
