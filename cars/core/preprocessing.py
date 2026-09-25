@@ -47,13 +47,112 @@ from cars.core.cars_logging import logger
 from cars.core.projection import polygon_projection
 from cars.core.utils import safe_makedirs
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
+from cars.pipelines.pipeline_constants import ADVANCED, APPLICATIONS
 
 PREPROCESSING_TAG = "pair_preprocessing"
 LEFT_ENVELOPE_TAG = "left_envelope"
 RIGHT_ENVELOPE_TAG = "right_envelope"
 ENVELOPES_INTERSECTION_TAG = "envelopes_intersection"
 ENVELOPES_INTERSECTION_BB_TAG = "envelopes_intersection_bounding_box"
+
+
+def get_land_cover_auto_configuration(corresponding_conf_name):
+    """
+    Return the auto-configuration derived from the dominant
+    world land cover class.
+    """
+
+    is_urban = corresponding_conf_name == "census_sgm_urban"
+
+    return {
+        "use_monocular": True,
+        "monocular_resolution": 1 if is_urban else 4,
+        "dense_matching_edges_3sgm": is_urban,
+        "point_cloud_refinement_activated": True,
+        "depth_to_z_fusion_activated": is_urban,
+    }
+
+
+def setdefault(d, key, value):
+    """
+    Custom setdefault function. Default setdefault behavior + if
+    key is set to "auto", it will be replaced by the default value.
+
+    :param d: dictionary to update
+    :type d: dict
+    :param key: key to set default value for
+    :type key: str
+    :param value: default value to set
+    :type value: any
+    """
+    if key not in d or d[key] == "auto":
+        d[key] = value
+    return d[key]
+
+
+def apply_land_cover_auto_configuration(
+    conf,
+    corresponding_conf_name,
+    use_monocular=False,
+):
+    """
+    Apply the world-classification auto-configuration on a pipeline conf.
+
+    Existing user-defined values are preserved.
+
+    :param conf: pipeline configuration to update
+    :type conf: dict
+    :param corresponding_conf_name: dominant land-cover configuration name
+    :type corresponding_conf_name: str
+    :param use_monocular: whether monocular configuration should be updated
+    :type use_monocular: bool
+    """
+
+    auto_conf = get_land_cover_auto_configuration(corresponding_conf_name)
+    surface_modeling_conf = conf.setdefault(pipeline_cst.SURFACE_MODELING, {})
+    applications_conf = surface_modeling_conf.setdefault(APPLICATIONS, {})
+
+    target_applications_conf = applications_conf.setdefault("1", {})
+
+    dense_matching_conf = target_applications_conf.setdefault(
+        "dense_matching", {}
+    )
+    setdefault(
+        dense_matching_conf,
+        "edges_3sgm",
+        auto_conf["dense_matching_edges_3sgm"],
+    )
+
+    point_cloud_refinement_conf = target_applications_conf.setdefault(
+        "point_cloud_refinement", {}
+    )
+    setdefault(
+        point_cloud_refinement_conf,
+        "activated",
+        auto_conf["point_cloud_refinement_activated"],
+    )
+
+    depth_to_z_fusion_conf = target_applications_conf.setdefault(
+        "depth_to_z_fusion", {}
+    )
+    setdefault(
+        depth_to_z_fusion_conf,
+        "activated",
+        auto_conf["depth_to_z_fusion_activated"],
+    )
+
+    if use_monocular:
+        monocular_conf = conf.setdefault(pipeline_cst.MONOCULAR, {})
+        monocular_advanced_conf = monocular_conf.setdefault(ADVANCED, {})
+        setdefault(
+            monocular_advanced_conf,
+            "resolution",
+            auto_conf["monocular_resolution"],
+        )
+
+    return conf
 
 
 def get_utm_zone_as_epsg_code(lon, lat):
@@ -112,6 +211,14 @@ def find_land_cover_class(
     else:
         land_cover_map_path = land_cover_map
 
+    # Construct the path to the classification to configuration mapping
+    if os.path.dirname(classif_to_config_mapping) == "":
+        conf_file_path = os.path.join(
+            package_path, "land_cover_map", classif_to_config_mapping
+        )
+    else:
+        conf_file_path = classif_to_config_mapping
+
     results = {}
     with rasterio.open(land_cover_map_path) as src:
         # Project the polygon to the right epsg
@@ -148,14 +255,6 @@ def find_land_cover_class(
 
     for value in results:
         results[value] = results[value] / poly.area * 100
-
-        # Construct the path to the classification to configuration mapping
-        if os.path.dirname(classif_to_config_mapping) == "":
-            conf_file_path = os.path.join(
-                package_path, "land_cover_map", classif_to_config_mapping
-            )
-        else:
-            conf_file_path = classif_to_config_mapping
 
     # read conf
     with open(conf_file_path, "r", encoding="utf8") as fstream:

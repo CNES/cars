@@ -81,6 +81,12 @@ def test_pipeline():
             "surface_modeling",
         ]
 
+        input_conf["monocular"] = {
+            "advanced": {
+                "activated": False,
+            }
+        }
+
         pipeline = default_pipeline.DefaultPipeline(
             input_conf, absolute_data_path(directory)
         )
@@ -167,6 +173,12 @@ def test_pipeline():
         input_conf["subsampling"] = {}
         input_conf["subsampling"]["advanced"] = {}
         input_conf["subsampling"]["advanced"]["resolutions"] = 1
+
+        input_conf["monocular"] = {
+            "advanced": {
+                "activated": False,
+            }
+        }
 
         input_conf["pipeline"] = [
             "subsampling",

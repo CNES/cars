@@ -59,6 +59,7 @@ Application parameters
    applications/auxiliary_filling
    applications/epipolar_to_sensor_matching
    applications/depth_map_generation
+   applications/oversampling
    applications/dsm_merging
    applications/sensors_subsampling
 

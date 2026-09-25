@@ -108,6 +108,12 @@ def test_pipeline_filling_end2end_global():
             }
         }
 
+        input_conf["monocular"] = {
+            "advanced": {
+                "activated": False,
+            }
+        }
+
         input_conf["output"]["auxiliary"] = {
             "filling": True,
             "classification": True,

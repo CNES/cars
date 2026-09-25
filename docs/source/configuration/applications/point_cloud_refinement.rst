@@ -16,15 +16,20 @@ This application is skipped otherwise.
 
 **Configuration**
 
-+------------------------------+----------------------------------------------------------+---------+-----------------------------------+------------------+----------+
-| Name                         | Description                                              | Type    | Available value                   | Default value    | Required |
-+==============================+==========================================================+=========+===================================+==================+==========+
-| method                       | Method for point cloud refinement                        | string  | "normals_guided"                  | "normals_guided" | No       |
-+------------------------------+----------------------------------------------------------+---------+-----------------------------------+------------------+----------+
-| activated                    | Run this application (if false, skip processing)         | boolean |                                   | true             | No       |
-+------------------------------+----------------------------------------------------------+---------+-----------------------------------+------------------+----------+
-| save_intermediate_data       | Save the refined point cloud and displacement map as TIF | boolean |                                   | false            | No       |
-+------------------------------+----------------------------------------------------------+---------+-----------------------------------+------------------+----------+
++------------------------------+----------------------------------------------------------+-----------------+-----------------------------------+------------------+----------+
+| Name                         | Description                                              | Type            | Available value                   | Default value    | Required |
++==============================+==========================================================+=================+===================================+==================+==========+
+| method                       | Method for point cloud refinement                        | string          | "normals_guided"                  | "normals_guided" | No       |
++------------------------------+----------------------------------------------------------+-----------------+-----------------------------------+------------------+----------+
+| activated                    | Run this application (if false, skip processing)         | boolean, string | "auto", true, false               | "auto"           | No       |
++------------------------------+----------------------------------------------------------+-----------------+-----------------------------------+------------------+----------+
+| save_intermediate_data       | Save the refined point cloud and displacement map as TIF | boolean         |                                   | false            | No       |
++------------------------------+----------------------------------------------------------+-----------------+-----------------------------------+------------------+----------+
+
+.. note::
+
+    * The ``activated`` parameter accepts ``"auto"`` and resolves to its default value at runtime. This is used when the monocular/global preprocessing decides the value automatically.
+    * This application is skipped unless a normal map is available or the configuration explicitly turns it on.
 
 If method is *normals_guided*:
 

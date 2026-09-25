@@ -124,7 +124,7 @@ bundleadjustment = [
 ]
 
 monocular = [
-    "cars-monocular-plugin==0.2.0rc0"
+    "cars-monocular-plugin==0.2.0rc1"
 ]
 
 [tool.black]
