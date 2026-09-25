@@ -1,0 +1,4 @@
+---
+applications:
+  oversampling:
+    method: simple

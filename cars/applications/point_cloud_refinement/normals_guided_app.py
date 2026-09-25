@@ -86,7 +86,7 @@ class NormalsGuidedPointCloudRefinement(
             overloaded_conf = {}
 
         overloaded_conf["method"] = conf.get("method", "normals_guided")
-        overloaded_conf["activated"] = conf.get("activated", True)
+        overloaded_conf["activated"] = conf.get("activated", "auto")
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
@@ -101,7 +101,7 @@ class NormalsGuidedPointCloudRefinement(
 
         schema = {
             "method": str,
-            "activated": bool,
+            "activated": Or(bool, lambda value: value == "auto"),
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
             "w_guidance": And(Or(int, float), lambda value: value >= 0.0),
             "w_smooth": And(Or(int, float), lambda value: value >= 0.0),
@@ -116,6 +116,14 @@ class NormalsGuidedPointCloudRefinement(
         Checker(schema).validate(overloaded_conf)
 
         return overloaded_conf
+
+    def default_value_for_auto_configuration(self):
+        """
+        Update auto configuration values with their defaults.
+        """
+
+        if self.activated == "auto":
+            self.activated = True
 
     def _register_output_dataset(
         self,
@@ -234,6 +242,8 @@ class NormalsGuidedPointCloudRefinement(
         """
         Run point cloud refinement on epipolar point cloud tiles.
         """
+
+        self.default_value_for_auto_configuration()
 
         if orchestrator is None:
             self.orchestrator = ocht.Orchestrator(

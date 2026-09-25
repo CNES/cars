@@ -109,6 +109,21 @@ def test_depth_to_z_fusion_config_activated_true():
 
 
 @pytest.mark.unit_tests
+def test_depth_to_z_fusion_config_activated_auto_resolves_to_default():
+    """
+    Test activated accepts auto and resolves to the default value.
+    """
+
+    app = AnisotropicDepthToZFusion({"activated": "auto"})
+
+    assert app.activated == "auto"
+
+    app.default_value_for_auto_configuration()
+
+    assert app.activated is True
+
+
+@pytest.mark.unit_tests
 def test_fit_depth_to_z_tile_creates_fit_map_and_fills_invalid_z():
     """
     Test that anisotropic fusion outputs fit_depth_map, keeps valid Z unchanged,

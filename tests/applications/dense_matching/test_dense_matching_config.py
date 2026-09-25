@@ -240,6 +240,24 @@ def test_classification_3sgm(classif_values):
 
 
 @pytest.mark.unit_tests
+def test_edges_3sgm_auto_is_accepted_and_resolved():
+    """
+    Test edges_3sgm accepts the auto sentinel and resolves to default.
+    """
+
+    app = AbstractDenseMatchingApplication({"edges_3sgm": "auto"})
+
+    # pylint: disable=E1101
+    assert app.dense_matching_method.edges_3sgm == "auto"
+
+    # pylint: disable=E1101
+    app.dense_matching_method.default_value_for_auto_configuration()
+
+    # pylint: disable=E1101
+    assert app.dense_matching_method.edges_3sgm is True
+
+
+@pytest.mark.unit_tests
 def test_classification_3sgm_forces_3sgm_optimization():
     """
     Test that classification_3sgm activates 3sgm in Pandora configuration

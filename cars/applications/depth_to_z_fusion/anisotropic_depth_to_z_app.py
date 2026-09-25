@@ -89,7 +89,7 @@ class AnisotropicDepthToZFusion(
             overloaded_conf = {}
 
         overloaded_conf["method"] = conf.get("method", "anisotropic")
-        overloaded_conf["activated"] = conf.get("activated", True)
+        overloaded_conf["activated"] = conf.get("activated", "auto")
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
@@ -111,7 +111,7 @@ class AnisotropicDepthToZFusion(
 
         schema = {
             "method": str,
-            "activated": bool,
+            "activated": Or(bool, lambda value: value == "auto"),
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
             "lambda_data": And(float, lambda value: value >= 0.0),
             "depth_sigma": And(
@@ -128,6 +128,14 @@ class AnisotropicDepthToZFusion(
 
         Checker(schema).validate(overloaded_conf)
         return overloaded_conf
+
+    def default_value_for_auto_configuration(self):
+        """
+        Update auto configuration values with their defaults.
+        """
+
+        if self.activated == "auto":
+            self.activated = True
 
     def _register_output_dataset(
         self,
@@ -236,6 +244,8 @@ class AnisotropicDepthToZFusion(
         """
         Run depth to Z fusion on epipolar point cloud tiles.
         """
+
+        self.default_value_for_auto_configuration()
 
         if orchestrator is None:
             self.orchestrator = ocht.Orchestrator(

@@ -86,6 +86,19 @@ def is_valid_classification_3sgm_value(x):
     return isinstance(x, int) and not isinstance(x, bool)
 
 
+def is_bool_or_auto(x):
+    """
+    Helper function
+    Returns whether the value x is a boolean or "auto"
+
+    :param x: value to check
+    :type x: any
+    :return: true or false
+    :rtype: bool
+    """
+    return isinstance(x, bool) or (isinstance(x, str) and x == "auto")
+
+
 class PandoraMethod(
     AbstractDenseMatchingMethod,
     short_name=[
@@ -129,7 +142,7 @@ class PandoraMethod(
             "confidence_filtering": dict,
             "threshold_disp_range_to_borders": bool,
             "filter_incomplete_disparity_range": bool,
-            "edges_3sgm": bool,
+            "edges_3sgm": is_bool_or_auto,
             "classification_3sgm": Or(
                 [is_valid_classification_3sgm_value],
                 None,
@@ -169,6 +182,14 @@ class PandoraMethod(
         self.edges_3sgm = self.used_config["edges_3sgm"]
         self.classification_3sgm = self.used_config["classification_3sgm"]
 
+    def default_value_for_auto_configuration(self):
+        """
+        Update auto configuration values with their defaults.
+        """
+
+        if self.edges_3sgm == "auto":
+            self.edges_3sgm = True
+
     def check_conf(self, conf):
         """
         Merge user configuration with default values and validate schema.
@@ -201,7 +222,7 @@ class PandoraMethod(
             "confidence_filtering": {},
             "threshold_disp_range_to_borders": False,
             "filter_incomplete_disparity_range": True,
-            "edges_3sgm": True,
+            "edges_3sgm": "auto",
             "classification_3sgm": None,
         }
 
@@ -723,6 +744,9 @@ class PandoraMethod(
 
         :rtype: CarsDataset
         """
+
+        self.default_value_for_auto_configuration()
+
         # ensure classification_3sgm is used over edges_3sgm if both are true
         if (
             self.edges_3sgm

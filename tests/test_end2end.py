@@ -59,7 +59,6 @@ NB_OUTLIERS_ALLOWED_GITHUB = 10
 
 
 @pytest.mark.end2end_tests
-@pytest.mark.slow
 def test_end2end_gizeh_meta_pipeline():
     """
     End to end processing with color
@@ -96,6 +95,12 @@ def test_end2end_gizeh_meta_pipeline():
                 "max_ram_per_worker": 1000,
             },
             "output": {"directory": directory, "product_level": ["dtm"]},
+            "monocular": {
+                "advanced": {
+                    "activated": True,
+                    "resolution": 4,
+                }
+            },
         }
         out_dir = conf["output"]["directory"]
         meta_pipeline = default.DefaultPipeline(conf)
@@ -290,6 +295,7 @@ def test_end2end_gizeh_meta_pipeline_rectangular_resolution():
 
 
 @pytest.mark.end2end_tests
+@pytest.mark.slow
 def test_end2end_gizeh_meta_pipeline_pandora2d():
     """
     End to end processing with color

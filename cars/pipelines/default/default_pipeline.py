@@ -243,6 +243,24 @@ class DefaultPipeline(PipelineTemplate):
         else:
             self.resolutions = [1]
 
+        if dsm_cst.DSMS in conf[INPUT]:
+            self.use_monocular = False
+
+        self.optimal_pandora_conf = None
+        if self.pipeline_to_use[pipeline_cst.SURFACE_MODELING]:
+            self.optimal_pandora_conf = (
+                self.compute_optimal_pandora_configuration(conf)
+            )
+            if self.use_monocular:
+                if 1 in self.resolutions:
+                    if self.use_monocular == "auto":
+                        self.use_monocular = True
+                    preprocessing.apply_land_cover_auto_configuration(
+                        conf,
+                        self.optimal_pandora_conf,
+                        use_monocular=bool(self.use_monocular),
+                    )
+
         for pipeline, activated in self.pipeline_to_use.items():
             if pipeline in conf and not activated:
                 logger.warning(
@@ -395,57 +413,6 @@ class DefaultPipeline(PipelineTemplate):
         else:
             self.used_conf = copy.deepcopy(conf)
             full_used_conf = self.used_conf
-
-        if dsm_cst.DSMS in conf[INPUT]:
-            self.use_monocular = False
-
-        self.optimal_pandora_conf = None
-
-        if self.use_monocular:
-            # Find the land cover map most common class
-            # for the use of monocular
-            conf_advanced = full_used_conf[pipeline_cst.SURFACE_MODELING].get(
-                ADVANCED, {}
-            )
-            last_key = next(reversed(conf_advanced))
-            conf_advanced_last_res = conf_advanced[last_key]
-
-            (
-                _,
-                _,
-                _,
-                _,
-                geom_plugin_with_dem_and_geoid,
-                _,
-                _,
-                _,
-            ) = advanced_parameters.check_advanced_parameters(
-                conf[INPUT],
-                conf_advanced_last_res,
-            )
-
-            epsg = conf[OUTPUT][out_cst.EPSG]
-
-            list_intersection_poly = self.compute_intersection_poly(
-                conf[INPUT],
-                self.intermediate_data_dir,
-                epsg,
-                geom_plugin_with_dem_and_geoid,
-            )
-
-            # Find the conf that correspond to the land cover map
-            self.optimal_pandora_conf = preprocessing.find_land_cover_class(
-                list_intersection_poly,
-                conf[INPUT][sens_cst.LAND_COVER_MAP],
-                conf[INPUT][sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],
-                epsg,
-            )
-
-            if self.use_monocular == "auto":
-                if self.optimal_pandora_conf != "census_sgm_urban":
-                    self.use_monocular = False
-                else:
-                    self.use_monocular = True
 
         full_used_conf[pipeline_cst.SUBSAMPLING] = subsampling_used_conf
         full_used_conf[pipeline_cst.PIPELINE] = conf[PIPELINE]
@@ -816,9 +783,11 @@ class DefaultPipeline(PipelineTemplate):
         }
 
         monocular_conf[pipeline_cst.MONOCULAR].setdefault(ADVANCED, {})
-        monocular_conf[pipeline_cst.MONOCULAR][ADVANCED].setdefault(
-            "save_intermediate_data", True
-        )
+        # always save intermediate data for monocular,
+        # as it is used for the next steps
+        monocular_conf[pipeline_cst.MONOCULAR][ADVANCED][
+            "save_intermediate_data"
+        ] = True
 
         return monocular_conf
 
@@ -878,6 +847,53 @@ class DefaultPipeline(PipelineTemplate):
             list_intersection_poly.append(inter_poly)
 
         return list_intersection_poly
+
+    def compute_optimal_pandora_configuration(self, conf):
+        """Compute the dominant world-classification Pandora preset."""
+
+        # Get the surface modeling conf
+        surface_modeling_conf = conf.get(pipeline_cst.SURFACE_MODELING, {})
+
+        # Get the 'all' resolution advanced parameters
+        conf_advanced_all_res = surface_modeling_conf.get(ADVANCED, {}).get(
+            "all", {}
+        )
+        # Get the last resolution advanced parameters
+        last_res = self.resolutions[-1]
+        csfa = surface_modeling_conf.get(ADVANCED, {})
+        conf_advanced_last_res = csfa.get(last_res, csfa.get(str(last_res), {}))
+
+        # Apply last res over all res to get the merged advanced parameters
+        conf_merged = {**conf_advanced_all_res, **conf_advanced_last_res}
+
+        (
+            _,
+            _,
+            _,
+            _,
+            geom_plugin_with_dem_and_geoid,
+            _,
+            _,
+            _,
+        ) = advanced_parameters.check_advanced_parameters(
+            conf[INPUT],
+            conf_merged,
+        )
+
+        epsg = conf[OUTPUT][out_cst.EPSG]
+        list_intersection_poly = self.compute_intersection_poly(
+            conf[INPUT],
+            self.intermediate_data_dir,
+            epsg,
+            geom_plugin_with_dem_and_geoid,
+        )
+
+        return preprocessing.find_land_cover_class(
+            list_intersection_poly,
+            conf[INPUT][sens_cst.LAND_COVER_MAP],
+            conf[INPUT][sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING],
+            epsg,
+        )
 
     @cars_profile(name="Run_default_pipeline", interval=0.5)
     def run(self, args=None):  # noqa C901
@@ -1607,6 +1623,36 @@ def get_monocular_inputs(monocular_out_dir, sensor_key):
         sens_cst.INPUT_EDGES_DEPTH_MAP: os.path.join(
             monocular_out_dir,
             "dump_dir",
+            "oversampling",
+            sensor_key,
+            "depth.tif",
+        ),
+        sens_cst.INPUT_EDGES_NORMALS: os.path.join(
+            monocular_out_dir,
+            "dump_dir",
+            "oversampling",
+            sensor_key,
+            "normals.tif",
+        ),
+        sens_cst.INPUT_EDGES_TILE_ID: os.path.join(
+            monocular_out_dir,
+            "dump_dir",
+            "oversampling",
+            sensor_key,
+            "tile_id.tif",
+        ),
+    }
+
+    backup_files = {
+        sens_cst.INPUT_EDGES_MASK: os.path.join(
+            monocular_out_dir,
+            pipeline_cst.MONOCULAR,
+            sensor_key,
+            "edges.tif",
+        ),
+        sens_cst.INPUT_EDGES_DEPTH_MAP: os.path.join(
+            monocular_out_dir,
+            "dump_dir",
             "depth_map_generation",
             sensor_key,
             "depth.tif",
@@ -1634,9 +1680,11 @@ def get_monocular_inputs(monocular_out_dir, sensor_key):
         sens_cst.INPUT_EDGES_TILE_ID: None,
     }
     # check the files exist before returning them
-    for key, val in default_files.items():
-        if os.path.isfile(val):
-            actual_files[key] = val
+    for key, default_path in default_files.items():
+        if os.path.isfile(default_path):
+            actual_files[key] = default_path
+        elif os.path.isfile(backup_files[key]):
+            actual_files[key] = backup_files[key]
 
     return actual_files
 
