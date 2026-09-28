@@ -295,7 +295,6 @@ def test_end2end_gizeh_meta_pipeline_rectangular_resolution():
 
 
 @pytest.mark.end2end_tests
-@pytest.mark.slow
 def test_end2end_gizeh_meta_pipeline_pandora2d():
     """
     End to end processing with color
