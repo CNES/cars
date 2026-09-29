@@ -231,6 +231,9 @@ class BasicDenseMatchingApplication(
     def get_method(self):
         return self.dense_matching_method.get_method()
 
+    def get_corr_config(self):
+        return self.dense_matching_method.corr_config
+
     @cars_profile(name="Disp Grid Generation")
     def generate_disparity_grids(  # noqa: C901
         self,

@@ -264,7 +264,7 @@ def test_classification_3sgm_forces_3sgm_optimization():
     """
     app = AbstractDenseMatchingApplication({"classification_3sgm": [6]})
 
-    # pylint: disable=E1101
+    # pylint: disable=E1101,E1136
     optimization = app.dense_matching_method.corr_config["pipeline"][
         "optimization"
     ]
@@ -299,7 +299,7 @@ def test_empty_classification_3sgm_keeps_default_optimization():
     """
     app = AbstractDenseMatchingApplication({"classification_3sgm": []})
 
-    # pylint: disable=E1101
+    # pylint: disable=E1101,E1136
     optimization = app.dense_matching_method.corr_config["pipeline"][
         "optimization"
     ]

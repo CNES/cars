@@ -1110,6 +1110,82 @@ class SurfaceModelingPipeline(PipelineTemplate):
         res_as_string_list = [str(value) for value in simplified_list]
         return res_as_string_list
 
+    def check_dense_matching_conf_with_inputs(
+        self, inputs_conf, update_corr_config=True
+    ):
+        """
+        Check and complete the dense matching configuration with input
+        information.
+
+        :param inputs_conf: checked input configuration
+        :type inputs_conf: dict
+        :param update_corr_config: update the dense matching configuration
+            used for processing
+        :type update_corr_config: bool
+
+        :return: checked Pandora configuration
+        :rtype: dict
+        """
+
+        checked_corr_config = None
+
+        for key1, key2 in inputs_conf["pairing"]:
+            corr_cfg = self.dense_matching_app.loader.get_conf()
+
+            # When only retrieving the complete configuration for the
+            # used configuration, do not alter the configuration used
+            # for processing.
+            if not update_corr_config:
+                corr_cfg = copy.deepcopy(corr_cfg)
+
+            nodata_left = inputs_conf["sensors"][key1]["image"]["no_data"]
+            nodata_right = inputs_conf["sensors"][key2]["image"]["no_data"]
+
+            bands_left = list(
+                inputs_conf["sensors"][key1]["image"]["bands"].keys()
+            )
+            bands_right = list(
+                inputs_conf["sensors"][key2]["image"]["bands"].keys()
+            )
+
+            values_classif_left = None
+            values_classif_right = None
+
+            if (
+                "classification" in inputs_conf["sensors"][key1]
+                and inputs_conf["sensors"][key1]["classification"] is not None
+            ):
+                values_classif_left = inputs_conf["sensors"][key1][
+                    "classification"
+                ]["values"]
+                values_classif_left = list(map(str, values_classif_left))
+
+            if (
+                "classification" in inputs_conf["sensors"][key2]
+                and inputs_conf["sensors"][key2]["classification"] is not None
+            ):
+                values_classif_right = inputs_conf["sensors"][key2][
+                    "classification"
+                ]["values"]
+                values_classif_right = list(map(str, values_classif_right))
+
+            checked_corr_config = self.dense_matching_app.loader.check_conf(
+                corr_cfg,
+                nodata_left,
+                nodata_right,
+                bands_left,
+                bands_right,
+                values_classif_left,
+                values_classif_right,
+            )
+
+            if update_corr_config:
+                self.dense_matching_app.dense_matching_method.corr_config = (
+                    checked_corr_config
+                )
+
+        return checked_corr_config
+
     def check_applications_with_inputs(  # noqa: C901 : too complex
         self, inputs_conf, application_conf
     ):
@@ -1165,45 +1241,8 @@ class SurfaceModelingPipeline(PipelineTemplate):
                                         ]
                                     )
                                 )
-        for key1, key2 in inputs_conf["pairing"]:
-            corr_cfg = self.dense_matching_app.loader.get_conf()
-            nodata_left = inputs_conf["sensors"][key1]["image"]["no_data"]
-            nodata_right = inputs_conf["sensors"][key2]["image"]["no_data"]
-            bands_left = list(
-                inputs_conf["sensors"][key1]["image"]["bands"].keys()
-            )
-            bands_right = list(
-                inputs_conf["sensors"][key2]["image"]["bands"].keys()
-            )
-            values_classif_left = None
-            values_classif_right = None
-            if (
-                "classification" in inputs_conf["sensors"][key1]
-                and inputs_conf["sensors"][key1]["classification"] is not None
-            ):
-                values_classif_left = inputs_conf["sensors"][key1][
-                    "classification"
-                ]["values"]
-                values_classif_left = list(map(str, values_classif_left))
-            if (
-                "classification" in inputs_conf["sensors"][key2]
-                and inputs_conf["sensors"][key2]["classification"] is not None
-            ):
-                values_classif_right = inputs_conf["sensors"][key2][
-                    "classification"
-                ]["values"]
-                values_classif_right = list(map(str, values_classif_right))
-            self.dense_matching_app.dense_matching_method.corr_config = (
-                self.dense_matching_app.loader.check_conf(
-                    corr_cfg,
-                    nodata_left,
-                    nodata_right,
-                    bands_left,
-                    bands_right,
-                    values_classif_left,
-                    values_classif_right,
-                )
-            )
+
+        self.check_dense_matching_conf_with_inputs(inputs_conf)
 
         return application_conf
 
@@ -1957,6 +1996,21 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 self.dense_matching_app.dense_matching_method.corr_config[
                     "input"
                 ] = corr_cfg["input"]
+
+                # Complete a copy of the Pandora configuration for the used
+                # configuration without modifying the processing configuration
+                used_corr_config = self.check_dense_matching_conf_with_inputs(
+                    inputs,
+                    update_corr_config=False,
+                )
+
+            else:
+                used_corr_config = self.dense_matching_app.get_corr_config()
+
+            # Store the complete Pandora configuration effectively used
+            self.used_conf[PIPELINE][APPLICATIONS]["dense_matching"][
+                "loader_conf"
+            ] = copy.deepcopy(used_corr_config)
 
             # Run epipolar matching application
             epipolar_disparity_map = self.dense_matching_app.run(
