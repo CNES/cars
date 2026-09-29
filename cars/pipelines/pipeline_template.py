@@ -77,6 +77,10 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
                 OptionalKey(pipeline_name): Or(None, dict)
             }
 
+        global_schema = global_schema | {
+            OptionalKey("monocular"): Or(None, dict)
+        }
+
         checker_inputs = Checker(global_schema)
         checker_inputs.validate(conf)
 

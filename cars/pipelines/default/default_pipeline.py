@@ -486,7 +486,8 @@ class DefaultPipeline(PipelineTemplate):
                 use_monocular = False
                 logger.warning(
                     "The monocular plugin is not installed. "
-                    "Continuing without monocular."
+                    "Continuing without monocular. You can install it using : "
+                    "pip install cars-monocular-plugin"
                 )
 
         return use_monocular
