@@ -34,10 +34,6 @@ Advanced Parameters
       - Save intermediate data for all applications inside this pipeline.
       - bool
       - False
-    * - dsm_merging_tile_size
-      - Tile size to use in dsms merging
-      - int
-      - 4000
     * - geometry_plugin
       - Name of the geometry plugin to use and optional parameters (see :ref:`geometry plugin <geometry_plugin>`)
       - str or dict

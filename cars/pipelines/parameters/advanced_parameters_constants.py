@@ -36,8 +36,6 @@ GROUND_TRUTH_DSM = "ground_truth_dsm"
 RESOLUTIONS = "resolutions"
 MIN_IMAGE_SIZE = "min_image_size"
 
-DSM_MERGING_TILE_SIZE = "dsm_merging_tile_size"
-
 # phasing constants
 PHASING_POINT = "point"
 PHASING_EPSG = "epsg"
