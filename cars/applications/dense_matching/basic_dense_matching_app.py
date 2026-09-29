@@ -83,6 +83,7 @@ class BasicDenseMatchingApplication(
             ),
             "epi_disp_grid_tile_size": int,
             "required_bands": [str],
+            "used_band": str,
         }
 
         super().__init__(conf=conf)
@@ -107,6 +108,7 @@ class BasicDenseMatchingApplication(
         self.disp_range_propagation_filter_size = self.used_config[
             "disp_range_propagation_filter_size"
         ]
+        self.used_band = self.used_config["used_band"]
         self.epi_disp_grid_tile_size = self.used_config[
             "epi_disp_grid_tile_size"
         ]
@@ -143,6 +145,7 @@ class BasicDenseMatchingApplication(
             "disp_range_propagation_filter_size": 50,
             "epi_disp_grid_tile_size": 800,
             "required_bands": ["b0"],
+            "used_band": "b0",
         }
 
         # merge defaults + user conf
@@ -216,6 +219,16 @@ class BasicDenseMatchingApplication(
         required_bands["left"] = self.required_bands
         required_bands["right"] = self.required_bands
         return required_bands
+
+    def get_used_band(self):
+        """
+        Get used_band
+
+        :return: used_band for left and right image
+        :rtype: dict
+        """
+
+        return self.used_band
 
     def get_performance_map_parameters(self):
         return self.dense_matching_method.get_performance_map_parameters()
@@ -830,6 +843,7 @@ class BasicDenseMatchingApplication(
                             margins_to_keep=margins_to_keep,
                             texture_bands=texture_bands,
                             classif_bands_to_mask=classif_bands_to_mask,
+                            used_band=self.used_band,
                         )
 
         else:
@@ -852,6 +866,7 @@ def basic_dense_matching_wrapper(
     margins_to_keep=0,
     texture_bands=None,
     classif_bands_to_mask=None,
+    used_band="b0",
 ):
     """
     Matching application wrapper.
@@ -901,6 +916,8 @@ def basic_dense_matching_wrapper(
     :type texture_bands: list
     :param classif_bands_to_mask: bands from classif to mask
     :type classif_bands_to_mask: list of str / int
+    :param used_band: band to use for correlation
+    :type used_band: str
 
     :return: Left to right disparity dataset
         Returned dataset is composed of :
@@ -909,6 +926,7 @@ def basic_dense_matching_wrapper(
         - cst_disp.VALID
         - cst.EPI_TEXTURE
     """
+
     return dense_matching_method.run(
         left_image_object,
         right_image_object,
@@ -920,4 +938,5 @@ def basic_dense_matching_wrapper(
         margins_to_keep,
         texture_bands,
         classif_bands_to_mask,
+        used_band,
     )

@@ -136,7 +136,6 @@ class PandoraMethod(
             "classification_fusion_margin": int,
             "use_cross_validation": Or(bool, str),
             "denoise_disparity_map": bool,
-            "used_band": str,
             "loader_conf": Or(dict, collections.OrderedDict, str, None),
             "loader": str,
             "confidence_filtering": dict,
@@ -170,7 +169,6 @@ class PandoraMethod(
         ]
         self.use_cross_validation = self.used_config["use_cross_validation"]
         self.denoise_disparity_map = self.used_config["denoise_disparity_map"]
-        self.used_band = self.used_config["used_band"]
         self.loader_conf = self.used_config["loader_conf"]
         self.confidence_filtering = self.used_config["confidence_filtering"]
         self.threshold_disp_range_to_borders = self.used_config[
@@ -216,7 +214,6 @@ class PandoraMethod(
             "classification_fusion_margin": 5,
             "use_cross_validation": True,
             "denoise_disparity_map": False,
-            "used_band": "b0",
             "loader_conf": None,
             "loader": "pandora",
             "confidence_filtering": {},
@@ -280,6 +277,9 @@ class PandoraMethod(
 
         loader = conf.get("loader")
         loader_conf = conf.get("loader_conf")
+
+        if "used_band" not in conf:
+            conf["used_band"] = "b0"
 
         default_method = "pandora_custom" if loader_conf else "pandora_auto"
         method = conf.get("method", default_method)
@@ -688,6 +688,7 @@ class PandoraMethod(
         margins_to_keep=0,
         texture_bands=None,
         classif_bands_to_mask=None,
+        used_band="b0",
     ):
         """
         Run dense matching on a pair of epipolar images.
@@ -723,6 +724,8 @@ class PandoraMethod(
         :type texture_bands: list
         :param classif_bands_to_mask: bands from classification to mask
         :type classif_bands_to_mask: list of str or int
+        :param used_band: band to use for correlation
+        :type used_band: str
 
         :return: disparity map.
 
@@ -774,7 +777,7 @@ class PandoraMethod(
             disp_range_grid,
             left_image_object,
             right_image_object,
-            self.used_band,
+            used_band,
             self.threshold_disp_range_to_borders,
         )
 
@@ -818,7 +821,7 @@ class PandoraMethod(
             left_image_object,
             right_image_object,
             self.corr_config,
-            self.used_band,
+            used_band,
             disp_min_grid=disp_min_grid,
             disp_max_grid=disp_max_grid,
             compute_disparity_masks=compute_disparity_masks,

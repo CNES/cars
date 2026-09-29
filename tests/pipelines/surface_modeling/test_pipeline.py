@@ -304,7 +304,13 @@ def test_ventoux_full():
                                         "input/phr_ventoux/right_image.tif"
                                     ),
                                     "band": 0,
-                                }
+                                },
+                                "b1": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/right_image.tif"
+                                    ),
+                                    "band": 0,
+                                },
                             }
                         },
                         "geomodel": absolute_data_path(
@@ -329,6 +335,9 @@ def test_ventoux_full():
                     "filling": True,
                     "performance_map": True,
                 },
+            },
+            "surface_modeling": {
+                "applications": {"dense_matching": {"used_band": "b1"}}
             },
         }
         out_dir = conf["output"]["directory"]
@@ -499,6 +508,104 @@ def test_ventoux_full():
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
+
+
+@pytest.mark.end2end_tests
+def test_ventoux_full_fail_with_used_band_b1():
+    """
+    End to end pipeline that failed when used band is equal to b1
+    and this band is not available for the right image
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {
+            "input": {
+                "loaders": {"image": "pivot"},
+                "sensors": {
+                    "image1": {
+                        "image": {
+                            "bands": {
+                                "b0": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/left_image.tif"
+                                    ),
+                                    "band": 0,
+                                },
+                                "b1": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/color_image.tif"
+                                    ),
+                                    "band": 0,
+                                },
+                                "b2": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/color_image.tif"
+                                    ),
+                                    "band": 1,
+                                },
+                                "b3": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/color_image.tif"
+                                    ),
+                                    "band": 2,
+                                },
+                                "b4": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/color_image.tif"
+                                    ),
+                                    "band": 3,
+                                },
+                            }
+                        },
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/left_image.geom"
+                        ),
+                        "classification": absolute_data_path(
+                            "input/phr_ventoux/left_classif.tif"
+                        ),
+                    },
+                    "image2": {
+                        "image": {
+                            "bands": {
+                                "b0": {
+                                    "path": absolute_data_path(
+                                        "input/phr_ventoux/right_image.tif"
+                                    ),
+                                    "band": 0,
+                                },
+                            }
+                        },
+                        "geomodel": absolute_data_path(
+                            "input/phr_ventoux/right_image.geom"
+                        ),
+                        "classification": absolute_data_path(
+                            "input/phr_ventoux/right_classif.tif"
+                        ),
+                    },
+                },
+                "initial_elevation": absolute_data_path(
+                    "input/phr_ventoux/srtm/N44E005.hgt"
+                ),
+            },
+            "output": {
+                "directory": directory,
+                "auxiliary": {
+                    "ambiguity": True,
+                    "classification": True,
+                    "contributing_pair": True,
+                    "image": ["b1", "b2", "b3"],
+                    "filling": True,
+                    "performance_map": True,
+                },
+            },
+            "surface_modeling": {
+                "applications": {"dense_matching": {"used_band": "b1"}}
+            },
+        }
+        with pytest.raises(
+            RuntimeError,
+            match="Band 'b1' is not available in one of the two datasets.",
+        ):
+            _ = SurfaceModelingPipeline(conf)
 
 
 @pytest.mark.end2end_tests

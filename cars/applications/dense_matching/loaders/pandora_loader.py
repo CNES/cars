@@ -386,6 +386,17 @@ class PandoraLoader:
         saved_schema = copy.deepcopy(
             pandora.matching_cost.matching_cost.AbstractMatchingCost.schema
         )
+
+        band = user_cfg_pipeline["pipeline"]["matching_cost"]["band"]
+
+        if (
+            band not in metadata_left["band_im"]
+            or band not in metadata_right["band_im"]
+        ):
+            raise RuntimeError(
+                f"Band {band!r} is not available in one of the two datasets."
+            )
+
         cfg_pipeline = check_pipeline_section(
             user_cfg_pipeline, metadata_left, metadata_right, pandora_machine
         )
