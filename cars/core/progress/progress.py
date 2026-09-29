@@ -33,7 +33,7 @@ from itertools import count
 from rich.console import Console
 
 from cars.core.cars_logging import (
-    get_warning_count,
+    get_warning_data,
     logger,
 )
 from cars.core.progress.ui import PipelineTreeUI
@@ -137,7 +137,7 @@ class ProgressTree:  # pylint: disable=R0902
                 parent_id=parent_id,
             )
             self._ui.update_state(pipeline_id, "pending")
-            self._ui.update_warning_count(get_warning_count())
+            self._ui.update_warning_data(get_warning_data())
         self._pipelines[pipeline_id] = PipelineState(
             pipeline_id=pipeline_id,
             name=pipeline_name,
@@ -201,7 +201,7 @@ class ProgressTree:  # pylint: disable=R0902
         )
         if not self._ui_enabled:
             return
-        self._ui.update_warning_count(get_warning_count())
+        self._ui.update_warning_data(get_warning_data())
         self._ui.update_progress(
             pipeline.pipeline_id,
             progress_fraction,
@@ -513,14 +513,14 @@ class ProgressTree:  # pylint: disable=R0902
     def draw(self) -> None:
         """Render the current tree state immediately."""
         if self._ui_enabled:
-            self._ui.update_warning_count(get_warning_count())
+            self._ui.update_warning_data(get_warning_data())
             self._ui.display()
 
     def notify_crash(self, exception: BaseException) -> None:
         """Notify progress UI that a crash occurred and render details."""
         self._finished_successfully = False
         if self._ui_enabled:
-            self._ui.update_warning_count(get_warning_count())
+            self._ui.update_warning_data(get_warning_data())
             self._ui.update_crash(exception)
             self._ui.display_final()
 
@@ -528,7 +528,7 @@ class ProgressTree:  # pylint: disable=R0902
         """Notify progress UI that pipeline completed successfully."""
         self._finished_successfully = True
         if self._ui_enabled:
-            self._ui.update_warning_count(get_warning_count())
+            self._ui.update_warning_data(get_warning_data())
             self._ui.update_success(output_dir)
             self._ui.display_final()
 
