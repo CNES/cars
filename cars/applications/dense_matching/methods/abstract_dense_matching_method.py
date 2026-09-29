@@ -89,6 +89,7 @@ class AbstractDenseMatchingMethod(metaclass=ABCMeta):
         self.schema = None
         self.used_config = None
         self.loader = None
+        self.corr_config = None
 
     @abstractmethod
     def get_optimal_tile_size(  # pylint: disable=R0917
