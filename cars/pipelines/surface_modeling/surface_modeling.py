@@ -1754,10 +1754,15 @@ class SurfaceModelingPipeline(PipelineTemplate):
 
             # Get required bands of third resampling
             required_bands = self.dense_matching_app.get_required_bands()
+            used_band = self.dense_matching_app.get_used_band()
 
             # Add left required bands for texture
             required_bands["left"] = sorted(
                 set(required_bands["left"]).union(set(self.texture_bands))
+            )
+
+            required_bands["right"] = sorted(
+                set(required_bands["right"]).union({used_band})
             )
 
             # Find index of texture band in left_dataset
