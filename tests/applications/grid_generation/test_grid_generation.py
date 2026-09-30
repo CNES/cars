@@ -110,13 +110,13 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
         scaling_coeff=1,
     )
 
-    assert epi_size == [612, 612]
+    assert epi_size == [932, 615]
 
     # test baseline: 1/(disp to alt ratio), adapted from Shareloc.
     # but precision result to 10**-5 is enough for baseline
     # put exact values to know if modifications are done.
     # put decimal values to 10 to know if modifications are done.
-    np.testing.assert_almost_equal(baseline, 1.4205663917758247, decimal=10)
+    np.testing.assert_almost_equal(baseline, 1.4320026788702918, decimal=10)
 
     # Uncomment to update baseline
     # generate_grid_xr_dataset(left_grid).to_netcdf(absolute_data_path(
@@ -177,12 +177,12 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
         scaling_coeff=1,
     )
 
-    assert epi_size == [612, 612]
+    assert epi_size == [2557, 615]
 
     # test baseline: 1/(disp to alt ratio) adapted from Shareloc.
     # but precision result to 10**-5 is enough for baseline
     # put decimal values to 10 to know if modifications are done.
-    np.testing.assert_almost_equal(baseline, 1.4205731358019482, decimal=10)
+    np.testing.assert_almost_equal(baseline, 1.4509157747789643, decimal=10)
 
     # Uncomment to update baseline
     # generate_grid_xr_dataset(left_grid).to_netcdf(

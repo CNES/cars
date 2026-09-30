@@ -126,11 +126,11 @@ def test_pipeline_ventoux():
         }
 
         expected = {
-            "raw_count": 370,
-            "filtered_count": 353,
-            "raw_disp": 110,
-            "filtered_disp": 106,
-            "raw_epi": 7,
+            "raw_count": 519,
+            "filtered_count": 511,
+            "raw_disp": 113,
+            "filtered_disp": 108,
+            "raw_epi": 5,
             "filtered_epi": 4.75,
             "disp_tol": 2,
             "epi_tol": 0.5,
@@ -174,11 +174,11 @@ def test_pipeline_ventoux_with_dem():
         }
 
         expected = {
-            "raw_count": 613,
-            "filtered_count": 602,
-            "raw_disp": -3.35,
+            "raw_count": 581,
+            "filtered_count": 579,
+            "raw_disp": -4.1,
             "filtered_disp": -5,
-            "raw_epi": 6,
+            "raw_epi": 4.85,
             "filtered_epi": 4.75,
             "disp_tol": 0.5,
             "epi_tol": 0.5,
@@ -225,11 +225,11 @@ def test_pipeline_ventoux_with_mask():
         }
 
         expected = {
-            "raw_count": 370,
-            "filtered_count": 353,
-            "raw_disp": 110,
-            "filtered_disp": 106,
-            "raw_epi": 7,
+            "raw_count": 518,
+            "filtered_count": 510,
+            "raw_disp": 113,
+            "filtered_disp": 108,
+            "raw_epi": 5,
             "filtered_epi": 4.75,
             "disp_tol": 2,
             "epi_tol": 0.5,

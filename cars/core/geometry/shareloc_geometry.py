@@ -208,9 +208,10 @@ class SharelocGeometry(AbstractGeometry):
         )
 
         coords_list = []
-        for image1, geomodel1, _, geomodel2 in pairs_for_roi:
+        for image1, geomodel1, image2, geomodel2 in pairs_for_roi:
             # Footprint of rectification grid (with margins)
             image1 = SharelocGeometry.load_image(image1["bands"]["b0"]["path"])
+            image2 = SharelocGeometry.load_image(image2["bands"]["b0"]["path"])
             geomodel1 = self.load_geom_model(geomodel1)
             geomodel2 = self.load_geom_model(geomodel2)
 
@@ -218,6 +219,7 @@ class SharelocGeometry(AbstractGeometry):
             epipolar_extent = rectif.get_epipolar_extent(
                 image1,
                 geomodel1,
+                image2,
                 geomodel2,
                 elevation=z_min,
                 grid_margin=self.rectification_grid_margin,
@@ -229,6 +231,7 @@ class SharelocGeometry(AbstractGeometry):
             epipolar_extent = rectif.get_epipolar_extent(
                 image1,
                 geomodel1,
+                image2,
                 geomodel2,
                 elevation=z_max,
                 grid_margin=self.rectification_grid_margin,
@@ -498,7 +501,7 @@ class SharelocGeometry(AbstractGeometry):
                     )
                 )
 
-                [loc_a_row], [loc_a_col], _ = localization.coloc(
+                [[loc_a_row, loc_a_col, _]], _ = localization.coloc(
                     geomodel1,
                     geomodel2,
                     left_point[0],
@@ -509,7 +512,7 @@ class SharelocGeometry(AbstractGeometry):
                 )
 
                 loc_a = np.array((loc_a_row, loc_a_col))
-                [loc_b_row], [loc_b_col], _ = localization.coloc(
+                [[loc_b_row, loc_b_col, _]], _ = localization.coloc(
                     geomodel1,
                     geomodel2,
                     left_point[0],

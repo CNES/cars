@@ -459,6 +459,7 @@ def test_end2end_ventoux_meta_pipeline():
                     "all": {
                         "dense_matching": {
                             "filter_incomplete_disparity_range": False,
+                            "use_cross_validation": "accurate",
                         },
                         "point_cloud_rasterization": {
                             "fill_nodata": False,
@@ -591,6 +592,7 @@ def test_end2end_ventoux_with_filling():
                     "all": {
                         "dense_matching": {
                             "filter_incomplete_disparity_range": False,
+                            "use_cross_validation": "accurate",
                         }
                     }
                 }
@@ -769,6 +771,7 @@ def test_end2end_ventoux_with_filling_in_4326():
                     "all": {
                         "dense_matching": {
                             "filter_incomplete_disparity_range": False,
+                            "use_cross_validation": "accurate",
                         }
                     }
                 }

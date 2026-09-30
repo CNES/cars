@@ -128,10 +128,10 @@ def test_get_roi():
     pairs_for_roi = [(sensor1, geomodel1, sensor2, geomodel2)]
     roi = geo_plugin.get_roi(pairs_for_roi, 4326, constant_margin=0.005)
     ref_roi = [
-        5.187108,
-        44.199474,
-        5.202048,
-        44.212998,
+        5.187103,
+        44.199473,
+        5.202113,
+        44.213167,
     ]
     np.testing.assert_allclose(roi, ref_roi)
 
@@ -147,10 +147,10 @@ def test_get_roi():
     )
 
     ref_roi = [
-        5.185954,
-        44.198651,
-        5.203201,
-        44.21382,
+        5.18595,
+        44.19865,
+        5.203266,
+        44.21399,
     ]
     # Returned ROI is the footprint of the rectification
     # It takes into account the 5 pixels margin
@@ -191,7 +191,7 @@ def test_exception_roi_outside_dtm():
     assert str(excinfo.value) == (
         "The median value of DEM is NaN. The SRTM "
         "tile might not intersect the images : the roi bounds are "
-        "[5.156013852323939, 44.15169289345662, 5.235306512180193, "
+        "[5.146731581705067, 44.136845813948064, 5.235306512180193, "
         "44.256780712026995] while the dtm bounds are "
         "[31.099861111111114, 29.950138888888887, "
         "31.149861111111115, 30.000138888888888]"

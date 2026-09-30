@@ -15,7 +15,8 @@
 
  - Confidence filtering is activated by default for last resolution but only the risk metric is used [#1401]
  - Logging levels are changed [#1396]
- - Updated Pandora to version 1.9.0 (MLflow removed from MC-CNN dependencies)
+ - Update Pandora to version 1.9.0 (MLflow removed from MC-CNN dependencies)
+ - Update Shareloc to version 0.3.0 [#1449]
  - Better resolution for global land cover map [#1415]
  - Pixels that are nodata after rasterization are considered occlusions for filling pipeline [#1423]
  - Merging of DSM follows a priority list depending on filling [#1379]
