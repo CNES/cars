@@ -65,7 +65,7 @@ dependencies = [
     "cars-resample==0.1.*",
     "cars-filter==0.3.*",
     "vlsift==0.1.*",
-    "shareloc==0.2.12",
+    "shareloc==0.3.0",
     "bulldozer-dtm==1.3.*",
     "xdem==0.2.*",
     "geopandas",
