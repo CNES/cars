@@ -5,6 +5,8 @@ Full configuration
 
 Here is an example of a full CARS configuration, as saved by CARS in the `global_used_conf` file.
 
+The archive `cars/tutorials/data_gizeh_small.tar.bz2` contains a basic configuration that can be run directly. To test the more complete configuration presented below, extract the archive and replace the configuration file in the `data_gizeh_small` directory with this one before running CARS.
+
 .. raw:: html
 
    <div class="scrollable-config">
@@ -21,6 +23,7 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
 .. raw:: html
 
    </details>
+
    <details open>
    <summary>Output</summary>
 
@@ -29,10 +32,11 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
 
    .. include-cars-config-section:: ../example_configs/configuration/full_config
       :key: output
-      
+
 .. raw:: html
 
    </details>
+
    <details open>
    <summary>Orchestrator</summary>
 
@@ -42,10 +46,9 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
    .. include-cars-config-section:: ../example_configs/configuration/full_config
       :key: orchestrator
 
-
 .. raw:: html
 
-   <div class="scrollable-config">
+   </details>
 
    <details open>
    <summary>Subsampling</summary>
@@ -58,7 +61,7 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
 
 .. raw:: html
 
-   <div class="scrollable-config">
+   </details>
 
    <details open>
    <summary>Surface modeling</summary>
@@ -69,10 +72,9 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
    .. include-cars-config-section:: ../example_configs/configuration/full_config
       :key: surface_modeling
 
-
 .. raw:: html
 
-   <div class="scrollable-config">
+   </details>
 
    <details open>
    <summary>Tiepoints</summary>
@@ -83,10 +85,9 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
    .. include-cars-config-section:: ../example_configs/configuration/full_config
       :key: tie_points
 
-
 .. raw:: html
 
-   <div class="scrollable-config">
+   </details>
 
    <details open>
    <summary>Filling</summary>
@@ -100,3 +101,18 @@ Here is an example of a full CARS configuration, as saved by CARS in the `global
 .. raw:: html
 
    </details>
+
+   <details open>
+   <summary>Monocular</summary>
+
+.. admonition:: Monocular
+   :class: monocular
+
+   .. include-cars-config-section:: ../example_configs/configuration/full_config
+      :key: monocular
+
+.. raw:: html
+
+   </details>
+
+   </div>
