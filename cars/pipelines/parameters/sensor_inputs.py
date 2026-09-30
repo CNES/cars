@@ -895,11 +895,12 @@ def check_classification_values(sensors, sensor_type, key1, key2, filling):
                     if isinstance(filling_value, str) and filling_value not in (
                         "mismatch",
                         "occlusion",
+                        "empty_cell",
                     ):
                         raise RuntimeError(
                             "The values defined for "
                             "filling {} should be integer or in ('mismatch', "
-                            "'occlusion') : {}".format(
+                            "'occlusion', 'empty_cell') : {}".format(
                                 filling_method,
                                 filling_values,
                             )

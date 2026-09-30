@@ -450,7 +450,7 @@ class FillingPipeline(PipelineTemplate):
 
         return used_conf
 
-    def generate_filling_applications(self, inputs_conf):
+    def generate_filling_applications(self, inputs_conf):  # noqa C901
         """
         Generate filling applications configuration according to inputs
 
@@ -475,10 +475,20 @@ class FillingPipeline(PipelineTemplate):
                 if isinstance(elem, int):
                     classif_values.append(str(elem))
                 elif isinstance(elem, str):
+                    if elem not in ("occlusion", "mismatch", "empty_cell"):
+                        raise RuntimeError(
+                            "The values defined for "
+                            "filling should be integer or in ('mismatch', "
+                            "'occlusion', 'empty_cell') : {}".format(
+                                elem,
+                            )
+                        )
                     if elem == "occlusion":
                         fill_nodata_values.append("1")
-                    else:
+                    elif elem == "mismatch":
                         fill_nodata_values.append("2")
+                    else:
+                        fill_nodata_values.append("3")
 
             if not fill_nodata_values:
                 fill_nodata_values = None

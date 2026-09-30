@@ -1102,7 +1102,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     values_to_add = [classif_values]
                 else:
                     for elem in classif_values:
-                        if elem not in ("mismatch", "occlusion"):
+                        if elem not in ("mismatch", "occlusion", "empty_cell"):
                             values_to_add.append(elem)
                 filling_classif_values += values_to_add
 
@@ -2840,7 +2840,7 @@ class SurfaceModelingPipeline(PipelineTemplate):
             )
             mask_no_data = dsm_msk == 0
 
-            mask_mono_band[mask_no_data & mask_roi] = 1
+            mask_mono_band[mask_no_data & mask_roi] = 3
 
             for num_band in range(0, nb_bands):
                 mask_1 = mask_mono_band == 0
