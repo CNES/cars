@@ -627,7 +627,11 @@ class DefaultPipeline(PipelineTemplate):
         :type conf: dict
         """
 
-        pipeline = FillingPipeline(conf, pre_check=True)
+        pipeline = FillingPipeline(
+            conf,
+            config_dir=self.config_dir,
+            pre_check=True,
+        )
         advanced = pipeline.check_advanced(
             conf[pipeline_cst.FILLING],
             conf[INPUT],
