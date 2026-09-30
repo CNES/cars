@@ -195,6 +195,10 @@ Output configuration
         **Scalar value**
 
         .. include-cars-config:: ../../example_configs/configuration/output_resolution_1
+        
+        **List value**
+        
+        .. include-cars-config:: ../../example_configs/configuration/output_resolution_5
 
         **Dictionary format**
 
