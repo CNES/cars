@@ -619,8 +619,8 @@ def update_data(  # pylint: disable=too-many-positional-arguments
                 np.expand_dims(weights, axis=0), current_data.shape[0], axis=0
             )
         # compute masks
-        current_valid = weights != 0
-        old_valid = old_weights != 0
+        current_valid = (weights != 0) & (current_data != nodata)
+        old_valid = (old_weights != 0) & (old_data != nodata)
 
         both_valid = np.logical_and(current_valid, old_valid)
 
