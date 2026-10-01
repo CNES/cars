@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.3.0 Point cloud refinement guided by monocular geometry estimation (September 2026)
+## 1.3.0 Point cloud refinement guided by monocular geometry estimation (October 2026)
 
 ### Added
 
@@ -24,6 +24,7 @@
  - Nodata value of `filling.tif` file is now 0 [#1402]
  - Right sensor footprint is used for epipolar grid generation [shareloc#317]
  - Performance map computation now accounts for the local disparity range and supports an optional affine normalization [#1295]
+ - Empty cells can now be filled differently from occlusions [#1450]
 
 ### Fixed
 
@@ -41,6 +42,7 @@
  - Add src_nodata parameter in rasterio reproject function (needed by rasterio 1.5.0) [#1385]
  - Add index to merging output [#1435]
  - Remove `blockxsize` and `blockysize` creation options when tiled output is disabled
+ - Pixels with nodata value are not rasterized anymore [#1437]
 
 
 ## 1.2.0 Rich Logging Output (June 2026)
