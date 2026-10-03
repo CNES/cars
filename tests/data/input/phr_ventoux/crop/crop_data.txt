@@ -1,0 +1,4 @@
+Crop généré avec gdal_translate -srcwin [fenêtre] [input.tif] [output.tif]
+Fenêtres utilisées :
+ - gauche: -srcwin 0 250 500 250
+ - droite: -srcwin 0 0 498 250

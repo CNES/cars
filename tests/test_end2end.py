@@ -192,13 +192,17 @@ def test_end2end_gizeh_meta_pipeline_rectangular_resolution():
             "input": {
                 "sensors": {
                     "image1": {
-                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img1_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img1.geom"
                         ),
                     },
                     "image2": {
-                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img2_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img2.geom"
                         ),
@@ -424,7 +428,7 @@ def test_end2end_ventoux_meta_pipeline():
                 "sensors": {
                     "image1": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
+                            "input/phr_ventoux/crop/left_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
@@ -432,7 +436,7 @@ def test_end2end_ventoux_meta_pipeline():
                     },
                     "image2": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
+                            "input/phr_ventoux/crop/right_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
@@ -551,24 +555,24 @@ def test_end2end_ventoux_with_filling():
                 "sensors": {
                     "image1": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
+                            "input/phr_ventoux/crop/left_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
                         ),
                         "classification": absolute_data_path(
-                            "input/phr_ventoux/left_classif.tif"
+                            "input/phr_ventoux/crop/left_classif_crop.tif"
                         ),
                     },
                     "image2": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
+                            "input/phr_ventoux/crop/right_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
                         ),
                         "classification": absolute_data_path(
-                            "input/phr_ventoux/right_classif.tif"
+                            "input/phr_ventoux/crop/right_classif_crop.tif"
                         ),
                     },
                 },
@@ -730,24 +734,24 @@ def test_end2end_ventoux_with_filling_in_4326():
                 "sensors": {
                     "image1": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
+                            "input/phr_ventoux/crop/left_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
                         ),
                         "classification": absolute_data_path(
-                            "input/phr_ventoux/left_classif.tif"
+                            "input/phr_ventoux/crop/left_classif_crop.tif"
                         ),
                     },
                     "image2": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
+                            "input/phr_ventoux/crop/right_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
                         ),
                         "classification": absolute_data_path(
-                            "input/phr_ventoux/right_classif.tif"
+                            "input/phr_ventoux/crop/right_classif_crop.tif"
                         ),
                     },
                 },
@@ -956,13 +960,17 @@ def test_end2end_gizeh_use_endogenous_dem():
             "input": {
                 "sensors": {
                     "image1": {
-                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img1_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img1.geom"
                         ),
                     },
                     "image2": {
-                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img2_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img2.geom"
                         ),
@@ -1231,13 +1239,17 @@ def test_run_with_used_conf():
             "input": {
                 "sensors": {
                     "image1": {
-                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img1_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img1.geom"
                         ),
                     },
                     "image2": {
-                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img2_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img2.geom"
                         ),

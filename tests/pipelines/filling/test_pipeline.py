@@ -65,7 +65,7 @@ def test_pipeline_filling_end2end_global():
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf_path = absolute_data_path(
-            "input/phr_ventoux/input_with_color_and_classif.json"
+            "input/phr_ventoux/crop/input_color_classif_crop.json"
         )
 
         # Generate base configuration
