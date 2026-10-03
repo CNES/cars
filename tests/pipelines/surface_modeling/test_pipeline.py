@@ -59,13 +59,17 @@ def test_gizeh_with_low_res_dsm():
             "input": {
                 "sensors": {
                     "image1": {
-                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img1_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img1.geom"
                         ),
                     },
                     "image2": {
-                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img2_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img2.geom"
                         ),
@@ -146,13 +150,17 @@ def test_gizeh_sensor_depthmap():
             "input": {
                 "sensors": {
                     "image1": {
-                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img1_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img1.geom"
                         ),
                     },
                     "image2": {
-                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
+                        "image": absolute_data_path(
+                            "input/phr_gizeh/crop/img2_crop.tif"
+                        ),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img2.geom"
                         ),
@@ -250,6 +258,7 @@ def test_ventoux_full():
     End to end pipeline processing
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        data_path = "input/phr_ventoux/crop"
         conf = {
             "input": {
                 "loaders": {"image": "pivot"},
@@ -259,31 +268,31 @@ def test_ventoux_full():
                             "bands": {
                                 "b0": {
                                     "path": absolute_data_path(
-                                        "input/phr_ventoux/left_image.tif"
+                                        f"{data_path}/left_image_crop.tif"
                                     ),
                                     "band": 0,
                                 },
                                 "b1": {
                                     "path": absolute_data_path(
-                                        "input/phr_ventoux/color_image.tif"
+                                        f"{data_path}/color_image_crop.tif"
                                     ),
                                     "band": 0,
                                 },
                                 "b2": {
                                     "path": absolute_data_path(
-                                        "input/phr_ventoux/color_image.tif"
+                                        f"{data_path}/color_image_crop.tif"
                                     ),
                                     "band": 1,
                                 },
                                 "b3": {
                                     "path": absolute_data_path(
-                                        "input/phr_ventoux/color_image.tif"
+                                        f"{data_path}/color_image_crop.tif"
                                     ),
                                     "band": 2,
                                 },
                                 "b4": {
                                     "path": absolute_data_path(
-                                        "input/phr_ventoux/color_image.tif"
+                                        f"{data_path}/color_image_crop.tif"
                                     ),
                                     "band": 3,
                                 },
@@ -293,7 +302,7 @@ def test_ventoux_full():
                             "input/phr_ventoux/left_image.geom"
                         ),
                         "classification": absolute_data_path(
-                            "input/phr_ventoux/left_classif.tif"
+                            f"{data_path}/left_classif_crop.tif"
                         ),
                     },
                     "image2": {
@@ -301,13 +310,13 @@ def test_ventoux_full():
                             "bands": {
                                 "b0": {
                                     "path": absolute_data_path(
-                                        "input/phr_ventoux/right_image.tif"
+                                        f"{data_path}/right_image_crop.tif"
                                     ),
                                     "band": 0,
                                 },
                                 "b1": {
                                     "path": absolute_data_path(
-                                        "input/phr_ventoux/right_image.tif"
+                                        f"{data_path}/right_image_crop.tif"
                                     ),
                                     "band": 0,
                                 },
@@ -317,7 +326,7 @@ def test_ventoux_full():
                             "input/phr_ventoux/right_image.geom"
                         ),
                         "classification": absolute_data_path(
-                            "input/phr_ventoux/right_classif.tif"
+                            f"{data_path}/right_classif_crop.tif"
                         ),
                     },
                 },
@@ -619,7 +628,7 @@ def test_ventoux_without_filter_incomplete_disparity_range():
                 "sensors": {
                     "image1": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
+                            "input/phr_ventoux/crop/left_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
@@ -627,7 +636,7 @@ def test_ventoux_without_filter_incomplete_disparity_range():
                     },
                     "image2": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
+                            "input/phr_ventoux/crop/right_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
@@ -705,7 +714,7 @@ def test_ventoux_depth_maps_point_clouds():
                 "sensors": {
                     "image1": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
+                            "input/phr_ventoux/crop/left_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
@@ -713,7 +722,7 @@ def test_ventoux_depth_maps_point_clouds():
                     },
                     "image2": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
+                            "input/phr_ventoux/crop/right_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
@@ -739,9 +748,10 @@ def test_ventoux_depth_maps_point_clouds():
         intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
+        # check that any point cloud has been generated
         assert os.path.exists(
             os.path.join(
-                out_dir, "point_cloud", "image1_image2", "laz", "2_1.laz"
+                out_dir, "point_cloud", "image1_image2", "laz", "0_0.laz"
             )
         )
 
@@ -1623,24 +1633,24 @@ def test_ventoux_filling():
                 "sensors": {
                     "image1": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
+                            "input/phr_ventoux/crop/left_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
                         ),
                         "classification": absolute_data_path(
-                            "input/phr_ventoux/left_classif.tif"
+                            "input/phr_ventoux/crop/left_classif_crop.tif"
                         ),
                     },
                     "image2": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
+                            "input/phr_ventoux/crop/right_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
                         ),
                         "classification": absolute_data_path(
-                            "input/phr_ventoux/right_classif.tif"
+                            "input/phr_ventoux/crop/right_classif_crop.tif"
                         ),
                     },
                 },

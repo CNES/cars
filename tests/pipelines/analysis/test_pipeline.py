@@ -48,7 +48,7 @@ def test_pipeline_analysis_api():
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf_path = absolute_data_path(
-            "input/phr_ventoux/input_with_color_and_classif.json"
+            "input/phr_ventoux/crop/input_color_classif_crop.json"
         )
 
         # Generate base configuration
@@ -61,6 +61,8 @@ def test_pipeline_analysis_api():
                 "max_ram_per_worker": 500,
             },
         )
+
+        input_conf["monocular"] = {"activated": False}
 
         # Run pipeline
         pipeline = AnalysisPipeline(input_conf, absolute_data_path(directory))

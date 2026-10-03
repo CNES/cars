@@ -184,6 +184,31 @@ test-end2end:
   extends:
     - .cars-python-job
   script:
+  # Print runner environment for debugging purposes
+    - |
+      echo "=== Runner environment ==="
+      uname -a
+      echo
+      echo "=== CPU ==="
+      if command -v lscpu >/dev/null 2>&1; then
+        echo "-- lscpu --"
+        lscpu
+      else
+        echo "-- nproc --"
+        nproc
+      fi
+      echo
+      echo "=== Memory ==="
+      if command -v free >/dev/null 2>&1; then
+        echo "-- free -h --"
+        free -h
+      else
+        echo "-- /proc/meminfo --"
+        grep -E 'MemTotal|MemFree|MemAvailable|SwapTotal|SwapFree' /proc/meminfo
+      fi
+      echo
+      echo "=== Disk ==="
+      df -h .
     - source /app/cars/venv/bin/activate
     - |
       MARKER="end2end_tests"

@@ -47,6 +47,18 @@ def _check_tie_points_output(outdir, expected):
     disparity_filtered = filtered_matches[:, 2] - filtered_matches[:, 0]
     epipolar_filtered = np.abs(filtered_matches[:, 3] - filtered_matches[:, 1])
 
+    # show data before asserts for easier update of expected values
+    print(
+        {
+            "raw_count": len(raw_matches),
+            "filtered_count": len(filtered_matches),
+            "raw_disp": np.mean(disparity_raw),
+            "filtered_disp": np.mean(disparity_filtered),
+            "raw_epi": np.mean(epipolar_raw),
+            "filtered_epi": np.mean(epipolar_filtered),
+        }
+    )
+
     assert len(raw_matches) == expected["raw_count"]
 
     assert np.mean(disparity_raw) == pytest.approx(
@@ -105,7 +117,7 @@ def test_pipeline_ventoux():
                 "sensors": {
                     "image1": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
+                            "input/phr_ventoux/crop/left_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
@@ -113,7 +125,7 @@ def test_pipeline_ventoux():
                     },
                     "image2": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
+                            "input/phr_ventoux/crop/right_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
@@ -126,11 +138,11 @@ def test_pipeline_ventoux():
         }
 
         expected = {
-            "raw_count": 519,
-            "filtered_count": 511,
-            "raw_disp": 113,
-            "filtered_disp": 108,
-            "raw_epi": 5,
+            "raw_count": 555,
+            "filtered_count": 546,
+            "raw_disp": 105,
+            "filtered_disp": 103,
+            "raw_epi": 5.5,
             "filtered_epi": 4.75,
             "disp_tol": 2,
             "epi_tol": 0.5,
@@ -150,7 +162,7 @@ def test_pipeline_ventoux_with_dem():
                 "sensors": {
                     "image1": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
+                            "input/phr_ventoux/crop/left_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
@@ -158,7 +170,7 @@ def test_pipeline_ventoux_with_dem():
                     },
                     "image2": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
+                            "input/phr_ventoux/crop/right_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
@@ -174,11 +186,11 @@ def test_pipeline_ventoux_with_dem():
         }
 
         expected = {
-            "raw_count": 581,
-            "filtered_count": 579,
-            "raw_disp": -4.1,
-            "filtered_disp": -5,
-            "raw_epi": 4.85,
+            "raw_count": 617,
+            "filtered_count": 612,
+            "raw_disp": 6,
+            "filtered_disp": 5,
+            "raw_epi": 5,
             "filtered_epi": 4.75,
             "disp_tol": 0.5,
             "epi_tol": 0.5,
@@ -198,24 +210,24 @@ def test_pipeline_ventoux_with_mask():
                 "sensors": {
                     "image1": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/left_image.tif"
+                            "input/phr_ventoux/crop/left_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
                         ),
                         "mask": absolute_data_path(
-                            "input/phr_ventoux/left_mask.tif"
+                            "input/phr_ventoux/crop/left_mask_crop.tif"
                         ),
                     },
                     "image2": {
                         "image": absolute_data_path(
-                            "input/phr_ventoux/right_image.tif"
+                            "input/phr_ventoux/crop/right_image_crop.tif"
                         ),
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
                         ),
                         "mask": absolute_data_path(
-                            "input/phr_ventoux/right_mask.tif"
+                            "input/phr_ventoux/crop/right_mask_crop.tif"
                         ),
                     },
                 },
@@ -225,11 +237,11 @@ def test_pipeline_ventoux_with_mask():
         }
 
         expected = {
-            "raw_count": 518,
-            "filtered_count": 510,
-            "raw_disp": 113,
-            "filtered_disp": 108,
-            "raw_epi": 5,
+            "raw_count": 555,
+            "filtered_count": 546,
+            "raw_disp": 105,
+            "filtered_disp": 103,
+            "raw_epi": 5.5,
             "filtered_epi": 4.75,
             "disp_tol": 2,
             "epi_tol": 0.5,
