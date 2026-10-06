@@ -129,7 +129,7 @@ class Pandora2DSparseMethod(
             "threshold_disp_range_to_borders": False,
             "loader": "pandora2d",
             "tile_width": 500,
-            "tile_height": 60,
+            "tile_height": 120,
         }
 
         loader_conf = conf.get("loader_conf", None)
