@@ -30,6 +30,7 @@ import os
 import platform
 import sys
 import threading
+from collections import deque
 from contextlib import contextmanager
 
 # Standard imports
@@ -66,7 +67,10 @@ PROFILING = 5  # we want DEBUG to not have profiling logs
 logging.addLevelName(PROFILING, "PROFILING")
 
 
-_WARNING_COUNTER = 0
+_WARNING_DATA = {
+    "count": 0,
+    "recents": deque(maxlen=5),  # store last 10 warnings
+}
 _WARNING_LOCK = threading.Lock()  # for logs from workers
 
 
@@ -116,15 +120,18 @@ def mute_external_logging():
 
 def reset_warning_count() -> None:
     """Reset global warning counting state for a fresh pipeline run."""
-    global _WARNING_COUNTER
     with _WARNING_LOCK:
-        _WARNING_COUNTER = 0
+        _WARNING_DATA["count"] = 0
+        _WARNING_DATA["recents"].clear()
 
 
-def get_warning_count() -> int:
-    """Get total warning count captured by WarningCounterHandler."""
+def get_warning_data() -> dict:
+    """Get the data about warnings captured by WarningCounterHandler."""
     with _WARNING_LOCK:
-        return _WARNING_COUNTER
+        return {
+            "count": _WARNING_DATA["count"],
+            "recents": list(_WARNING_DATA["recents"]),
+        }
 
 
 class WarningCounterHandler(logging.Handler):
@@ -132,9 +139,17 @@ class WarningCounterHandler(logging.Handler):
 
     def emit(self, record):
         if record.levelno >= logging.WARNING:
-            global _WARNING_COUNTER
             with _WARNING_LOCK:
-                _WARNING_COUNTER += 1
+                _WARNING_DATA["count"] += 1
+                _WARNING_DATA["recents"].append(
+                    {
+                        "timestamp": datetime.fromtimestamp(record.created)
+                        .astimezone()
+                        .strftime("%H:%M:%S"),
+                        "level": record.levelname,
+                        "message": record.getMessage(),
+                    }
+                )
 
 
 class ProfilingFilter(logging.Filter):  # pylint: disable=R0903

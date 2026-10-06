@@ -69,6 +69,8 @@ class UINode:
 class PipelineTreeUI:
     """Rich-based UI for displaying hierarchical pipeline progress."""
 
+    WARNING_PANEL_MAX_WIDTH = 55
+
     def __init__(self, console: Console | None = None) -> None:
         self.console = console or Console()
         self.tree: dict[int, UINode] = {}
@@ -76,6 +78,7 @@ class PipelineTreeUI:
         self.live: Live | None = None
         self.empty_status_text: str = "Loading configuration file"
         self.warning_count: int = 0
+        self.warning_recents: list[dict[str, str] | str] = []
         self.log_file_path: str | None = None
         self.crash_exception: BaseException | None = None
         self.success_output_dir: str | None = None
@@ -85,9 +88,10 @@ class PipelineTreeUI:
         if status_text:
             self.empty_status_text = str(status_text)
 
-    def update_warning_count(self, warning_count: int) -> None:
+    def update_warning_data(self, warning_data: dict) -> None:
         """Update total warning counter displayed in the panel footer."""
-        self.warning_count = max(0, int(warning_count))
+        self.warning_count = max(0, int(warning_data.get("count", 0)))
+        self.warning_recents = list(warning_data.get("recents", []))
 
     def update_log_file_path(self, log_file_path: str | None) -> None:
         """Update log file path used by the footer log link button."""
@@ -124,6 +128,57 @@ class PipelineTreeUI:
             # label.append(")")
             return label
         return Text("", style="dim")
+
+    def _render_warning_entry(
+        self, warning_entry: dict[str, str] | str
+    ) -> Text:
+        """Render one warning line with timestamp and color styling."""
+        timestamp = ""
+        level = "WARNING"
+        message = str(warning_entry)
+
+        if isinstance(warning_entry, dict):
+            timestamp = str(warning_entry.get("timestamp", "")).strip()
+            level = str(warning_entry.get("level", level)).strip() or level
+            message = str(warning_entry.get("message", message)).strip()
+
+        entry = Text()
+        entry.append("• ", style="yellow")
+        if timestamp:
+            entry.append(f"[{timestamp}] ", style="dim")
+        entry.append(level, style="bold yellow")
+        entry.append(" ", style="dim")
+        entry.append(message, style="white")
+        return entry
+
+    def _render_warning_panel(self) -> Panel | None:
+        """Render recent warnings as a styled Rich panel."""
+        if self.warning_count <= 0 or not self.warning_recents:
+            return None
+
+        warning_entries = [
+            self._render_warning_entry(warning_entry)
+            for warning_entry in self.warning_recents
+        ]
+        # interleave a rule in-between warnings
+        warning_entries = [
+            Group(entry, Rule(style="grey50")) for entry in warning_entries[:-1]
+        ] + [warning_entries[-1]]
+        warning_body = Group(*warning_entries)
+
+        if self.warning_count > len(self.warning_recents):
+            # Add "+ n warnings"
+            more_count = self.warning_count - len(self.warning_recents)
+            more_text = Text(f"+ {more_count} more warning(s)")
+            warning_body = Group(more_text, Rule(style="grey50"), warning_body)
+
+        return Panel(
+            warning_body,
+            title="[bold white]Recent warnings[/bold white]",
+            border_style="yellow",
+            expand=False,
+            width=self.WARNING_PANEL_MAX_WIDTH,
+        )
 
     def _render_success_panel(self) -> Panel | None:
         """Render final success panel with output links using Tree."""
@@ -365,8 +420,22 @@ class PipelineTreeUI:
             content = Group(*lines, Rule(style="grey50"), footer_row)
 
         main_panel = Panel(
-            content, title="[bold]CARS Progress[/bold]", expand=False
+            content,
+            title="[bold white]CARS Progress[/bold white]",
+            expand=False,
         )
+
+        warning_panel = self._render_warning_panel()
+        if warning_panel is not None:
+            panels_row = Table.grid(expand=False, padding=(0, 1))
+            panels_row.add_column(vertical="top")
+            panels_row.add_column(
+                width=self.WARNING_PANEL_MAX_WIDTH,
+                vertical="top",
+            )
+            panels_row.add_row(main_panel, warning_panel)
+
+            main_panel = panels_row
 
         # Crash section (if any)
         if self.crash_exception is not None:
