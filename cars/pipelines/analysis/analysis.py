@@ -302,8 +302,9 @@ def launch_full_res_pipeline(
     if "loaders" not in conf["input"]:
         conf["input"]["loaders"] = {}
 
-    # fix bug: image is in pivot format
+    # fix bug: image and classif are in pivot format
     conf["input"]["loaders"]["image"] = "pivot"
+    conf["input"]["loaders"]["classification"] = "pivot"
 
     default_pipeline_dry = DefaultPipeline(conf, config_dir=config_dir)
     input_conf = default_pipeline_dry.used_conf[0]["input"]
