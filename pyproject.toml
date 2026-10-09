@@ -61,7 +61,7 @@ dependencies = [
     "laspy[laszip]",
     "pandora[sgm]==1.9.0",
     "pandora2d",
-    "cars-rasterize==0.3.0rc0",
+    "cars-rasterize==0.3.*",
     "cars-resample==0.1.*",
     "cars-filter==0.3.*",
     "vlsift==0.1.*",
@@ -124,7 +124,7 @@ bundleadjustment = [
 ]
 
 monocular = [
-    "cars-monocular-plugin==0.2.0rc1"
+    "cars-monocular-plugin==0.2.*"
 ]
 
 [tool.black]
