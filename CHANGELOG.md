@@ -25,6 +25,7 @@
  - Right sensor footprint is used for epipolar grid generation [shareloc#317]
  - Performance map computation now accounts for the local disparity range and supports an optional affine normalization [#1295]
  - Empty cells can now be filled differently from occlusions [#1450]
+ - New logging panel showing the last 5 warnings emitted [#1446]
 
 ### Fixed
 
@@ -43,6 +44,7 @@
  - Add index to merging output [#1435]
  - Remove `blockxsize` and `blockysize` creation options when tiled output is disabled
  - Pixels with nodata value are not rasterized anymore [#1437]
+ - Analysis pipeline can be used with a classification [#1397]
 
 
 ## 1.2.0 Rich Logging Output (June 2026)
