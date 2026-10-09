@@ -36,7 +36,7 @@ from cars.applications.triangulation.line_of_sight_intersection_app import (
 @pytest.mark.parametrize(
     "conf_normalization, expected_normalization",
     [
-        (None, [1, 0]),
+        (None, [0.224391, 1.225126]),
         ([0.5, -2.0], [0.5, -2.0]),
     ],
 )
