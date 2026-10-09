@@ -129,7 +129,7 @@ class LineOfSightIntersection(
         )
 
         overloaded_conf["performance_map_affine_normalization"] = conf.get(
-            "performance_map_affine_normalization", [1, 0]
+            "performance_map_affine_normalization", [0.224391, 1.225126]
         )
 
         triangulation_schema = {
