@@ -31,7 +31,6 @@ DEBUG_WITH_ROI = "debug_with_roi"
 USE_SENSOR_DISP = "use_sensor_disp"
 
 RESOLUTION_A_PRIORI = "resolution_a_priori"
-GROUND_TRUTH_DSM = "ground_truth_dsm"
 
 RESOLUTIONS = "resolutions"
 MIN_IMAGE_SIZE = "min_image_size"
@@ -57,14 +56,6 @@ USE_ENDOGENOUS_DEM = "use_endogenous_dem"
 DEM_MEDIAN = "dem_median"
 DEM_MIN = "dem_min"
 DEM_MAX = "dem_max"
-
-# ground truth dsm
-INPUT_GROUND_TRUTH_DSM = "dsm"
-INPUT_CLASSIFICATION = "classification"
-INPUT_AUX_PATH = "auxiliary_data"
-INPUT_AUX_INTERP = "auxiliary_data_interpolation"
-INPUT_GEOID = "geoid"
-INPUT_EPSG = "epsg"
 
 PERFORMANCE_MAP_CLASSES = "performance_map_classes"
 

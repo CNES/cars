@@ -5,23 +5,25 @@ Running CARS with sensor images as input
 
 The standard configuration uses sensor images as inputs. Additional parameters can be used in inputs configuration :
 
-+------------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
-| Name                         | Description                                                         | Type                        | Default value        | Required |
-+==============================+=====================================================================+=============================+======================+==========+
-| *sensors*                    | Stereo sensor images                                                | dict                        | No                   | Yes      |
-+------------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
-| *pairing*                    | Association of sensor image to create pairs                         | list of pairs of *sensors*  | No                   | Yes (*)  |
-+------------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
-| *initial_elevation*          | Low resolution DEM                                                  | string or dict              | No                   | No       |
-+------------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
-| *roi*                        | Region Of Interest: Vector file path or GeoJson dictionary          | string or dict              | None                 | No       |
-+------------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
-| *ignore_roi_during_a_priori* | Ignore the roi during a priori computation                          | bool                        | false                | No       |
-+------------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
-| *loaders*                    | Input format for image and classification                           | dict                        | cf. Loaders tab      | No       |
-+------------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
-| *filling*                    | Areas to fill in final result                                       | dict                        | cf. Filling tab      | No       |
-+------------------------------+---------------------------------------------------------------------+-----------------------------+----------------------+----------+
++------------------------------+-----------------------------------------------------------------------+-----------------------------+-------------------------------+----------+
+| Name                         | Description                                                           | Type                        | Default value                 | Required |
++==============================+=======================================================================+=============================+===============================+==========+
+| *sensors*                    | Stereo sensor images                                                  | dict                        | No                            | Yes      |
++------------------------------+-----------------------------------------------------------------------+-----------------------------+-------------------------------+----------+
+| *pairing*                    | Association of sensor image to create pairs                           | list of pairs of *sensors*  | No                            | Yes (*)  |
++------------------------------+-----------------------------------------------------------------------+-----------------------------+-------------------------------+----------+
+| *initial_elevation*          | Low resolution DEM                                                    | string or dict              | No                            | No       |
++------------------------------+-----------------------------------------------------------------------+-----------------------------+-------------------------------+----------+
+| *roi*                        | Region Of Interest: Vector file path or GeoJson dictionary            | string or dict              | None                          | No       |
++------------------------------+-----------------------------------------------------------------------+-----------------------------+-------------------------------+----------+
+| *ignore_roi_during_a_priori* | Ignore the roi during a priori computation                            | bool                        | false                         | No       |
++------------------------------+-----------------------------------------------------------------------+-----------------------------+-------------------------------+----------+
+| *loaders*                    | Input format for image and classification                             | dict                        | cf. Loaders tab               | No       |
++------------------------------+-----------------------------------------------------------------------+-----------------------------+-------------------------------+----------+
+| *filling*                    | Areas to fill in final result                                         | dict                        | cf. Filling tab               | No       |
++------------------------------+-----------------------------------------------------------------------+-----------------------------+-------------------------------+----------+
+| *ground_truth_dsm*           | Data to be reprojected from the application ground_truth_reprojection | dict                        | None                          | No       |
++------------------------------+-----------------------------------------------------------------------+-----------------------------+-------------------------------+----------+
 
 (*) `pairing` is required if there are more than two sensors (see pairing section below)
 
@@ -55,14 +57,14 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         | *regularization_mask*  | Path to the regularization mask, used in surface modeling                                                                       | string, dict   | None          | No       |
         +------------------------+---------------------------------------------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
-        In most cases, only the file path is required for each of these parameters and CARS will know how to read each file : 
+        In most cases, only the file path is required for each of these parameters and CARS will know how to read each file :
 
         .. include-cars-config:: ../../example_configs/configuration/inputs_sensor_image_intermediate
 
-        However for each parameter it is possible to set a dictionary with additional parameters on how to read the file. 
-        
+        However for each parameter it is possible to set a dictionary with additional parameters on how to read the file.
+
         **Advanced configuration**
-        
+
         These parameters are described on the tabs below :
 
         .. tabs::
@@ -83,7 +85,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 | *no_data*      | No data value of file | int    | 0             |                  | No       |
                 +----------------+-----------------------+--------+---------------+------------------+----------+
 
-                An example is given below : 
+                An example is given below :
 
                 .. include-cars-config:: ../../example_configs/configuration/image_basic_loader_config
 
@@ -107,16 +109,16 @@ The standard configuration uses sensor images as inputs. Additional parameters c
                 | *tile_id*      | File path. A tile ID map, specifying the tile ID of each pixel, resulting from parallel processing. | str    | None          | No       |
                 +----------------+-----------------------------------------------------------------------------------------------------+--------+---------------+----------+
 
-                An example is given below : 
+                An example is given below :
 
                 .. include-cars-config:: ../../example_configs/configuration/input_edges_config
 
             .. tab:: Geomodel
 
                 In most cases you do not need to fill this parameter because the RPC information can be found by CARS directly either in the image metadata or in a .XML or .RPB file.
-                
+
                 If RPC information are not in the image but in a separate file not recognized by rasterio like a .geom file, this parameter has to be filled with the path of this file.
-                
+
                 If you want to use grid models, you have to use a dictionary for the geomodel parameter and fill the `model_type` key.
 
                 +----------------+-----------------------+--------+---------------+------------------+----------+
@@ -130,8 +132,8 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
                 .. note::
                      If the geomodel file is not provided, CARS will try to use the RPC loaded with rasterio opening *image*. RPCs are assumed to convert rows and columns into WGS84 longitude/latitude coordinates.
-                     
-                A full configuration example is given below : 
+
+                A full configuration example is given below :
 
                 .. include-cars-config:: ../../example_configs/configuration/geomodel_full_config
 
@@ -139,16 +141,16 @@ The standard configuration uses sensor images as inputs. Additional parameters c
             .. tab:: Mask
 
                 The mask parameter is optional. A mask can be used if you want to define an area that CARS will not process.
-                
+
                 The mask must be a mono-band binary image. Please, see the section :ref:`convert_image_to_binary_image` to make binary *mask* image with 1 bit per band.
-                
+
                 The file path must be given directly as a string parameter.
 
 
             .. tab:: Classification
 
                 The classification parameter is optional. It can be used to define areas that has to be filled (particularly water and cloud).
-                
+
                 The classification must be a mono-band uint8 image.
 
                 The file path must be given directly as a string parameter.
@@ -156,10 +158,10 @@ The standard configuration uses sensor images as inputs. Additional parameters c
             .. tab:: Regularization mask
 
                 The regularization mask is optional. It can be used if you want to provide your own for surface modeling.
-                
+
                 The file path must be given directly as a string parameter.
 
-                A configuration example is given below : 
+                A configuration example is given below :
 
                 .. include-cars-config:: ../../example_configs/configuration/regularization_mask_config
 
@@ -173,8 +175,8 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
     .. tab:: Initial Elevation
 
-        The attribute contains all informations about initial elevation: dem path, geoid path and default altitudes. 
-        The initial elevation provided by a user will be used for the first resolution. 
+        The attribute contains all informations about initial elevation: dem path, geoid path and default altitudes.
+        The initial elevation provided by a user will be used for the first resolution.
         Subsequent resolutions will use the `DEMs Min/Median/Max` generated by the previous resolution as their initial elevation.
 
         +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
@@ -224,7 +226,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         A terrain ROI can be provided by the user. It can be either a vector file (Shapefile for instance) path,
         or a GeoJson dictionary. These structures must contain a single Polygon or MultiPolygon. Multi-features are
         not supported. Instead of cropping the input images, the whole images will be used to compute grid correction
-        and terrain + epipolar a priori. Then the rest of the pipeline will use the given roi. This allow better correction 
+        and terrain + epipolar a priori. Then the rest of the pipeline will use the given roi. This allow better correction
         of epipolar rectification grids.
 
 
@@ -257,7 +259,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
          - `input.sensors.image`
          - `input.sensors.classification`
 
-        To use sensor loaders, fill the laoders dictionary as follows : 
+        To use sensor loaders, fill the laoders dictionary as follows :
 
         +-------------------+--------------------------------------------------+-----------+------------------+------------------+----------+
         | Name              | Description                                      | Type      | Default value    | Available value  | Required |
@@ -300,12 +302,12 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         .. include-cars-config:: ../../example_configs/configuration/image_co3d_loader_config
 
         By using the CO3D loader, the output image bands will automatically be the RGB bands, but it can be changed in the output configuration.
-    
+
         **Image pivot loader**
 
         Pivot loader for image can be useful in these cases :
 
-        - A multi-band image is passed as input and you want to control which band is used for correlation 
+        - A multi-band image is passed as input and you want to control which band is used for correlation
         - A multi-band image is passed as input and you want to control which bands are used in the output orthorectified image.
         - You want to concatenate several bands of a single image which are on separate files (for example a panchromatic image file and a RGB image file).
 
@@ -322,7 +324,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
         With the pivot format, an image can be composed of several files.
 
-        A full configuration example for pivot sensor loader is given below. In this case, multiple files are used for the same image : The file `img1.tif` refers to a panchromatic image 
+        A full configuration example for pivot sensor loader is given below. In this case, multiple files are used for the same image : The file `img1.tif` refers to a panchromatic image
         and the file `color1.tif` refers to a RGB (or RGBN) image with the same size and resolution than `img1.tif`
 
         .. include-cars-config:: ../../example_configs/configuration/image_pivot_loader_config
@@ -330,7 +332,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
         **Classification SLURP loader**
 
         The SLURP loader is useful if the classification used comes from `SLURP tool <https://github.com/CNES/slurp>`_
-        The loader automatically fills the *filling* dictionary according to the SLURP convention. It follows this table : 
+        The loader automatically fills the *filling* dictionary according to the SLURP convention. It follows this table :
 
         +-----------------+----------------------------+---------------------------+
         | Value           | Class                      | Filling method            |
@@ -346,7 +348,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
         The SLURP loader does not change the configuration schema of the classification parameter.
 
-        An example is given below : 
+        An example is given below :
 
         .. include-cars-config:: ../../example_configs/configuration/classif_slurp_loader_config
 
@@ -354,7 +356,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
         The pivot loader is the full parametrization of the classification. It can be used to optimize the reading of classification file.
 
-        The pivot loader looks like the basic loader but with the *values* parameter added : 
+        The pivot loader looks like the basic loader but with the *values* parameter added :
 
         +-----------------+--------------------------------------------------------------------+--------+--------------------------+-------------------------+----------+
         | Name            | Description                                                        | Type   | Default value            | Available values        | Required |
@@ -366,7 +368,7 @@ The standard configuration uses sensor images as inputs. Additional parameters c
 
         With the basic loader, classes are automatically defined from statistics of the input file. But with the pivot loader, the classes must be given in the *values* parameter.
 
-        An example is given below : 
+        An example is given below :
 
         .. include-cars-config:: ../../example_configs/configuration/classif_pivot_loader_config
 
@@ -406,3 +408,32 @@ The standard configuration uses sensor images as inputs. Additional parameters c
             - interpolation : interpolation
 
         .. include-cars-config:: ../../example_configs/configuration/filling_in_input
+
+    .. tab:: Ground Truth Dsm
+
+        To activate the ground truth reprojection application, it is necessary to specify the required inputs in the advanced settings.
+        For this, a dictionary named `ground_truth_dsm` must be added, containing the keys presented in the following table.
+        By default, the used dsm is considered on ellipsoid. If not, fill the `geoid` parameter.
+
+        For more information, see the :ref:`ground_truth_reprojection tutorial <ground_truth_reprojection_tutorial>`.
+
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
+        | Name                            | Description                                                | Type               | Available value              | Default value                                         | Required |
+        +=================================+============================================================+====================+==============================+=======================================================+==========+
+        | dsm                             | Path to ground truth dsm (Lidar for example)               | string             |                              |                                                       | Yes      |
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
+        | geoid                           | DSM geoid.                                                 | bool or string     |                              |  False                                                | No       |
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
+        | auxiliary_data                  | The lidar auxiliaries data                                 | dict               |                              |  None                                                 | No       |
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
+        | auxiliary_data_interpolation    | The lidar auxiliaries data interpolator                    | dict               |                              |  None (nearest if auxiliary_data is not None)         | No       |
+        +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
+
+        .. note::
+
+            The parameter `geoid` refers to the vertical reference of the ground truth DSM. It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to True CARS default geoid is used, if set to False no vertical offset is applied (ellipsoid reference).
+
+        Example:
+
+        .. include-cars-config:: ../../example_configs/configuration/input_ground_truth_dsm
+

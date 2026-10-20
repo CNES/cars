@@ -1,0 +1,13 @@
+input:
+  sensors:
+    my_name_for_this_sensor:
+      image: img.tif
+      classification: classif.tif
+  ground_truth_dsm:
+    dsm: path/to/ground/truth/dsm.tif
+    auxiliary_data:
+      classification: path/to/classification.tif
+      texture: path/to/image.tif
+    auxiliary_data_interpolation:
+      classification: nearest
+      texture: linear

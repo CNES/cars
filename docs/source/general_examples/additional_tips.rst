@@ -331,21 +331,19 @@ The `target` parameter specifies the geometry in which the reference data will b
 Configuring the Reference Data
 --------------------------------
 
-The reference DSM and its associated auxiliary data must be specified in the advanced configuration section of `surface_modeling`:
+The reference DSM and its associated auxiliary data must be specified in the input configuration section:
 
 .. code-block:: yaml
 
-	surface_modeling:
-	  advanced:
-	    all:
-	      ground_truth_dsm:
-	        dsm: path/to/ground_truth_dsm.tif
-	        auxiliary_data:
-	          classification: path/to/classification.tif
-	          texture: path/to/texture.tif
-	        auxiliary_data_interpolation:
-	          classification: nearest
-	          texture: linear
+	input:
+	  ground_truth_dsm:
+            dsm: path/to/ground_truth_dsm.tif
+	    auxiliary_data:
+              classification: path/to/classification.tif
+	      texture: path/to/texture.tif
+	    auxiliary_data_interpolation:
+	      classification: nearest
+	      texture: linear
 
 The configuration includes the following parameters:
 

@@ -28,7 +28,7 @@ import os
 
 import numpy as np
 import rasterio as rio
-from json_checker import Checker, Or
+from json_checker import Checker, OptionalKey, Or
 
 import cars.core.constants as cst
 
@@ -107,6 +107,20 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         pipeline_cst.SCALING_COEFF, None
     )
 
+    overloaded_conf[sens_cst.GROUND_TRUTH_DSM] = conf.get(
+        sens_cst.GROUND_TRUTH_DSM, {}
+    )
+
+    # Validate ground truth DSM
+    if overloaded_conf[sens_cst.GROUND_TRUTH_DSM]:
+        overloaded_conf[sens_cst.GROUND_TRUTH_DSM][sens_cst.INPUT_AUX_PATH] = (
+            conf[sens_cst.GROUND_TRUTH_DSM].get(sens_cst.INPUT_AUX_PATH, None)
+        )
+        overloaded_conf[sens_cst.GROUND_TRUTH_DSM][
+            sens_cst.INPUT_AUX_INTERP
+        ] = conf[sens_cst.GROUND_TRUTH_DSM].get(sens_cst.INPUT_AUX_INTERP, None)
+        check_ground_truth_dsm_data(overloaded_conf[sens_cst.GROUND_TRUTH_DSM])
+
     # Validate inputs
     inputs_schema = {
         sens_cst.SENSORS: dict,
@@ -117,6 +131,7 @@ def sensors_check_inputs(conf, config_dir=None):  # noqa: C901
         sens_cst.IGNORE_ROI_DURING_APRIORI: Or(bool, False),
         sens_cst.LOADERS: dict,
         sens_cst.FILLING: dict,
+        sens_cst.GROUND_TRUTH_DSM: Or(dict, str),
         sens_cst.LAND_COVER_MAP: str,
         sens_cst.CLASSIFICATION_TO_CONFIGURATION_MAPPING: str,
         pipeline_cst.DSM_TO_FILL: Or(str, dict, None),
@@ -350,6 +365,84 @@ def check_sensors(conf, overloaded_conf, config_dir=None):  # noqa: C901
         )
 
     return overloaded_conf
+
+
+def check_ground_truth_dsm_data(conf):
+    """
+    Check data of the image ground truth
+
+    :param conf: ground truth dsm configuration
+    :type conf: str
+    """
+    if isinstance(conf, str):
+        with rio.open(conf) as img_reader:
+            trans = img_reader.transform
+            if trans.e < 0:
+                logger.warning(
+                    "{} seems to have an incoherent pixel size. "
+                    "Input images has to be in sensor geometry.".format(conf)
+                )
+
+    conf[sens_cst.INPUT_GEOID] = conf.get(sens_cst.INPUT_GEOID, None)
+
+    if isinstance(conf, dict):
+        ground_truth_dsm_schema = {
+            sens_cst.INPUT_GROUND_TRUTH_DSM: str,
+            OptionalKey(sens_cst.INPUT_AUX_PATH): Or(dict, None),
+            OptionalKey(sens_cst.INPUT_AUX_INTERP): Or(dict, None),
+            sens_cst.INPUT_GEOID: Or(None, str, bool),
+        }
+
+        checker_ground_truth_dsm_schema = Checker(ground_truth_dsm_schema)
+        checker_ground_truth_dsm_schema.validate(conf)
+
+        gt_dsm_path = conf[sens_cst.INPUT_GROUND_TRUTH_DSM]
+        with rio.open(gt_dsm_path) as img_reader:
+            trans = img_reader.transform
+            if trans.e < 0:
+                logger.warning(
+                    "{} seems to have an incoherent pixel size. "
+                    "Input images has to be in sensor geometry.".format(
+                        gt_dsm_path
+                    )
+                )
+
+        # Update geoid
+        if isinstance(conf[sens_cst.INPUT_GEOID], bool):
+            if conf[sens_cst.INPUT_GEOID]:
+                # Use CARS geoid
+                logger.debug(
+                    "CARS will use its own internal file as geoid reference"
+                )
+                package_path = os.path.dirname(__file__)
+                geoid_path = os.path.join(
+                    package_path, "..", "..", "conf", CARS_GEOID_PATH
+                )
+                conf[sens_cst.INPUT_GEOID] = geoid_path
+            else:
+                conf[sens_cst.INPUT_GEOID] = None
+
+        path_dict = conf.get(sens_cst.INPUT_AUX_PATH, None)
+        if path_dict is not None:
+            for key in path_dict.keys():
+                if not isinstance(path_dict[key], str):
+                    raise RuntimeError("Path should be a string")
+                if not os.path.exists(path_dict[key]):
+                    raise RuntimeError("Path doesn't exist")
+
+        path_interp = conf.get(sens_cst.INPUT_AUX_INTERP, None)
+        if path_interp is not None:
+            for key in path_interp.keys():
+                if not isinstance(path_interp[key], str):
+                    raise RuntimeError("interpolator should be a string")
+                if path_interp[key] not in (
+                    "nearest",
+                    "linear",
+                    "cubic",
+                    "slinear",
+                    "quintic",
+                ):
+                    raise RuntimeError("interpolator does not exist")
 
 
 def check_loaders(conf):

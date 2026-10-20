@@ -22,20 +22,15 @@
 """
 CARS module containing functions to check advanced parameters configuration
 """
-import os
-
-import rasterio as rio
 from json_checker import And, Checker, OptionalKey, Or
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 
-from cars.core.cars_logging import logger
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import dsm_inputs
 from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
-from cars.pipelines.parameters.sensor_inputs import CARS_GEOID_PATH
 
 
 def get_resolutions(conf):
@@ -178,20 +173,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] is None,
     )
 
-    overloaded_conf[adv_cst.GROUND_TRUTH_DSM] = conf.get(
-        adv_cst.GROUND_TRUTH_DSM, {}
-    )
-
-    # Validate ground truth DSM
-    if overloaded_conf[adv_cst.GROUND_TRUTH_DSM]:
-        overloaded_conf[adv_cst.GROUND_TRUTH_DSM][adv_cst.INPUT_AUX_PATH] = (
-            conf[adv_cst.GROUND_TRUTH_DSM].get(adv_cst.INPUT_AUX_PATH, None)
-        )
-        overloaded_conf[adv_cst.GROUND_TRUTH_DSM][adv_cst.INPUT_AUX_INTERP] = (
-            conf[adv_cst.GROUND_TRUTH_DSM].get(adv_cst.INPUT_AUX_INTERP, None)
-        )
-        check_ground_truth_dsm_data(overloaded_conf[adv_cst.GROUND_TRUTH_DSM])
-
     # Check geometry plugin
     geom_plugin_without_dem_and_geoid = None
     geom_plugin_with_dem_and_geoid = None
@@ -232,7 +213,6 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
     schema = {
         adv_cst.SAVE_INTERMEDIATE_DATA: Or(dict, bool),
         adv_cst.KEEP_LOW_RES_DIR: bool,
-        adv_cst.GROUND_TRUTH_DSM: Or(dict, str),
         adv_cst.USE_SENSOR_DISP: bool,
         adv_cst.PHASING: Or(dict, None),
         adv_cst.GEOMETRY_PLUGIN: Or(str, dict),
@@ -254,81 +234,3 @@ def check_advanced_parameters(inputs, conf, output_dem_dir=None):
         bounds,
         overloaded_conf[adv_cst.USE_SENSOR_DISP],
     )
-
-
-def check_ground_truth_dsm_data(conf):
-    """
-    Check data of the image ground truth
-
-    :param conf: ground truth dsm configuration
-    :type conf: str
-    """
-    if isinstance(conf, str):
-        with rio.open(conf) as img_reader:
-            trans = img_reader.transform
-            if trans.e < 0:
-                logger.warning(
-                    "{} seems to have an incoherent pixel size. "
-                    "Input images has to be in sensor geometry.".format(conf)
-                )
-
-    conf[adv_cst.INPUT_GEOID] = conf.get(adv_cst.INPUT_GEOID, None)
-
-    if isinstance(conf, dict):
-        ground_truth_dsm_schema = {
-            adv_cst.INPUT_GROUND_TRUTH_DSM: str,
-            OptionalKey(adv_cst.INPUT_AUX_PATH): Or(dict, None),
-            OptionalKey(adv_cst.INPUT_AUX_INTERP): Or(dict, None),
-            adv_cst.INPUT_GEOID: Or(None, str, bool),
-        }
-
-        checker_ground_truth_dsm_schema = Checker(ground_truth_dsm_schema)
-        checker_ground_truth_dsm_schema.validate(conf)
-
-        gt_dsm_path = conf[adv_cst.INPUT_GROUND_TRUTH_DSM]
-        with rio.open(gt_dsm_path) as img_reader:
-            trans = img_reader.transform
-            if trans.e < 0:
-                logger.warning(
-                    "{} seems to have an incoherent pixel size. "
-                    "Input images has to be in sensor geometry.".format(
-                        gt_dsm_path
-                    )
-                )
-
-        # Update geoid
-        if isinstance(conf[adv_cst.INPUT_GEOID], bool):
-            if conf[adv_cst.INPUT_GEOID]:
-                # Use CARS geoid
-                logger.debug(
-                    "CARS will use its own internal file as geoid reference"
-                )
-                package_path = os.path.dirname(__file__)
-                geoid_path = os.path.join(
-                    package_path, "..", "..", "conf", CARS_GEOID_PATH
-                )
-                conf[adv_cst.INPUT_GEOID] = geoid_path
-            else:
-                conf[adv_cst.INPUT_GEOID] = None
-
-        path_dict = conf.get(adv_cst.INPUT_AUX_PATH, None)
-        if path_dict is not None:
-            for key in path_dict.keys():
-                if not isinstance(path_dict[key], str):
-                    raise RuntimeError("Path should be a string")
-                if not os.path.exists(path_dict[key]):
-                    raise RuntimeError("Path doesn't exist")
-
-        path_interp = conf.get(adv_cst.INPUT_AUX_INTERP, None)
-        if path_interp is not None:
-            for key in path_interp.keys():
-                if not isinstance(path_interp[key], str):
-                    raise RuntimeError("interpolator should be a string")
-                if path_interp[key] not in (
-                    "nearest",
-                    "linear",
-                    "cubic",
-                    "slinear",
-                    "quintic",
-                ):
-                    raise RuntimeError("interpolator does not exist")
