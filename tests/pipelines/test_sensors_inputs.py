@@ -25,7 +25,9 @@ Test module for cars/pipelines/parameters/sensor_inputs.py
 import json
 import os
 
+import json_checker
 import pytest
+import rasterio as rio
 from json_checker.core.exceptions import DictCheckerError, MissKeyCheckerError
 
 from cars.pipelines.parameters import sensor_inputs
@@ -58,6 +60,10 @@ def test_check_full_conf():
         "pairing": [["left", "right"]],
         "initial_elevation": {
             "dem": "srtm/N44E005.hgt",
+        },
+        "ground_truth_dsm": {
+            "dsm": "tests/data/input/phr_gizeh/img1.tif",
+            "geoid": True,
         },
         "roi": {
             "type": "FeatureCollection",
@@ -745,3 +751,25 @@ def test_input_co3d_loader():
         },
     }
     _ = sensor_inputs.sensors_check_inputs(conf, config_dir=json_dir_path)
+
+
+@pytest.mark.unit_tests
+def test_check_ground_truth_dsm_data():
+    """
+    Test check_ground_truth_dsm_data function
+    """
+
+    ground_truth_dsm_conf = {"dsm": "tests/data/input/phr_gizeh/img1.tif"}
+
+    # Should pass
+    sensor_inputs.check_ground_truth_dsm_data(ground_truth_dsm_conf)
+
+    # Should raise an error because of wrong dsm file is used
+    ground_truth_dsm_conf["dsm"] = "wrong_file.tif"
+    with pytest.raises(rio.errors.RasterioIOError):
+        sensor_inputs.check_ground_truth_dsm_data(ground_truth_dsm_conf)
+
+    # Should raise an error because of wrong dsm type is used
+    ground_truth_dsm_conf["dsm"] = True
+    with pytest.raises(json_checker.core.exceptions.DictCheckerError):
+        sensor_inputs.check_ground_truth_dsm_data(ground_truth_dsm_conf)
