@@ -304,6 +304,8 @@ If you want to upscale or downscale the resolution of you input data, use raster
             dst.write(data)
 
 
+.. _ground_truth_reprojection_tutorial:
+
 How to use the ground truth reprojection application
 =======================================================
 

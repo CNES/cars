@@ -120,6 +120,8 @@ Ground truth DSM
     To activate the ground truth reprojection application, it is necessary to specify the required inputs in the advanced settings.
     For this, a dictionary named `ground_truth_dsm` must be added, containing the keys presented in the following table.
     By default, the used dsm is considered on ellipsoid. If not, fill the `geoid` parameter.
+    
+    For more information, see the :ref:`ground_truth_reprojection tutorial <ground_truth_reprojection_tutorial>`.
 
     +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
     | Name                            | Description                                                | Type               | Available value              | Default value                                         | Required |
