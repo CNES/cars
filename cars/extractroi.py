@@ -39,23 +39,91 @@ from shareloc.geomodels.rpc_writers import (
 from cars.core.cars_logging import logger
 
 
+def get_local_image_box(image_dataset):
+    """
+    Get image bounds in the dataset local pixel coordinate system.
+
+    Parameters:
+        image_dataset (rio.DatasetReader): Opened image dataset.
+
+    Returns:
+        shapely.geometry.Polygon: Image bounds in local pixel coordinates.
+    """
+
+    return box(0, 0, image_dataset.width, image_dataset.height)
+
+
+def get_transformed_image_box(image_dataset):
+    """
+    Get image bounds in the dataset pixel coordinate system.
+
+    Parameters:
+        image_dataset (rio.DatasetReader): Opened image dataset.
+
+    Returns:
+        shapely.geometry.Polygon: Image bounds expressed in the same pixel
+        coordinate system as the affine transform and RPC row/col results.
+    """
+
+    return box(
+        min(image_dataset.bounds.left, image_dataset.bounds.right),
+        min(image_dataset.bounds.bottom, image_dataset.bounds.top),
+        max(image_dataset.bounds.left, image_dataset.bounds.right),
+        max(image_dataset.bounds.bottom, image_dataset.bounds.top),
+    )
+
+
+def get_requested_box(bbx, transformer):
+    """
+    Get requested bounds in the dataset pixel coordinate system.
+
+    Parameters:
+        bbx (array): The bounding box in geographic coordinates.
+        transformer (rio.transform.RPCTransformer): RPC transformer.
+
+    Returns:
+        tuple: Requested box as a shapely polygon and the list of projected
+        corner coordinates as (row, col) tuples.
+    """
+
+    coordinates = [
+        transformer.rowcol(bbx[0], bbx[1]),
+        transformer.rowcol(bbx[2], bbx[1]),
+        transformer.rowcol(bbx[2], bbx[3]),
+        transformer.rowcol(bbx[0], bbx[3]),
+    ]
+    rows = [coord[0] for coord in coordinates]
+    cols = [coord[1] for coord in coordinates]
+
+    return box(min(cols), min(rows), max(cols), max(rows)), coordinates
+
+
 def is_bbx_in_image(bbx, image_dataset):
     """
     Checks if the bounding box is within the image.
 
     Parameters:
-        bbx (array): The bounding box of the image.
+        bbx (array): The bounding box of the image in pixel coordinates.
         image_dataset (rio.DatasetReader): Opened image dataset.
 
     """
-    img_bounds = image_dataset.bounds
-    min_height = min(img_bounds.bottom, img_bounds.top)
-    max_height = max(img_bounds.bottom, img_bounds.top)
-    min_width = min(img_bounds.left, img_bounds.right)
-    max_width = max(img_bounds.left, img_bounds.right)
-    image_box = box(min_height, min_width, max_height, max_width)
+    local_image_box = get_local_image_box(image_dataset)
+    transformed_image_box = get_transformed_image_box(image_dataset)
 
-    return image_box.contains(bbx), image_box.intersects(bbx), image_box
+    if local_image_box.intersects(bbx):
+        return (
+            local_image_box.contains(bbx),
+            True,
+            local_image_box,
+            True,
+        )
+
+    return (
+        transformed_image_box.contains(bbx),
+        transformed_image_box.intersects(bbx),
+        transformed_image_box,
+        False,
+    )
 
 
 def get_slices_from_bbx(image_dataset, bbx, rpc_options, external_rpc=None):
@@ -74,25 +142,27 @@ def get_slices_from_bbx(image_dataset, bbx, rpc_options, external_rpc=None):
         rpcs = external_rpc
 
     transformer = rio.transform.RPCTransformer(rpcs, **rpc_options)
-    coordinates = [
-        transformer.rowcol(bbx[0], bbx[1]),
-        transformer.rowcol(bbx[2], bbx[1]),
-        transformer.rowcol(bbx[2], bbx[3]),
-        transformer.rowcol(bbx[0], bbx[3]),
-    ]
-    coordinates = np.array(coordinates)
-    (row_start, col_start) = np.amin(coordinates, axis=0)
-    (row_stop, col_stop) = np.amax(coordinates, axis=0)
-    rows_global = (row_start, row_stop)
-    cols_global = (col_start, col_stop)
+    requested_box, coordinates = get_requested_box(bbx, transformer)
+    _, intersects, _, uses_local_coordinates = is_bbx_in_image(
+        requested_box, image_dataset
+    )
 
-    x_origin = image_dataset.transform.c
-    y_origin = image_dataset.transform.f
+    if intersects and uses_local_coordinates:
+        local_coordinates = np.array(
+            [(coord[1], coord[0]) for coord in coordinates]
+        )
+    else:
+        local_coordinates = np.array(
+            [
+                (~image_dataset.transform) * (coord[1], coord[0])
+                for coord in coordinates
+            ]
+        )
 
-    rows_local = (rows_global[0] - y_origin, rows_global[1] - y_origin)
-    cols_local = (cols_global[0] - x_origin, cols_global[1] - x_origin)
+    col_start, row_start = np.amin(local_coordinates, axis=0)
+    col_stop, row_stop = np.amax(local_coordinates, axis=0)
 
-    return rows_local, cols_local
+    return (row_start, row_stop), (col_start, col_stop)
 
 
 def process_image_file(  # pylint: disable=R0917
@@ -165,7 +235,12 @@ def process_image_file(  # pylint: disable=R0917
             create_rpb_file(image_dataset, rpb_file_path)
 
 
-def get_human_readable_bbox(image_dataset, rpc_options, external_rpc=None):
+def get_human_readable_bbox(
+    image_dataset,
+    rpc_options,
+    external_rpc=None,
+    use_local_coordinates=True,
+):
     """
     Get the human-readable bounding box from an image dataset.
 
@@ -183,18 +258,35 @@ def get_human_readable_bbox(image_dataset, rpc_options, external_rpc=None):
 
     transformer = rio.transform.RPCTransformer(rpcs, **rpc_options)
 
+    if use_local_coordinates:
+        image_coordinates = [
+            (0, 0),
+            (0, image_dataset.width),
+            (image_dataset.height, image_dataset.width),
+            (image_dataset.height, 0),
+        ]
+    else:
+        image_box = get_transformed_image_box(image_dataset)
+        min_col, min_row, max_col, max_row = image_box.bounds
+        image_coordinates = [
+            (min_row, min_col),
+            (min_row, max_col),
+            (max_row, max_col),
+            (max_row, min_col),
+        ]
+
     human_readable_bbx = [
-        transformer.xy(0, 0),
-        transformer.xy(image_dataset.height, image_dataset.width),
+        transformer.xy(row, col) for row, col in image_coordinates
     ]
     # fix coordinates to precision -7 for (x, y)
     image_coords = [
         (round(coord[0], 7), round(coord[1], 7)) for coord in human_readable_bbx
     ]
-    [(x_1, y_1), (x_2, y_2)] = image_coords
 
-    min_x, max_x = min(x_1, x_2), max(x_1, x_2)
-    min_y, max_y = min(y_1, y_2), max(y_1, y_2)
+    min_x = min(coord[0] for coord in image_coords)
+    max_x = max(coord[0] for coord in image_coords)
+    min_y = min(coord[1] for coord in image_coords)
+    max_y = max(coord[1] for coord in image_coords)
 
     return min_x, max_x, min_y, max_y
 
@@ -214,13 +306,16 @@ def validate_bounding_box(bbx, image_dataset, rpc_options, external_rpc=None):
         rpcs = external_rpc
 
     transformer = rio.transform.RPCTransformer(rpcs, **rpc_options)
-    input_box = box(
-        *transformer.rowcol(bbx[0], bbx[1]), *transformer.rowcol(bbx[2], bbx[3])
+    input_box, _ = get_requested_box(bbx, transformer)
+    contains, intersects, _, uses_local_coordinates = is_bbx_in_image(
+        input_box, image_dataset
     )
-    contains, intersects, _ = is_bbx_in_image(input_box, image_dataset)
     if not contains:
         min_x, max_x, min_y, max_y = get_human_readable_bbox(
-            image_dataset, rpc_options, external_rpc=external_rpc
+            image_dataset,
+            rpc_options,
+            external_rpc=external_rpc,
+            use_local_coordinates=uses_local_coordinates,
         )
         msg = (
             "Coordinates must be between "
@@ -316,7 +411,7 @@ def main():
     while i < len(args.il):
         image_path = args.il[i]
         if i + 1 < len(args.il) and args.il[i + 1].lower().endswith(
-            (".xml", ".rpc", ".rpb", ".txt")
+            (".xml", ".rpc", ".rpb", ".txt", ".geom")
         ):
             rpc_path = args.il[i + 1]
             i += 2
