@@ -24,7 +24,9 @@ from shareloc.geomodels.los import LOS
 from shareloc.proj_utils import coordinates_conversion
 
 from cars.core.cars_logging import logger
+from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.pipeline import Pipeline
+from cars.pipelines.pipeline_constants import OUTPUT
 
 try:
     from rpcfit import rpc_fit
@@ -589,7 +591,7 @@ def cars_bundle_adjustment(conf, no_run_sparse, output_format="yaml"):
     sparse_matching_config["input"]["pairing"] = bundle_adjustment_config[
         "pairing"
     ]
-    sparse_matching_config["output"]["directory"] = sparse_matching
+    sparse_matching_config[OUTPUT] = {out_cst.OUT_DIRECTORY: sparse_matching}
 
     sparse_matching_config["subsampling"] = {}
     sparse_matching_config["subsampling"]["advanced"] = {}
