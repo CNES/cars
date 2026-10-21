@@ -1294,6 +1294,11 @@ def test_gizeh_res4_with_gt_reprojection():
                         ),
                     },
                 },
+                "ground_truth_dsm": {
+                    "dsm": absolute_data_path(
+                        "input/phr_gizeh/srtm_dir/N29E031_KHEOPS.tif"
+                    )
+                },
             },
             "orchestrator": {
                 "mode": "multiprocessing",
@@ -1306,13 +1311,6 @@ def test_gizeh_res4_with_gt_reprojection():
                         "method": "direct_loc",
                         "target": "all",
                         "save_intermediate_data": True,
-                    },
-                },
-                "advanced": {
-                    "ground_truth_dsm": {
-                        "dsm": absolute_data_path(
-                            "input/phr_gizeh/srtm_dir/N29E031_KHEOPS.tif"
-                        )
                     },
                 },
             },
