@@ -24,38 +24,10 @@ Test module for cars/parameters/advanced_parameters.py
 """
 import json_checker
 import pytest
-import rasterio as rio
 
 from cars.pipelines.parameters import advanced_parameters, sensor_inputs
 
 from ..helpers import absolute_data_path
-
-
-@pytest.mark.unit_tests
-def test_advanced_parameters_full_config():
-    """
-    Test configuration check for advanced parameters
-    """
-
-    config = {
-        "ground_truth_dsm": {
-            "dsm": "tests/data/input/phr_gizeh/img1.tif",
-            "geoid": True,
-        },
-    }
-
-    inputs_config = {
-        "sensors": {
-            "one": {"image": "img1_crop.tif", "geomodel": "img1_crop.geom"},
-            "two": {"image": "img2_crop.tif", "geomodel": "img2_crop.geom"},
-        }
-    }
-    inputs_config = sensor_inputs.sensors_check_inputs(
-        inputs_config,
-        config_dir=absolute_data_path("input/data_gizeh_crop/"),
-    )
-
-    advanced_parameters.check_advanced_parameters(inputs_config, config)
 
 
 @pytest.mark.unit_tests
@@ -104,9 +76,6 @@ def test_advanced_parameters_update_conf():
         advanced_parameters.check_advanced_parameters(inputs_config, config)
     )
 
-    # TODO: maybe move this inside update conf
-    updated_config["ground_truth_dsm"] = {}
-
     # Cars level conf
     full_config = {"advanced": updated_config}
 
@@ -114,28 +83,6 @@ def test_advanced_parameters_update_conf():
     _ = advanced_parameters.check_advanced_parameters(
         inputs_config, full_config["advanced"]
     )
-
-
-@pytest.mark.unit_tests
-def test_check_ground_truth_dsm_data():
-    """
-    Test check_ground_truth_dsm_data function
-    """
-
-    ground_truth_dsm_conf = {"dsm": "tests/data/input/phr_gizeh/img1.tif"}
-
-    # Should pass
-    advanced_parameters.check_ground_truth_dsm_data(ground_truth_dsm_conf)
-
-    # Should raise an error because of wrong dsm file is used
-    ground_truth_dsm_conf["dsm"] = "wrong_file.tif"
-    with pytest.raises(rio.errors.RasterioIOError):
-        advanced_parameters.check_ground_truth_dsm_data(ground_truth_dsm_conf)
-
-    # Should raise an error because of wrong dsm type is used
-    ground_truth_dsm_conf["dsm"] = True
-    with pytest.raises(json_checker.core.exceptions.DictCheckerError):
-        advanced_parameters.check_ground_truth_dsm_data(ground_truth_dsm_conf)
 
 
 @pytest.mark.unit_tests

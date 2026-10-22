@@ -60,3 +60,12 @@ SENSOR_TYPE = "sensor_type"
 SCALING_COEFF = "scaling_coeff"
 
 CARS_DEFAULT_ALT = 0  # Default altitude used in cars pipelines
+
+GROUND_TRUTH_DSM = "ground_truth_dsm"
+
+# ground truth dsm
+INPUT_GROUND_TRUTH_DSM = "dsm"
+INPUT_AUX_PATH = "auxiliary_data"
+INPUT_AUX_INTERP = "auxiliary_data_interpolation"
+INPUT_GEOID = "geoid"
+INPUT_EPSG = "epsg"

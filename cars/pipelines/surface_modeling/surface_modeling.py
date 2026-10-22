@@ -896,19 +896,17 @@ class SurfaceModelingPipeline(PipelineTemplate):
         used_conf["resampling"] = self.resampling_application.get_conf()
 
         # ground truth disparity map computation
-        if self.used_conf[PIPELINE][ADVANCED][adv_cst.GROUND_TRUTH_DSM]:
+        if self.used_conf[INPUT][sens_cst.GROUND_TRUTH_DSM]:
             used_conf["ground_truth_reprojection"][
                 "save_intermediate_data"
             ] = True
 
             if isinstance(
-                self.used_conf[PIPELINE][ADVANCED][adv_cst.GROUND_TRUTH_DSM],
+                self.used_conf[INPUT][sens_cst.GROUND_TRUTH_DSM],
                 str,
             ):
-                self.used_conf[PIPELINE][ADVANCED][adv_cst.GROUND_TRUTH_DSM] = {
-                    "dsm": self.used_conf[PIPELINE][ADVANCED][
-                        adv_cst.GROUND_TRUTH_DSM
-                    ]
+                self.used_conf[INPUT][sens_cst.GROUND_TRUTH_DSM] = {
+                    "dsm": self.used_conf[INPUT][sens_cst.GROUND_TRUTH_DSM]
                 }
 
             self.ground_truth_reprojection = Application(
@@ -1842,18 +1840,18 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 texture_bands=self.texture_bands,
             )
             # Run ground truth dsm computation
-            if self.used_conf[PIPELINE][ADVANCED][adv_cst.GROUND_TRUTH_DSM]:
+            if self.used_conf[INPUT][sens_cst.GROUND_TRUTH_DSM]:
                 self.used_conf[PIPELINE][APPLICATIONS][
                     "ground_truth_reprojection"
                 ]["save_intermediate_data"] = True
                 new_geomplugin_dsm = AbstractGeometry(  # pylint: disable=E0110
                     self.geometry_plugin,
-                    dem=self.used_conf[PIPELINE][ADVANCED][
-                        adv_cst.GROUND_TRUTH_DSM
-                    ][adv_cst.INPUT_GROUND_TRUTH_DSM],
-                    geoid=self.used_conf[PIPELINE][ADVANCED][
-                        adv_cst.GROUND_TRUTH_DSM
-                    ][adv_cst.INPUT_GEOID],
+                    dem=self.used_conf[INPUT][sens_cst.GROUND_TRUTH_DSM][
+                        sens_cst.INPUT_GROUND_TRUTH_DSM
+                    ],
+                    geoid=self.used_conf[INPUT][sens_cst.GROUND_TRUTH_DSM][
+                        sens_cst.INPUT_GEOID
+                    ],
                     scaling_coeff=self.scaling_coeff,
                 )
                 self.ground_truth_reprojection.run(
@@ -1866,12 +1864,12 @@ class SurfaceModelingPipeline(PipelineTemplate):
                     self.pairs[pair_key]["corrected_grid_left"][
                         "disp_to_alt_ratio"
                     ],
-                    self.used_conf[PIPELINE][ADVANCED][
-                        adv_cst.GROUND_TRUTH_DSM
-                    ][adv_cst.INPUT_AUX_PATH],
-                    self.used_conf[PIPELINE][ADVANCED][
-                        adv_cst.GROUND_TRUTH_DSM
-                    ][adv_cst.INPUT_AUX_INTERP],
+                    self.used_conf[INPUT][sens_cst.GROUND_TRUTH_DSM][
+                        sens_cst.INPUT_AUX_PATH
+                    ],
+                    self.used_conf[INPUT][sens_cst.GROUND_TRUTH_DSM][
+                        sens_cst.INPUT_AUX_INTERP
+                    ],
                     orchestrator=self.cars_orchestrator,
                     pair_folder=os.path.join(
                         self.dump_dir, "ground_truth_reprojection", pair_key

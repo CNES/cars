@@ -7,10 +7,11 @@ Ground truth reprojection
 
 **Description**
 
-Generates epipolar and sensor ground truth from input dsm using direct localization.
-
+Generates epipolar and sensor ground truth from input dsm using direct localization. 
 * Sensor ground truth contains altitude in sensor geometry.
 * Epipolar ground truth contains disparity map in epipolar geometry.
+
+For more information, see the :ref:`ground_truth_reprojection tutorial <ground_truth_reprojection_tutorial>`.
 
 +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
 | Name                            | Description                                                | Type       | Available value              | Default value | Required |

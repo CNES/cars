@@ -69,10 +69,6 @@ Advanced Parameters
       - Save intermediate data for all applications inside this pipeline.
       - bool
       - False
-    * - ground_truth_dsm
-      - Data to be reprojected from the application ground_truth_reprojection
-      - dict
-      - None
     * - geometry_plugin
       - Name of the geometry plugin to use and optional parameters (see :ref:`geometry plugin <geometry_plugin>`)
       - str or dict
@@ -112,35 +108,6 @@ Keep low res dir
     The following example disables the saving of the outputs of all intermediate resolutions:
 
     .. include-cars-config:: ../../example_configs/pipeline/surface_modeling_keep_low_res_dir
-
-
-Ground truth DSM
-^^^^^^^^^^^^^^^^
-
-    To activate the ground truth reprojection application, it is necessary to specify the required inputs in the advanced settings.
-    For this, a dictionary named `ground_truth_dsm` must be added, containing the keys presented in the following table.
-    By default, the used dsm is considered on ellipsoid. If not, fill the `geoid` parameter.
-
-    +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
-    | Name                            | Description                                                | Type               | Available value              | Default value                                         | Required |
-    +=================================+============================================================+====================+==============================+=======================================================+==========+
-    | dsm                             | Path to ground truth dsm (Lidar for example)               | string             |                              |                                                       | Yes      |
-    +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
-    | geoid                           | DSM geoid.                                                 | bool or string     |                              |  False                                                | No       |
-    +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
-    | auxiliary_data                  | The lidar auxiliaries data                                 | dict               |                              |  None                                                 | No       |
-    +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
-    | auxiliary_data_interpolation    | The lidar auxiliaries data interpolator                    | dict               |                              |  None (nearest if auxiliary_data is not None)         | No       |
-    +---------------------------------+------------------------------------------------------------+--------------------+------------------------------+-------------------------------------------------------+----------+
-
-    .. note::
-
-        The parameter `geoid` refers to the vertical reference of the ground truth DSM. It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to True CARS default geoid is used, if set to False no vertical offset is applied (ellipsoid reference).
-
-    Example:
-
-    .. include-cars-config:: ../../example_configs/pipeline/surface_modeling_ground_truth_dsm
-
 
 .. _surface_modeling_phasing:
 

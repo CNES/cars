@@ -304,4 +304,85 @@ If you want to upscale or downscale the resolution of you input data, use raster
             dst.write(data)
 
 
+.. _ground_truth_reprojection_tutorial:
+
+How to use the ground truth reprojection application
+=======================================================
+
+The ground truth reprojection application allows you to reproject a reference DSM and its associated auxiliary data into sensor or epipolar geometry.
+
+To enable this application, select the desired reprojection target in the `surface_modeling` configuration:
+
+.. code-block:: yaml
+
+	surface_modeling:
+	  applications:
+	    all:
+	      ground_truth_reprojection:
+	        method: direct_loc
+	        target: all
+
+The `target` parameter specifies the geometry in which the reference data will be generated:
+
+* `epipolar`: generates reference disparity values in epipolar geometry.
+* `sensor`: generates reference elevation values in sensor geometry.
+* `all`: generates both representations.
+
+Configuring the Reference Data
+--------------------------------
+
+The reference DSM and its associated auxiliary data must be specified in the input configuration section:
+
+.. code-block:: yaml
+
+	input:
+	  ground_truth_dsm:
+            dsm: path/to/ground_truth_dsm.tif
+	    auxiliary_data:
+              classification: path/to/classification.tif
+	      texture: path/to/texture.tif
+	    auxiliary_data_interpolation:
+	      classification: nearest
+	      texture: linear
+
+The configuration includes the following parameters:
+
+* `dsm`: path to the reference DSM used to provide ground-truth elevation information.
+* `auxiliary_data`: paths to auxiliary datasets associated with the reference DSM, such as classification maps or texture images.
+* `auxiliary_data_interpolation`: interpolation methods used to resample each auxiliary dataset into the target geometry.
+
+The interpolation method should be selected according to the data type. For example, `nearest` is generally suitable for categorical data, such as classification maps, while `linear` can be used for continuous data.
+
+Reprojection Modes
+-------------------
+
+When `target` is set to `all`, the application generates reference data in both sensor and epipolar geometry.
+
+**Epipolar geometry**
+
+Positions on the epipolar grid are converted into physical coordinates and then mapped to pixel coordinates in the sensor image. The reference geometric model is used to compute ground-truth altitudes, which are compared with the corresponding altitudes obtained from the geometric model associated with the DSM generated from the input images.
+
+The altitude difference is converted into a reference disparity using the `disp_to_alt_ratio` factor.
+
+**Sensor geometry**
+
+Pixel positions in the sensor image are geolocated using the ground-truth geometric model. The resulting altitudes form the reference elevation map.
+
+Auxiliary Data Resampling
+---------------------------
+
+Auxiliary datasets are resampled into the target geometry using the geographic coordinates obtained through the direct localization of the reference DSM. These coordinates are used to locate the corresponding pixels in each auxiliary dataset and interpolate their values onto the target grid.
+
+The resampled auxiliary data are aligned with the target geometry, allowing information such as terrain or land-cover classifications to be associated with the same locations as the reference data.
+
+Output
+--------
+
+The application produces ground-truth data in the requested geometry:
+
+* In **sensor geometry**, the output contains reference elevation values.
+* In **epipolar geometry**, the output contains reference disparity values.
+* For each configured auxiliary dataset, the corresponding values are resampled into the target geometry using the specified interpolation method.
+
+These outputs provide a geometric reference for evaluating the DSM generated from the input images and allow auxiliary information to be used consistently in subsequent processing steps.
 
