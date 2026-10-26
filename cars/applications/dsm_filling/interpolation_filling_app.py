@@ -339,9 +339,6 @@ def interpolation_filling_wrapper(  # pylint: disable=R0917 # noqa: C901
             logger.debug(f"Filling of {label} with rasterio.fill.fillnodata")
             combined_mask = np.logical_or(combined_mask, filling_mask)
 
-    # Keep only targets inside DSM contour to preserve true outside nodata.
-    combined_mask = np.logical_and(combined_mask, inside_contour_mask)
-
     invalidity_mask = None
     if fill_nodata is not None:
         if invalidity_mask_file is not None:
@@ -353,6 +350,9 @@ def interpolation_filling_wrapper(  # pylint: disable=R0917 # noqa: C901
             )
 
             combined_mask = np.logical_or(combined_mask, filling_mask)
+
+    # Keep only targets inside DSM contour to preserve true outside nodata.
+    combined_mask = np.logical_and(combined_mask, inside_contour_mask)
 
     filled_dsm = dsm.copy()
     if np.any(combined_mask) and np.any(

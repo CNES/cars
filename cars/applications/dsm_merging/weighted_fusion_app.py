@@ -751,6 +751,12 @@ def create_classif_map(  # pylint: disable=R0917
                         i = bands_name.index(str(val))
                         bands[i] += full_mask
 
+    if not bands:
+        nodata = inputs.rasterio_get_nodata(classif_paths[0])
+        classif_mono_band = np.zeros((height, width), dtype=dtype)
+        classif_mono_band[validity_mask == 0] = nodata
+        return classif_mono_band
+
     classif_multi_band = np.stack(bands)
     classes = np.array(bands_name, dtype=int)
     priority_list = np.array(priority_list)
