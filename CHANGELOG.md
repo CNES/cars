@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.1 Bugfix release (November 2026)
+
+### Added 
+
+ - RPCs can now be used in extract roi 
+ - Added a beefrost tutorial in the doc [#1302]
+ 
+### Fixed
+
+ - Fix a crash in bundle adjustment when the output configuration contains keys other than `directory`. [#1464]
+ - Properly handle local / transformed pixel coordinates in extract roi [#1466]
+ - Improve ROI examples readability [#1469]
+ - Use the correct extent when creating the invalidity mask [#1472] 
+
 ## 1.3.0 Point cloud refinement guided by monocular geometry estimation (October 2026)
 
 ### Added
