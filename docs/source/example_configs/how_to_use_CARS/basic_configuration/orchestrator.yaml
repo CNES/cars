@@ -1,4 +1,0 @@
----
-orchestrator:
-  mode: sequential
-  profiling: {}

@@ -1,5 +1,0 @@
----
-applications:
-  dem_generation:
-    method: dichotomic
-    min_number_matches: 20

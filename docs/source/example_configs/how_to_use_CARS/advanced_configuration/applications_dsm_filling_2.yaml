@@ -1,8 +1,0 @@
----
-applications:
-  dsm_filling: # run single filling application
-    method: exogenous_filling
-    classification:
-    - "8"
-    fill_with_geoid:
-    - "8"
