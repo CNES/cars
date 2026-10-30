@@ -32,6 +32,9 @@ import tempfile
 import numpy as np
 import pandas
 import pytest
+import rasterio as rio
+from rasterio.enums import Resampling
+from rasterio.warp import transform_bounds
 from shapely.affinity import translate
 from shapely.geometry import Polygon
 
@@ -260,4 +263,147 @@ def test_get_ground_angles():
         angles,
         [19.48120732, 81.18985592, 189.98986491, 78.61360403, 20.12773114],
         rtol=1e-01,
+    )
+
+
+@pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "bounds, expected_shift",
+    [
+        (
+            (
+                -2.893155095819556,
+                47.34278384877841,
+                -2.883463737137246,
+                47.348960338888325,
+            ),
+            -360,
+        ),
+        (
+            (
+                31.103882929319752,
+                29.95302668768181,
+                31.161032593333626,
+                30.002323874846862,
+            ),
+            0,
+        ),
+    ],
+)
+def test_get_geoid_longitude_shift(bounds, expected_shift):
+    """
+    Test longitude shift between destination raster and global geoid.
+    """
+    geoid_bounds = rio.coords.BoundingBox(
+        left=-0.125,
+        bottom=-90.125,
+        right=360.125,
+        top=90.125,
+    )
+
+    shape = (100, 100)
+
+    dst_transform = rio.transform.from_bounds(
+        *bounds,
+        shape[1],
+        shape[0],
+    )
+
+    shift = projection.get_geoid_longitude_shift(
+        geoid_bounds,
+        "EPSG:4326",
+        dst_transform,
+        "EPSG:4326",
+        shape,
+    )
+
+    assert shift == expected_shift
+
+
+@pytest.mark.unit_tests
+def test_get_geoid_longitude_shift_projected_crs():
+    """
+    Test longitude shift with a destination raster in a projected CRS.
+    """
+    geoid_bounds = rio.coords.BoundingBox(
+        left=-0.125,
+        bottom=-90.125,
+        right=360.125,
+        top=90.125,
+    )
+
+    shape = (100, 100)
+
+    ouat_bounds = (
+        -2.893155095819556,
+        47.34278384877841,
+        -2.883463737137246,
+        47.348960338888325,
+    )
+
+    ouat_utm_bounds = transform_bounds(
+        "EPSG:4326",
+        "EPSG:32630",
+        *ouat_bounds,
+    )
+
+    ouat_utm_transform = rio.transform.from_bounds(
+        *ouat_utm_bounds,
+        shape[1],
+        shape[0],
+    )
+
+    shift = projection.get_geoid_longitude_shift(
+        geoid_bounds,
+        "EPSG:4326",
+        ouat_utm_transform,
+        "EPSG:32630",
+        shape,
+    )
+
+    assert shift == -360
+
+
+@pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    "longitude, expected",
+    [
+        (-2, [358, 359]),
+        (31, [31, 32]),
+    ],
+)
+def test_reproject_geoid_longitude(longitude, expected):
+    """
+    Test geoid reprojection with matching and wrapped longitude domains.
+    """
+    geoid_data = np.tile(
+        np.arange(360, dtype=np.float32),
+        (2, 1),
+    )
+
+    geoid_profile = {
+        "driver": "GTiff",
+        "height": 2,
+        "width": 360,
+        "count": 1,
+        "dtype": np.float32,
+        "crs": "EPSG:4326",
+        "transform": rio.transform.from_origin(0, 1, 1, 1),
+    }
+
+    with rio.io.MemoryFile() as memfile:
+        with memfile.open(**geoid_profile) as in_geoid:
+            in_geoid.write(geoid_data, 1)
+
+            result = projection.reproject_geoid(
+                in_geoid,
+                (1, 2),
+                rio.transform.from_origin(longitude, 1, 1, 1),
+                "EPSG:4326",
+                Resampling.nearest,
+            )
+
+    np.testing.assert_array_equal(
+        result,
+        np.array([expected], dtype=np.float32),
     )

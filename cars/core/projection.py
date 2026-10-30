@@ -33,8 +33,11 @@ import pandas
 import pyproj
 import rasterio as rio
 import xarray as xr
+from affine import Affine
 from pyproj import CRS
 from rasterio.features import shapes
+from rasterio.transform import array_bounds
+from rasterio.warp import reproject, transform_bounds
 from shapely.geometry import Polygon, shape
 from shapely.ops import transform
 
@@ -840,3 +843,159 @@ def guess_vcrs_from_file_name(filepath):
 
     # aucun match connu
     return None
+
+
+def get_geoid_longitude_shift(
+    geoid_bounds,
+    geoid_crs,
+    dst_transform,
+    dst_crs,
+    dst_shape,
+):
+    """
+    Compute the longitude shift to apply to a global geoid.
+
+    Global geoids can use a longitude domain such as [0, 360], while
+    destination rasters can use equivalent negative longitudes.
+
+    :param geoid_bounds: geoid raster bounds
+    :param geoid_crs: geoid CRS
+    :param dst_transform: destination affine transform
+    :param dst_crs: destination CRS
+    :param dst_shape: destination raster shape
+
+    :return: longitude shift to apply to the geoid transform
+    :rtype: int
+    """
+
+    geoid_crs = CRS.from_user_input(geoid_crs)
+
+    # Longitude wrapping only makes sense for a geographic CRS.
+    if not geoid_crs.is_geographic:
+        return 0
+
+    dst_bounds = array_bounds(
+        dst_shape[0],
+        dst_shape[1],
+        dst_transform,
+    )
+
+    dst_bounds_geoid_crs = transform_bounds(
+        dst_crs,
+        geoid_crs,
+        *dst_bounds,
+        densify_pts=21,
+    )
+
+    logger.debug(
+        "Destination bounds in geoid CRS: %s",
+        dst_bounds_geoid_crs,
+    )
+    logger.debug("Geoid bounds: %s", geoid_bounds)
+
+    # Do not wrap regional geoids.
+    geoid_width = geoid_bounds.right - geoid_bounds.left
+    if geoid_width < 359:
+        return 0
+
+    dst_left = dst_bounds_geoid_crs[0]
+    dst_right = dst_bounds_geoid_crs[2]
+
+    # Destination already covered by the geoid.
+    if dst_left >= geoid_bounds.left and dst_right <= geoid_bounds.right:
+        return 0
+
+    # Use the equivalent geoid domain shifted west.
+    if (
+        dst_left >= geoid_bounds.left - 360
+        and dst_right <= geoid_bounds.right - 360
+    ):
+        return -360
+
+    # Use the equivalent geoid domain shifted east.
+    if (
+        dst_left >= geoid_bounds.left + 360
+        and dst_right <= geoid_bounds.right + 360
+    ):
+        return 360
+
+    return 0
+
+
+def reproject_geoid(
+    in_geoid,
+    dst_shape,
+    dst_transform,
+    dst_crs,
+    resampling,
+):
+    """
+    Reproject a geoid onto a destination raster.
+
+    Handle equivalent longitude domains such as [-180, 180] and
+    [0, 360] for global geoids.
+
+    :param in_geoid: opened geoid raster
+    :type in_geoid: rasterio.io.DatasetReader
+    :param dst_shape: destination raster shape
+    :type dst_shape: tuple
+    :param dst_transform: destination affine transform
+    :type dst_transform: affine.Affine
+    :param dst_crs: destination CRS
+    :param resampling: Rasterio resampling method
+
+    :return: reprojected geoid
+    :rtype: numpy.ndarray
+    """
+
+    geoid_data = np.empty(dst_shape, dtype=in_geoid.dtypes[0])
+
+    longitude_shift = get_geoid_longitude_shift(
+        in_geoid.bounds,
+        in_geoid.crs,
+        dst_transform,
+        dst_crs,
+        dst_shape,
+    )
+
+    logger.debug(
+        "Geoid longitude shift: %s degrees",
+        longitude_shift,
+    )
+
+    src_transform = in_geoid.transform
+
+    if longitude_shift != 0:
+        src_transform = Affine(
+            src_transform.a,
+            src_transform.b,
+            src_transform.c + longitude_shift,
+            src_transform.d,
+            src_transform.e,
+            src_transform.f,
+        )
+
+        # A numpy array is required here so that src_transform is taken
+        # into account instead of the transform stored in the dataset.
+        source = in_geoid.read(1)
+    else:
+        source = rio.band(in_geoid, 1)
+
+    reproject(
+        source=source,
+        destination=geoid_data,
+        src_transform=src_transform,
+        src_crs=in_geoid.crs,
+        dst_transform=dst_transform,
+        dst_crs=dst_crs,
+        resampling=resampling,
+    )
+
+    logger.debug(
+        "Geoid reprojected: shift=%s°, min=%s, max=%s",
+        longitude_shift,
+        np.nanmin(geoid_data),
+        np.nanmax(geoid_data),
+    )
+
+    return geoid_data
