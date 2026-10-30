@@ -415,32 +415,24 @@ def exogenous_filling_wrapper(  # noqa C901 # pylint: disable=R0917
 
     with rio.open(geo_plugin_geoid) as in_geoid:
         # Reproject the geoid data to match the DSM
-        input_geoid_data = np.empty(dsm.shape, dtype=in_geoid.dtypes[0])
-
-        reproject(
-            source=rio.band(in_geoid, 1),
-            destination=input_geoid_data,
-            src_transform=in_geoid.transform,
-            src_crs=in_geoid.crs,
-            dst_transform=window_transform,
-            dst_crs=dsm_crs,
-            resampling=interpolation_method,
+        input_geoid_data = projection.reproject_geoid(
+            in_geoid,
+            dsm.shape,
+            window_transform,
+            dsm_crs,
+            interpolation_method,
         )
 
     output_geoid_data = None
     if isinstance(output_geoid, str):
         with rio.open(output_geoid) as in_geoid:
             # Reproject the geoid data to match the DSM
-            output_geoid_data = np.empty(dsm.shape, dtype=in_geoid.dtypes[0])
-
-            reproject(
-                source=rio.band(in_geoid, 1),
-                destination=output_geoid_data,
-                src_transform=in_geoid.transform,
-                src_crs=in_geoid.crs,
-                dst_transform=window_transform,
-                dst_crs=dsm_crs,
-                resampling=interpolation_method,
+            output_geoid_data = projection.reproject_geoid(
+                in_geoid,
+                dsm.shape,
+                window_transform,
+                dsm_crs,
+                interpolation_method,
             )
 
     # Fill DSM for every label

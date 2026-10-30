@@ -31,7 +31,6 @@ import rasterio as rio
 import skimage
 from json_checker import And, Checker, Or
 from rasterio.enums import Resampling
-from rasterio.warp import reproject
 
 # CARS imports - Applications
 from cars.applications import application_constants
@@ -51,7 +50,7 @@ from cars.applications.dem_generation.dem_generation_wrappers import (
 )
 
 # CARS imports - Core
-from cars.core import inputs
+from cars.core import inputs, projection
 
 # Standard library
 from cars.core.cars_logging import logger
@@ -301,42 +300,26 @@ class BulldozerDem(DemGeneration, short_name="bulldozer_on_raster"):
         # Add geoid
         if input_geoid:
             with rio.open(input_geoid) as in_geoid:
-                # Reproject the geoid data to match the DSM
-                input_geoid_data = np.empty(
-                    dem_data.shape, dtype=in_geoid.dtypes[0]
+                input_geoid_data = projection.reproject_geoid(
+                    in_geoid,
+                    dem_data.shape,
+                    profile["transform"],
+                    profile["crs"],
+                    Resampling.bilinear,
                 )
 
-                logger.debug("Reprojection of geoid data")
-
-                reproject(
-                    source=rio.band(in_geoid, 1),
-                    destination=input_geoid_data,
-                    src_transform=in_geoid.transform,
-                    src_crs=in_geoid.crs,
-                    dst_transform=profile["transform"],
-                    dst_crs=profile["crs"],
-                    resampling=Resampling.bilinear,
-                )
             dem_data -= input_geoid_data
 
         if output_geoid:
             with rio.open(input_geoid) as in_geoid:
-                # Reproject the geoid data to match the DSM
-                input_geoid_data = np.empty(
-                    dem_data.shape, dtype=in_geoid.dtypes[0]
+                input_geoid_data = projection.reproject_geoid(
+                    in_geoid,
+                    dem_data.shape,
+                    profile["transform"],
+                    profile["crs"],
+                    Resampling.bilinear,
                 )
 
-                logger.debug("Reprojection of geoid data")
-
-                reproject(
-                    source=rio.band(in_geoid, 1),
-                    destination=input_geoid_data,
-                    src_transform=in_geoid.transform,
-                    src_crs=in_geoid.crs,
-                    dst_transform=profile["transform"],
-                    dst_crs=profile["crs"],
-                    resampling=Resampling.bilinear,
-                )
             dem_data += input_geoid_data
 
         # apply morphological filters and height margin

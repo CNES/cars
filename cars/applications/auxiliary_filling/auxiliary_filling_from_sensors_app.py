@@ -31,7 +31,6 @@ import xarray as xr
 from json_checker import Checker
 from pyproj import CRS
 from rasterio.enums import Resampling
-from rasterio.warp import reproject
 from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
@@ -457,19 +456,14 @@ def filling_from_sensor_wrapper(
             geoid_file = output_geoid
         with rio.open(geoid_file) as in_geoid:
             # Reproject the geoid data to match the DSM
-            output_geoid_data = np.empty(
-                alt_values.shape, dtype=in_geoid.dtypes[0]
+            output_geoid_data = projection.reproject_geoid(
+                in_geoid,
+                alt_values.shape,
+                transform,
+                crs,
+                Resampling.bilinear,
             )
 
-            reproject(
-                source=rio.band(in_geoid, 1),
-                destination=output_geoid_data,
-                src_transform=in_geoid.transform,
-                src_crs=in_geoid.crs,
-                dst_transform=transform,
-                dst_crs=crs,
-                resampling=Resampling.bilinear,
-            )
             alt_values += output_geoid_data
 
     nodata_color = None
