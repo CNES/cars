@@ -799,7 +799,7 @@ def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
     :return: disp_min_right_grid, disp_max_right_grid
     :rtype: numpy ndarray, numpy ndarray
     """
-    float_types = [np.float16, np.float32, np.float64, np.float128]
+    float_types = [np.float16, np.float32, np.float64, np.longdouble]
     int_types = [
         int,
         np.int8,
