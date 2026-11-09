@@ -34,9 +34,12 @@ from cars.pipelines.surface_modeling.surface_modeling import (
     SurfaceModelingPipeline,
 )
 
-from ...helpers import absolute_data_path, assert_same_images
-from ...helpers import cars_copy2 as copy2
-from ...helpers import temporary_dir
+from ...helpers import (
+    absolute_data_path,
+    assert_same_images_list,
+    copy_to_intermediate_data,
+    temporary_dir,
+)
 
 DEFAULT_TOL = 0.1
 CARS_GITHUB_ACTIONS = (
@@ -50,9 +53,6 @@ def test_gizeh_with_low_res_dsm():
     """
     End to end pipeline processing
     """
-
-    atol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001
-    rtol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf = {
@@ -98,7 +98,6 @@ def test_gizeh_with_low_res_dsm():
         with open(cli_conf_path, "w", encoding="utf8") as f:
             json.dump(cli_conf, f)
 
-        intermediate_dir = absolute_data_path("intermediate_data")
         ref_output_dir = absolute_data_path("ref_output")
 
         # api run
@@ -108,414 +107,60 @@ def test_gizeh_with_low_res_dsm():
         # cli run
         main_cli(argparse.Namespace(conf=cli_conf_path))
 
-        # output products
-        products = {
-            "dsm.tif": "dsm_test_surface_modeling_low_res_dsm.tif",
-            "image.tif": "image_test_surface_modeling_low_res_dsm.tif",
-        }
-
-        # check results are as expected
-        for out_dir in [out_dir_api, out_dir_cli]:
-            dsm_dir = os.path.join(out_dir, "dsm")
-
-            for filename, ref_name in products.items():
-                output_path = os.path.join(dsm_dir, filename)
-
-                # Save intermediate result
-                copy2(
-                    output_path,
-                    os.path.join(intermediate_dir, ref_name),
-                )
-
-                # Compare with reference
-                assert_same_images(
-                    output_path,
-                    os.path.join(ref_output_dir, ref_name),
-                    atol=atol,
-                    rtol=rtol,
-                )
-
-
-@pytest.mark.end2end_tests
-def test_gizeh_sensor_depthmap():
-    """
-    End to end pipeline processing
-    """
-
-    atol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001
-    rtol = DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        conf = {
-            "input": {
-                "sensors": {
-                    "image1": {
-                        "image": absolute_data_path(
-                            "input/phr_gizeh/crop/img1_crop.tif"
-                        ),
-                        "geomodel": absolute_data_path(
-                            "input/phr_gizeh/img1.geom"
-                        ),
-                    },
-                    "image2": {
-                        "image": absolute_data_path(
-                            "input/phr_gizeh/crop/img2_crop.tif"
-                        ),
-                        "geomodel": absolute_data_path(
-                            "input/phr_gizeh/img2.geom"
-                        ),
-                    },
-                },
-                "low_res_dsm": absolute_data_path(
-                    "input/phr_gizeh/low_res_dsm.tif"
-                ),
-            },
-            "orchestrator": {
-                "mode": "multiprocessing",
-                "nb_workers": 4,
-                "max_ram_per_worker": 1000,
-            },
-            "output": {"directory": directory},
-            "surface_modeling": {
-                "advanced": {
-                    "use_sensor_disp": True,
-                },
-                "applications": {
-                    "triangulation": {"save_intermediate_data": True}
-                },
-            },
-        }
-
-        intermediate_dir = absolute_data_path("intermediate_data")
-        ref_output_dir = absolute_data_path("ref_output")
-
-        # api run
-        api_pipeline = SurfaceModelingPipeline(conf)
-        api_pipeline.run()
-
-        # output products
-        products = {
-            "dsm.tif": "dsm_test_surface_modeling_n_los.tif",
-        }
-
-        dsm_dir = os.path.join(directory, "dsm")
-
-        for filename, ref_name in products.items():
-            output_path = os.path.join(dsm_dir, filename)
-
-            # Save intermediate result
-            copy2(
-                output_path,
-                os.path.join(intermediate_dir, ref_name),
-            )
-
-            # Compare with reference
-            assert_same_images(
-                output_path,
-                os.path.join(ref_output_dir, ref_name),
-                atol=atol,
-                rtol=rtol,
-                nb_outliers_allowed=(
-                    NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
-                ),
-            )
-
-        intersection_path = (
-            "intersections_residues_test_surface_modeling_n_los.tif"
-        )
-        products = {
-            "Z.tif": "Z_test_surface_modeling_n_los.tif",
-            "intersections_residues.tif": intersection_path,
-        }
-        depth_map_dir = os.path.join(
-            directory, "dump_dir", "triangulation", "common_sensor", "tif"
-        )
-
-        for filename, ref_name in products.items():
-            output_path = os.path.join(depth_map_dir, filename)
-
-            # Save intermediate result
-            copy2(
-                output_path,
-                os.path.join(intermediate_dir, ref_name),
-            )
-
-            # Compare with reference
-            assert_same_images(
-                output_path,
-                os.path.join(ref_output_dir, ref_name),
-                atol=atol,
-                rtol=rtol,
-                nb_outliers_allowed=(
-                    NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
-                ),
-            )
-
-
-@pytest.mark.end2end_tests
-def test_ventoux_full():
-    """
-    End to end pipeline processing
-    """
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        data_path = "input/phr_ventoux/crop"
-        conf = {
-            "input": {
-                "loaders": {"image": "pivot"},
-                "sensors": {
-                    "image1": {
-                        "image": {
-                            "bands": {
-                                "b0": {
-                                    "path": absolute_data_path(
-                                        f"{data_path}/left_image_crop.tif"
-                                    ),
-                                    "band": 0,
-                                },
-                                "b1": {
-                                    "path": absolute_data_path(
-                                        f"{data_path}/color_image_crop.tif"
-                                    ),
-                                    "band": 0,
-                                },
-                                "b2": {
-                                    "path": absolute_data_path(
-                                        f"{data_path}/color_image_crop.tif"
-                                    ),
-                                    "band": 1,
-                                },
-                                "b3": {
-                                    "path": absolute_data_path(
-                                        f"{data_path}/color_image_crop.tif"
-                                    ),
-                                    "band": 2,
-                                },
-                                "b4": {
-                                    "path": absolute_data_path(
-                                        f"{data_path}/color_image_crop.tif"
-                                    ),
-                                    "band": 3,
-                                },
-                            }
-                        },
-                        "geomodel": absolute_data_path(
-                            "input/phr_ventoux/left_image.geom"
-                        ),
-                        "classification": absolute_data_path(
-                            f"{data_path}/left_classif_crop.tif"
-                        ),
-                    },
-                    "image2": {
-                        "image": {
-                            "bands": {
-                                "b0": {
-                                    "path": absolute_data_path(
-                                        f"{data_path}/right_image_crop.tif"
-                                    ),
-                                    "band": 0,
-                                },
-                                "b1": {
-                                    "path": absolute_data_path(
-                                        f"{data_path}/right_image_crop.tif"
-                                    ),
-                                    "band": 0,
-                                },
-                            }
-                        },
-                        "geomodel": absolute_data_path(
-                            "input/phr_ventoux/right_image.geom"
-                        ),
-                        "classification": absolute_data_path(
-                            f"{data_path}/right_classif_crop.tif"
-                        ),
-                    },
-                },
-                "initial_elevation": absolute_data_path(
-                    "input/phr_ventoux/srtm/N44E005.hgt"
-                ),
-            },
-            "output": {
-                "directory": directory,
-                "auxiliary": {
-                    "ambiguity": True,
-                    "classification": True,
-                    "contributing_pair": True,
-                    "image": ["b1", "b2", "b3"],
-                    "filling": True,
-                    "performance_map": True,
-                },
-            },
-            "surface_modeling": {
-                "applications": {"dense_matching": {"used_band": "b1"}}
-            },
-        }
-        out_dir = conf["output"]["directory"]
-        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
-        surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_ventoux.tif",
-                )
+        # products to check
+        to_check_cli = [
+            (
+                os.path.join(out_dir_cli, "dsm", "dsm.tif"),
+                "dsm_test_surface_modeling_low_res_dsm.tif",
             ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_ventoux.tif",
-                )
+            (
+                os.path.join(out_dir_cli, "dsm", "image.tif"),
+                "image_test_surface_modeling_low_res_dsm.tif",
             ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "ambiguity.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "ambiguity_test_surface_modeling_ventoux.tif",
-                )
+        ]
+
+        to_check_api = [
+            (
+                os.path.join(out_dir_api, "dsm", "dsm.tif"),
+                "dsm_test_surface_modeling_low_res_dsm.tif",
             ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "classification.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "classif_test_surface_modeling_ventoux.tif",
-                )
+            (
+                os.path.join(out_dir_api, "dsm", "image.tif"),
+                "image_test_surface_modeling_low_res_dsm.tif",
             ),
+        ]
+
+        copy_to_intermediate_data(
+            [file[0] for file in to_check_cli],
+            [file[1] for file in to_check_cli],
         )
-        copy2(
-            os.path.join(out_dir, "dsm", "filling.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "filling_test_surface_modeling_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "contributing_pair.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "cp_test_surface_modeling_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "performance_map.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "pm_test_surface_modeling_ventoux.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "cropped_disp_range.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "cropped_disp_range_test_surface_modeling_ventoux.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_ventoux.tif",
-                )
-            ),
+
+        # compare cli and expected output
+        assert_same_images_list(
+            [file[0] for file in to_check_cli],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check_cli
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_ventoux.tif",
-                )
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "ambiguity.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "ambiguity_test_surface_modeling_ventoux.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "classification.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "classif_test_surface_modeling_ventoux.tif",
-                )
-            ),
+        # compare api and expected output
+        assert_same_images_list(
+            [file[0] for file in to_check_api],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check_api
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "contributing_pair.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "cp_test_surface_modeling_ventoux.tif",
-                )
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "filling.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "filling_test_surface_modeling_ventoux.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "performance_map.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "pm_test_surface_modeling_ventoux.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "cropped_disp_range.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "cropped_disp_range_test_surface_modeling_ventoux.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
 
 
@@ -618,284 +263,6 @@ def test_ventoux_full_fail_with_used_band_b1():
 
 
 @pytest.mark.end2end_tests
-def test_ventoux_without_filter_incomplete_disparity_range():
-    """
-    End to end pipeline processing
-    """
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        conf = {
-            "input": {
-                "sensors": {
-                    "image1": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/crop/left_image_crop.tif"
-                        ),
-                        "geomodel": absolute_data_path(
-                            "input/phr_ventoux/left_image.geom"
-                        ),
-                    },
-                    "image2": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/crop/right_image_crop.tif"
-                        ),
-                        "geomodel": absolute_data_path(
-                            "input/phr_ventoux/right_image.geom"
-                        ),
-                    },
-                },
-                "initial_elevation": absolute_data_path(
-                    "input/phr_ventoux/srtm/N44E005.hgt"
-                ),
-            },
-            "surface_modeling": {
-                "applications": {
-                    "dense_matching": {
-                        "filter_incomplete_disparity_range": False
-                    }
-                },
-            },
-            "output": {"directory": directory},
-        }
-        out_dir = conf["output"]["directory"]
-        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
-        surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_ventoux_wo_fidr.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_ventoux_wo_fidr.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_ventoux_wo_fidr.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_ventoux_wo_fidr.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-
-@pytest.mark.end2end_tests
-def test_ventoux_depth_maps_point_clouds():
-    """
-    End to end pipeline processing
-    """
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        conf = {
-            "input": {
-                "sensors": {
-                    "image1": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/crop/left_image_crop.tif"
-                        ),
-                        "geomodel": absolute_data_path(
-                            "input/phr_ventoux/left_image.geom"
-                        ),
-                    },
-                    "image2": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/crop/right_image_crop.tif"
-                        ),
-                        "geomodel": absolute_data_path(
-                            "input/phr_ventoux/right_image.geom"
-                        ),
-                    },
-                },
-                "initial_elevation": absolute_data_path(
-                    "input/phr_ventoux/srtm/N44E005.hgt"
-                ),
-            },
-            "output": {
-                "directory": directory,
-                "product_level": ["point_cloud", "dsm"],
-            },
-        }
-
-        out_dir = conf["output"]["directory"]
-
-        new_conf = copy.deepcopy(conf)
-
-        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
-        surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
-
-        # check that any point cloud has been generated
-        assert os.path.exists(
-            os.path.join(
-                out_dir, "point_cloud", "image1_image2", "laz", "0_0.laz"
-            )
-        )
-
-        new_conf["output"]["product_format"] = {}
-        new_conf["output"]["product_format"]["point_cloud"] = "tif"
-        surface_modeling_pipeline = SurfaceModelingPipeline(new_conf)
-        surface_modeling_pipeline.run()
-
-        copy2(
-            os.path.join(
-                out_dir, "point_cloud", "image1_image2", "tif", "Z.tif"
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dm_Z_test_surface_modeling_ventoux_dm_pc.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir, "point_cloud", "image1_image2", "tif", "Z.tif"
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dm_Z_test_surface_modeling_ventoux_dm_pc.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-
-@pytest.mark.end2end_tests
-def test_gizeh_dem_min_max_median():
-    """
-    End to end pipeline processing
-    """
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        conf = {
-            "input": {
-                "sensors": {
-                    "image1": {
-                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
-                        "geomodel": absolute_data_path(
-                            "input/phr_gizeh/img1.geom"
-                        ),
-                    },
-                    "image2": {
-                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
-                        "geomodel": absolute_data_path(
-                            "input/phr_gizeh/img2.geom"
-                        ),
-                    },
-                },
-                "low_res_dsm": absolute_data_path(
-                    "input/phr_gizeh/low_res_dsm.tif"
-                ),
-            },
-            "orchestrator": {
-                "mode": "multiprocessing",
-                "nb_workers": 4,
-                "max_ram_per_worker": 1000,
-            },
-            "surface_modeling": {
-                "applications": {
-                    "dem_generation": {"save_intermediate_data": True}
-                },
-            },
-            "output": {"directory": directory, "product_level": []},
-        }
-        out_dir = conf["output"]["directory"]
-        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
-        surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dem_min_test_surface_modeling_dem_min_max_median.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dem_max_test_surface_modeling_dem_min_max_max.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dem_median_test_surface_modeling_dem_min_max_median.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dem_min_test_surface_modeling_dem_min_max_median.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dem_max_test_surface_modeling_dem_min_max_max.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dem_median_test_surface_modeling_dem_min_max_median.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-
-@pytest.mark.end2end_tests
 def test_gizeh_res4():
     """
     End to end pipeline processing
@@ -932,45 +299,30 @@ def test_gizeh_res4():
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res4.tif",
-                )
+
+        to_check = [
+            (
+                os.path.join(out_dir, "dsm", "dsm.tif"),
+                "dsm_test_surface_modeling_gizeh_res4.tif",
             ),
+            (
+                os.path.join(out_dir, "dsm", "image.tif"),
+                "image_test_surface_modeling_gizeh_res4.tif",
+            ),
+        ]
+
+        copy_to_intermediate_data(
+            [file[0] for file in to_check],
+            [file[1] for file in to_check],
         )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_gizeh_res4.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res4.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_gizeh_res4.tif",
-                )
-            ),
+
+        assert_same_images_list(
+            [file[0] for file in to_check],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
@@ -1013,45 +365,30 @@ def test_gizeh_res16():
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res16.tif",
-                )
+
+        to_check = [
+            (
+                os.path.join(out_dir, "dsm", "dsm.tif"),
+                "dsm_test_surface_modeling_gizeh_res16.tif",
             ),
+            (
+                os.path.join(out_dir, "dsm", "image.tif"),
+                "image_test_surface_modeling_gizeh_res16.tif",
+            ),
+        ]
+
+        copy_to_intermediate_data(
+            [file[0] for file in to_check],
+            [file[1] for file in to_check],
         )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_gizeh_res16.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res16.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_gizeh_res16.tif",
-                )
-            ),
+
+        assert_same_images_list(
+            [file[0] for file in to_check],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
@@ -1119,45 +456,30 @@ def test_gizeh_res4_with_roi():
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
-                )
+
+        to_check = [
+            (
+                os.path.join(out_dir, "dsm", "dsm.tif"),
+                "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
             ),
+            (
+                os.path.join(out_dir, "dsm", "image.tif"),
+                "image_test_surface_modeling_gizeh_res4_with_roi.tif",
+            ),
+        ]
+
+        copy_to_intermediate_data(
+            [file[0] for file in to_check],
+            [file[1] for file in to_check],
         )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_gizeh_res4_with_roi.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_gizeh_res4_with_roi.tif",
-                )
-            ),
+
+        assert_same_images_list(
+            [file[0] for file in to_check],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
@@ -1224,45 +546,30 @@ def test_gizeh_res4_with_a_priori_roi():
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
-                )
+
+        to_check = [
+            (
+                os.path.join(out_dir, "dsm", "dsm.tif"),
+                "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
             ),
+            (
+                os.path.join(out_dir, "dsm", "image.tif"),
+                "image_test_surface_modeling_gizeh_res4_with_roi.tif",
+            ),
+        ]
+
+        copy_to_intermediate_data(
+            [file[0] for file in to_check],
+            [file[1] for file in to_check],
         )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_gizeh_res4_with_roi.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res4_with_roi.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_gizeh_res4_with_roi.tif",
-                )
-            ),
+
+        assert_same_images_list(
+            [file[0] for file in to_check],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
@@ -1320,219 +627,62 @@ def test_gizeh_res4_with_gt_reprojection():
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "image1_image2",
-                "sensor_dsm_ground_truth_left.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "sensor_dsm_gt_left_test_gt_reprojection.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "image1_image2",
-                "sensor_dsm_ground_truth_right.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "sensor_dsm_gt_right_test_gt_reprojection.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "image1_image2",
-                "epipolar_disp_ground_truth_left.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "epipolar_disp_gt_left_test_gt_reprojection.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "image1_image2",
-                "epipolar_disp_ground_truth_right.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "epipolar_disp_gt_right_test_gt_reprojection.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "image1_image2",
-                "sensor_dsm_ground_truth_left.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "sensor_dsm_gt_left_test_gt_reprojection.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "image1_image2",
-                "sensor_dsm_ground_truth_right.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "sensor_dsm_gt_right_test_gt_reprojection.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "image1_image2",
-                "epipolar_disp_ground_truth_left.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "epipolar_disp_gt_left_test_gt_reprojection.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dump_dir",
-                "ground_truth_reprojection",
-                "image1_image2",
-                "epipolar_disp_ground_truth_right.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "epipolar_disp_gt_right_test_gt_reprojection.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
 
-
-@pytest.mark.end2end_tests
-def test_gizeh_with_mask():
-    """
-    End to end pipeline processing
-    """
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        conf = {
-            "input": {
-                "sensors": {
-                    "image1": {
-                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
-                        "geomodel": absolute_data_path(
-                            "input/phr_gizeh/img1.geom"
-                        ),
-                        "mask": absolute_data_path(
-                            "input/phr_gizeh/new_mask1.tif"
-                        ),
-                    },
-                    "image2": {
-                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
-                        "geomodel": absolute_data_path(
-                            "input/phr_gizeh/img2.geom"
-                        ),
-                        "mask": absolute_data_path(
-                            "input/phr_gizeh/new_mask2.tif"
-                        ),
-                    },
-                },
-                "low_res_dsm": absolute_data_path(
-                    "input/phr_gizeh/low_res_dsm.tif"
+        to_check = [
+            (
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "ground_truth_reprojection",
+                    "image1_image2",
+                    "sensor_dsm_ground_truth_left.tif",
                 ),
-            },
-            "orchestrator": {
-                "mode": "multiprocessing",
-                "nb_workers": 4,
-                "max_ram_per_worker": 1000,
-            },
-            "output": {"directory": directory},
-        }
-        out_dir = conf["output"]["directory"]
-        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
-        surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_with_mask.tif",
-                )
+                "sensor_dsm_gt_left_test_gt_reprojection.tif",
             ),
+            (
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "ground_truth_reprojection",
+                    "image1_image2",
+                    "sensor_dsm_ground_truth_right.tif",
+                ),
+                "sensor_dsm_gt_right_test_gt_reprojection.tif",
+            ),
+            (
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "ground_truth_reprojection",
+                    "image1_image2",
+                    "epipolar_disp_ground_truth_left.tif",
+                ),
+                "epipolar_disp_gt_left_test_gt_reprojection.tif",
+            ),
+            (
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "ground_truth_reprojection",
+                    "image1_image2",
+                    "epipolar_disp_ground_truth_right.tif",
+                ),
+                "epipolar_disp_gt_right_test_gt_reprojection.tif",
+            ),
+        ]
+
+        copy_to_intermediate_data(
+            [file[0] for file in to_check],
+            [file[1] for file in to_check],
         )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_with_mask.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_with_mask.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_with_mask.tif",
-                )
-            ),
+
+        assert_same_images_list(
+            [file[0] for file in to_check],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
@@ -1576,45 +726,30 @@ def test_gizeh_res4_without_tie_points():
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
-                )
+
+        to_check = [
+            (
+                os.path.join(out_dir, "dsm", "dsm.tif"),
+                "dsm_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
             ),
+            (
+                os.path.join(out_dir, "dsm", "image.tif"),
+                "image_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
+            ),
+        ]
+
+        copy_to_intermediate_data(
+            [file[0] for file in to_check],
+            [file[1] for file in to_check],
         )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_gizeh_res4_wo_tie_points.tif",
-                )
-            ),
+
+        assert_same_images_list(
+            [file[0] for file in to_check],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
@@ -1626,13 +761,46 @@ def test_ventoux_filling():
     End to end pipeline processing
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        data_path = "input/phr_ventoux/crop"
         conf = {
             "input": {
+                "loaders": {"image": "pivot"},
                 "sensors": {
                     "image1": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/crop/left_image_crop.tif"
-                        ),
+                        "image": {
+                            "bands": {
+                                "b0": {
+                                    "path": absolute_data_path(
+                                        f"{data_path}/left_image_crop.tif"
+                                    ),
+                                    "band": 0,
+                                },
+                                "b1": {
+                                    "path": absolute_data_path(
+                                        f"{data_path}/color_image_crop.tif"
+                                    ),
+                                    "band": 0,
+                                },
+                                "b2": {
+                                    "path": absolute_data_path(
+                                        f"{data_path}/color_image_crop.tif"
+                                    ),
+                                    "band": 1,
+                                },
+                                "b3": {
+                                    "path": absolute_data_path(
+                                        f"{data_path}/color_image_crop.tif"
+                                    ),
+                                    "band": 2,
+                                },
+                                "b4": {
+                                    "path": absolute_data_path(
+                                        f"{data_path}/color_image_crop.tif"
+                                    ),
+                                    "band": 3,
+                                },
+                            },
+                        },
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/left_image.geom"
                         ),
@@ -1641,9 +809,22 @@ def test_ventoux_filling():
                         ),
                     },
                     "image2": {
-                        "image": absolute_data_path(
-                            "input/phr_ventoux/crop/right_image_crop.tif"
-                        ),
+                        "image": {
+                            "bands": {
+                                "b0": {
+                                    "path": absolute_data_path(
+                                        f"{data_path}/right_image_crop.tif"
+                                    ),
+                                    "band": 0,
+                                },
+                                "b1": {
+                                    "path": absolute_data_path(
+                                        f"{data_path}/right_image_crop.tif"
+                                    ),
+                                    "band": 0,
+                                },
+                            },
+                        },
                         "geomodel": absolute_data_path(
                             "input/phr_ventoux/right_image.geom"
                         ),
@@ -1666,60 +847,101 @@ def test_ventoux_filling():
                         "fill_classification": ["3"],
                     },
                     "point_cloud_outlier_removal": None,
-                }
+                },
+                "advanced": {
+                    "phasing": {
+                        "point": [0.03, 0.03],
+                        "unit": "arcsec",
+                        "epsg": 4326,
+                    }
+                },
             },
             "output": {
                 "directory": directory,
                 "auxiliary": {
+                    "ambiguity": True,
                     "classification": True,
                     "filling": True,
+                    "contributing_pair": True,
+                    "image": ["b1", "b2", "b3"],
+                    "performance_map": True,
                 },
+                "product_level": ["point_cloud", "dsm"],
+                "product_format": {
+                    "point_cloud": ["laz", "tif"],
+                },
+                "epsg": 4326,
             },
         }
         out_dir = conf["output"]["directory"]
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_ventoux_filling.tif",
-                )
+
+        to_check = [
+            (
+                os.path.join(out_dir, "dsm", "dsm.tif"),
+                "dsm_test_surface_modeling_ventoux_filling.tif",
             ),
+            (
+                os.path.join(out_dir, "dsm", "image.tif"),
+                "image_test_surface_modeling_ventoux_filling.tif",
+            ),
+            (
+                os.path.join(out_dir, "dsm", "ambiguity.tif"),
+                "ambiguity_test_surface_modeling_ventoux_filling.tif",
+            ),
+            (
+                os.path.join(out_dir, "dsm", "classification.tif"),
+                "classification_test_surface_modeling_ventoux_filling.tif",
+            ),
+            (
+                os.path.join(out_dir, "dsm", "filling.tif"),
+                "filling_test_surface_modeling_ventoux_filling.tif",
+            ),
+            (
+                os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+                "contributing_pair_test_surface_modeling_ventoux_filling.tif",
+            ),
+            (
+                os.path.join(out_dir, "dsm", "performance_map.tif"),
+                "performance_map_test_surface_modeling_ventoux_filling.tif",
+            ),
+            (
+                os.path.join(out_dir, "dsm", "cropped_disp_range.tif"),
+                "cropped_disp_range_test_surface_modeling_ventoux_filling.tif",
+            ),
+            (
+                os.path.join(
+                    out_dir, "point_cloud", "image1_image2", "tif", "Z.tif"
+                ),
+                "point_cloud_Z_test_surface_modeling_ventoux_filling.tif",
+            ),
+        ]
+
+        copy_to_intermediate_data(
+            [file[0] for file in to_check],
+            [file[1] for file in to_check],
         )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_ventoux_filling.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_ventoux_filling.tif",
-                )
-            ),
+
+        assert_same_images_list(
+            [file[0] for file in to_check],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_ventoux_filling.tif",
-                )
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
+        )
+
+        # assert the laz version of the point cloud is also generated
+        assert os.path.exists(
+            os.path.join(
+                out_dir, "point_cloud", "image1_image2", "laz", "0_0.laz"
+            )
         )
 
 
@@ -1751,11 +973,17 @@ def test_gizeh_with_monocular_data():
                                 "input/phr_gizeh/monocular/tile_id.tif"
                             ),
                         },
+                        "mask": absolute_data_path(
+                            "input/phr_gizeh/new_mask1.tif"
+                        ),
                     },
                     "image2": {
                         "image": absolute_data_path("input/phr_gizeh/img2.tif"),
                         "geomodel": absolute_data_path(
                             "input/phr_gizeh/img2.geom"
+                        ),
+                        "mask": absolute_data_path(
+                            "input/phr_gizeh/new_mask2.tif"
                         ),
                     },
                 },
@@ -1763,82 +991,14 @@ def test_gizeh_with_monocular_data():
                     "input/phr_gizeh/low_res_dsm.tif"
                 ),
             },
-            "orchestrator": {
-                "mode": "multiprocessing",
-                "nb_workers": 4,
-                "max_ram_per_worker": 1000,
-            },
-            "output": {"directory": directory},
-        }
-        out_dir = conf["output"]["directory"]
-        surface_modeling_pipeline = SurfaceModelingPipeline(conf)
-        surface_modeling_pipeline.run()
-        intermediate_output_dir = "intermediate_data"
-        ref_output_dir = "ref_output"
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_gizeh_monocular.tif",
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_gizeh_monocular.tif",
-                )
-            ),
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_gizeh_monocular.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_gizeh_monocular.tif",
-                )
-            ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-
-
-@pytest.mark.end2end_tests
-def test_gizeh_phasing_4326_arcsec():
-    """
-    End to end pipeline processing with phasing in EPSG:4326
-    using arcseconds.
-    """
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        conf = {
-            "input": {
-                "sensors": {
-                    "image1": {
-                        "image": absolute_data_path("input/phr_gizeh/img1.tif"),
-                        "geomodel": absolute_data_path(
-                            "input/phr_gizeh/img1.geom"
-                        ),
-                    },
-                    "image2": {
-                        "image": absolute_data_path("input/phr_gizeh/img2.tif"),
-                        "geomodel": absolute_data_path(
-                            "input/phr_gizeh/img2.geom"
-                        ),
-                    },
+            "surface_modeling": {
+                "applications": {
+                    "dem_generation": {"save_intermediate_data": True},
+                    "triangulation": {"save_intermediate_data": True},
+                    "depth_to_z_fusion": {"activated": False},
+                },
+                "advanced": {
+                    "use_sensor_disp": True,
                 },
             },
             "orchestrator": {
@@ -1846,67 +1006,80 @@ def test_gizeh_phasing_4326_arcsec():
                 "nb_workers": 4,
                 "max_ram_per_worker": 1000,
             },
-            "surface_modeling": {
-                "advanced": {
-                    "phasing": {
-                        "point": [0.03, 0.03],
-                        "unit": "arcsec",
-                        "epsg": 4326,
-                    }
-                }
-            },
             "output": {
                 "directory": directory,
-                "epsg": 4326,
+                "auxiliary": {
+                    "image": True,
+                },
             },
         }
-
         out_dir = conf["output"]["directory"]
-
         surface_modeling_pipeline = SurfaceModelingPipeline(conf)
         surface_modeling_pipeline.run()
-
-        intermediate_output_dir = "intermediate_data"
         ref_output_dir = "ref_output"
 
-        copy2(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    intermediate_output_dir,
-                    "dsm_test_surface_modeling_gizeh_phasing_4326_arcsec.tif",
-                )
+        to_check = [
+            (
+                os.path.join(out_dir, "dsm", "dsm.tif"),
+                "dsm_test_surface_modeling_gizeh_monocular.tif",
             ),
-        )
-        copy2(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
+            (
                 os.path.join(
-                    intermediate_output_dir,
-                    "image_test_surface_modeling_gizeh_phasing_4326_arcsec.tif",
-                )
+                    out_dir,
+                    "dump_dir",
+                    "triangulation",
+                    "common_sensor",
+                    "tif",
+                    "Z.tif",
+                ),
+                "Z_test_surface_modeling_gizeh_monocular.tif",
             ),
+            (
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "triangulation",
+                    "common_sensor",
+                    "tif",
+                    "intersections_residues.tif",
+                ),
+                "intersections_residues_test_"
+                "surface_modeling_gizeh_monocular.tif",
+            ),
+            (
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+                ),
+                "dem_median_test_surface_modeling_gizeh_monocular.tif",
+            ),
+            (
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_min.tif"
+                ),
+                "dem_min_test_surface_modeling_gizeh_monocular.tif",
+            ),
+            (
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_max.tif"
+                ),
+                "dem_max_test_surface_modeling_gizeh_monocular.tif",
+            ),
+        ]
+
+        copy_to_intermediate_data(
+            [file[0] for file in to_check],
+            [file[1] for file in to_check],
         )
 
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "dsm_test_surface_modeling_gizeh_phasing_4326_arcsec.tif",
-                )
-            ),
+        assert_same_images_list(
+            [file[0] for file in to_check],
+            [
+                absolute_data_path(os.path.join(ref_output_dir, file[1]))
+                for file in to_check
+            ],
             atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
             rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "image.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "image_test_surface_modeling_gizeh_phasing_4326_arcsec.tif",
-                )
+            nb_outliers_allowed=(
+                NB_OUTLIERS_ALLOWED_GITHUB if CARS_GITHUB_ACTIONS else 0
             ),
-            atol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 0.0001,
-            rtol=DEFAULT_TOL if CARS_GITHUB_ACTIONS else 1e-6,
         )
