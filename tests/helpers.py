@@ -47,7 +47,6 @@ from pandora.check_configuration import (
     get_config_pipeline,
 )
 from pandora.state_machine import PandoraMachine
-from pytest_check import check
 from scipy.ndimage import zoom
 
 from cars.applications.dense_matching.loaders.pandora_loader import (
@@ -256,7 +255,6 @@ def temporary_dir():
     return os.environ["CARS_TEST_TEMPORARY_DIR"]
 
 
-@check.check_func  # pylint: disable=no-member
 def assert_same_images(actual, expected, rtol=0, atol=0, nb_outliers_allowed=0):
     """
     Compare two image files with assertion:
@@ -285,6 +283,79 @@ def assert_same_images(actual, expected, rtol=0, atol=0, nb_outliers_allowed=0):
                     raise AssertionError(
                         "{} points differ from reference".format(diff)
                     )
+
+
+def assert_same_images_list(
+    actual_images,
+    expected_images,
+    rtol=0,
+    atol=0,
+    nb_outliers_allowed=0,
+):
+    """
+    Compare two lists of image paths pairwise using assert_same_images.
+
+    The comparison continues across all files even if one or more assertions
+    fail. A small summary is printed to the console so the user can see which
+    files match and which ones differ, then a single AssertionError is raised
+    at the end with the aggregated report.
+    """
+    failures = []
+
+    for idx, (actual, expected) in enumerate(
+        zip(actual_images, expected_images, strict=True)
+    ):
+        actual_label = (
+            os.fspath(actual) if actual is not None else "<missing actual>"
+        )
+        expected_label = (
+            os.fspath(expected)
+            if expected is not None
+            else "<missing expected>"
+        )
+
+        try:
+            assert_same_images(
+                actual,
+                expected,
+                rtol=rtol,
+                atol=atol,
+                nb_outliers_allowed=nb_outliers_allowed,
+            )
+        except Exception as exc:
+            failures.append((idx, actual_label, expected_label, str(exc)))
+
+    if failures:
+        failure_summary = "\n ".join(
+            (
+                "{}: {} != {} ({})".format(idx, actual, expected, problem)
+                if idx is not None
+                else "{} != {} ({})".format(actual, expected, problem)
+            )
+            for idx, actual, expected, problem in failures
+        )
+        raise AssertionError(
+            "Image comparison failed for {} file(s): {}".format(
+                len(failures), failure_summary
+            )
+        )
+
+
+def copy_to_intermediate_data(source_paths, output_filenames):
+    """
+    Copy a list of input files into tests/data/intermediate_data/ using the
+    provided output filenames.
+    """
+    target_dir = os.path.join(
+        os.path.dirname(__file__), "data", "intermediate_data"
+    )
+    os.makedirs(target_dir, exist_ok=True)
+
+    for source_path, output_filename in zip(
+        source_paths, output_filenames, strict=True
+    ):
+        target_path = os.path.join(target_dir, output_filename)
+        cars_copy2(source_path, target_path)
 
 
 def assert_same_carsdatasets(actual, expected, rtol=0, atol=0):
