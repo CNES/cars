@@ -360,7 +360,9 @@ class PipelineTreeUI:
             suffix_parts.append(f"retries={node.retries}")
         if node.failed > 0:
             suffix_parts.append(f"failed={node.failed}")
+        # pylint: disable=inconsistent-quotes
         status_suffix = f" ({', '.join(suffix_parts)})" if suffix_parts else ""
+        # pylint: enable=inconsistent-quotes
         progress_label = Text(
             f" {progress * 100:.0f}%{status_suffix}", no_wrap=True
         )

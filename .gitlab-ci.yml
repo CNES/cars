@@ -74,7 +74,7 @@ include:
   image: ${UL_ARTIFACTORY_HOST}/${CARS_ENV_IMAGE_NAME}:${CARS_ENV_IMAGE_TAG}
   before_script:
     - apt-get update -y
-    - apt-get install -y libgl1-mesa-glx libsm6 libxext6 ffmpeg
+    - apt-get install -y libgl1 libglx-mesa0 libsm6 libxext6 ffmpeg
     - source /app/cars/venv/bin/activate
     # All dependencies should already be installed in the docker env
     - pip install --no-build-isolation --editable .[dev,docs,monocular]
