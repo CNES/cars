@@ -189,7 +189,7 @@ class SharelocFilter(logging.Filter):  # pylint: disable=R0903
         return "shareloc" not in path_parts
 
 
-class ProfilinglHandler(logging.FileHandler):  # pylint: disable=R0903
+class ProfilingHandler(logging.FileHandler):  # pylint: disable=R0903
     """
     Profiling
     """
@@ -352,7 +352,7 @@ def setup_logging_pipeline(
     handlers_to_remove = []
     for handler in logger.handlers:
         # Skip custom worker handlers
-        if isinstance(handler, (WorkerHandler, ProfilinglHandler)):
+        if isinstance(handler, (WorkerHandler, ProfilingHandler)):
             continue
         if isinstance(handler, logging.FileHandler):
             handler_path = os.path.abspath(handler.baseFilename)
@@ -421,6 +421,8 @@ def setup_logging_workers(
     # Set logger level to PROFILING to allow all messages through to handlers
     logger.setLevel(PROFILING)
 
+    _remove_worker_handlers(log_dir)
+
     workers_formatter = logging.Formatter(
         "%(asctime)s :: %(levelname)s :: %(thread)d :: "
         "%(process)d :: %(message)s"
@@ -443,12 +445,30 @@ def setup_logging_workers(
         log_dir,
         "profiling.log",
     )
-    worker_prof_log_file_handler = ProfilinglHandler(
+    worker_prof_log_file_handler = ProfilingHandler(
         log_file_workers_profiling, mode="a"
     )
     worker_prof_log_file_handler.setLevel(PROFILING)
     worker_prof_log_file_handler.setFormatter(workers_formatter)
     logger.addHandler(worker_prof_log_file_handler)
+
+
+def _remove_worker_handlers(log_dir):
+    """Remove stale CARS worker handlers for the same log directory."""
+    log_dir = os.path.abspath(log_dir)
+    target_files = {
+        os.path.abspath(os.path.join(log_dir, "workers.log")),
+        os.path.abspath(os.path.join(log_dir, "profiling.log")),
+    }
+
+    for handler in list(logger.handlers):
+        if not isinstance(handler, (WorkerHandler, ProfilingHandler)):
+            continue
+
+        handler_path = os.path.abspath(getattr(handler, "baseFilename", ""))
+        if handler_path in target_files:
+            logger.removeHandler(handler)
+            handler.close()
 
 
 def add_profiling_message(message):
