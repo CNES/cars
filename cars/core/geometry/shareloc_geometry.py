@@ -23,6 +23,7 @@
 Shareloc geometry sub class : CARS geometry wrappers functions to shareloc ones
 """
 
+from itertools import product
 from typing import List, Tuple, Union
 
 import bindings_cpp  # pylint: disable=E0401
@@ -39,7 +40,6 @@ from shareloc.geofunctions.triangulation import (
     distance_point_los,
     epipolar_triangulation,
     n_view_triangulation,
-    sensor_triangulation,
 )
 from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.grid import Grid
@@ -165,6 +165,17 @@ class SharelocGeometry(AbstractGeometry):
         overloaded_conf["add_epipolar_margins"] = conf.get(
             "add_epipolar_margins", True
         )
+        overloaded_conf["nb_alts"] = conf.get("nb_alts", 200)
+        overloaded_conf["grid_size"] = conf.get("grid_size", 5)
+        overloaded_conf["default_alt_range"] = conf.get(
+            "default_alt_range", [-500, 5000]
+        )
+        overloaded_conf["prior_alt"] = conf.get("prior_alt", 0.0)
+
+        self.prior_alt = overloaded_conf["prior_alt"]
+        self.default_alt_range = overloaded_conf["default_alt_range"]
+        self.nb_alts = overloaded_conf["nb_alts"]
+        self.grid_size = overloaded_conf["grid_size"]
 
         geometry_schema = {
             "plugin_name": str,
@@ -174,6 +185,10 @@ class SharelocGeometry(AbstractGeometry):
                 Or(float, int), lambda x: x > 0
             ),
             "add_epipolar_margins": bool,
+            "nb_alts": int,
+            "grid_size": int,
+            "default_alt_range": [int, int],
+            "prior_alt": Or(int, float),
         }
 
         # Check conf
@@ -449,183 +464,116 @@ class SharelocGeometry(AbstractGeometry):
         return llh
 
     @staticmethod
-    def is_inside_image(point, image):
-        col, row = ~image.transform * (point[1], point[0])
-        return 0 <= row < image.nb_rows and 0 <= col < image.nb_columns
-
-    @staticmethod
-    def find_optimal_alt(
+    def find_optimal_alt(  # pylint: disable=too-many-positional-arguments
         image1,
         image2,
         geomodel1,
         geomodel2,
-        scaling_coeff,
+        nb_alts=200,
+        grid_size=5,
+        default_alt_range=(-500.0, 5000.0),
+        prior_alt=0.0,
     ):
         """
-        Find the elevation that maximizes the covering between images
-        :param image1: left image as shareloc object
-        :param image2: right image as shareloc object
-        :param geomodel1: left geomodel as shareloc object
-        :param geomodel2: right geomodel as shareloc object
-        :param scaling_coeff: scaling coefficient for scaling
-        :type scaling_coeff: float
+        Find the elevation that maximizes the covering between images.
+        Among equivalent altitudes, the closest to prior_alt is kept.
 
-        :return: optimal altitude, residue of triangulation
-
+        :return: optimal altitude, or None if none is found
         """
 
-        alt_min, alt_max = geomodel1.get_alt_min_max()
+        grid_size = int(grid_size)
+        nb_alts = int(nb_alts)
 
-        rows_left = np.linspace(
-            100 / scaling_coeff,
-            image1.nb_rows - 5,
-            10,
-        )
-
-        cols_left = np.linspace(
-            100 / scaling_coeff,
-            image1.nb_columns - 5,
-            10,
-        )
-
-        alt_coords = []
-        residues = []
-        for row in rows_left:
-            for col in cols_left:
-
-                left_point = np.array(
-                    proj_utils.transform_index_to_physical_point(
-                        image1.transform,
-                        row,
-                        col,
-                    )
-                )
-
-                [[loc_a_row, loc_a_col, _]], _ = localization.coloc(
-                    geomodel1,
-                    geomodel2,
-                    left_point[0],
-                    left_point[1],
-                    elevation=alt_min,
-                    image1=image1,
-                    image2=image2,
-                )
-
-                loc_a = np.array((loc_a_row, loc_a_col))
-                [[loc_b_row, loc_b_col, _]], _ = localization.coloc(
-                    geomodel1,
-                    geomodel2,
-                    left_point[0],
-                    left_point[1],
-                    elevation=alt_max,
-                    image1=image1,
-                    image2=image2,
-                )
-
-                loc_b = np.array((loc_b_row, loc_b_col))
-
-                inside_a = SharelocGeometry.is_inside_image(loc_a, image2)
-                inside_b = SharelocGeometry.is_inside_image(loc_b, image2)
-
-                if not inside_a and not inside_b:
-                    continue
-
-                ab = loc_b - loc_a
-
-                ab_norm2 = np.dot(ab, ab)
-
-                candidate_rows = np.linspace(
-                    0,
-                    image2.nb_rows - 1,
-                    10,
-                )
-
-                candidate_cols = np.linspace(
-                    0,
-                    image2.nb_columns - 1,
-                    10,
-                )
-
-                best_candidate = None
-                best_distance = np.inf
-                best_t = None
-
-                for right_row in candidate_rows:
-                    for right_col in candidate_cols:
-
-                        right_point = np.array(
-                            proj_utils.transform_index_to_physical_point(
-                                image2.transform,
-                                right_row,
-                                right_col,
-                            )
-                        )
-
-                        ac = right_point - loc_a
-
-                        t = np.dot(ac, ab) / ab_norm2
-
-                        projected_point = loc_a + t * ab
-
-                        if not 0 <= t <= 1:
-                            continue
-
-                        distance = np.linalg.norm(right_point - projected_point)
-
-                        if distance < best_distance:
-                            best_distance = distance
-                            best_candidate = right_point.copy()
-                            best_t = t
-
-                if best_candidate is None:
-                    continue
-
-                right_projected = loc_a + best_t * ab
-
-                if not SharelocGeometry.is_inside_image(
-                    right_projected, image2
-                ):
-                    continue
-
-                match = np.array(
-                    [
-                        left_point[1],
-                        left_point[0],
-                        right_projected[1],
-                        right_projected[0],
-                    ]
-                ).reshape((1, 4))
-
-                (
-                    _,
-                    coords_wgs84,
-                    residue,
-                ) = sensor_triangulation(
-                    match,
-                    geomodel1,
-                    geomodel2,
-                    left_min_max=[alt_min, alt_max],
-                    right_min_max=[alt_min, alt_max],
-                    residues=True,
-                )
-
-                alt_coords.append(coords_wgs84[0, 2])
-                residues.append(residue[0, 0])
-
-        if len(alt_coords) == 0:
-            logger.warning(
-                "No matches were found, the default "
-                "altitude of 0 will be used instead"
+        def to_phys(image, row, col):
+            """
+            Transform index to physical point
+            """
+            return np.array(
+                proj_utils.transform_index_to_physical_point(
+                    image.transform, row, col
+                ),
+                dtype=float,
             )
 
-        if len(alt_coords) != 0:
-            final_alt = np.mean(np.array(alt_coords))
-            final_residue = np.mean(np.array(residues))
-        else:
-            final_alt = None
-            final_residue = None
+        def coloc(pt, alt):
+            """
+            Colocalization
+            """
+            [[row, col, _]], _ = localization.coloc(
+                geomodel1,
+                geomodel2,
+                pt[0],
+                pt[1],
+                elevation=alt,
+                image1=image1,
+                image2=image2,
+            )
+            return np.array((row, col))
 
-        return final_alt, final_residue
+        rpc_min, rpc_max = geomodel1.get_alt_min_max()
+        alt_min = min(rpc_min, default_alt_range[0])
+        alt_max = max(rpc_max, default_alt_range[1])
+
+        # Right image extent
+        corner_up_left = to_phys(image2, 0, 0)
+        corner_bottom_right = to_phys(
+            image2, image2.nb_rows - 1, image2.nb_columns - 1
+        )
+        right_bbox_min = np.minimum(corner_up_left, corner_bottom_right)
+        right_bbox_max = np.maximum(corner_up_left, corner_bottom_right)
+
+        # Epipolar segment (alt_min -> alt_max) for a grid of left points
+        # Avoid the borders
+        fractions = np.linspace(0.1, 0.9, grid_size)
+        rows = (fractions * (image1.nb_rows - 1)).astype(int)
+        cols = (fractions * (image1.nb_columns - 1)).astype(int)
+
+        coloc_min_alt, coloc_max_alt = [], []
+        for r, c in product(rows, cols):
+            # Convert to physical coord
+            physical_point = to_phys(image1, r, c)
+            coloc_a = coloc(physical_point, alt_min)
+            coloc_b = coloc(physical_point, alt_max)
+            if np.all(np.isfinite(coloc_a)) and np.all(np.isfinite(coloc_b)):
+                coloc_min_alt.append(coloc_a)
+                coloc_max_alt.append(coloc_b)
+
+        if not coloc_min_alt:
+            logger.warning("Optimal altitude not found")
+            return None
+
+        coloc_min_alt = np.array(coloc_min_alt)
+        coloc_max_alt = np.array(coloc_max_alt)
+
+        # Fraction of left points falling inside the right image
+        alts = np.linspace(alt_min, alt_max, nb_alts)
+        # Weights -> 0 (alt_min), 1 (alt_max)
+        weights = (alts - alt_min) / (alt_max - alt_min)
+        # Linear interpolation
+        pos = coloc_min_alt + weights[:, None, None] * (
+            coloc_max_alt - coloc_min_alt
+        )
+        # Test if each position is in the right image
+        inside = np.all(
+            (pos >= right_bbox_min) & (pos <= right_bbox_max), axis=2
+        )
+        coverage = inside.mean(axis=1)
+
+        if coverage.max() <= 0:
+            logger.warning("No overlap found between images")
+            return None
+
+        # Plateau of best coverage: keep the altitude closest to the prior
+        best_coverage_idx = np.flatnonzero(coverage >= coverage.max() - 1e-9)
+        # Choose the closest to the prior alt -> default 0
+        closest_to_prior_idx = best_coverage_idx[
+            np.argmin(np.abs(alts[best_coverage_idx] - prior_alt))
+        ]
+        optimal_altitude = float(alts[closest_to_prior_idx])
+
+        logger.debug("Optimal altitude: %s", optimal_altitude)
+
+        return optimal_altitude
 
     def triangulate_n_los(  # pylint: disable=too-many-positional-arguments
         self, geomodel1, geomodels2, sensor_matches
@@ -714,7 +662,6 @@ class SharelocGeometry(AbstractGeometry):
         geomodel2,
         epipolar_step: int = 30,
         find_optimal_altitude: bool = False,
-        scaling_coeff: float = 1.0,
     ) -> Tuple[
         np.ndarray, np.ndarray, List[float], List[float], List[int], float
     ]:
@@ -728,8 +675,6 @@ class SharelocGeometry(AbstractGeometry):
         :param epipolar_step: step to use to construct the epipolar grids
         :param find_optimal_altitude: whether to find the altitude that
             maximize image covering
-        :param scaling_coeff: scaling coefficient for scaling
-        :type scaling_coeff: float
 
         :return: Tuple composed of :
             - the left epipolar grid as a numpy array
@@ -750,8 +695,15 @@ class SharelocGeometry(AbstractGeometry):
 
         if self.elevation == 0 and find_optimal_altitude:
             # find the elevation that maximizes the covering between images
-            h, residue = SharelocGeometry.find_optimal_alt(
-                image1, image2, shareloc_model1, shareloc_model2, scaling_coeff
+            h = SharelocGeometry.find_optimal_alt(
+                image1,
+                image2,
+                shareloc_model1,
+                shareloc_model2,
+                self.nb_alts,
+                self.grid_size,
+                self.default_alt_range,
+                self.prior_alt,
             )
 
             if h is not None:
@@ -762,10 +714,7 @@ class SharelocGeometry(AbstractGeometry):
             if h is not None:
                 logger.debug(
                     "Optimal altitude found for epipolar "
-                    "grid generation : {}m. "
-                    "Residue of triangulation : {}m".format(
-                        round(h, 2), round(residue, 5)
-                    )
+                    "grid generation : {}m. ".format(round(h, 2))
                 )
 
         # compute epipolar grids
