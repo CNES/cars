@@ -135,7 +135,7 @@ class PandoraLoader:
                 "confidence_method": "ambiguity",
                 "eta_max": perf_eta_max_ambiguity,
                 "eta_step": perf_eta_step,
-                "normalization": False,
+                "normalization": {"enable": True, "type": "local"},
             }
         }
 
