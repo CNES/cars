@@ -319,7 +319,12 @@ class SubsamplingPipeline(PipelineTemplate):
 
             :param path: image path
             """
-            return os.path.join(out_dir, key, Path(path).stem + ".tif")
+            new_path = os.path.join(out_dir, key, Path(path).stem + ".tif")
+
+            with rio.open(new_path, "r+") as dst:
+                dst.update_tags(subsampling=res)
+
+            return new_path
 
         sensor[sens_cst.INPUT_IMG]["bands"]["b0"]["path"] = replace_path(
             sensor[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
@@ -389,8 +394,6 @@ class SubsamplingPipeline(PipelineTemplate):
 
             for res in self.resolutions:
                 if res != 1:
-                    conf_to_save = copy.deepcopy(self.used_conf)
-                    first_key = True
                     for key, val in inputs[sens_cst.SENSORS].items():
                         # Define the output directory
                         out_directory = os.path.join(
@@ -406,23 +409,35 @@ class SubsamplingPipeline(PipelineTemplate):
                             self.cars_orchestrator,
                         )
 
-                        self.formatting(
-                            key,
-                            os.path.abspath(out_directory),
-                            conf_to_save,
-                            res,
-                            first_key,
-                        )
-
-                        first_key = False
-
-                    out_yaml = os.path.abspath(
-                        os.path.join(out_directory, "input.yaml")
+        # Outside the orchestrator in order to save the tags
+        for res in self.resolutions:
+            if res != 1:
+                conf_to_save = copy.deepcopy(self.used_conf)
+                first_key = True
+                for key, _ in inputs[sens_cst.SENSORS].items():
+                    # Define the output directory
+                    out_directory = os.path.join(
+                        self.subsampling_dir, "res_" + str(res)
                     )
-                    with open(out_yaml, "w", encoding="utf-8") as f:
-                        yaml.dump(
-                            conf_to_save[INPUT],
-                            f,
-                            default_flow_style=False,
-                            sort_keys=False,
-                        )
+                    safe_makedirs(out_directory)
+
+                    self.formatting(
+                        key,
+                        os.path.abspath(out_directory),
+                        conf_to_save,
+                        res,
+                        first_key,
+                    )
+
+                    first_key = False
+
+                out_yaml = os.path.abspath(
+                    os.path.join(out_directory, "input.yaml")
+                )
+                with open(out_yaml, "w", encoding="utf-8") as f:
+                    yaml.dump(
+                        conf_to_save[INPUT],
+                        f,
+                        default_flow_style=False,
+                        sort_keys=False,
+                    )

@@ -76,31 +76,18 @@ def get_path_and_values_from_classif(sensor_classif):
 
 def get_sensors_bounds(sensor_image_left, sensor_image_right):
     """
-    Get bounds of sensor images
-    Bounds: BoundingBox(left, bottom, right, top)
+    Get bounds of left and right sensor images.
 
-    :param sensor_image_left: left sensor
-    :type sensor_image_left: dict
-    :param sensor_image_right: right sensor
-    :type sensor_image_right: dict
-
-    :return: left image bounds, right image bounds
+    :param sensor_image_left: left sensor image
+    :param sensor_image_right: right sensor image
+    :return: left and right sensor bounds
     :rtype: tuple(list, list)
     """
+    left_path = sensor_image_left[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
+    right_path = sensor_image_right[sens_cst.INPUT_IMG]["bands"]["b0"]["path"]
 
-    left_sensor_bounds = list(
-        inputs.rasterio_get_bounds(
-            sensor_image_left[sens_cst.INPUT_IMG]["bands"]["b0"]["path"],
-            apply_resolution_sign=True,
-        )
-    )
-
-    right_sensor_bounds = list(
-        inputs.rasterio_get_bounds(
-            sensor_image_right[sens_cst.INPUT_IMG]["bands"]["b0"]["path"],
-            apply_resolution_sign=True,
-        )
-    )
+    left_sensor_bounds = inputs.rasterio_get_sensor_bounds(left_path)
+    right_sensor_bounds = inputs.rasterio_get_sensor_bounds(right_path)
 
     return left_sensor_bounds, right_sensor_bounds
 

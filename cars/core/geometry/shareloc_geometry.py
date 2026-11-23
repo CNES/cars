@@ -28,7 +28,6 @@ from typing import List, Tuple, Union
 
 import bindings_cpp  # pylint: disable=E0401
 import numpy as np
-import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
 import xarray as xr
 from json_checker import And, Checker, Or
@@ -49,7 +48,7 @@ from shareloc.image import Image
 from shareloc.proj_utils import coordinates_conversion
 
 from cars.core import constants as cst
-from cars.core import projection
+from cars.core import inputs, projection
 from cars.core.cars_logging import logger
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 
@@ -333,6 +332,22 @@ class SharelocGeometry(AbstractGeometry):
             shareloc_img = Image(img, vertical_direction="north")
         except Exception as error:
             raise ValueError(f"Image type {img} is not supported") from error
+
+        if shareloc_img.dataset.crs is not None:
+            shareloc_img.transform = inputs.rasterio_get_sensor_transform(
+                img,
+                convention="north",
+            )
+            shareloc_img.trans_inv = ~shareloc_img.transform
+
+            shareloc_img.origin_row = shareloc_img.transform.f
+            shareloc_img.origin_col = shareloc_img.transform.c
+
+            shareloc_img.pixel_size_row = shareloc_img.transform.e
+            shareloc_img.pixel_size_col = shareloc_img.transform.a
+
+            shareloc_img.pixel_rotation_row = shareloc_img.transform.d
+            shareloc_img.pixel_rotation_col = shareloc_img.transform.b
 
         return shareloc_img
 
@@ -748,11 +763,8 @@ class SharelocGeometry(AbstractGeometry):
         spacing = [float(epipolar_step), float(epipolar_step)]
 
         # alt_to_disp_ratio does not consider image resolution
-        with rio.open(sensor1, "r") as rio_dst:
-            pixel_size_x, pixel_size_y = (
-                rio_dst.transform[0],
-                rio_dst.transform[4],
-            )
+        pixel_size_x = image1.transform.a
+        pixel_size_y = image1.transform.e
         mean_size = (abs(pixel_size_x) + abs(pixel_size_y)) / 2
         disp_to_alt_ratio = mean_size / alt_to_disp_ratio
 
