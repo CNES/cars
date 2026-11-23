@@ -23,6 +23,7 @@ CARS dsm inputs
 """
 
 import collections
+import math
 import os
 
 import numpy as np
@@ -34,6 +35,7 @@ from rasterio.windows import from_bounds
 
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
+from cars.applications import application_constants
 from cars.applications.rasterization.rasterization_wrappers import (
     update_data,
     update_weights,
@@ -67,6 +69,12 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
         self.filling_priority_list = self.used_config["filling_priority_list"]
         self.classif_priority_list = self.used_config["classif_priority_list"]
+
+        # DSM merging statistics
+        self._dsm_names = []
+        self._merging_stats = {}
+        self._merging_processed_tiles = 0
+        self._merging_expected_tiles = 0
 
     def check_conf(self, conf):
 
@@ -131,44 +139,52 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
         ambiguity_file_name=None,
         contributing_pair_file_name=None,
         dtm_file_name=None,
+        dsm_names=None,
     ):
         """
-        Merge all the dsms
+        Merge all the input DSMs using weighted fusion
 
-        :param dict_path: path of all variables from all dsms
+        :param dict_path: paths of all variables from the input DSMs
         :type dict_path: dict
         :param orchestrator: orchestrator used
-        :param dump_dir: output path
+        :param roi_poly: region of interest polygon
+        :param dump_dir: output directory
         :type dump_dir: str
-        :param dsm_file_name: name of the dsm output file
+        :param dsm_file_name: name of the DSM output file
         :type dsm_file_name: str
         :param weights_file_name: name of the weights output file
         :type weights_file_name: str
         :param color_file_name: name of the color output file
         :type color_file_name: str
-        :param classif_file_name: name of the classif output file
+        :param classif_file_name: name of the classification output file
         :type classif_file_name: str
         :param filling_file_name: name of the filling output file
         :type filling_file_name: str
-        :param performance_map_file_name: name of the performance_map file
+        :param performance_map_file_name: name of the performance map file
         :type performance_map_file_name: str
         :param ambiguity_file_name: name of the ambiguity output file
         :type ambiguity_file_name: str
-        :param contributing_pair_file_name: name of contributing_pair file
+        :param contributing_pair_file_name: name of the contributing pair file
         :type contributing_pair_file_name: str
+        :param dtm_file_name: name of the DTM output file
+        :type dtm_file_name: str
+        :param dsm_names: identifiers of the input DSMs, used in merging
+            statistics metadata
+        :type dsm_names: list[str]
 
-        :return: raster DSM. CarsDataset contains:
+        :return: merged DSM. CarsDataset contains:
 
-                - Z x W Delayed tiles. \
-                    Each tile will be a future xarray Dataset containing:
+                - Z x W delayed tiles. \
+                    Each tile will be an xarray Dataset containing:
 
-                    - data : with keys : "hgt", "img", "raster_msk",optional : \
-                    "n_pts", "pts_in_cell", "hgt_mean", "hgt_stdev",\
-                    "hgt_inf", "hgt_sup"
-                    - attrs with keys: "epsg"
-                - attributes containing: None
+                    - data: merged DSM elevations and weights, with \
+                    optional auxiliary data (image, classification, \
+                    filling, performance map, etc.)
+                    - coordinates: x and y
+                    - attributes: metadata required for saving the \
+                    raster tiles
 
-        :rtype : CarsDataset filled with xr.Dataset
+        :rtype: CarsDataset filled with xr.Dataset
         """
 
         # Create CarsDataset
@@ -223,6 +239,28 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
             self.tile_size,
             self.tile_size,
         )
+
+        # Keep DSM input identifiers for metadata
+        if dsm_names is None:
+            dsm_names = [
+                f"dsm_{idx}" for idx in range(len(dict_path[cst.DSM_ALT]))
+            ]
+
+        if len(dsm_names) != len(dict_path[cst.DSM_ALT]):
+            raise ValueError(
+                "Number of DSM identifiers does not match input DSMs"
+            )
+
+        # Initialize DSM merging statistics
+        self._dsm_names = list(dsm_names)
+        self._merging_stats = {name: [] for name in self._dsm_names}
+
+        self._merging_processed_tiles = 0
+        self._merging_expected_tiles = (
+            terrain_raster.shape[0] * terrain_raster.shape[1]
+        )
+
+        terrain_raster.final_function = self.finalize_merging_stats
 
         xsize, ysize = tiling.roi_to_start_and_size(
             global_bounds, list(resolution)
@@ -385,6 +423,65 @@ class WeightedFusion(DsmMerging, short_name="weighted_fusion"):
 
         return terrain_raster
 
+    def finalize_merging_stats(self, orchestrator, tile):
+        """
+        Collect overlap statistics from computed tiles.
+
+        Once all tiles are processed, aggregate the statistics
+        for each input DSM and update the output metadata.
+        """
+
+        tile_stats = tile.attrs.pop("merging_stats", [])
+
+        # Collect statistics for each added DSM
+        for stats in tile_stats:
+            dsm_name = self._dsm_names[stats["dsm_index"]]
+
+            self._merging_stats[dsm_name].append(
+                {
+                    key: value
+                    for key, value in stats.items()
+                    if key != "dsm_index"
+                }
+            )
+
+        self._merging_processed_tiles += 1
+
+        # Wait until all tiles have been processed
+        if self._merging_processed_tiles != self._merging_expected_tiles:
+            return tile
+
+        # Aggregate statistics for each DSM
+        results = {}
+
+        for idx, dsm_name in enumerate(self._dsm_names):
+            results[dsm_name] = {
+                "previous_merged_dsms": self._dsm_names[:idx],
+                "overlap": aggregate_overlap_stats(
+                    self._merging_stats[dsm_name]
+                ),
+            }
+
+        # Update metadata with global statistics only
+        updating_dict = {
+            application_constants.APPLICATION_TAG: {
+                "dsm_merging": {
+                    "overlap_difference_statistics": {
+                        "unit": "m",
+                        "inputs": results,
+                    }
+                }
+            }
+        }
+
+        orchestrator.update_out_info(updating_dict)
+        orchestrator.save_out_yaml()
+
+        # Clear intermediate tile statistics
+        self._merging_stats.clear()
+
+        return tile
+
 
 def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa C901
     dict_path,
@@ -524,6 +621,7 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
         # Update data
         if key == cst.DSM_ALT:
             # Update dsm_value and weights once
+            overlap_stats = []
             value, weights = assemblage(
                 dict_path[key],
                 dict_path[cst.DSM_WEIGHTS_SUM],
@@ -536,10 +634,13 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
                 filling_map=filling_map,
                 filling_paths=filling_paths,
                 resolution=resolution,
+                overlap_stats=overlap_stats,
             )
 
             dataset[key] = (dim, value)
             dataset[cst.DSM_WEIGHTS_SUM] = (dim, weights)
+
+            dataset.attrs["merging_stats"] = overlap_stats
         elif key == cst.DSM_SOURCE_PC:
             value, _ = assemblage(
                 dict_path[key],
@@ -611,6 +712,116 @@ def dsm_merging_wrapper(  # pylint: disable=too-many-positional-arguments # noqa
     )
 
     return dataset
+
+
+def compute_overlap_stats(
+    previous_data,
+    current_data,
+    previous_weights,
+    current_weights,
+    *,
+    previous_nodata,
+    current_nodata,
+):
+    """
+    Compute elevation differences on overlapping valid pixels.
+
+    Differences are computed as:
+        current_data - previous_data
+
+    Only pixels valid in both DSMs are considered.
+
+    :return: dictionary containing the number of compared pixels,
+        mean, median and population standard deviation of elevation
+        differences, or None if no valid overlap exists
+    :rtype: dict or None
+    """
+
+    valid = (
+        (previous_weights != 0)
+        & (current_weights != 0)
+        & np.isfinite(previous_data)
+        & np.isfinite(current_data)
+    )
+
+    if previous_nodata is not None:
+        valid &= previous_data != previous_nodata
+
+    if current_nodata is not None:
+        valid &= current_data != current_nodata
+
+    if not np.any(valid):
+        return None
+
+    diff = current_data[valid].astype(np.float64) - previous_data[valid].astype(
+        np.float64
+    )
+
+    return {
+        "compared_pixels": int(diff.size),
+        "mean": float(np.mean(diff)),
+        "median": float(np.median(diff)),
+        "std": float(np.std(diff)),
+    }
+
+
+def aggregate_overlap_stats(tile_stats):
+    """
+    Aggregate overlap statistics from multiple tiles.
+
+    The global mean and population standard deviation are
+    computed exactly from tile statistics.
+
+    The median is approximated by the weighted mean of tile
+    medians, using the number of compared pixels as weights.
+    It is not the exact median of all elevation differences.
+
+    :param tile_stats: list of overlap statistics per tile
+    :type tile_stats: list[dict]
+    :return: aggregated overlap statistics, or None if no overlap exists
+    :rtype: dict or None
+    """
+
+    if not tile_stats:
+        return None
+
+    total_pixels = sum(stats["compared_pixels"] for stats in tile_stats)
+
+    if total_pixels == 0:
+        return None
+
+    # Exact global mean
+    mean = (
+        math.fsum(
+            stats["compared_pixels"] * stats["mean"] for stats in tile_stats
+        )
+        / total_pixels
+    )
+
+    # Exact global population variance
+    variance = (
+        math.fsum(
+            stats["compared_pixels"]
+            * (stats["std"] ** 2 + (stats["mean"] - mean) ** 2)
+            for stats in tile_stats
+        )
+        / total_pixels
+    )
+
+    # Weighted mean of tile medians (approximation)
+    median = (
+        math.fsum(
+            stats["compared_pixels"] * stats["median"] for stats in tile_stats
+        )
+        / total_pixels
+    )
+
+    return {
+        "compared_pixels": total_pixels,
+        "mean": float(mean),
+        "median": float(median),
+        "std": float(math.sqrt(max(0.0, variance))),
+    }
 
 
 def create_filling_map(  # pylint: disable=R0917
@@ -793,6 +1004,7 @@ def assemblage(  # pylint: disable=too-many-positional-arguments
     filling_map=None,
     filling_paths=None,
     resolution=None,
+    overlap_stats=None,
 ):
     """
     Update data
@@ -888,8 +1100,26 @@ def assemblage(  # pylint: disable=too-many-positional-arguments
 
                 if cols > 0 and rows > 0:
                     tab_x = np.arange(x_offset, x_offset + cols)
-
                     tab_y = np.arange(y_offset, y_offset + rows)
+
+                    # Compute differences before merging the current DSM
+                    if overlap_stats is not None and idx > 0:
+                        current_stats = compute_overlap_stats(
+                            tile[np.ix_(tab_y, tab_x)],
+                            data,
+                            weights[np.ix_(tab_y, tab_x)],
+                            current_weights_window,
+                            previous_nodata=nodata,
+                            current_nodata=src.nodata,
+                        )
+
+                        if current_stats is not None:
+                            overlap_stats.append(
+                                {
+                                    "dsm_index": idx,
+                                    **current_stats,
+                                }
+                            )
 
                     # Update data
                     if band_descriptions[0] is not None:
