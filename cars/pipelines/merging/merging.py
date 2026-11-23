@@ -371,6 +371,12 @@ class MergingPipeline(PipelineTemplate):
             dsms_merging_dump_dir = os.path.join(self.dump_dir, "dsms_merging")
 
             dsm_dict = self.used_conf[INPUT][dsm_cst.DSMS]
+
+            # Keep input DSM identifiers in the same order as their paths
+            dsm_names = [
+                name for name, dsm in dsm_dict.items() if dsm["dsm"] is not None
+            ]
+
             dict_path = {}
             for key in dsm_dict.keys():
                 for path_name in dsm_dict[key].keys():
@@ -506,4 +512,5 @@ class MergingPipeline(PipelineTemplate):
                 ambiguity_file_name,
                 contributing_all_pair_file_name,
                 dtm_file_name,
+                dsm_names=dsm_names,
             )
