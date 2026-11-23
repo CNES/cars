@@ -142,6 +142,7 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         self.geoid = geoid
         self.default_alt = default_alt
         self.elevation = default_alt
+
         # a margin is needed for cubic interpolation
         self.rectification_grid_margin = 0
         if self.interpolator == "cubic":
@@ -413,7 +414,6 @@ class AbstractGeometry(metaclass=ABCMeta):  # pylint: disable=R0902
         overloaded_conf["add_epipolar_margins"] = conf.get(
             "add_epipolar_margins", True
         )
-
         geometry_schema = {
             "plugin_name": str,
             "interpolator": And(str, lambda x: x in ["cubic", "linear"]),

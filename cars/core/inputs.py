@@ -427,6 +427,68 @@ def rasterio_get_transform(raster_file: str, convention: str = None) -> Dict:
         return src_tr
 
 
+def _sensor_transform_from_dataset(dataset):
+    """
+    Get sensor transform in pixel coordinates for a georeferenced image.
+
+    The subsampling factor is used to express coordinates in the
+    original sensor image reference frame.
+    """
+    resolution = float(dataset.tags().get("subsampling", 1))
+
+    return Affine(resolution, 0, 0, 0, resolution, 0)
+
+
+def rasterio_get_sensor_transform(
+    raster_file: str,
+    convention: str = None,
+) -> Affine:
+    """
+    Get the transform used for sensor geometry operations.
+
+    For georeferenced images, use the sensor pixel reference frame.
+    Otherwise, preserve the original raster transform.
+
+    :param raster_file: path to the sensor image
+    :param convention: raster coordinate convention
+    :return: sensor affine transform
+    """
+    with rio.open(raster_file) as dataset:
+        if dataset.crs is not None:
+            return _sensor_transform_from_dataset(dataset)
+
+    return rasterio_get_transform(
+        raster_file,
+        convention=convention,
+    )
+
+
+def rasterio_get_sensor_bounds(raster_file: str) -> list:
+    """
+    Get image bounds in the sensor reference frame.
+
+    :param raster_file: path to the sensor image
+    :return: sensor bounds [xmin, ymin, xmax, ymax]
+    """
+    with rio.open(raster_file) as dataset:
+        if dataset.crs is not None:
+            transform = _sensor_transform_from_dataset(dataset)
+
+            return [
+                transform.c,
+                transform.f,
+                transform.c + dataset.width * transform.a,
+                transform.f + dataset.height * transform.e,
+            ]
+
+    return list(
+        rasterio_get_bounds(
+            raster_file,
+            apply_resolution_sign=True,
+        )
+    )
+
+
 def rasterio_get_epsg(raster_file: str) -> int:
     """
     Get the epsg of an image file

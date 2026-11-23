@@ -118,10 +118,10 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
     right_margins[3] = right_region[3] - right_roi[3]
 
     # Resample left images
-    left_img_transform = inputs.rasterio_get_transform(
-        next(iter(left_imgs)), convention="north"
+    left_img_transform = inputs.rasterio_get_sensor_transform(
+        next(iter(left_imgs)),
+        convention="north",
     )
-
     left_dataset = resample_image(
         left_imgs,
         grid1,
@@ -148,7 +148,9 @@ def epipolar_rectify_images(  # pylint: disable=too-many-positional-arguments
         left_dataset.attrs[cst.EPI_DISP_MAX] = margins.attrs["disp_max"]
 
     # Resample right image
-    right_img_transform = inputs.rasterio_get_transform(next(iter(right_imgs)))
+    right_img_transform = inputs.rasterio_get_sensor_transform(
+        next(iter(right_imgs)),
+    )
     right_dataset = resample_image(
         right_imgs,
         grid2,
