@@ -466,30 +466,67 @@ def epipolar_small_component_removal_wrapper(
     )
 
     if cst.EPI_INVALIDITY_MASK in filtered_cloud:
-        mask_valid = np.all(
-            filtered_cloud[cst.EPI_INVALIDITY_MASK].values != 1, axis=0
+        mask_valid_pandora = np.all(
+            filtered_cloud[cst.EPI_INVALIDITY_MASK].values != 1,
+            axis=0,
         )
 
-        fillnodata(
-            filtered_cloud[cst.X],
-            mask=mask_valid,
-            max_search_distance=100,
-            smoothing_iterations=0,
+        # Exclude non-finite XYZ coordinates from interpolation sources
+        mask_valid = mask_valid_pandora & (
+            np.isfinite(filtered_cloud[cst.X].values)
+            & np.isfinite(filtered_cloud[cst.Y].values)
+            & np.isfinite(filtered_cloud[cst.Z].values)
         )
 
-        fillnodata(
-            filtered_cloud[cst.Y],
-            mask=mask_valid,
-            max_search_distance=100,
-            smoothing_iterations=0,
-        )
+        targets = ~mask_valid_pandora
 
-        fillnodata(
-            filtered_cloud[cst.Z],
-            mask=mask_valid,
-            max_search_distance=100,
-            smoothing_iterations=0,
-        )
+        if np.any(mask_valid):
+            for coord in (cst.X, cst.Y, cst.Z):
+                values = filtered_cloud[coord].values
+
+                # Normalize coordinates around a local origin
+                origin = np.median(values[mask_valid])
+                normalized = values - origin
+
+                # Interpolate normalized coordinates
+                interpolated = fillnodata(
+                    normalized,
+                    mask=mask_valid,
+                    max_search_distance=100,
+                    smoothing_iterations=0,
+                )
+
+                if logger.isEnabledFor(10):
+                    # Precision loss after interpolation and denormalization
+                    precision_error = np.max(
+                        np.abs(
+                            interpolated[mask_valid]
+                            + origin
+                            - values[mask_valid]
+                        )
+                    )
+
+                    # Number of non-finite points recovered by interpolation
+                    filled = np.count_nonzero(
+                        targets
+                        & ~np.isfinite(values)
+                        & np.isfinite(interpolated)
+                    )
+
+                    logger.debug(
+                        "Point cloud interpolation: coord=%s "
+                        "dtype=%s->%s precision_error=%.3e "
+                        "filled_points=%d",
+                        coord,
+                        values.dtype,
+                        interpolated.dtype,
+                        precision_error,
+                        filled,
+                    )
+
+                # Restore absolute coordinates only for target pixels
+                # to preserve the original precision of source points
+                values[targets] = interpolated[targets] + origin
 
     # Fill with attributes
     cars_dataset.fill_dataset(
