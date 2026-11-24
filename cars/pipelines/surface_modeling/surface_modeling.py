@@ -425,10 +425,10 @@ class SurfaceModelingPipeline(PipelineTemplate):
                 ymin = low_res_dsm.bounds.bottom
                 utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
                 conversion_factor = preprocessing.get_conversion_factor(
-                    low_res_dsm.bounds, utm_epsg, crs.to_epsg()
+                    low_res_dsm.bounds, crs.to_epsg(), utm_epsg
                 )
                 self.dem_scaling_coeff = (
-                    self.dem_scaling_coeff * conversion_factor
+                    self.dem_scaling_coeff / conversion_factor
                 )
 
         # Init tie points pipelines
@@ -553,9 +553,9 @@ class SurfaceModelingPipeline(PipelineTemplate):
             ymin = bounds[1]
             utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
             conversion_factor = preprocessing.get_conversion_factor(
-                bounds, utm_epsg, self.input_roi_epsg
+                bounds, self.input_roi_epsg, utm_epsg
             )
-            res_roi_epsg = output["resolution"] / conversion_factor
+            res_roi_epsg = np.max(output["resolution"]) * conversion_factor
 
             terrain_margin = 10 * self.scaling_coeff * res_roi_epsg
 
