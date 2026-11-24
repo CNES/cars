@@ -1,7 +1,0 @@
----
-input:
-  initial_elevation:
-    dem: /path/to/srtm.tif
-    geoid: /path/to/geoid.tif
-    altitude_delta_min: 10
-    altitude_delta_max: 40
